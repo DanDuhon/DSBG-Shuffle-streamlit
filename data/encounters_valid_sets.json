@@ -1,0 +1,1298 @@
+{
+    "Painted World of Ariamis_1_Cloak and Feathers": {
+        "1": [["Painted World of Ariamis"], ["Phantoms"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"]],
+        "3": [["Painted World of Ariamis"], ["Darkroot"]],
+        "4": [["Painted World of Ariamis"], ["Darkroot"]]
+    },
+    "Painted World of Ariamis_1_Frozen Sentries": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_1_No Safe Haven": {
+        "1": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Darkroot"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Darkroot"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_1_Painted Passage": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Darkroot"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_1_Promised Respite": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Darkroot"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["Darkroot"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_1_Roll Out": {
+        "1": [["Iron Keep"], ["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_1_Skittering Frenzy": {
+        "1": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"]]
+    },
+    "Painted World of Ariamis_1_The First Bastion": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Darkroot"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_1_Unseen Scurrying": {
+        "1": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Painted World of Ariamis"], ["Iron Keep"], ["Executioner Chariot"]]
+    },
+    "Painted World of Ariamis_2_Abandoned and Forgotten": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"]],
+        "2": [["Darkroot"], ["Painted World of Ariamis"]],
+        "3": [["Darkroot"], ["Painted World of Ariamis"]],
+        "4": [["Darkroot"], ["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_2_Cold Snap": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"]],
+        "3": [["Painted World of Ariamis"], ["Darkroot"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Darkroot"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_2_Corrupted Hovel": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Darkroot"], ["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_2_Distant Tower": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_2_Gnashing Beaks": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"]],
+        "2": [["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"]],
+        "3": [["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"]],
+        "4": [["Darkroot"], ["Painted World of Ariamis"], ["Iron Keep"]]
+    },
+    "Painted World of Ariamis_2_Inhospitable Ground": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"], ["Dark Souls The Board Game"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"], ["Dark Souls The Board Game"]],
+        "3": [["Painted World of Ariamis"], ["Darkroot"], ["Dark Souls The Board Game"]],
+        "4": [["Painted World of Ariamis"], ["Darkroot"], ["Dark Souls The Board Game"]]
+    },
+    "Painted World of Ariamis_2_Monstrous Maw": {
+        "1": [["Painted World of Ariamis"], ["Executioner Chariot"]],
+        "2": [["Painted World of Ariamis"], ["Executioner Chariot"]],
+        "3": [["Painted World of Ariamis"], ["Executioner Chariot"]],
+        "4": [["Painted World of Ariamis"], ["Executioner Chariot"]]
+    },
+    "Painted World of Ariamis_2_Skeletal Spokes": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_2_Snowblind": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Iron Keep"]],
+        "2": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "3": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "4": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"]]
+    },
+    "Painted World of Ariamis_3_Central Plaza": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_3_Corvian Host": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]]
+    },
+    "Painted World of Ariamis_3_Deathly Freeze": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_3_Draconic Decay": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_3_Eye of the Storm": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_3_Frozen Revolutions": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Painted World of Ariamis_3_The Last Bastion": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"], ["Tomb of Giants"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"]],
+        "3": [["Painted World of Ariamis"], ["Darkroot"]],
+        "4": [["Painted World of Ariamis"], ["Darkroot"]]
+    },
+    "Painted World of Ariamis_3_Trecherous Tower": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Painted World of Ariamis_3_Velka's Chosen": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Iron Keep"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Iron Keep"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Iron Keep"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Iron Keep"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_Aged Sentinel": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_Broken Passageway (TSC)": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_1_Dark Alleyway": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_Illusionary Doorway": {
+        "1": [["Dark Souls The Board Game"], ["Explorers"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Explorers"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Explorers"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Explorers"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_Kingdom's Messengers": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_1_Shattered Keep": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_Tempting Maw": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_The Bell Tower": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_1_Undead Sanctum": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_2_Deathly Tolls": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_2_Flooded Fortress": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_2_Gleaming Silver": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_2_Parish Church": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_2_Parish Gates": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_2_The Fountainhead": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_2_The Hellkite Bridge": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_2_The Iron Golem": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "The Sunless City_2_The Shine of Gold": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_3_Archive Entrance": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_3_Castle Break In": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_3_Central Plaza (TSC)": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_3_Depths of the Cathedral": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_3_Grim Reunion": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_3_Hanging Rafters": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Sunless City_3_The Grand Hall": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_3_Trophy Room": {
+        "1": [["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "The Sunless City_3_Twilight Falls": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["The Sunless City"]],
+        "4": [["The Sunless City"]]
+    },
+    "Tomb of Giants_1_Abandoned Storeroom": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_1_Bridge Too Far": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Tomb of Giants_1_Dark Resurrection": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_1_Deathly Magic": {
+        "1": [["Tomb of Giants"], ["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_1_Grave Matters": {
+        "1": [["Tomb of Giants"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Tomb of Giants_1_Last Rites": {
+        "1": [["Tomb of Giants"], ["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Darkroot"], ["Tomb of Giants"]],
+        "3": [["Darkroot"], ["Tomb of Giants"]],
+        "4": [["Darkroot"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_1_Puppet Master": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_1_Rain of Filth": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_1_The Beast From the Depths": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_2_Altar of Bones": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_2_Far From the Sun": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_2_In Deep Water": {
+        "1": [["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Tomb of Giants_2_Lost Chapel": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "3": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_2_Maze of the Dead": {
+        "1": [["Tomb of Giants"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Tomb of Giants"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Tomb of Giants"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Tomb of Giants"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Tomb of Giants_2_Pitch Black": {
+        "1": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "2": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "3": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "Tomb of Giants_2_The Abandoned Chest": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "Tomb of Giants_2_The Mass Grave": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_2_Urns of the Fallen": {
+        "1": [["Painted World of Ariamis"], ["Explorers"], ["Tomb of Giants"]],
+        "2": [["Painted World of Ariamis"], ["Explorers"], ["Tomb of Giants"]],
+        "3": [["Explorers"], ["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "4": [["Explorers"], ["Painted World of Ariamis"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_A Trusty Ally": {
+        "1": [["Iron Keep"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Iron Keep"], ["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_Death's Precipice": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_Giant's Coffin": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_Gravelord Nito Setup": {
+        "1": [["Darkroot"], ["Tomb of Giants"], ["Painted World of Ariamis"]],
+        "2": [["Darkroot"], ["Tomb of Giants"]],
+        "3": [["Darkroot"], ["Tomb of Giants"]],
+        "4": [["Darkroot"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_Honour Guard": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Iron Keep"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Explorers"], ["Iron Keep"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Tomb of Giants_3_Lakeview Refuge": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_Last Shred of Light": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Executioner Chariot"]],
+        "2": [["Tomb of Giants"], ["Executioner Chariot"], ["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["Executioner Chariot"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["Executioner Chariot"]]
+    },
+    "Tomb of Giants_3_Skeleton Overlord": {
+        "1": [["Darkroot"], ["Tomb of Giants"]],
+        "2": [["Darkroot"], ["Tomb of Giants"]],
+        "3": [["Darkroot"], ["Tomb of Giants"]],
+        "4": [["Darkroot"], ["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_The Locked Grave": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Tomb of Giants_3_The Skeleton Ball": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Dark Souls The Board Game_1_Ash Gardens": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Ashen Hollow": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Broken Passageway": {
+        "1": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Dark Hollow": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_1_Forsaken Depths": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Ghostly Keep": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Hollow Cave": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Ruined Keep": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Shattered Dungeon": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_The Deeps": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_The Forgotten": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_1_Unlighted Chamber": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_2_Black Dungeon": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Iron Keep"], ["Dark Souls The Board Game"]],
+        "4": [["Iron Keep"], ["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_2_Burned Gardens": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Tomb of Giants"]]
+    },
+    "Dark Souls The Board Game_2_Demon Ruins": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]]
+    },
+    "Dark Souls The Board Game_2_Forgotten Gorge": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_2_High Wall of Lothric": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_2_Lightless Passage": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_2_Lost Labyrinth": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_2_Prison Tower": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Iron Keep"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Iron Keep"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_2_Sentinel's Wrath": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_2_Sunrise Pass": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_2_Temple of the Deeps": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_2_Weathered Peak": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Explorers"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_3_Cemetery of Ash": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Dark Souls The Board Game_3_Central Irithyll": {
+        "1": [["Iron Keep"], ["Dark Souls The Board Game"], ["Darkroot"], ["Tomb of Giants"]],
+        "2": [["Darkroot"], ["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Darkroot"], ["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Darkroot"], ["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Dark Souls The Board Game_3_Desecrated Church": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_3_Dilapidated Bridge": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_3_Empty Crypt": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_3_Lost Shrine": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_3_Perished Depths": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["Explorers"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["Explorers"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_3_Pit of the Dead": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_3_Profane Shrine": {
+        "1": [["Darkroot"], ["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"], ["Darkroot"]],
+        "3": [["Dark Souls The Board Game"], ["Darkroot"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_3_Silent Tombs": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "Dark Souls The Board Game_3_Untended Graves": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Dark Souls The Board Game_3_Wretched Gardens": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Darkroot_1_Blackroot Well": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"]],
+        "2": [["Darkroot"], ["Painted World of Ariamis"]],
+        "3": [["Darkroot"], ["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"], ["Darkroot"], ["Tomb of Giants"]]
+    },
+    "Darkroot_1_Fearful Woods": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "2": [["Darkroot"], ["Painted World of Ariamis"]],
+        "3": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "4": [["Darkroot"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"]]
+    },
+    "Darkroot_1_Leafy Grotto": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"]],
+        "3": [["Painted World of Ariamis"], ["Darkroot"], ["Tomb of Giants"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Darkroot_1_Misty Woods": {
+        "1": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Darkroot_1_Overgrown Caves": {
+        "1": [["Darkroot"], ["Painted World of Ariamis"]],
+        "2": [["Darkroot"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "3": [["Darkroot"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "4": [["Darkroot"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"]]
+    },
+    "Darkroot_1_Wild Glades": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"], ["Tomb of Giants"]],
+        "3": [["Darkroot"], ["Tomb of Giants"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Darkroot_2_Black Bog": {
+        "1": [["Painted World of Ariamis"], ["Darkroot"]],
+        "2": [["Painted World of Ariamis"], ["Darkroot"]],
+        "3": [["Painted World of Ariamis"], ["Darkroot"]],
+        "4": [["Painted World of Ariamis"], ["Darkroot"]]
+    },
+    "Darkroot_2_Boggy Hollow": {
+        "1": [["Darkroot"]],
+        "2": [["Darkroot"]],
+        "3": [["Darkroot"]],
+        "4": [["Darkroot"], ["Iron Keep"]]
+    },
+    "Darkroot_2_Haunted Ruins": {
+        "1": [["Darkroot"], ["The Sunless City"]],
+        "2": [["Darkroot"], ["The Sunless City"]],
+        "3": [["Darkroot"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["The Sunless City"]]
+    },
+    "Darkroot_2_Murky Roots": {
+        "1": [["Darkroot"]],
+        "2": [["Darkroot"]],
+        "3": [["Darkroot"]],
+        "4": [["Darkroot"]]
+    },
+    "Darkroot_2_Stone Hollow": {
+        "1": [["Darkroot"], ["Dark Souls The Board Game"], ["Iron Keep"], ["The Sunless City"]],
+        "2": [["Darkroot"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Darkroot"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Darkroot"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Darkroot_2_Withered Thicket": {
+        "1": [["Darkroot"]],
+        "2": [["Darkroot"]],
+        "3": [["Darkroot"]],
+        "4": [["Darkroot"]]
+    },
+    "Darkroot_3_Abandoned Tower": {
+        "1": [["Darkroot"], ["Dark Souls The Board Game"]],
+        "2": [["Darkroot"]],
+        "3": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"]],
+        "4": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"]]
+    },
+    "Darkroot_3_Corpselight Fens": {
+        "1": [["Darkroot"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Darkroot"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "Darkroot_3_Dark Woods": {
+        "1": [["Darkroot"]],
+        "2": [["Darkroot"]],
+        "3": [["Darkroot"]],
+        "4": [["Darkroot"]]
+    },
+    "Darkroot_3_Desolate Hinterland": {
+        "1": [["Dark Souls The Board Game"], ["Darkroot"], ["Tomb of Giants"]],
+        "2": [["Darkroot"], ["Tomb of Giants"]],
+        "3": [["Iron Keep"], ["Darkroot"], ["Tomb of Giants"]],
+        "4": [["Iron Keep"], ["Darkroot"], ["Tomb of Giants"]]
+    },
+    "Darkroot_3_Hydra Lake": {
+        "1": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "2": [["Darkroot"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "3": [["Darkroot"], ["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Darkroot"], ["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "Darkroot_3_Sodden Mire": {
+        "1": [["Darkroot"], ["Dark Souls The Board Game"]],
+        "2": [["Darkroot"]],
+        "3": [["Darkroot"]],
+        "4": [["Dark Souls The Board Game"], ["Darkroot"], ["Painted World of Ariamis"]]
+    },
+    "Explorers_1_Burning Swamp": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Explorers", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Explorers", "The Sunless City"], ["Painted World of Ariamis", "The Sunless City"]]
+    },
+    "Explorers_1_Halls of the Forsworn": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Explorers_1_Lothric Castle": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Explorers", "Dark Souls The Board Game"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "The Sunless City"]],
+        "4": [["Tomb of Giants", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Explorers", "Painted World of Ariamis"], ["Tomb of Giants", "The Sunless City"], ["Explorers", "The Sunless City"]]
+    },
+    "Explorers_1_Unholy Tunnels": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Explorers_1_Wicked Vault": {
+        "1": [["Explorers"], ["Painted World of Ariamis"]],
+        "2": [["Explorers"], ["Painted World of Ariamis"]],
+        "3": [["Explorers"], ["Painted World of Ariamis"]],
+        "4": [["Explorers"], ["Painted World of Ariamis"]]
+    },
+    "Explorers_2_Lost Grotto": {
+        "1": [["Explorers"], ["Painted World of Ariamis"]],
+        "2": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Explorers_2_Spirit Tomb": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Explorers_2_Sunken Stairwell": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Explorers_2_The Void Pit": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Explorers_2_Unhallowed Caves": {
+        "1": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Explorers"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Explorers_3_Gallery of the Hidden Warrior": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Explorers_3_Giant's Keep": {
+        "1": [["Dark Souls The Board Game", "Explorers"], ["Iron Keep", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Darkroot"], ["Painted World of Ariamis", "Executioner Chariot"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Executioner Chariot"], ["Iron Keep", "Painted World of Ariamis"], ["Tomb of Giants", "Painted World of Ariamis"], ["The Sunless City", "Explorers"], ["Iron Keep", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["The Sunless City", "Executioner Chariot"]],
+        "2": [["Iron Keep", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Executioner Chariot", "Painted World of Ariamis"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Iron Keep", "Painted World of Ariamis"], ["Tomb of Giants", "Painted World of Ariamis"], ["Iron Keep", "The Sunless City"], ["Explorers", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["Executioner Chariot", "The Sunless City"]],
+        "3": [["Dark Souls The Board Game", "Iron Keep"], ["Darkroot", "Dark Souls The Board Game"], ["Executioner Chariot", "Painted World of Ariamis"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Explorers"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Iron Keep"], ["Tomb of Giants", "Painted World of Ariamis"], ["The Sunless City", "Iron Keep"], ["Explorers", "The Sunless City"], ["Tomb of Giants", "The Sunless City"], ["Painted World of Ariamis", "The Sunless City"], ["Executioner Chariot", "The Sunless City"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Explorers_3_Hidden Chamber": {
+        "1": [["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "2": [["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "3": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Explorers_3_Refuge of Silence": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Explorers_3_Scarlet Battlement": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Tomb of Giants", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Explorers"], ["Tomb of Giants", "Painted World of Ariamis"], ["Phantoms", "Dark Souls The Board Game"], ["Darkroot", "Tomb of Giants"], ["Tomb of Giants", "The Sunless City"], ["Darkroot", "The Sunless City"]],
+        "4": [["Dark Souls The Board Game", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Phantoms", "Dark Souls The Board Game"], ["Darkroot", "Tomb of Giants"], ["The Sunless City", "Tomb of Giants"], ["Darkroot", "The Sunless City"]]
+    },
+    "Iron Keep_1_Blazing Plaza": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Iron Keep_1_Burning Hold": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Tomb of Giants", "Painted World of Ariamis"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Darkroot", "Dark Souls The Board Game"], ["Explorers", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Iron Keep"], ["Explorers", "Darkroot"], ["Explorers", "Tomb of Giants"], ["Executioner Chariot", "The Sunless City"], ["The Sunless City", "Tomb of Giants"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["The Sunless City", "Iron Keep"]],
+        "4": [["Tomb of Giants", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Iron Keep", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Darkroot", "Explorers"], ["Explorers", "Tomb of Giants"], ["Executioner Chariot", "The Sunless City"], ["Tomb of Giants", "The Sunless City"], ["Darkroot", "The Sunless City"], ["Painted World of Ariamis", "The Sunless City"], ["Iron Keep", "The Sunless City"], ["Explorers", "The Sunless City"]]
+    },
+    "Iron Keep_1_Charred Keep": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game", "Tomb of Giants"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["The Sunless City", "Tomb of Giants"], ["Executioner Chariot", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["Explorers", "The Sunless City"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Iron Keep"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Iron Keep_1_Flaming Passageway": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_1_Furnace Room": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Iron Keep_1_Threshold Bridge": {
+        "1": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "The Sunless City"]],
+        "2": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "The Sunless City"]],
+        "3": [["Dark Souls The Board Game", "Iron Keep"], ["The Sunless City", "Iron Keep"]],
+        "4": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "The Sunless City"]]
+    },
+    "Iron Keep_2_Brass Sanctum": {
+        "1": [["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_2_Bronze Spire": {
+        "1": [["Painted World of Ariamis"], ["Iron Keep"]],
+        "2": [["Iron Keep"], ["Painted World of Ariamis"]],
+        "3": [["Iron Keep"], ["Painted World of Ariamis"]],
+        "4": [["Iron Keep"], ["Painted World of Ariamis"]]
+    },
+    "Iron Keep_2_Iron Depths": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_2_Pyre of Souls": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_2_Searing Hallway": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_2_Smouldering Labyrinth": {
+        "1": [["Dark Souls The Board Game"], ["Iron Keep"], ["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "3": [["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_3_Castle Aflame": {
+        "1": [["Dark Souls The Board Game"], ["Iron Keep"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["Iron Keep"], ["The Sunless City"]],
+        "3": [["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "4": [["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Iron Keep_3_Hollowed Threshold": {
+        "1": [["Iron Keep"], ["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "2": [["Iron Keep"], ["Tomb of Giants"]],
+        "3": [["Iron Keep"], ["Tomb of Giants"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_3_Melting Gallery": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_3_Shrine of the Torch": {
+        "1": [["Iron Keep"], ["Tomb of Giants"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Iron Keep"], ["Tomb of Giants"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Iron Keep"], ["Painted World of Ariamis"], ["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Iron Keep"], ["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "Iron Keep_3_Smoking Gallery": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Iron Keep_3_Sweltering Sanctum": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Executioner Chariot_1_Quiet Graveyard": {
+        "1": [["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "2": [["Painted World of Ariamis"], ["Tomb of Giants"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Executioner Chariot_1_Silent Pathway": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"]]
+    },
+    "Executioner Chariot_2_Mausoleum Ruins": {
+        "1": [["Darkroot", "Tomb of Giants"], ["Explorers", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Iron Keep"], ["Tomb of Giants", "Painted World of Ariamis"], ["Explorers", "Darkroot"], ["Explorers", "Painted World of Ariamis"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"]],
+        "2": [["Darkroot", "Tomb of Giants"], ["Explorers", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Iron Keep", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Darkroot", "Explorers"], ["Explorers", "Painted World of Ariamis"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"]],
+        "3": [["Darkroot", "Tomb of Giants"], ["Explorers", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Iron Keep", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Darkroot", "Explorers"], ["Explorers", "Painted World of Ariamis"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"]],
+        "4": [["Darkroot", "Tomb of Giants"], ["Explorers", "Dark Souls The Board Game"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Iron Keep"], ["Explorers", "Darkroot"], ["Explorers", "Painted World of Ariamis"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"]]
+    },
+    "Executioner Chariot_2_Misty Burial Site": {
+        "1": [["Painted World of Ariamis"], ["Explorers"], ["Tomb of Giants"]],
+        "2": [["Painted World of Ariamis"], ["Explorers"], ["Tomb of Giants"]],
+        "3": [["Painted World of Ariamis"], ["Explorers"], ["Tomb of Giants"]],
+        "4": [["Painted World of Ariamis"], ["Explorers"], ["Tomb of Giants"]]
+    },
+    "Executioner Chariot_3_Corrupted Crypt": {
+        "1": [["Tomb of Giants"]],
+        "2": [["Tomb of Giants"]],
+        "3": [["Tomb of Giants"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Executioner Chariot_3_Desolate Cemetery": {
+        "1": [["Tomb of Giants"], ["The Sunless City"]],
+        "2": [["The Sunless City"]],
+        "3": [["Tomb of Giants"], ["The Sunless City"]],
+        "4": [["Tomb of Giants"], ["The Sunless City"]]
+    },
+    "Asylum Demon_4_Asylum's North Hall": {
+        "1": [["Darkroot", "Iron Keep"], ["Darkroot", "Phantoms"], ["Darkroot", "Dark Souls The Board Game"], ["Darkroot", "Painted World of Ariamis"], ["Darkroot", "Tomb of Giants"], ["Darkroot", "Explorers"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Executioner Chariot", "Painted World of Ariamis"], ["Executioner Chariot", "Tomb of Giants"], ["The Sunless City", "Dark Souls The Board Game"], ["The Sunless City", "Painted World of Ariamis"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Phantoms", "Dark Souls The Board Game"], ["Phantoms", "Painted World of Ariamis"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "Tomb of Giants"], ["Darkroot", "The Sunless City"], ["Iron Keep", "The Sunless City"], ["Painted World of Ariamis", "The Sunless City"], ["Tomb of Giants", "The Sunless City"], ["The Sunless City", "Iron Keep"]],
+        "2": [["Explorers", "Dark Souls The Board Game"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "Darkroot"], ["Explorers", "Tomb of Giants"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "The Sunless City"], ["Phantoms", "Dark Souls The Board Game"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Darkroot", "Painted World of Ariamis"], ["The Sunless City", "Painted World of Ariamis"], ["Phantoms", "Painted World of Ariamis"], ["Executioner Chariot", "Painted World of Ariamis"], ["Iron Keep", "Painted World of Ariamis"], ["Tomb of Giants", "Painted World of Ariamis"], ["Phantoms", "Darkroot"], ["Darkroot", "Iron Keep"], ["Darkroot", "Tomb of Giants"], ["Iron Keep", "Tomb of Giants"], ["Darkroot", "The Sunless City"], ["The Sunless City", "Iron Keep"], ["The Sunless City", "Tomb of Giants"]],
+        "3": [["Darkroot", "Phantoms"], ["Darkroot", "Painted World of Ariamis"], ["Darkroot", "Tomb of Giants"], ["Darkroot", "Iron Keep"], ["Darkroot", "Explorers"], ["Darkroot", "Dark Souls The Board Game"], ["Phantoms", "Painted World of Ariamis"], ["Phantoms", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Painted World of Ariamis", "Iron Keep"], ["Executioner Chariot", "Painted World of Ariamis"], ["The Sunless City", "Painted World of Ariamis"], ["Painted World of Ariamis", "Explorers"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Tomb of Giants", "Iron Keep"], ["Tomb of Giants", "Explorers"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Executioner Chariot", "Dark Souls The Board Game"], ["The Sunless City", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Explorers"], ["Darkroot", "The Sunless City"], ["Tomb of Giants", "The Sunless City"], ["The Sunless City", "Iron Keep"], ["The Sunless City", "Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Asylum Demon_4_Cells of the Dead": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Asylum Demon_4_Demon's Antechamber": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Asylum Demon_4_Shattered Cell": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Black Dragon Kalameet_4_Gough's Perch": {
+        "1": [["Darkroot", "Tomb of Giants"], ["Darkroot", "Dark Souls The Board Game"], ["Phantoms", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"]],
+        "2": [["Darkroot", "Dark Souls The Board Game"], ["Phantoms", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Tomb of Giants", "Painted World of Ariamis"], ["Darkroot", "Tomb of Giants"]],
+        "3": [["Darkroot", "Dark Souls The Board Game"], ["Darkroot", "Tomb of Giants"], ["Iron Keep", "Dark Souls The Board Game"], ["Phantoms", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"]],
+        "4": [["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Tomb of Giants", "Painted World of Ariamis"], ["Darkroot", "Tomb of Giants"]]
+    },
+    "Black Dragon Kalameet_4_Great Stone Bridge": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]]
+    },
+    "Black Dragon Kalameet_4_Perilous Crossing": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Black Dragon Kalameet_4_Royal Woods Passage": {
+        "1": [["Iron Keep", "Dark Souls The Board Game"], ["Darkroot", "Iron Keep"], ["Painted World of Ariamis", "Iron Keep"], ["Tomb of Giants", "Iron Keep"], ["Executioner Chariot", "Iron Keep"], ["The Sunless City", "Iron Keep"], ["Explorers", "Iron Keep"], ["Iron Keep", "The Sunless City"]],
+        "2": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Explorers"], ["Iron Keep", "Darkroot"], ["Iron Keep", "Executioner Chariot"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "The Sunless City"]],
+        "3": [["Iron Keep", "Dark Souls The Board Game"], ["Darkroot", "Iron Keep"], ["Painted World of Ariamis", "Iron Keep"], ["Tomb of Giants", "Iron Keep"], ["Executioner Chariot", "Iron Keep"], ["Explorers", "Iron Keep"], ["Iron Keep", "The Sunless City"]],
+        "4": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Explorers"], ["Iron Keep", "Darkroot"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "The Sunless City"]]
+    },
+    "Gaping Dragon_4_Darkened Chamber": {
+        "1": [["Darkroot"]],
+        "2": [["Darkroot"]],
+        "3": [["Darkroot"]],
+        "4": [["Darkroot"]]
+    },
+    "Gaping Dragon_4_Outskirts of Blighttown": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Gaping Dragon_4_Sewers of Lordran": {
+        "1": [["Darkroot", "Dark Souls The Board Game"], ["Iron Keep", "Executioner Chariot"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Executioner Chariot", "Painted World of Ariamis"], ["Executioner Chariot", "Tomb of Giants"], ["Iron Keep", "Phantoms"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "Explorers"], ["Phantoms", "Dark Souls The Board Game"], ["Phantoms", "Painted World of Ariamis"], ["Phantoms", "Tomb of Giants"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "Tomb of Giants"], ["Iron Keep", "The Sunless City"], ["Phantoms", "The Sunless City"], ["Painted World of Ariamis", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"]],
+        "2": [["Iron Keep", "Explorers"], ["Explorers", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Explorers"], ["Explorers", "Tomb of Giants"], ["Dark Souls The Board Game", "Darkroot"], ["Iron Keep", "Executioner Chariot"], ["Painted World of Ariamis", "Executioner Chariot"], ["Dark Souls The Board Game", "Executioner Chariot"], ["Tomb of Giants", "Executioner Chariot"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Phantoms"], ["Iron Keep", "Tomb of Giants"], ["Dark Souls The Board Game", "The Sunless City"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Painted World of Ariamis", "Phantoms"], ["Tomb of Giants", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Phantoms"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Tomb of Giants", "Phantoms"], ["Iron Keep", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["The Sunless City", "Phantoms"]],
+        "3": [["Explorers", "Dark Souls The Board Game"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "Iron Keep"], ["Explorers", "Tomb of Giants"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "The Sunless City"], ["Phantoms", "Dark Souls The Board Game"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Phantoms", "Painted World of Ariamis"], ["Executioner Chariot", "Painted World of Ariamis"], ["Iron Keep", "Painted World of Ariamis"], ["Tomb of Giants", "Painted World of Ariamis"], ["Phantoms", "Iron Keep"], ["Phantoms", "Tomb of Giants"], ["Executioner Chariot", "Iron Keep"], ["Executioner Chariot", "Tomb of Giants"], ["Iron Keep", "Tomb of Giants"], ["The Sunless City", "Painted World of Ariamis"], ["Phantoms", "The Sunless City"], ["The Sunless City", "Iron Keep"]],
+        "4": [["Darkroot", "Dark Souls The Board Game"], ["Phantoms", "Painted World of Ariamis"], ["Phantoms", "Tomb of Giants"], ["Phantoms", "Iron Keep"], ["Phantoms", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Painted World of Ariamis", "Iron Keep"], ["Executioner Chariot", "Painted World of Ariamis"], ["Painted World of Ariamis", "Explorers"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Tomb of Giants", "Iron Keep"], ["Executioner Chariot", "Tomb of Giants"], ["Tomb of Giants", "Explorers"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Executioner Chariot", "Iron Keep"], ["Explorers", "Iron Keep"], ["Dark Souls The Board Game", "Iron Keep"], ["Executioner Chariot", "Dark Souls The Board Game"], ["The Sunless City", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Darkroot", "The Sunless City"], ["Phantoms", "The Sunless City"], ["Painted World of Ariamis", "The Sunless City"], ["Tomb of Giants", "The Sunless City"], ["The Sunless City", "Iron Keep"]]
+    },
+    "Gaping Dragon_4_The Depths": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Guardian Dragon_4_Dragon Shrine": {
+        "1": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]]
+    },
+    "Guardian Dragon_4_Manor Foregarden": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Guardian Dragon_4_Research Library": {
+        "1": [["Explorers", "Dark Souls The Board Game"], ["Explorers", "Painted World of Ariamis"], ["Explorers", "Iron Keep"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Darkroot", "Dark Souls The Board Game"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Iron Keep", "Painted World of Ariamis"], ["Tomb of Giants", "Painted World of Ariamis"], ["Explorers", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["The Sunless City", "Iron Keep"]],
+        "2": [["Darkroot", "Dark Souls The Board Game"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Explorers", "Painted World of Ariamis"], ["Iron Keep", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["Tomb of Giants", "The Sunless City"], ["Explorers", "The Sunless City"]],
+        "3": [["Darkroot", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Painted World of Ariamis", "Iron Keep"], ["Painted World of Ariamis", "Explorers"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Iron Keep"], ["Executioner Chariot", "Dark Souls The Board Game"], ["Explorers", "Dark Souls The Board Game"], ["Painted World of Ariamis", "The Sunless City"], ["Tomb of Giants", "The Sunless City"], ["The Sunless City", "Iron Keep"], ["Explorers", "The Sunless City"]],
+        "4": [["Explorers", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Explorers"], ["Dark Souls The Board Game", "Darkroot"], ["Dark Souls The Board Game", "Executioner Chariot"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Tomb of Giants", "Painted World of Ariamis"], ["Dark Souls The Board Game", "Tomb of Giants"], ["The Sunless City", "Explorers"], ["Iron Keep", "The Sunless City"], ["The Sunless City", "Painted World of Ariamis"], ["The Sunless City", "Tomb of Giants"]]
+    },
+    "Guardian Dragon_4_Scholars' Hall": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Manus, Father of the Abyss_4_Entryway of the Chasm": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Manus, Father of the Abyss_4_Ruined Walkway": {
+        "1": [["Iron Keep", "Tomb of Giants"], ["Dark Souls The Board Game", "Iron Keep"], ["Darkroot", "Iron Keep"], ["Iron Keep", "Painted World of Ariamis"], ["Phantoms", "Iron Keep"]],
+        "2": [["Iron Keep", "Tomb of Giants"], ["Dark Souls The Board Game", "Iron Keep"], ["Darkroot", "Iron Keep"], ["Iron Keep", "Painted World of Ariamis"], ["Phantoms", "Iron Keep"]],
+        "3": [["Phantoms", "Iron Keep"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "Painted World of Ariamis"], ["Darkroot", "Iron Keep"], ["Dark Souls The Board Game", "Iron Keep"]],
+        "4": [["Phantoms", "Iron Keep"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Darkroot", "Iron Keep"], ["Dark Souls The Board Game", "Iron Keep"]]
+    },
+    "Manus, Father of the Abyss_4_Shadow of the Abyss": {
+        "1": [["Darkroot", "Dark Souls The Board Game"]],
+        "2": [["Darkroot", "Dark Souls The Board Game"]],
+        "3": [["Darkroot", "Dark Souls The Board Game"], ["Darkroot", "Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game", "Darkroot"], ["Iron Keep", "Darkroot"], ["Tomb of Giants", "Darkroot"]]
+    },
+    "Manus, Father of the Abyss_4_The Desecrated Grave": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Iron Keep"], ["Dark Souls The Board Game"]]
+    },
+    "Old Iron King_4_Blazing Furnace": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Darkroot"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Phantoms"], ["Iron Keep", "Explorers"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "Executioner Chariot"], ["Iron Keep", "The Sunless City"]]
+    },
+    "Old Iron King_4_Fortress Gates": {
+        "1": [["Dark Souls The Board Game"], ["Iron Keep"]],
+        "2": [["Dark Souls The Board Game"], ["Iron Keep"]],
+        "3": [["Dark Souls The Board Game"], ["Iron Keep"]],
+        "4": [["Dark Souls The Board Game"], ["Iron Keep"]]
+    },
+    "Old Iron King_4_Ironhearth Hall": {
+        "1": [["Dark Souls The Board Game"]],
+        "2": [["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"]]
+    },
+    "Old Iron King_4_Lava Path": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "2": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "4": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]]
+    },
+    "The Four Kings_4_Cursed Cavern": {
+        "1": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "The Four Kings_4_Edge of the Abyss": {
+        "1": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["The Sunless City"]],
+        "4": [["Dark Souls The Board Game"], ["The Sunless City"]]
+    },
+    "The Four Kings_4_Hall of Wraiths": {
+        "1": [["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Darkroot", "Tomb of Giants"], ["Darkroot", "Iron Keep"], ["Dark Souls The Board Game", "Tomb of Giants"], ["Tomb of Giants", "Painted World of Ariamis"], ["Phantoms", "Darkroot"], ["Executioner Chariot", "Darkroot"], ["Darkroot", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["The Sunless City", "Tomb of Giants"], ["Explorers", "Darkroot"], ["Dark Souls The Board Game", "Iron Keep"], ["Iron Keep", "Painted World of Ariamis"], ["Phantoms", "Dark Souls The Board Game"], ["Phantoms", "Tomb of Giants"], ["Darkroot", "The Sunless City"]],
+        "2": [["Darkroot", "Dark Souls The Board Game"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Darkroot", "Tomb of Giants"], ["Darkroot", "Iron Keep"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Tomb of Giants", "Painted World of Ariamis"], ["Darkroot", "Phantoms"], ["Darkroot", "Executioner Chariot"], ["Darkroot", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["The Sunless City", "Tomb of Giants"], ["Darkroot", "Explorers"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Painted World of Ariamis"], ["Phantoms", "Dark Souls The Board Game"], ["Iron Keep", "Phantoms"], ["Phantoms", "Tomb of Giants"], ["Darkroot", "The Sunless City"], ["Tomb of Giants", "The Sunless City"]],
+        "3": [["Darkroot", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Dark Souls The Board Game"], ["Darkroot", "Tomb of Giants"], ["Darkroot", "Iron Keep"], ["Tomb of Giants", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Tomb of Giants"], ["Darkroot", "Phantoms"], ["Executioner Chariot", "Darkroot"], ["Darkroot", "Painted World of Ariamis"], ["Tomb of Giants", "Iron Keep"], ["The Sunless City", "Tomb of Giants"], ["Darkroot", "Explorers"], ["Dark Souls The Board Game", "Iron Keep"], ["Painted World of Ariamis", "Iron Keep"], ["Phantoms", "Dark Souls The Board Game"], ["Phantoms", "Iron Keep"], ["Phantoms", "Tomb of Giants"], ["Darkroot", "The Sunless City"], ["Tomb of Giants", "The Sunless City"]],
+        "4": [["Dark Souls The Board Game", "Darkroot"], ["Dark Souls The Board Game", "Painted World of Ariamis"], ["Tomb of Giants", "Darkroot"], ["Iron Keep", "Darkroot"], ["Tomb of Giants", "Painted World of Ariamis"], ["Phantoms", "Darkroot"], ["Darkroot", "Executioner Chariot"], ["Painted World of Ariamis", "Darkroot"], ["Iron Keep", "Tomb of Giants"], ["Dark Souls The Board Game", "Tomb of Giants"], ["The Sunless City", "Tomb of Giants"], ["Explorers", "Darkroot"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Phantoms"], ["Dark Souls The Board Game", "Phantoms"], ["The Sunless City", "Darkroot"], ["Iron Keep", "The Sunless City"]]
+    },
+    "The Four Kings_4_New Londo Ruins": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "The Last Giant_4_Base of Cardinal Tower": {
+        "1": [["Explorers", "Iron Keep"], ["Dark Souls The Board Game", "Iron Keep"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["The Sunless City", "Iron Keep"]],
+        "2": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "Explorers"], ["Iron Keep", "The Sunless City"]],
+        "3": [["Iron Keep", "Dark Souls The Board Game"], ["Painted World of Ariamis", "Iron Keep"], ["Tomb of Giants", "Iron Keep"], ["Explorers", "Iron Keep"], ["Iron Keep", "The Sunless City"]],
+        "4": [["Iron Keep", "Dark Souls The Board Game"], ["Iron Keep", "Explorers"], ["Iron Keep", "Painted World of Ariamis"], ["Iron Keep", "Tomb of Giants"], ["Iron Keep", "The Sunless City"]]
+    },
+    "The Last Giant_4_Forest of Fallen Giants": {
+        "1": [["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "2": [["Tomb of Giants"], ["Iron Keep"], ["Dark Souls The Board Game"]],
+        "3": [["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "4": [["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "The Last Giant_4_The Petrified Fallen": {
+        "1": [["Darkroot"], ["Dark Souls The Board Game"]],
+        "2": [["Darkroot"], ["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Darkroot"]],
+        "4": [["Darkroot"], ["Iron Keep"], ["Dark Souls The Board Game"]]
+    },
+    "The Last Giant_4_Wanderers Wood": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Iron Keep"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Iron Keep"], ["The Sunless City"]],
+        "4": [["Iron Keep"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Vordt of the Boreal Valley_4_Courtyard of Lothric": {
+        "1": [["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]]
+    },
+    "Vordt of the Boreal Valley_4_Guarded Path": {
+        "1": [["Painted World of Ariamis"], ["Iron Keep"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Iron Keep"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "3": [["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["Iron Keep"], ["The Sunless City"]],
+        "4": [["Iron Keep"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    },
+    "Vordt of the Boreal Valley_4_The Castle Grounds": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep"]]
+    },
+    "Vordt of the Boreal Valley_4_The Dog's Domain": {
+        "1": [["Tomb of Giants"], ["Iron Keep"], ["Dark Souls The Board Game"]],
+        "2": [["Iron Keep"], ["Dark Souls The Board Game"], ["Tomb of Giants"]],
+        "3": [["Dark Souls The Board Game"], ["Iron Keep"], ["Tomb of Giants"]],
+        "4": [["Dark Souls The Board Game"], ["Tomb of Giants"]]
+    },
+    "Executioner Chariot_4_Brume Tower": {
+        "1": [["Iron Keep"]],
+        "2": [["Iron Keep"]],
+        "3": [["Iron Keep"]],
+        "4": [["Iron Keep", "Dark Souls The Board Game"], ["The Sunless City", "Iron Keep"], ["Explorers", "Iron Keep"], ["Painted World of Ariamis", "Iron Keep"], ["Phantoms", "Iron Keep"], ["Tomb of Giants", "Iron Keep"], ["Darkroot", "Iron Keep"], ["Iron Keep", "The Sunless City"]]
+    },
+    "Executioner Chariot_4_Gate of Peril": {
+        "1": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "2": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "3": [["Painted World of Ariamis"], ["Dark Souls The Board Game"]],
+        "4": [["Dark Souls The Board Game"], ["Painted World of Ariamis"]]
+    },
+    "Executioner Chariot_4_Huntsman's Copse": {
+        "1": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "2": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "3": [["Tomb of Giants"], ["Dark Souls The Board Game"]],
+        "4": [["Tomb of Giants"]]
+    },
+    "Executioner Chariot_4_Mega Boss Setup": {
+        "1": [["Tomb of Giants"], ["Painted World of Ariamis"], ["Dark Souls The Board Game"], ["The Sunless City"]],
+        "2": [["Tomb of Giants"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"]],
+        "3": [["Dark Souls The Board Game"], ["Tomb of Giants"], ["Painted World of Ariamis"]],
+        "4": [["Tomb of Giants"], ["Dark Souls The Board Game"]]
+    },
+    "Executioner Chariot_4_Undead Purgatory": {
+        "1": [["Iron Keep"], ["Dark Souls The Board Game"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "2": [["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "3": [["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]],
+        "4": [["Iron Keep"], ["Painted World of Ariamis"], ["The Sunless City"]]
+    }
+}
