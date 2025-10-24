@@ -8,6 +8,8 @@ from PIL import Image
 from .enemyNames import enemyNames
 from .encounterKeywords import encounterKeywords, keywordSize
 from .editedEncounterKeywords import editedEncounterKeywords
+from core.encounter_processors import apply_processor
+
 
 ENCOUNTER_DATA_DIR = Path(__file__).parent.parent / "data" / "encounters"
 ENEMY_ICONS_DIR = Path(__file__).parent.parent / "assets" / "enemy icons"
@@ -182,6 +184,9 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
                     continue
             coords = (pos_table[key][0] + xOffset, pos_table[key][1] + yOffset)
             card_img.alpha_composite(icon_img, dest=coords)
+
+    # Apply encounter-specific post-processing
+    card_img = apply_processor(card_img, expansion_name, encounter_name, enemies)
 
     return card_img
 

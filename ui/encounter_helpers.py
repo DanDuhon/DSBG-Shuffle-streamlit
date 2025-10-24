@@ -1,5 +1,6 @@
 import base64
 from io import BytesIO
+from pathlib import Path
 import streamlit as st
 from core.encounters import (
     load_encounter,
@@ -142,3 +143,92 @@ def build_encounter_keywords(encounter_name, expansion, use_edited=False):
     else:
         keywords = encounterKeywords.get((encounter_name, expansion), [])
     return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
+
+
+def _img_tag_from_path(path: Path, title: str, height_px: int = 48, extra_css: str = "") -> str:
+    """
+    Safely embed an image file as a base64 data URI for Streamlit's HTML.
+    Returns an <img> tag or an empty string if the file doesn't exist.
+    """
+    try:
+        if not path.exists():
+            return ""
+        data = path.read_bytes()
+        b64 = base64.b64encode(data).decode("ascii")
+        # Don't set explicit width; let it scale from height to preserve aspect
+        return (
+            f"<img src='data:image/png;base64,{b64}' "
+            f"title='{title}' alt='{title}' "
+            f"style='height:{height_px}px; {extra_css}'/>"
+        )
+    except Exception:
+        # If anything fails, just return empty so we can fallback to a placeholder
+        return ""
+
+
+def render_encounter_icons(current_encounter, assets_dir="assets"):
+    """
+    Render party and the expansions actually used in the current encounter
+    (icons embedded as base64 so they display in Streamlit).
+    """
+    chars_dir = Path(assets_dir) / "characters"
+    exps_dir  = Path(assets_dir) / "expansions"
+
+    html = """
+    <style>
+      .icons-section h4 { margin: 0.75rem 0 0.25rem 0; }
+      .icons-row { display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; }
+      .icons-row::-webkit-scrollbar { height: 6px; }
+      .icons-row::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+      .icons-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; }
+      .icon-fallback {
+        height:48px; background:#ccc; border-radius:6px;
+        display:flex; align-items:center; justify-content:center;
+        font-size:10px; text-align:center; padding:2px;
+      }
+    </style>
+    <div class="icons-section">
+    """
+
+    # --- PARTY (single row) ---
+    characters = st.session_state.user_settings.get("selected_characters", [])
+    if characters:
+        html += "<h4>Party</h4><div class='icons-row'>"
+        for char in characters:
+            fname = (char.replace(" ", "_") + ".png")
+            tag = _img_tag_from_path(chars_dir / fname, title=char, extra_css="border-radius:6px;")
+            if tag:
+                html += tag
+            else:
+                # 1-letter fallback
+                initial = (char or "?")[0:1]
+                html += f"<div class='icon-fallback' title='{char}'>{initial}</div>"
+        html += "</div>"
+
+    # --- EXPANSIONS IN USE (grid of 4) ---
+    encounter_data = current_encounter["encounter_data"]
+    enemies        = current_encounter["enemies"]
+
+    used_expansions = []
+    for combo_key, enemy_sets in encounter_data.get("alternatives", {}).items():
+        for alt in enemy_sets:
+            if alt == enemies:  # exact list match is fine per your note
+                used_expansions = combo_key.split(",")
+                break
+        if used_expansions:
+            break
+
+    if used_expansions:
+        html += "<h4>Expansions Needed</h4><div class='icons-grid'>"
+        for exp in used_expansions:
+            label   = exp.replace("'", "&apos;")
+            fname   = (exp.replace(" ", "_") + ".png")
+            tag = _img_tag_from_path(exps_dir / fname, title=label, extra_css="object-fit:contain; border-radius:6px;")
+            if tag:
+                html += tag
+            else:
+                html += f"<div class='icon-fallback' title='{label}'>{label}</div>"
+        html += "</div>"
+
+    html += "</div>"
+    return html

@@ -1,4 +1,3 @@
-# core/settings_manager.py
 import json
 from pathlib import Path
 
@@ -26,7 +25,8 @@ DEFAULT_SETTINGS = {
         "The Last Giant",
         "Vordt of the Boreal Valley"
     ],
-    "selected_characters": []
+    "selected_characters": [],
+    "edited_toggles": {}
 }
 
 def load_settings():

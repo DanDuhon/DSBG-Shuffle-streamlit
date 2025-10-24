@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  dsbg-light:
+    build:
+      context: .
+      dockerfile: Dockerfile.light
+    container_name: dsbg-web-light
+    ports:
+      - "8501:8501"
+    volumes:
+      # Mount local data and assets so they aren’t baked into the image
+      - ./data:/app/data
+      - ./assets:/app/assets
+    restart: unless-stopped
+
+  dsbg-full:
+    build:
+      context: .
+      dockerfile: Dockerfile.full
+    container_name: dsbg-web-full
+    ports:
+      - "8501:8501"
+    restart: unless-stopped

@@ -1,7 +1,9 @@
 import streamlit as st
 from core.encounters import list_encounters, load_valid_sets, encounter_is_valid
+from core.editedEncounterKeywords import editedEncounterKeywords
 from .encounter_helpers import (
-    render_card, render_original_encounter, shuffle_encounter, build_encounter_keywords
+    render_card, render_original_encounter, shuffle_encounter,
+    build_encounter_keywords, render_encounter_icons
 )
 
 def render(settings, valid_party, character_count):
@@ -72,7 +74,39 @@ def render(settings, valid_party, character_count):
             disabled=not valid_party,
         )
 
-        use_edited = st.checkbox("Use Edited Encounter", value=False, key="edited_toggle")
+        # Determine current encounter
+        if selected_label:
+            selected_encounter = filtered_encounters[display_names.index(selected_label)]
+            encounter_name = selected_encounter["name"]
+            key = f"{encounter_name}|{selected_expansion}"  # always string
+            has_edited = (encounter_name, selected_expansion) in editedEncounterKeywords
+        else:
+            encounter_name, key, has_edited = None, None, False
+
+
+        # Ensure edited_toggles dict exists in settings
+        if "edited_toggles" not in settings:
+            settings["edited_toggles"] = {}
+
+        # Get previous state (default False)
+        prev_state = settings["edited_toggles"].get(key, False) if key else False
+
+        # Reset if encounter doesn’t support edited
+        if not has_edited and key:
+            settings["edited_toggles"][key] = False
+            prev_state = False
+
+        use_edited = st.checkbox(
+            "Use Edited Encounter",
+            value=prev_state,
+            key=f"edited_toggle_{encounter_name}_{selected_expansion}",
+            disabled=not has_edited
+        )
+
+        # Save state back to settings (persists via save_settings in app.py)
+        if key:
+            settings["edited_toggles"][key] = use_edited
+
         toggle_changed = (
             "last_toggle" in st.session_state
             and st.session_state["last_toggle"] != use_edited
@@ -124,6 +158,8 @@ def render(settings, valid_party, character_count):
                 }
 
         # Toggle edited/original refresh
+        toggle_changed = (prev_state != use_edited)
+
         if toggle_changed and "current_encounter" in st.session_state:
             current = st.session_state.current_encounter
             encounter_slug = f"{current['expansion']}_{current['encounter_level']}_{current['encounter_name']}"
@@ -157,6 +193,7 @@ def render(settings, valid_party, character_count):
             else:
                 st.warning(res["message"])
 
+
         # Keywords
         if "current_encounter" in st.session_state:
             current = st.session_state.current_encounter
@@ -170,6 +207,11 @@ def render(settings, valid_party, character_count):
             with st.expander("📖 Special Rules Reference", expanded=False):
                 for _, text in keyword_items:
                     st.markdown(text)
+
+        # Character and expansion icons
+        if "current_encounter" in st.session_state:
+            icons_html = render_encounter_icons(st.session_state.current_encounter)
+            st.markdown(icons_html, unsafe_allow_html=True)
 
     with col_card:
         if "current_encounter" in st.session_state:

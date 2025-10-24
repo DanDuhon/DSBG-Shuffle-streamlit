@@ -1,10 +1,10 @@
 {
   "active_expansions": [
-    "Darkroot",
-    "The Sunless City",
     "Painted World of Ariamis",
+    "The Sunless City",
     "Tomb of Giants",
     "Dark Souls The Board Game",
+    "Darkroot",
     "Explorers",
     "Iron Keep",
     "Characters Expansion",
@@ -21,6 +21,10 @@
     "Vordt of the Boreal Valley"
   ],
   "selected_characters": [
-    "Herald"
-  ]
+    "Assassin"
+  ],
+  "edited_toggles": {
+    "Cloak and Feathers|Painted World of Ariamis": false,
+    "No Safe Haven|Painted World of Ariamis": true
+  }
 }
