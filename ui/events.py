@@ -1,141 +1,159 @@
-import os
-import random
 import streamlit as st
 import streamlit.components.v1 as components
+import os
+import base64
+import random
 from core import events
 from core.settings_manager import save_settings
 
+
+DECK_BACK_PATH = "assets/events/deck_back.png"
+
+
+def img_to_base64(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+
 def render(settings):
-    st.header("🃏 Event Deck")
-
-    # Preset selection (persists in settings)
-    preset = st.selectbox(
-        "Select Event Deck Preset",
-        ["Mixed V2", "Painted World of Ariamis", "The Sunless City", "Tomb of Giants"],
-        key="event_deck_preset"
-    )
-    settings["event_preset"] = preset
-
-    # Initialize deck if not present
-    if "event_deck" not in settings or settings.get("event_preset") != preset:
-        configs = events.load_event_configs()
-        if preset == "Mixed V2":
-            deck = events.build_mixed_v2_deck(configs)
-        else:
-            deck = events.build_deck({preset: configs[preset]})
-
-        settings["event_deck"] = {
-            "draw_pile": deck,
-            "discard_pile": [],
-            "current_card": None
-        }
-        settings["event_preset"] = preset
-
+    configs = events.load_event_configs()
     deck_state = settings["event_deck"]
 
-    # Controls
-    cols = st.columns(5)
-    with cols[0]:
-        if st.button("▶️ Draw Next"):
-            if deck_state["draw_pile"]:
-                card = deck_state["draw_pile"].pop(0)
-                deck_state["current_card"] = card
-                deck_state["discard_pile"].append(card)
-    with cols[1]:
-        if st.button("🔄 Reset Deck"):
-            configs = events.load_event_configs()
+    # ------------------------
+    # Row 1: Deck, current card, discard pile
+    # ------------------------
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col1:
+        presets = ["Mixed V2", "Painted World of Ariamis", "The Sunless City", "Tomb of Giants"]
+
+        preset = st.selectbox("Choose an event deck preset", presets, key="event_preset")
+
+        # Ensure deck state exists
+        if "event_deck" not in settings:
+            settings["event_deck"] = {
+                "draw_pile": [],
+                "discard_pile": [],
+                "current_card": None,
+                "preset": None
+            }
+
+        # If preset changed or deck empty, build new
+        if deck_state.get("preset") != preset or (
+            not deck_state["draw_pile"] and not deck_state["discard_pile"] and not deck_state["current_card"]
+        ):
             if preset == "Mixed V2":
                 deck = events.build_mixed_v2_deck(configs)
             else:
                 deck = events.build_deck({preset: configs[preset]})
-
-            # Shuffle the deck
             random.shuffle(deck)
-
-            # Build fresh state
-            new_state = {
-                "draw_pile": deck,
-                "discard_pile": [],
-                "current_card": None
-            }
-
-            # Overwrite both memory + persistent state
-            deck_state.update(new_state)
-            settings["event_deck"] = new_state
+            deck_state["draw_pile"] = deck
+            deck_state["discard_pile"] = []
+            deck_state["current_card"] = None
+            deck_state["preset"] = preset
             save_settings(settings)
-    with cols[2]:
-        if st.button("⬆️ Put on Top") and deck_state["current_card"]:
-            deck_state["draw_pile"].insert(0, deck_state["current_card"])
-            deck_state["discard_pile"].remove(deck_state["current_card"])
-    with cols[3]:
-        if st.button("⬇️ Put on Bottom") and deck_state["current_card"]:
-            deck_state["draw_pile"].append(deck_state["current_card"])
-            deck_state["discard_pile"].remove(deck_state["current_card"])
-    with cols[4]:
-        with st.expander("🗑️ Discard Pile"):
-            pile = deck_state["discard_pile"]
-            if pile:
-                n = len(pile)
-                offset = 20
-                aspect_w, aspect_h = 498, 745
-                max_iframe_height = 180  # cap pile height in px
+            st.rerun()
 
-                html = f"""
-                <div id="discard-pile" style="position:relative;width:100%;--offset:{offset}px;overflow-y:auto;max-height:{max_iframe_height}px;">
-                <div style="
-                    width:100%;
-                    aspect-ratio:{aspect_w}/{aspect_h};
-                    margin-bottom:calc(var(--offset) * {max(n-1,0)});
-                "></div>
-                """
+    with col2:
+        if deck_state["current_card"]:
+            st.image(deck_state["current_card"], width=320)
+        else:
+            # Show the deck back instead of text
+            st.image(DECK_BACK_PATH, width=320)
 
-                for i, card in enumerate(pile):
-                    b64 = events.img_to_base64(card)
-                    name = os.path.splitext(os.path.basename(card))[0].replace("_", " ")
-                    html += f"""
-                    <img src="data:image/jpeg;base64,{b64}"
-                        title="{name}"
-                        style="
-                        position:absolute;
-                        top:calc(var(--offset) * {i});
-                        left:0;
-                        width:100%;
-                        height:auto;
-                        z-index:{100+i};
-                        box-shadow:2px 2px 6px rgba(0,0,0,0.6);
-                        border-radius:8px;
-                        ">
-                    """
-                html += """
-                </div>
-                <script>
-                function resizePile() {
-                    const pile = document.getElementById("discard-pile");
-                    const card = pile.querySelector("img");
-                    if (card) {
-                        const cardHeight = card.offsetHeight;
-                        const offset = parseInt(getComputedStyle(pile).getPropertyValue("--offset"));
-                        const count = pile.querySelectorAll("img").length;
-                        const totalHeight = cardHeight + offset * (count - 1);
-                        pile.style.height = totalHeight + "px";
-                        // Cap at max height and let scrolling handle overflow
-                        const cappedHeight = Math.min(totalHeight, {max_iframe_height});
-                        window.parent.postMessage({isStreamlitMessage: true, type: "resize", height: cappedHeight + 20}, "*");
-                    }
-                }
-                window.addEventListener("load", resizePile);
-                window.addEventListener("resize", resizePile);
-                </script>
-                """
-
-                # Starter height, JS will fix it
-                components.html(html, height=200, scrolling=False)
+    with col3:
+        with st.expander("Discard Pile", expanded=False):
+            if deck_state["discard_pile"]:
+                render_discard_pile(deck_state["discard_pile"], card_width=80)
             else:
-                st.info("Discard pile is empty.")
+                st.caption("Empty")
+
+    # ------------------------
+    # Row 2: Action buttons
+    # ------------------------
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+
+    # Draw card
+    with col1:
+        if st.button("Draw Card"):
+            if deck_state["draw_pile"]:
+                if deck_state["current_card"]:
+                    deck_state["discard_pile"].append(deck_state["current_card"])
+                card = deck_state["draw_pile"].pop(0)
+                deck_state["current_card"] = card
+                save_settings(settings)
+                st.rerun()
+
+    # Put current card on top
+    with col2:
+        if st.button("Put on Top"):
+            if deck_state["current_card"]:
+                deck_state["draw_pile"].insert(0, deck_state["current_card"])
+                deck_state["current_card"] = None
+                save_settings(settings)
+                st.rerun()
+
+    # Put current card on bottom
+    with col3:
+        if st.button("Put on Bottom"):
+            if deck_state["current_card"]:
+                deck_state["draw_pile"].append(deck_state["current_card"])
+                deck_state["current_card"] = None
+                save_settings(settings)
+                st.rerun()
+
+    # Reset deck
+    with col4:
+        if st.button("Reset Deck"):
+            if preset == "Mixed V2":
+                deck = events.build_mixed_v2_deck(configs)
+            else:
+                deck = events.build_deck({preset: configs[preset]})
+            random.shuffle(deck)
+            deck_state["draw_pile"] = deck
+            deck_state["discard_pile"] = []
+            deck_state["current_card"] = None
+            deck_state["preset"] = preset
+            save_settings(settings)
+            st.rerun()
 
 
-    # Display current card
-    if deck_state["current_card"]:
-        st.image(deck_state["current_card"], width="stretch")
-    else:
-        st.info("No card drawn yet.")
+
+def render_discard_pile(discard_pile, card_width: int = 100, offset: int = 20, max_iframe_height: int = 280):
+    """
+    Renders the discard pile as an overlapping stack of images with a scrollbar if too tall.
+    """
+    if not discard_pile:
+        st.caption("Empty")
+        return
+
+    aspect_w, aspect_h = 498, 745
+    card_h = int(card_width * (aspect_h / aspect_w))
+    total_h = card_h + offset * (len(discard_pile) - 1)
+
+    cards_html = []
+    for i, path in enumerate(discard_pile):
+        top = i * offset
+        b64 = img_to_base64(path)
+        cards_html.append(
+            f'<img src="data:image/jpeg;base64,{b64}" '
+            f'style="position:absolute; top:{top}px; left:0; '
+            f'width:{card_width}px; height:auto; '
+            f'border-radius:8px; box-shadow:2px 2px 6px rgba(0,0,0,0.5);" '
+            f'title="{os.path.splitext(os.path.basename(path))[0]}">'
+        )
+
+    stack_html = f"""
+    <div style="position:relative; width:{card_width}px; height:{total_h}px;">
+        {''.join(cards_html)}
+    </div>
+    """
+
+    # Wrap in a scrollable container
+    container_html = f"""
+    <div style="max-height:{max_iframe_height}px; overflow-y:auto; padding-right:5px;">
+        {stack_html}
+    </div>
+    """
+
+    st.components.v1.html(container_html, height=max_iframe_height)
