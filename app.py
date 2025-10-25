@@ -28,7 +28,7 @@ with tab_encounters:
     encounters.render(settings, valid_party, character_count)
 
 with tab_events:
-    events.render(settings, valid_party, character_count)
+    events.render(settings)
 
 with tab_campaign:
     campaign.render()

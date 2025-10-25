@@ -1,0 +1,28 @@
+{
+	"events": [
+        {"image": "Alluring Skull.jpg", "copies": 1},
+        {"image": "Blacksmith's Trial.jpg", "copies": 1},
+        {"image": "Bleak Bonfire Ascetic.jpg", "copies": 1},
+        {"image": "Bloodstained Bonfire Ascetic.jpg", "copies": 1},
+        {"image": "Cracked Bonfire Ascetic.jpg", "copies": 1},
+        {"image": "Firekeeper's Boon.jpg", "copies": 2},
+        {"image": "Forgotten Supplies.jpg", "copies": 2},
+        {"image": "Frozen Bonfire Ascetic.jpg", "copies": 1},
+        {"image": "Green Blossom.jpg", "copies": 1},
+        {"image": "Hearty Bonfire Ascetic.jpg", "copies": 1},
+        {"image": "Lifegem.jpg", "copies": 1},
+        {"image": "Martial Bonfire Ascetic.jpg", "copies": 1},
+        {"image": "Obscured Knowledge.jpg", "copies": 1},
+        {"image": "Pine Resin.jpg", "copies": 1},
+        {"image": "Repair Powder.jpg", "copies": 1},
+        {"image": "Rite of Rekindling.jpg", "copies": 1},
+        {"image": "Scout Ahead.jpg", "copies": 2},
+        {"image": "Scrying Stone.jpg", "copies": 1},
+        {"image": "Skeletal Reforging.jpg", "copies": 2},
+        {"image": "Stolen Artifact.jpg", "copies": 2},
+        {"image": "Trustworthy Promise.jpg", "copies": 2},
+        {"image": "Undead Merchant.jpg", "copies": 2},
+        {"image": "Unhallowed Offering.jpg", "copies": 1},
+        {"image": "Virulent Bonfire Ascetic.jpg", "copies": 1}
+	]
+}
