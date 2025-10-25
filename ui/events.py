@@ -13,6 +13,20 @@ DECK_BACK_PATH = "assets/events/deck_back.png"
 def img_to_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
+    
+
+def get_card_width(layout_width: int = 700, col_ratio: int = 2, total_ratio: int = 4, max_width: int = 300) -> int:
+    """
+    Estimate card width based on layout and screen size.
+    
+    Args:
+        layout_width: Approx expander/container width (px).
+        col_ratio: Column weight for the target column.
+        total_ratio: Sum of weights for all columns.
+        max_width: Hard cap so desktop doesn’t get too huge.
+    """
+    col_w = int(layout_width * (col_ratio / total_ratio))
+    return min(col_w - 20, max_width)
 
 
 def render(settings):
@@ -22,6 +36,7 @@ def render(settings):
     # ------------------------
     # Row 1: Deck, current card, discard pile
     # ------------------------
+    card_width = get_card_width(layout_width=700, col_ratio=2, total_ratio=4, max_width=350)
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col1:
@@ -56,10 +71,10 @@ def render(settings):
 
     with col2:
         if deck_state["current_card"]:
-            st.image(deck_state["current_card"], width=320)
+            st.image(deck_state["current_card"], width=card_width)
         else:
             # Show the deck back instead of text
-            st.image(DECK_BACK_PATH, width=320)
+            st.image(DECK_BACK_PATH, width=card_width)
 
     with col3:
         with st.expander("Discard Pile", expanded=False):
