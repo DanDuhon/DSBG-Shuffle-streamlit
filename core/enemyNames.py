@@ -36,7 +36,7 @@ enemyNames = {
     35: "Armorer Dennis",
     36: "Fencer Sharron",
     37: "Invader Brylex",
-    38: "Kirk Knight of Thorns",
+    38: "Kirk, Knight of Thorns",
     39: "Longfinger Kirk",
     40: "Maldron the Assassin",
     41: "Maneater Mildred",

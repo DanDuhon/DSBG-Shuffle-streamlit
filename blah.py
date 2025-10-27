@@ -1,29 +1,46 @@
 import json
 
-def get_smallest_subsets(combo_list):
-    if not combo_list:
-        return []
-    min_len = min(len(subset) for subset in combo_list)
-    return [subset for subset in combo_list if len(subset) == min_len]
+def remove_supersets(combos):
+    """
+    Given a list of combos (lists of expansions), 
+    return only the minimal sets (no supersets).
+    """
+    # Convert all combos to sets
+    combo_sets = [set(c) for c in combos]
+    minimal_sets = []
 
-def process_encounters(input_file, output_file):
-    # Load the input JSON
-    with open(input_file, "r") as f:
+    for i, c in enumerate(combo_sets):
+        if not any(c > other for j, other in enumerate(combo_sets) if i != j):
+            minimal_sets.append(c)
+
+    # Convert back to sorted lists for JSON consistency
+    return [list(s) for s in minimal_sets]
+
+def transform_json(input_file, output_file):
+    # Load the JSON
+    with open(input_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    result = {}
-    for encounter_name, encounter_data in data.items():
-        new_entry = {}
-        expansion_combos = encounter_data.get("expansionCombos", {})
-        newKey = f"{data[encounter_name]['expansion']}_{data[encounter_name]['level']}_{encounter_name}"
-        for key in ["1", "2", "3", "4"]:
-            if key in expansion_combos:
-                new_entry[key] = get_smallest_subsets(expansion_combos[key])
-        result[newKey] = new_entry
+    new_data = {}
 
-    # Save the transformed JSON
-    with open(output_file, "w") as f:
-        json.dump(result, f)
+    for encounter_key, encounter in data.items():
+        expansion = encounter["expansion"]
+        level = encounter["level"]
+        name = encounter["name"]
+
+        # New key format
+        new_key = f"{expansion}_{level}_{name}"
+        new_data[new_key] = {}
+
+        # Process expansionCombos
+        for lvl, combos in encounter["expansionCombos"].items():
+            cleaned = remove_supersets(combos)
+            new_data[new_key][lvl] = cleaned
+
+    # Write out the transformed JSON
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(new_data, f, ensure_ascii=False)
+
 
 if __name__ == "__main__":
-    process_encounters("C:\\Users\\lenle\\Documents\\GitHub\\DSBG-Shuffle\\lib\\dsbg_shuffle_encounters.json", "D:\GitHub\DSBG-Shuffle-streamlit\data\encounters_valid_sets.json")
+    transform_json("C:\\Users\\lenle\\GitHub\\DSBG-Shuffle\\lib\\dsbg_shuffle_encounters.json", "C:\\Users\\lenle\\GitHub\\DSBG-Shuffle\\lib\\dsbg_shuffle_encounters2.json")

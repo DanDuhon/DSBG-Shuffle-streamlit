@@ -81,12 +81,14 @@ def list_encounters():
 
     return sorted_data
 
+
 def load_encounter(encounter_slug: str, character_count: int):
     """Load encounter JSON by name (e.g., 'Altar of Bones1.json')."""
     file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
+
 
 def get_alternatives(data, active_expansions):
     """Return all valid alternative enemy sets based on expansions."""
@@ -97,6 +99,7 @@ def get_alternatives(data, active_expansions):
             valid_alts[combo] = alt_sets
     return valid_alts
 
+
 def pick_random_alternative(data, active_expansions):
     """Randomly pick one valid alternative enemy set."""
     valid_alts = get_alternatives(data, active_expansions)
@@ -106,15 +109,18 @@ def pick_random_alternative(data, active_expansions):
     enemies = random.choice(valid_alts[combo])
     return combo, enemies
 
+
 def get_enemy_image(enemy_id: int):
     """Return image path for a given enemy ID."""
     image_path = ENEMY_ICONS_DIR / f"{enemyNames[enemy_id]}.png"
     return str(image_path)
 
+
 def get_keyword_image(keyword: str):
     """Return image path for a given enemy ID (placeholder logic)."""
     image_path = KEYWORDS_DIR / f"{keyword}.png"
     return str(image_path)
+
 
 def generate_encounter_image(expansion_name: str, level: int, encounter_name: str, data: dict, enemies: list[int], use_edited=False):
     """Render the encounter card with enemy icons based on enemySlots layout."""

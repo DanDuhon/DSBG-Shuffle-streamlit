@@ -1,31 +1,32 @@
 {
   "active_expansions": [
     "Painted World of Ariamis",
-    "The Sunless City",
-    "Tomb of Giants",
-    "Dark Souls The Board Game",
-    "Darkroot",
-    "Explorers",
-    "Iron Keep",
-    "Characters Expansion",
-    "Phantoms",
-    "Executioner Chariot",
-    "Asylum Demon",
-    "Black Dragon Kalameet",
-    "Gaping Dragon",
-    "Guardian Dragon",
-    "Manus, Father of the Abyss",
-    "Old Iron King",
-    "The Four Kings",
-    "The Last Giant",
-    "Vordt of the Boreal Valley"
+    "The Sunless City"
   ],
   "selected_characters": [
-    "Assassin"
+    "Deprived"
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,
-    "No Safe Haven|Painted World of Ariamis": true
+    "No Safe Haven|Painted World of Ariamis": true,
+    "Aged Sentinel|The Sunless City": false,
+    "The Grand Hall|The Sunless City": false,
+    "Dark Alleyway|The Sunless City": false,
+    "Illusionary Doorway|The Sunless City": false,
+    "Kingdom's Messengers|The Sunless City": false,
+    "Shattered Keep|The Sunless City": false,
+    "Tempting Maw|The Sunless City": false,
+    "The Bell Tower|The Sunless City": false,
+    "Undead Sanctum|The Sunless City": false,
+    "Deathly Tolls|The Sunless City": false,
+    "Flooded Fortress|The Sunless City": false,
+    "Bridge Too Far|Tomb of Giants": false,
+    "Abandoned Storeroom|Tomb of Giants": false,
+    "Far From the Sun|Tomb of Giants": false,
+    "The First Bastion|Painted World of Ariamis": false,
+    "Cold Snap|Painted World of Ariamis": false,
+    "Unseen Scurrying|Painted World of Ariamis": false,
+    "Depths of the Cathedral|The Sunless City": true
   },
   "event_deck": {
     "draw_pile": [
@@ -72,5 +73,28 @@
     "current_card": null,
     "preset": "Mixed V2"
   },
-  "event_preset": "Mixed V2"
+  "event_preset": "Mixed V2",
+  "campaigns": {
+    "test": {
+      "active_expansions": [
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ],
+      "selected_characters": [
+        "Deprived"
+      ],
+      "spark_count": 5,
+      "progress_index": 0,
+      "sequence": [
+        {
+          "type": "encounter",
+          "name": "Cloak and Feathers",
+          "expansion": "Painted World of Ariamis",
+          "level": 1,
+          "events": []
+        }
+      ]
+    }
+  },
+  "current_campaign": "test"
 }

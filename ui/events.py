@@ -23,7 +23,7 @@ def get_card_width(layout_width: int = 700, col_ratio: int = 2, total_ratio: int
         layout_width: Approx expander/container width (px).
         col_ratio: Column weight for the target column.
         total_ratio: Sum of weights for all columns.
-        max_width: Hard cap so desktop doesn’t get too huge.
+        max_width: Hard cap so desktop doesn't get too huge.
     """
     col_w = int(layout_width * (col_ratio / total_ratio))
     return min(col_w - 20, max_width)
@@ -90,7 +90,7 @@ def render(settings):
 
     # Draw card
     with col1:
-        if st.button("Draw Card"):
+        if st.button("Draw Card", use_container_width=True):
             if deck_state["draw_pile"]:
                 if deck_state["current_card"]:
                     deck_state["discard_pile"].append(deck_state["current_card"])
@@ -101,7 +101,7 @@ def render(settings):
 
     # Put current card on top
     with col2:
-        if st.button("Put on Top"):
+        if st.button("Put on Top", use_container_width=True):
             if deck_state["current_card"]:
                 deck_state["draw_pile"].insert(0, deck_state["current_card"])
                 deck_state["current_card"] = None
@@ -110,7 +110,7 @@ def render(settings):
 
     # Put current card on bottom
     with col3:
-        if st.button("Put on Bottom"):
+        if st.button("Put on Bottom", use_container_width=True):
             if deck_state["current_card"]:
                 deck_state["draw_pile"].append(deck_state["current_card"])
                 deck_state["current_card"] = None
@@ -119,7 +119,7 @@ def render(settings):
 
     # Reset deck
     with col4:
-        if st.button("Reset Deck"):
+        if st.button("Reset Deck", use_container_width=True):
             if preset == "Mixed V2":
                 deck = events.build_mixed_v2_deck(configs)
             else:
@@ -132,6 +132,71 @@ def render(settings):
             save_settings(settings)
             st.rerun()
 
+    # After building deck based on preset:
+    if preset == "Mixed V2":
+        all_cards = events.build_mixed_v2_deck(configs)
+    else:
+        all_cards = events.build_deck({preset: configs[preset]})
+        
+    st.markdown("---")  # separator line
+
+    st.subheader("Browse All Cards in Preset")
+
+    # Map names -> paths (remove extension for display)
+    card_map = {
+        os.path.splitext(os.path.basename(path))[0]: path
+        for path in all_cards
+    }
+
+    card_names = sorted(card_map.keys())  # alphabetize for easier browsing
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        # Dropdown
+        selected_name = st.selectbox("Choose a card to view", ["(none)"] + card_names)
+        
+        # Add to campaign button
+        if st.button("Add to Campaign"):
+            if "current_campaign" not in settings or not settings["current_campaign"]:
+                st.error("No active campaign selected in Campaign tab.")
+            else:
+                camp_name = settings["current_campaign"]
+                camp = settings["campaigns"][camp_name]
+                # Find eligible encounters
+                eligible = []
+                for i, item in enumerate(camp["sequence"]):
+                    if item["type"] != "encounter":
+                        continue
+                    ev_type = "rendezvous" if "rendezvous" in selected_name.lower() else "normal"
+                    has_rendezvous = any(e["type"] == "rendezvous" for e in item.get("events", []))
+                    ev_count = len(item.get("events", []))
+                    if ev_type == "normal":
+                        if ev_count < 3:
+                            eligible.append((i, item["name"]))
+                    else:  # rendezvous
+                        if ev_count < 3 or (ev_count == 3 and has_rendezvous):
+                            eligible.append((i, item["name"]))
+
+                if not eligible:
+                    st.warning("No valid encounters available for this event.")
+                else:
+                    idx_map = {f"{nm} (#{i})": i for i, nm in eligible}
+                    choice = st.selectbox("Attach to encounter:", ["(cancel)"] + list(idx_map.keys()))
+                    if choice != "(cancel)" and st.button("Confirm Attach"):
+                        target = camp["sequence"][idx_map[choice]]
+                        from ui import campaign as campaign_ui
+                        campaign_ui.add_event_to_encounter(target,
+                            "rendezvous" if "rendezvous" in selected_name.lower() else "normal",
+                            selected_name)
+                        save_settings(settings)
+                        st.rerun()
+
+    with col2:
+        # Display selected card
+        if selected_name == "(none)":
+            st.image(DECK_BACK_PATH, width=card_width, caption="None selected")
+        else:
+            st.image(card_map[selected_name], width=card_width, caption=selected_name)
 
 
 def render_discard_pile(discard_pile, card_width: int = 100, offset: int = 20, max_iframe_height: int = 280):

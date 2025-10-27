@@ -1,7 +1,8 @@
 import base64
+import re
+import streamlit as st
 from io import BytesIO
 from pathlib import Path
-import streamlit as st
 from core.encounters import (
     load_encounter,
     pick_random_alternative,
@@ -43,7 +44,40 @@ def render_original_encounter(encounter_data, selected_expansion, encounter_name
         "encounter_name": encounter_name,
         "encounter_level": encounter_level,
         "expansion": selected_expansion,
-        "enemies": enemies
+        "enemies": enemies,
+        "expansions_used": [selected_expansion,]
+    }
+
+
+def apply_edited_toggle(encounter_data, expansion, encounter_name, encounter_level, use_edited, enemies, combo):
+    """
+    Re-render the encounter card when toggling between edited and original encounters.
+    Does not reshuffle enemies — just swaps the encounter card image and keywords.
+    """
+    # Generate card image (respecting use_edited)
+    card_img = generate_encounter_image(
+        expansion,
+        encounter_level,
+        encounter_name,
+        encounter_data,
+        enemies=enemies,
+        use_edited=use_edited
+    )
+
+    buf = BytesIO()
+    card_img.save(buf, format="PNG")
+    buf.seek(0)
+
+    return {
+        "ok": True,
+        "encounter_data": encounter_data,
+        "expansion": expansion,
+        "encounter_name": encounter_name,
+        "encounter_level": encounter_level,
+        "enemies": enemies,
+        "card_img": card_img,
+        "buf": buf,
+        "expansions_used": combo
     }
 
 
@@ -81,7 +115,8 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
         "encounter_name": name,
         "encounter_level": level,
         "expansion": selected_expansion,
-        "enemies": enemies
+        "enemies": enemies,
+        "expansions_used": combo.split(",") if type(combo) == str else combo
     }
 
 
@@ -145,7 +180,7 @@ def build_encounter_keywords(encounter_name, expansion, use_edited=False):
     return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
 
 
-def _img_tag_from_path(path: Path, title: str, height_px: int = 48, extra_css: str = "") -> str:
+def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: str = "") -> str:
     """
     Safely embed an image file as a base64 data URI for Streamlit's HTML.
     Returns an <img> tag or an empty string if the file doesn't exist.
@@ -170,6 +205,7 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
     """
     Render party and the expansions actually used in the current encounter
     (icons embedded as base64 so they display in Streamlit).
+    Includes special rules for Dark Souls The Board Game vs Sunless City.
     """
     chars_dir = Path(assets_dir) / "characters"
     exps_dir  = Path(assets_dir) / "expansions"
@@ -180,7 +216,7 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
       .icons-row { display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; }
       .icons-row::-webkit-scrollbar { height: 6px; }
       .icons-row::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
-      .icons-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; }
+      .icons-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; }
       .icon-fallback {
         height:48px; background:#ccc; border-radius:6px;
         display:flex; align-items:center; justify-content:center;
@@ -193,9 +229,9 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
     # --- PARTY (single row) ---
     characters = st.session_state.user_settings.get("selected_characters", [])
     if characters:
-        html += "<h4>Party</h4><div class='icons-row'>"
+        html += "<h5>Party</h5><div class='icons-row'>"
         for char in characters:
-            fname = (char.replace(" ", "_") + ".png")
+            fname = f"{char}.png"
             tag = _img_tag_from_path(chars_dir / fname, title=char, extra_css="border-radius:6px;")
             if tag:
                 html += tag
@@ -205,30 +241,49 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
                 html += f"<div class='icon-fallback' title='{char}'>{initial}</div>"
         html += "</div>"
 
-    # --- EXPANSIONS IN USE (grid of 4) ---
-    encounter_data = current_encounter["encounter_data"]
-    enemies        = current_encounter["enemies"]
+    # --- EXPANSIONS IN USE (grid of 6) ---
+    enemies = current_encounter["enemies"]
+    expansions_used = list(current_encounter.get("expansions_used", []))  # make a copy
+    icons = []
+    html += "<h5>Expansions Needed</h5><div class='icons-grid'>"
 
-    used_expansions = []
-    for combo_key, enemy_sets in encounter_data.get("alternatives", {}).items():
-        for alt in enemy_sets:
-            if alt == enemies:  # exact list match is fine per your note
-                used_expansions = combo_key.split(",")
-                break
-        if used_expansions:
-            break
+    enemy_ids = set([e["name"] if isinstance(e, dict) else e for e in enemies])
 
-    if used_expansions:
-        html += "<h4>Expansions Needed</h4><div class='icons-grid'>"
-        for exp in used_expansions:
-            label   = exp.replace("'", "&apos;")
-            fname   = (exp.replace(" ", "_") + ".png")
-            tag = _img_tag_from_path(exps_dir / fname, title=label, extra_css="object-fit:contain; border-radius:6px;")
-            if tag:
-                html += tag
-            else:
-                html += f"<div class='icon-fallback' title='{label}'>{label}</div>"
-        html += "</div>"
+    # --- Special combined rules ---
+    if any(exp in current_encounter["expansions_used"] for exp in ["Dark Souls The Board Game", "The Sunless City"]):
+        if 16 not in enemy_ids and 34 not in enemy_ids:
+            icons.append({"file": "Dark Souls The Board Game The Sunless City.png",
+                            "label": "Dark Souls The Board Game / The Sunless City"})
+            # strip out the originals, but from our copy only
+            expansions_used = [exp for exp in expansions_used if exp not in ["Dark Souls The Board Game", "The Sunless City"]]
+        else:
+            if 16 in enemy_ids: # Large Hollow Soldier
+                icons.append({"file": "Dark Souls The Board Game.png", "label": "Dark Souls The Board Game"})
+            if 34 in enemy_ids: # Mimic
+                icons.append({"file": "The Sunless City.png", "label": "The Sunless City"})
+
+        # --- All other expansions normal ---
+        for exp in [exp for exp in current_encounter["expansions_used"] if exp not in {"Dark Souls The Board Game", "The Sunless City"}]:
+            icons.append({"file": f"{exp}.png", "label": exp})
+    else:
+        for exp in current_encounter["expansions_used"]:
+            icons.append({"file": f"{exp}.png", "label": exp})
+
+    # --- Render unique icons ---
+    seen = set()
+    for icon in icons:
+        fname, label = icon["file"], icon["label"]
+        if fname in seen:
+            continue
+        seen.add(fname)
+
+        tag = _img_tag_from_path(exps_dir / fname, title=label,
+                                    extra_css="object-fit:contain; border-radius:6px;")
+        if tag:
+            html += tag
+        else:
+            html += f"<div class='icon-fallback' title='{label}'>{label}</div>"
 
     html += "</div>"
+
     return html

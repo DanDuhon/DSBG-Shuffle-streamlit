@@ -1,9 +1,10 @@
 import streamlit as st
 from core.encounters import list_encounters, load_valid_sets, encounter_is_valid
 from core.editedEncounterKeywords import editedEncounterKeywords
+from core.settings_manager import save_settings
 from .encounter_helpers import (
     render_card, render_original_encounter, shuffle_encounter,
-    build_encounter_keywords, render_encounter_icons
+    build_encounter_keywords, render_encounter_icons, apply_edited_toggle
 )
 
 def render(settings, valid_party, character_count):
@@ -64,7 +65,7 @@ def render(settings, valid_party, character_count):
             st.stop()
 
         display_names = [f"{e['name']} (level {e['level']})" for e in filtered_encounters]
-
+        
         default_label = st.session_state.get("last_encounter", {}).get("label")
         selected_label = st.selectbox(
             "Select Encounter:",
@@ -82,8 +83,7 @@ def render(settings, valid_party, character_count):
             has_edited = (encounter_name, selected_expansion) in editedEncounterKeywords
         else:
             encounter_name, key, has_edited = None, None, False
-
-
+            
         # Ensure edited_toggles dict exists in settings
         if "edited_toggles" not in settings:
             settings["edited_toggles"] = {}
@@ -113,8 +113,8 @@ def render(settings, valid_party, character_count):
         )
         st.session_state["last_toggle"] = use_edited
 
-        shuffle_clicked = st.button("Shuffle Encounter", use_container_width=True)
-        original_clicked = st.button("Show Original Encounter", use_container_width=True)
+        shuffle_clicked = st.button("Shuffle", use_container_width=True)
+        original_clicked = st.button("Original", use_container_width=True)
 
         # Shuffle
         if shuffle_clicked and selected_label:
@@ -130,7 +130,8 @@ def render(settings, valid_party, character_count):
                     "expansion": selected_expansion,
                     "character_count": character_count,
                     "edited": use_edited,
-                    "enemies": res["enemies"]
+                    "enemies": res["enemies"],
+                    "expansions_used": res["expansions_used"]
                 }
             else:
                 st.warning(res["message"])
@@ -154,7 +155,8 @@ def render(settings, valid_party, character_count):
                     "expansion": selected_expansion,
                     "character_count": character_count,
                     "edited": use_edited,
-                    "enemies": res["enemies"]
+                    "enemies": res["enemies"],
+                    "expansions_used": res["expansions_used"]
                 }
 
         # Toggle edited/original refresh
@@ -163,13 +165,14 @@ def render(settings, valid_party, character_count):
         if toggle_changed and "current_encounter" in st.session_state:
             current = st.session_state.current_encounter
             encounter_slug = f"{current['expansion']}_{current['encounter_level']}_{current['encounter_name']}"
-            res = render_original_encounter(
+            res = apply_edited_toggle(
                 current["encounter_data"],
                 current["expansion"],
                 current["encounter_name"],
                 current["encounter_level"],
                 use_edited,
-                enemies=current["enemies"]
+                enemies=current["enemies"],
+                combo=current["expansions_used"]
             )
             if res:
                 st.session_state.current_encounter = res
@@ -179,7 +182,8 @@ def render(settings, valid_party, character_count):
                     "expansion": selected_expansion,
                     "character_count": character_count,
                     "edited": use_edited,
-                    "enemies": res["enemies"]
+                    "enemies": res["enemies"],
+                    "expansions_used": res["expansions_used"]
                 }
 
         # Auto shuffle when changing encounters
@@ -193,21 +197,30 @@ def render(settings, valid_party, character_count):
             else:
                 st.warning(res["message"])
 
-
-        # Keywords
-        if "current_encounter" in st.session_state:
+        if st.button("Add to Campaign", key="add_campaign_encounter", use_container_width=True):
+            settings = st.session_state.user_settings
             current = st.session_state.current_encounter
-            keyword_items = build_encounter_keywords(
-                current["encounter_name"], current["expansion"], use_edited
-            )
-        else:
-            keyword_items = []
+            if "current_campaign" not in settings or not settings["current_campaign"]:
+                st.error("No active campaign selected in Campaign tab.")
+            else:
+                camp_name = settings["current_campaign"]
+                camp = settings["campaigns"][camp_name]
+                if "sequence" not in camp:
+                    camp["sequence"] = []
 
-        if keyword_items:
-            with st.expander("📖 Special Rules Reference", expanded=False):
-                for _, text in keyword_items:
-                    st.markdown(text)
+                # Build encounter object
+                encounter_obj = {
+                    "type": "encounter",
+                    "name": current["encounter_name"],
+                    "expansion": current["expansion"],
+                    "level": current["encounter_level"],
+                    "events": []
+                }
 
+                camp["sequence"].append(encounter_obj)
+                save_settings(settings)
+                st.success(f"Added encounter '{current['encounter_name']}' to {camp_name}")
+        
         # Character and expansion icons
         if "current_encounter" in st.session_state:
             icons_html = render_encounter_icons(st.session_state.current_encounter)
@@ -222,3 +235,19 @@ def render(settings, valid_party, character_count):
             st.info(f"Last encounter was {st.session_state['last_encounter']['label']}")
         else:
             st.info("Select an encounter to get started.")
+            
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Keywords
+    if "current_encounter" in st.session_state:
+        current = st.session_state.current_encounter
+        keyword_items = build_encounter_keywords(
+            current["encounter_name"], current["expansion"], use_edited
+        )
+    else:
+        keyword_items = []
+
+    if keyword_items:
+        with st.expander("Special Rules Reference", expanded=False):
+            for _, text in keyword_items:
+                st.markdown(text)
