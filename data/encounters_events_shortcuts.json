@@ -1,0 +1,330 @@
+{
+    "Painted World of Ariamis_1_Cloak and Feathers": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Painted World of Ariamis_1_Frozen Sentries": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_1_No Safe Haven": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_1_Painted Passage": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_1_Promised Respite": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Painted World of Ariamis_1_Roll Out": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_1_Skittering Frenzy": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_1_The First Bastion": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_1_Unseen Scurrying": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Abandoned and Forgotten": {
+        "eventsRewarded": 2,
+        "shortcut": true
+    },
+    "Painted World of Ariamis_2_Cold Snap": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Corrupted Hovel": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Distant Tower": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Gnashing Beaks": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Inhospitable Ground": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Painted World of Ariamis_2_Monstrous Maw": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Skeletal Spokes": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_2_Snowblind": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_Central Plaza": {
+        "eventsRewarded": 2,
+        "shortcut": true
+    },
+    "Painted World of Ariamis_3_Corvian Host": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_Deathly Freeze": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_Draconic Decay": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_Eye of the Storm": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_Frozen Revolutions": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_The Last Bastion": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Painted World of Ariamis_3_Trecherous Tower": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Painted World of Ariamis_3_Velka's Chosen": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_1_Aged Sentinel": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_1_Broken Passageway (TSC)": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "The Sunless City_1_Dark Alleyway": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "The Sunless City_1_Illusionary Doorway": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "The Sunless City_1_Kingdom's Messengers": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "The Sunless City_1_Shattered Keep": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_1_Tempting Maw": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_1_The Bell Tower": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "The Sunless City_1_Undead Sanctum": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_2_Deathly Tolls": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "The Sunless City_2_Flooded Fortress": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "The Sunless City_2_Gleaming Silver": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_2_Parish Church": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_2_Parish Gates": {
+        "eventsRewarded": 2,
+        "shortcut": true
+    },
+    "The Sunless City_2_The Fountainhead": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "The Sunless City_2_The Hellkite Bridge": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "The Sunless City_2_The Iron Golem": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_2_The Shine of Gold": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_3_Archive Entrance": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_3_Castle Break In": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_3_Central Plaza": {
+        "eventsRewarded": 2,
+        "shortcut": true
+    },
+    "The Sunless City_3_Depths of the Cathedral": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_3_Grim Reunion": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "The Sunless City_3_Hanging Rafters": {
+        "eventsRewarded": 3,
+        "shortcut": false
+    },
+    "The Sunless City_3_The Grand Hall": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "The Sunless City_3_Trophy Room": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "The Sunless City_3_Twilight Falls": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Tomb of Giants_1_Abandoned Storeroom": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_1_Bridge Too Far": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Tomb of Giants_1_Dark Resurrection": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Tomb of Giants_1_Deathly Magic": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_1_Grave Matters": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_1_Last Rites": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_1_Puppet Master": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_1_Rain of Filth": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_1_The Beast From the Depths": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_2_Altar of Bones": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_2_Far From the Sun": {
+        "eventsRewarded": 3,
+        "shortcut": false
+    },
+    "Tomb of Giants_2_In Deep Water": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_2_Lost Chapel": {
+        "eventsRewarded": 3,
+        "shortcut": true
+    },
+    "Tomb of Giants_2_Maze of the Dead": {
+        "eventsRewarded": 2,
+        "shortcut": true
+    },
+    "Tomb of Giants_2_Pitch Black": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_2_The Abandoned Chest": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_2_The Mass Grave": {
+        "eventsRewarded": 2,
+        "shortcut": true
+    },
+    "Tomb of Giants_2_Urns of the Fallen": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_A Trusty Ally": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_Death's Precipice": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_Giant's Coffin": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_Gravelord Nito Setup": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_Honour Guard": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_Lakeview Refuge": {
+        "eventsRewarded": 1,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_Last Shred of Light": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    },
+    "Tomb of Giants_3_Skeleton Overlord": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_The Locked Grave": {
+        "eventsRewarded": 2,
+        "shortcut": false
+    },
+    "Tomb of Giants_3_The Skeleton Ball": {
+        "eventsRewarded": 1,
+        "shortcut": true
+    }
+}

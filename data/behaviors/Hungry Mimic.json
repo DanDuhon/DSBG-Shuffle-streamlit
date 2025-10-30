@@ -1,0 +1,65 @@
+{
+    "Raking Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 18,
+    "heatup": 8,
+    "armor": 1,
+    "resist": 1,
+    "Heavy Punch": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Leaping Spin Kick": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Stomping Kick": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Charging Chomp": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Vicious Chomp": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Aggressive Grab": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    }
+}

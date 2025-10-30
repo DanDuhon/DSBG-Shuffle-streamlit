@@ -1,0 +1,73 @@
+{
+    "Sweeping Strike": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 26,
+    "heatup": 12,
+    "armor": 2,
+    "resist": 1,
+    "Halberd Thrust": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Tail Sweep": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Tail Whip": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Electric Breath": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Flying Tail Whip": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Swooping Cleave": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Aerial Electric Breath": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": True
+    }
+}

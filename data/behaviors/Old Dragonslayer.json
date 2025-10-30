@@ -1,0 +1,74 @@
+{
+    "Darkness Bolt": {
+        "dodge": 3,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 20,
+    "armor": 2,
+    "resist": 2,
+    "Spear Lunge": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Leaping Darkness": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Skewering Charge": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Spear Sweep": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Darkness Falls": {
+        "dodge": 1,
+        "right": {
+            "type": "magic",
+            "damage": 5
+        },
+        "heatup": True
+    },
+    "Massive Sweep": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "heatup": True
+    },
+    "Lunging Combo": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {
+            "type": "physical",
+            "damage": 5
+        },
+        "heatup": True
+    }
+}

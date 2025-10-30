@@ -1,0 +1,51 @@
+{
+    "Double Smash": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 3
+        },
+        "right": {}
+    },
+    "health": 20,
+    "heatup": 11,
+    "armor": 0,
+    "resist": 0,
+    "Cleaving Strikes": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Jumping Cleave": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "physical",
+            "damage": 3
+        },
+        "middle": {}
+    },
+    "Greataxe Sweep": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Sweeping Advance": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    }
+}

@@ -1,0 +1,91 @@
+{
+    "Mighty Hammer Smash": {
+        "dodge": 1,
+        "middle": {
+            "type": "push",
+            "damage": 5
+        }
+    },
+    "health": 34,
+    "heatup": 16,
+    "armor": 1,
+    "resist": 1,
+    "Leaping Hammer Smash": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Ground Pound": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Delayed Hammer Drive": {
+        "dodge": 1,
+        "middle": {
+            "type": "push",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Hammer Drive": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Retreating Sweep": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Lumbering Swings": {
+        "dodge": 1,
+        "repeat": 2,
+        "right": {
+            "type": "physical",
+            "damage": 4
+        },
+        "heatup": True
+    },
+    "Sweeping Strikes": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {
+            "type": "physical",
+            "damage": 4
+        },
+        "heatup": True
+    },
+    "Crushing Leaps": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "middle": {
+            "type": "push",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": True
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "Greatlance Lunge": {
+        "dodge": 3,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 8,
+    "heatup": 5,
+    "armor": 1,
+    "resist": 1,
+    "Double Lance Lunge": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Leaping Lance Strike": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Jousting Charge": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Corrosive Urn Toss": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 3,
+            "effect": ["poison"]
+        },
+        "middle": {}
+    }
+}

@@ -1,0 +1,117 @@
+{
+    "Fist Pound": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "health": 44,
+    "heatup": 22,
+    "armor": 3,
+    "resist": 3,
+    "Double Fist Pound": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Swipe": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Shockwave": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Bash": {
+        "dodge": 3,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Searing Blast": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Double Swipe": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Firestorm": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {},
+        "heatup": True
+    },
+    "Magma Blast": {
+        "dodge": 3,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "heatup": True
+    },
+    "Fire Beam (Left)": {
+        "dodge": 1,
+        "right": {
+            "type": "magic",
+            "damage": 5
+        }
+    },
+    "Fire Beam (Right)": {
+        "dodge": 1,
+        "right": {
+            "type": "magic",
+            "damage": 5
+        }
+    },
+    "Fire Beam (Front)": {
+        "dodge": 1,
+        "right": {
+            "type": "magic",
+            "damage": 6
+        }
+    }
+}

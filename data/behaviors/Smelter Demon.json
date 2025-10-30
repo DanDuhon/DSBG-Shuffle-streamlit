@@ -1,0 +1,129 @@
+{
+    "Double Sweep": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "health": 22,
+    "heatup": 11,
+    "armor": 4,
+    "resist": 3,
+    "Overhead Chop": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Fiery Blast": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Leaping Impalement Strike": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Sweeping Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Lunging Strike": {
+        "dodge": 1,
+        "right": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Flaming Impalement Strike": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Fiery Explosion": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "heatup": True
+    },
+    "Flaming Double Sweep": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Flaming Sweeping Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Flaming Overhead Chop": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Flame Wave": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Flaming Lunging Strike": {
+        "dodge": 1,
+        "right": {
+            "type": "magic",
+            "damage": 7
+        },
+        "heatup": True
+    }
+}

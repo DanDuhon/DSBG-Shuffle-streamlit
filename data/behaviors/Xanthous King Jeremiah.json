@@ -1,0 +1,49 @@
+{
+    "Great Chaos Fireball": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 14,
+    "heatup": 8,
+    "armor": 0,
+    "resist": 1,
+    "Chaos Fire Whip": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Chaos Storm": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "magic",
+            "damage": 3
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Fiery Retreat": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Whiplash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    }
+}

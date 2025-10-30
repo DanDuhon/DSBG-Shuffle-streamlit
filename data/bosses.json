@@ -1,0 +1,164 @@
+{
+    "Asylum Demon": {
+        "name": "Asylum Demon",
+        "type": "mini boss",
+        "encounters": [1, 1, 1, 2],
+        "expansions": ["Asylum Demon"]
+    },
+    "Black Knight": {
+        "name": "Black Knight",
+        "type": "mini boss",
+        "encounters": [1, 1, 1, 2],
+        "expansions": ["Tomb of Giants"]
+    },
+    "Boreal Outrider Knight": {
+        "name": "Boreal Outrider Knight",
+        "type": "mini boss",
+        "encounters": [1, 1, 2, 2],
+        "expansions": ["Dark Souls The Board Game"]
+    },
+    "Gargoyle": {
+        "name": "Gargoyle",
+        "type": "mini boss",
+        "encounters": [1, 1, 1, 2],
+        "expansions": ["Dark Souls The Board Game"]
+    },
+    "Heavy Knight": {
+        "name": "Heavy Knight",
+        "type": "mini boss",
+        "encounters": [1, 1, 1, 2],
+        "expansions": ["Painted World of Ariamis"]
+    },
+    "Old Dragonslayer": {
+        "name": "Old Dragonslayer",
+        "type": "mini boss",
+        "encounters": [1, 1, 1, 2],
+        "expansions": ["Explorers"]
+    },
+    "Titanite Demon": {
+        "name": "Titanite Demon",
+        "type": "mini boss",
+        "encounters": [1, 2, 2, 2],
+        "expansions": ["Dark Souls The Board Game", "The Sunless City"]
+    },
+    "Winged Knight": {
+        "name": "Winged Knight",
+        "type": "mini boss",
+        "encounters": [1, 1, 2, 2],
+        "expansions": ["Dark Souls The Board Game"]
+    },
+    "Artorias": {
+        "name": "Artorias",
+        "type": "main boss",
+        "encounters": [3, 3, 3, 3],
+        "expansions": ["Darkroot"]
+    },
+    "Crossbreed Priscilla": {
+        "name": "Crossbreed Priscilla",
+        "type": "main boss",
+        "encounters": [2, 2, 3, 3],
+        "expansions": ["Painted World of Ariamis"]
+    },
+    "Dancer of the Boreal Valley": {
+        "name": "Dancer of the Boreal Valley",
+        "type": "main boss",
+        "encounters": [2, 2, 3, 3],
+        "expansions": ["Dark Souls The Board Game"]
+    },
+    "Gravelord Nito": {
+        "name": "Gravelord Nito",
+        "type": "main boss",
+        "encounters": [2, 2, 3, 3],
+        "expansions": ["Tomb of Giants"]
+    },
+    "Great Grey Wolf Sif": {
+        "name": "Great Grey Wolf Sif",
+        "type": "main boss",
+        "encounters": [2, 3, 3, 3],
+        "expansions": ["Darkroot"]
+    },
+    "Ornstein & Smough": {
+        "name": "Ornstein & Smough",
+        "type": "main boss",
+        "encounters": [2, 3, 3, 3],
+        "expansions": ["Dark Souls The Board Game", "The Sunless City"]
+    },
+    "Sir Alonne": {
+        "name": "Sir Alonne",
+        "type": "main boss",
+        "encounters": [2, 2, 2, 3],
+        "expansions": ["Iron Keep"]
+    },
+    "Smelter Demon": {
+        "name": "Smelter Demon",
+        "type": "main boss",
+        "encounters": [2, 2, 3, 3],
+        "expansions": ["Iron Keep"]
+    },
+    "The Pursuer": {
+        "name": "The Pursuer",
+        "type": "main boss",
+        "encounters": [2, 3, 3, 3],
+        "expansions": ["Explorers"]
+    },
+    "Black Dragon Kalameet": {
+        "name": "Black Dragon Kalameet",
+        "type": "mega boss",
+        "encounters": [4],
+        "expansions": ["Black Dragon Kalameet"]
+    },
+    "Executioner Chariot": {
+        "name": "Executioner Chariot",
+        "type": "mega boss",
+        "encounters": [4],
+        "expansions": ["Executioner Chariot"]
+    },
+    "Gaping Dragon": {
+        "name": "Gaping Dragon",
+        "type": "mega boss",
+        "encounters": [4],
+        "expansions": ["Gaping Dragon"]
+        },
+        "Guardian Dragon": {
+            "name": "Guardian Dragon",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["Guardian Dragon"]
+        },
+        "Manus, Father of the Abyss": {
+            "name": "Manus, Father of the Abyss",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["Manus, Father of the Abyss"]
+        },
+        "Old Iron King": {
+            "name": "Old Iron King",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["Old Iron King"]
+        },
+        "Stray Demon": {
+            "name": "Stray Demon",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["Asylum Demon"]
+        },
+        "The Four Kings": {
+            "name": "The Four Kings",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["The Four Kings"]
+        },
+        "The Last Giant": {
+            "name": "The Last Giant",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["The Last Giant"]
+        },
+        "Vordt of the Boreal Valley": {
+            "name": "Vordt of the Boreal Valley",
+            "type": "mega boss",
+            "encounters": [4],
+            "expansions": ["Vordt of the Boreal Valley"]
+        }
+    }

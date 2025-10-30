@@ -1,0 +1,50 @@
+{
+    "Crossbow Volley": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 17,
+    "heatup": 9,
+    "armor": 1,
+    "resist": 2,
+    "Crossbow Snipe": {
+        "dodge": 4,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Throwing Knife Volley": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["bleed"]
+        },
+        "middle": {}
+    },
+    "Throwing Knife Flurry": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "physical",
+            "damage": 3,
+            "effect": ["bleed"]
+        },
+        "middle": {}
+    },
+    "Spinning Low Kick": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        }
+    }
+}

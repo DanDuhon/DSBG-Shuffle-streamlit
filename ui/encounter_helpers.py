@@ -1,5 +1,4 @@
 import base64
-import re
 import streamlit as st
 from io import BytesIO
 from pathlib import Path

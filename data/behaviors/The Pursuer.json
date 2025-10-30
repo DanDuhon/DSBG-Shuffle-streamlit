@@ -1,0 +1,100 @@
+{
+    "Wide Blade Swing 1": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 28,
+    "heatup": 12,
+    "armor": 3,
+    "resist": 2,
+    "Wide Blade Swing 2": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Wide Blade Swing 3": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Stabbing Strike 1": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Stabbing Strike 2": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Rising Blade Swing": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Overhead Cleave": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Cursed Impale": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Dark Magic": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Shield Bash": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Shield Smash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Forward Dash": {
+        "dodge": 0
+    },
+    "Back Dash": {
+        "dodge": 0
+    }
+}

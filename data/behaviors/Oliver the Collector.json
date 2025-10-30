@@ -1,0 +1,68 @@
+{
+    "Bone Fist Punches": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 15,
+    "heatup": 10,
+    "armor": 1,
+    "resist": 0,
+    "Minotaur Helm Charge": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Puzzling Stone Sword Strike": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Majestic Greatsword Slash": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Santier's Spear Lunge": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Smelter Hammer Whirlwind": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Ricard's Rapier Thrust": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {}
+    }
+}

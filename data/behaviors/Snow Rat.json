@@ -1,0 +1,14 @@
+{
+    "behavior": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 3,
+            "effect": ["poison"]
+        },
+        "right": {}
+    },
+    "health": 1,
+    "armor": 0,
+    "resist": 1
+}

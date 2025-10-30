@@ -1,0 +1,50 @@
+{
+    "Death Blow": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 18,
+    "heatup": 10,
+    "armor": 0,
+    "resist": 0,
+    "Executioner Strike": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Guillotine": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Butcher Chop": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Butchery": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "Advancing Grant Slam": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "health": 14,
+    "heatup": 8,
+    "armor": 2,
+    "resist": 1,
+    "Grant Slam Withdrawal": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Sanctus Shield Slam": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Sanctus Shield Dash": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Wrath of the Gods": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    }
+}

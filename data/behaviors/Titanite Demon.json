@@ -1,0 +1,75 @@
+{
+    "Double Swing": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 22,
+    "heatup": 10,
+    "armor": 3,
+    "resist": 2,
+    "Tail Whip": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Grab & Smash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Lightning Bolt": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Vicious Swing": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Sweeping Strike": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Vaulting Slam": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Double Pole Crush": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {},
+        "heatup": True
+    }
+}

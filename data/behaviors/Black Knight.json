@@ -1,0 +1,90 @@
+{
+    "Overhead Swing": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "health": 20,
+    "heatup": 10,
+    "armor": 3,
+    "resist": 2,
+    "Heavy Slash": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Backswing": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Vicious Hack": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Defensive Strike": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Wide Swing": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Massive Swing": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Hacking Slash": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {
+            "type": "push",
+            "damage": 4
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Charge": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "heatup": True
+    }
+}

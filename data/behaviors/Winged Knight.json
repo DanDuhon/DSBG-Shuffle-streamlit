@@ -1,0 +1,77 @@
+{
+    "Backhand Shaft Strike": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 24,
+    "heatup": 12,
+    "armor": 3,
+    "resist": 1,
+    "Overhand Smash": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Double Slash": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Whirlwind": {
+        "dodge": 1,
+        "repeat": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Pillars of Light": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {},
+        "heatup": True
+    },
+    "Sweeping Blade Swing": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Diagonal Uppercut": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Charging Assault": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    }
+}

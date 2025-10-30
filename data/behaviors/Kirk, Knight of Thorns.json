@@ -1,0 +1,49 @@
+{
+    "Forward Roll": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 3
+        },
+        "middle": {},
+        "right": {}
+    },
+    "health": 12,
+    "heatup": 7,
+    "armor": 1,
+    "resist": 1,
+    "Shield Bash": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Shield Charge": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Overhead Chop": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Barbed Sword Thrust": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    }
+}

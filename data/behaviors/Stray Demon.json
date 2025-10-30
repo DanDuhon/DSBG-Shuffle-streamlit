@@ -1,0 +1,125 @@
+{
+    "Mighty Hammer Smash": {
+        "dodge": 1,
+        "middle": {
+            "type": "push",
+            "damage": 8
+        },
+        "right": {}
+    },
+    "health": 34,
+    "heatup": 16,
+    "armor": 4,
+    "resist": 3,
+    "Leaping Hammer Smash": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "Ground Pound": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 9,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Delayed Hammer Drive": {
+        "dodge": 1,
+        "middle": {
+            "type": "push",
+            "damage": 8,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Hammer Drive": {
+        "dodge": 3,
+        "left": {
+            "type": "push",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Retreating Sweep": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "Lumbering Swings": {
+        "dodge": 1,
+        "repeat": 2,
+        "right": {
+            "type": "physical",
+            "damage": 7
+        },
+        "heatup": True
+    },
+    "Sweeping Strikes": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 7
+        },
+        "right": {
+            "type": "physical",
+            "damage": 7
+        },
+        "heatup": True
+    },
+    "Crushing Leaps": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 7
+        },
+        "middle": {
+            "type": "push",
+            "damage": 7
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Sidestep Right Sweep": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Sidestep Left Sweep": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Hammer Blast": {
+        "dodge": 3,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Shockwave": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 8
+        },
+        "right": {}
+    }
+}

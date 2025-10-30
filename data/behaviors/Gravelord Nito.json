@@ -1,0 +1,123 @@
+{
+    "Gravelord Greatsword": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 30,
+    "heatup": 15,
+    "armor": 2,
+    "resist": 2,
+    "Death Wave": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Miasma": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 3
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Sword Slam": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Sword Sweep": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Deathly Thrust": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["poison"]
+        },
+        "right": {}
+    },
+    "Death Grip": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Deathly Strike": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Toxicity": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["poison"]
+        },
+        "right": {}
+    },
+    "Entropy": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["poison"]
+        },
+        "right": {}
+    },
+    "Creeping Death": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "push",
+            "damage": 5,
+            "effect": ["poison"]
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Death's Embrace": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["poison"]
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Lunging Cleave": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["poison"]
+        },
+        "right": {},
+        "heatup": True
+    }
+}

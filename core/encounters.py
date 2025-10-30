@@ -44,8 +44,10 @@ def list_encounters():
         encounters[expansion][key] = {
             "name": encounter_name,
             "expansion": expansion,
-            "level": int(level)
+            "level": int(level),
+            "version": "V1" if int(level) < 4 and expansion.lower() in {"dark souls the board game", "darkroot", "explorers", "iron keep", "executioner chariot"} else "V2"
         }
+
 
     # --- Custom expansion sorting ---
     def expansion_sort_key(exp):
@@ -53,7 +55,7 @@ def list_encounters():
         exp_lower = exp.lower()
 
         # new core sets first
-        if any(x in exp_lower for x in ["tomb of giants", "painted world", "sunless city"]):
+        if any(x in exp_lower for x in ["tomb of giants", "painted world of ariamis", "the sunless city"]):
             return (0, exp_lower)
         # base game next
         elif "dark souls the board game" in exp_lower:
@@ -117,7 +119,7 @@ def get_enemy_image(enemy_id: int):
 
 
 def get_keyword_image(keyword: str):
-    """Return image path for a given enemy ID (placeholder logic)."""
+    """Return image path for a given keyword."""
     image_path = KEYWORDS_DIR / f"{keyword}.png"
     return str(image_path)
 
@@ -136,8 +138,9 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
             
     card_img = Image.open(card_path).convert("RGBA")
 
-
     for i, keyword in enumerate(keywordLookup.get((encounter_name, expansion_name), [])):
+        if keyword not in keywordSize:
+            continue
         keywordImagePath = get_keyword_image(keyword)
         keywordImage = Image.open(keywordImagePath).convert("RGBA").resize(keywordSize[keyword], Image.Resampling.LANCZOS)
         card_img.alpha_composite(keywordImage, dest=(282, int(400 + (32 * i))))

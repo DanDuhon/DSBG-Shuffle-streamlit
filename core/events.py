@@ -14,6 +14,22 @@ V2_EXPANSIONS = [
     "The Sunless City"
 ]
 
+rendezvousEvents = {
+    	"Big Pilgrim's Key",
+        "Bleak Bonfire Ascetic",
+        "Bloodstained Bonfire Ascetic",
+        "Cracked Bonfire Ascetic",
+        "Frozen Bonfire Ascetic",
+        "Hearty Bonfire Ascetic",
+        "Lost Envoy",
+        "Martial Bonfire Ascetic",
+        "Rare Vagrant",
+        "Scout Ahead",
+        "Trustworthy Promise",
+        "Undead Merchant",
+        "Virulent Bonfire Ascetic"
+}
+
 
 def img_to_base64(path):
     with open(path, "rb") as f:

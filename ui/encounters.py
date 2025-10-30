@@ -196,30 +196,6 @@ def render(settings, valid_party, character_count):
                 st.session_state.current_encounter = res
             else:
                 st.warning(res["message"])
-
-        if st.button("Add to Campaign", key="add_campaign_encounter", use_container_width=True):
-            settings = st.session_state.user_settings
-            current = st.session_state.current_encounter
-            if "current_campaign" not in settings or not settings["current_campaign"]:
-                st.error("No active campaign selected in Campaign tab.")
-            else:
-                camp_name = settings["current_campaign"]
-                camp = settings["campaigns"][camp_name]
-                if "sequence" not in camp:
-                    camp["sequence"] = []
-
-                # Build encounter object
-                encounter_obj = {
-                    "type": "encounter",
-                    "name": current["encounter_name"],
-                    "expansion": current["expansion"],
-                    "level": current["encounter_level"],
-                    "events": []
-                }
-
-                camp["sequence"].append(encounter_obj)
-                save_settings(settings)
-                st.success(f"Added encounter '{current['encounter_name']}' to {camp_name}")
         
         # Character and expansion icons
         if "current_encounter" in st.session_state:

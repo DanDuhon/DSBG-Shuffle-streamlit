@@ -1,0 +1,101 @@
+{
+    "Fireball": {
+        "dodge": 3,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 44,
+    "heatup": 28,
+    "armor": 3,
+    "resist": 3,
+    "Fiery Breath": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        }
+    },
+    "Fire Breath": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Leaping Breath": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "magic",
+            "damage": 4
+        },
+        "middle": {}
+    },
+    "Fire Sweep": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 4
+        },
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        }
+    },
+    "Charging Flame": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Tail Sweep": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Bite": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 8,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Left Stomp": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Right Stomp": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Cage Grasp Inferno": {
+        "dodge": 1,
+        "left": {},
+        "heatup": True
+    }
+}

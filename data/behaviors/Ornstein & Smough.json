@@ -1,0 +1,191 @@
+{
+    "Ornstein": {
+        "health": 20,
+        "armor": 3,
+        "resist": 3,
+        "heatup": 0
+    },
+    "Smough": {
+        "health": 30,
+        "armor": 2,
+        "resist": 2,
+        "heatup": 0
+    },
+    "Gliding Stab & Hammer Smash": {
+        "Gliding Stab": {
+            "dodge": 3,
+            "right": {
+                "type": "physical",
+                "damage": 5
+            }
+        },
+        "Hammer Smash": {
+            "dodge": 1,
+            "right": {
+                "type": "physical",
+                "damage": 5
+            }
+        }
+    },
+    "Evasive Sweep & Trampling Charge": {
+        "Evasive Sweep": {
+            "dodge": 2,
+            "right": {
+                "type": "physical",
+                "damage": 4
+            }
+        },
+        "Trampling Charge": {
+            "dodge": 1,
+            "left": {
+                "type": "push",
+                "damage": 5
+            },
+            "right": {}
+        }
+    },
+    "Spear Slam & Hammer Sweep": {
+        "Spear Slam": {
+            "dodge": 1,
+            "right": {
+                "type": "physical",
+                "damage": 5
+            }
+        },
+        "Hammer Sweep": {
+            "dodge": 1,
+            "left": {
+                "type": "physical",
+                "damage": 5
+            }
+        }
+    },
+    "Swiping Combo & Bonzai Drop": {
+        "Swiping Combo": {
+            "dodge": 1,
+            "repeat": 2,
+            "right": {
+                "type": "physical",
+                "damage": 5
+            }
+        },
+        "Bonzai Drop": {
+            "dodge": 2,
+            "left": {
+                "type": "push",
+                "damage": 5
+            },
+            "right": {}
+        }
+    },
+    "Lightning Bolt & Jumping Slam": {
+        "Lightning Bolt": {
+            "dodge": 1,
+            "left": {
+                "type": "magic",
+                "damage": 5
+            },
+            "right": {}
+        },
+        "Jumping Slam": {
+            "dodge": 1,
+            "right": {
+                "type": "physical",
+                "damage": 6
+            }
+        }
+    },
+    "Charged Swiping Combo": {
+        "dodge": 1,
+        "repeat": 3,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": "Ornstein"
+    },
+    "Charged Bolt": {
+        "dodge": 3,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "heatup": "Ornstein"
+    },
+    "Electric Clash": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "heatup": "Ornstein"
+    },
+    "Lightning Stab": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 7
+        },
+        "right": {},
+        "heatup": "Ornstein"
+    },
+    "High Voltage": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": "Ornstein"
+    },
+    "Electric Hammer Smash": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": "Smough"
+    },
+    "Lightning Sweep": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": "Smough"
+    },
+    "Jumping Volt Slam": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": "Smough"
+    },
+    "Electric Bonzai Drop": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 7
+        },
+        "right": {},
+        "heatup": "Smough"
+    },
+    "Charged Charge": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": "Smough"
+    }
+}

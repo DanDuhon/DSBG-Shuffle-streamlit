@@ -1,0 +1,126 @@
+{
+    "Ground Slam": {
+        "dodge": 3,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "health": 48,
+    "heatup": 28,
+    "armor": 3,
+    "resist": 3,
+    "Diving Slam": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 7
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Sweeping Strike": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "Extended Sweep": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Back Swipe": {
+        "dodge": 3,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "Frenzied Attacks": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Crushing Palm": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 7
+        },
+        "right": {}
+    },
+    "Catalyst Strike": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Catalyst Smash": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Dark Orb Barrage": {
+        "dodge": 3,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Descending Darkness": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Abyss Rain": {
+        "dodge": 3,
+        "left": {
+            "type": "magic",
+            "damage": 4
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Abyss Cage": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Ring of Darkfire": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 7
+        },
+        "middle": {},
+        "heatup": True
+    }
+}

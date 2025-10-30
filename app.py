@@ -31,7 +31,7 @@ with tab_events:
     events.render(settings)
 
 with tab_campaign:
-    campaign.render()
+    campaign.render(settings)
 
 with tab_variants:
     variants.render()

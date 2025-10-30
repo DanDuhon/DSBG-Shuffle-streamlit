@@ -1,0 +1,65 @@
+{
+    "Puzzling Stone Sword Charge": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 20,
+    "heatup": 12,
+    "armor": 1,
+    "resist": 1,
+    "Puzzling Stone Sword Whip": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "Spider Fang Sword Strike": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Spider Fang Sword Charge": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Spider Fang Web Blast": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Dual Sword Assault": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Dual Sword Slash": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    }
+}

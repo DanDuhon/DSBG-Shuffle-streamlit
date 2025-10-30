@@ -1,0 +1,181 @@
+{
+    "Horizontal Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 25,
+    "armor": 2,
+    "resist": 2,
+    "Upward Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Downward Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Forward Thrust": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Wrath of the Kings": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 4
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Homing Arrow Mass": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        }
+    },
+    "Homing Abyss Arrow": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        }
+    },
+    "Lifedrain Grab": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Evasive Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "heatup": 2
+    },
+    "Thrust & Retreat": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "heatup": 2
+    },
+    "Cautious Arrow Mass": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "heatup": 2
+    },
+    "Evasive Abyss Arrow": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "heatup": 2
+    },
+    "Precision Slash": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": 3
+    },
+    "Unerring Thrust": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": 3
+    },
+    "Blazing Wrath": {
+        "dodge": 3,
+        "left": {
+            "type": "magic",
+            "damage": 4
+        },
+        "middle": {},
+        "right": {},
+        "heatup": 3
+    },
+    "Pinpoint Homing Arrows": {
+        "dodge": 3,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {},
+        "heatup": 3
+    },
+    "Executioner's Slash": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {},
+        "heatup": 4
+    },
+    "Shockwave": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {},
+        "heatup": 4
+    },
+    "Into the Abyss": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {},
+        "heatup": 4
+    },
+    "Lifedrain Death Grasp": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {},
+        "heatup": 4
+    }
+}

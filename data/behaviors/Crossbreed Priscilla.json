@@ -1,0 +1,123 @@
+{
+    "Icy Blast": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        }
+    },
+    "health": 40,
+    "heatup": 25,
+    "armor": 2,
+    "resist": 1,
+    "Flanking Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Scything Withdrawal": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "middle": {}
+    },
+    "Blizzard": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        }
+    },
+    "Scythe Strike": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Scythe Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Snowstorm": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        }
+    },
+    "Backslash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Mournful Gaze": {
+        "dodge": 3,
+        "middle": {
+            "type": "magic",
+            "damage": 3,
+            "effect": ["frostbite"]
+        },
+        "right": {}
+    },
+    "Scything Lunge": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Double Lunge": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["bleed"]
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Double Strike": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["bleed"]
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Double Slash": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {},
+        "heatup": True
+    }
+}

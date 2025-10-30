@@ -1,0 +1,52 @@
+{
+    "Rolling Barbs": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 4,
+            "effect": ["bleed"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "health": 14,
+    "heatup": 8,
+    "armor": 2,
+    "resist": 2,
+    "Lunging Stab": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Cleave": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Crushing Blow": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["bleed"]
+        },
+        "right": {}
+    },
+    "Barbed Sword Strikes": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {}
+    }
+}

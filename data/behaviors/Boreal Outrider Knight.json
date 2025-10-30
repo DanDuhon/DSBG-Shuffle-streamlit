@@ -1,0 +1,81 @@
+{
+    "Backhand Slashes": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["frostbite"]
+        },
+        "right": {}
+    },
+    "health": 26,
+    "heatup": 13,
+    "armor": 2,
+    "resist": 3,
+    "Overhand Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Sweeping Strike": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Chilling Thrust": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4,
+            "effect": ["frostbite"]
+        },
+        "right": {}
+    },
+    "Leaping Frost": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["frostbite"]
+        },
+        "middle": {}
+    },
+    "Lunging Triple Slash": {
+        "dodge": 1,
+        "repeat": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 4
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Uppercut Slam": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["frostbite"]
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Frost Breath": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 6,
+            "effect": ["frostbite"]
+        },
+        "right": {},
+        "heatup": True
+    }
+}

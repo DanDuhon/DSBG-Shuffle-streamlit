@@ -1,0 +1,530 @@
+{
+  "campaigns": [
+    {
+      "name": "My Campaign",
+      "ruleset": "V2",
+      "characters": [
+        "Deprived"
+      ],
+      "sparks": 4,
+      "current_chapter": null,
+      "current_index": null,
+      "chapters": [
+        {
+          "boss": {
+            "kind": "node",
+            "name": "Asylum Demon",
+            "type": "mini boss",
+            "expansion": "Asylum Demon",
+            "level": null,
+            "completed": false,
+            "ever_completed": false,
+            "revealed": false,
+            "failed": false,
+            "failed_at": null,
+            "enemies": null,
+            "shortcut": false
+          },
+          "encounters": [
+            {
+              "kind": "choice",
+              "selected": 0,
+              "revealed": true,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Painted Passage",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 1,
+                  "completed": true,
+                  "ever_completed": true,
+                  "revealed": true,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    24,
+                    10,
+                    24
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Puppet Master",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 1,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    20,
+                    38
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 1
+            },
+            {
+              "kind": "choice",
+              "selected": 1,
+              "revealed": true,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Unseen Scurrying",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 1,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    6,
+                    3
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Promised Respite",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 1,
+                  "completed": true,
+                  "ever_completed": true,
+                  "revealed": true,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    25,
+                    8,
+                    8,
+                    25
+                  ],
+                  "shortcut": true
+                }
+              ],
+              "level": 1
+            },
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Last Rites",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 1,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    9,
+                    24
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Rain of Filth",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 1,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    28,
+                    25
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 1
+            },
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Far From the Sun",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 2,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    14,
+                    13,
+                    26,
+                    38,
+                    3
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Distant Tower",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 2,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    14,
+                    26,
+                    8,
+                    8,
+                    31,
+                    36
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 2
+            }
+          ],
+          "collapsed": false
+        },
+        {
+          "boss": {
+            "kind": "node",
+            "name": "Great Grey Wolf Sif",
+            "type": "main boss",
+            "expansion": "Darkroot",
+            "level": null,
+            "completed": false,
+            "ever_completed": false,
+            "revealed": false,
+            "failed": false,
+            "failed_at": null,
+            "enemies": null,
+            "shortcut": false
+          },
+          "encounters": [
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Cold Snap",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 2,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    6,
+                    14,
+                    14,
+                    27,
+                    26
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Snowblind",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 2,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    6,
+                    10,
+                    24,
+                    15
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 2
+            },
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "The Iron Golem",
+                  "type": "encounter",
+                  "expansion": "The Sunless City",
+                  "level": 2,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    23
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Corrupted Hovel",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 2,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    26,
+                    24,
+                    21,
+                    26
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 2
+            },
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Deathly Freeze",
+                  "type": "encounter",
+                  "expansion": "Painted World of Ariamis",
+                  "level": 3,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    6,
+                    14,
+                    27,
+                    14,
+                    30,
+                    30,
+                    27
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "A Trusty Ally",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 3,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    1,
+                    30,
+                    17,
+                    27,
+                    10,
+                    31,
+                    34
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 3
+            },
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Death's Precipice",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 3,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    14,
+                    3,
+                    10,
+                    46,
+                    43,
+                    2,
+                    38,
+                    2
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Lakeview Refuge",
+                  "type": "encounter",
+                  "expansion": "Tomb of Giants",
+                  "level": 3,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    12,
+                    25,
+                    30,
+                    14,
+                    25,
+                    44,
+                    19,
+                    13,
+                    29,
+                    27
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 3
+            }
+          ],
+          "collapsed": true
+        },
+        {
+          "boss": {
+            "kind": "node",
+            "name": "Old Iron King",
+            "type": "mega boss",
+            "expansion": "Old Iron King",
+            "level": null,
+            "completed": false,
+            "ever_completed": false,
+            "revealed": false,
+            "failed": false,
+            "failed_at": null,
+            "enemies": null,
+            "shortcut": false
+          },
+          "encounters": [
+            {
+              "kind": "choice",
+              "selected": null,
+              "revealed": false,
+              "completed": false,
+              "ever_completed": false,
+              "failed": false,
+              "options": [
+                {
+                  "kind": "node",
+                  "name": "Great Stone Bridge",
+                  "type": "encounter",
+                  "expansion": "Black Dragon Kalameet",
+                  "level": 4,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    33,
+                    3,
+                    11,
+                    10,
+                    22,
+                    42,
+                    1
+                  ],
+                  "shortcut": false
+                },
+                {
+                  "kind": "node",
+                  "name": "Sewers of Lordran",
+                  "type": "encounter",
+                  "expansion": "Gaping Dragon",
+                  "level": 4,
+                  "completed": false,
+                  "ever_completed": false,
+                  "revealed": false,
+                  "failed": false,
+                  "failed_at": null,
+                  "enemies": [
+                    10,
+                    28,
+                    28,
+                    45,
+                    44,
+                    22,
+                    8,
+                    41,
+                    30
+                  ],
+                  "shortcut": false
+                }
+              ],
+              "level": 4
+            }
+          ],
+          "collapsed": true
+        }
+      ]
+    }
+  ]
+}

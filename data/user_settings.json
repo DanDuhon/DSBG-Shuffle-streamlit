@@ -1,7 +1,24 @@
 {
   "active_expansions": [
     "Painted World of Ariamis",
-    "The Sunless City"
+    "The Sunless City",
+    "Tomb of Giants",
+    "Dark Souls The Board Game",
+    "Darkroot",
+    "Explorers",
+    "Iron Keep",
+    "Characters Expansion",
+    "Phantoms",
+    "Executioner Chariot",
+    "Asylum Demon",
+    "Black Dragon Kalameet",
+    "Gaping Dragon",
+    "Guardian Dragon",
+    "Manus, Father of the Abyss",
+    "Old Iron King",
+    "The Four Kings",
+    "The Last Giant",
+    "Vordt of the Boreal Valley"
   ],
   "selected_characters": [
     "Deprived"
@@ -26,75 +43,64 @@
     "The First Bastion|Painted World of Ariamis": false,
     "Cold Snap|Painted World of Ariamis": false,
     "Unseen Scurrying|Painted World of Ariamis": false,
-    "Depths of the Cathedral|The Sunless City": true
+    "Depths of the Cathedral|The Sunless City": true,
+    "Frozen Revolutions|Painted World of Ariamis": false,
+    "Ash Gardens|Dark Souls The Board Game": false,
+    "Ashen Hollow|Dark Souls The Board Game": false,
+    "Broken Passageway|Dark Souls The Board Game": false,
+    "Dark Hollow|Dark Souls The Board Game": false,
+    "Forsaken Depths|Dark Souls The Board Game": false,
+    "Ghostly Keep|Dark Souls The Board Game": false,
+    "Hollow Cave|Dark Souls The Board Game": false,
+    "Ruined Keep|Dark Souls The Board Game": false,
+    "Shattered Dungeon|Dark Souls The Board Game": false,
+    "The Deeps|Dark Souls The Board Game": false,
+    "Castle Break In|The Sunless City": false
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Rite of Rekindling.jpg",
-      "assets\\events\\Green Blossom.jpg",
-      "assets\\events\\Rare Vagrant.jpg",
-      "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
-      "assets\\events\\Hearty Bonfire Ascetic.jpg",
-      "assets\\events\\Trustworthy Promise.jpg",
-      "assets\\events\\Martial Bonfire Ascetic.jpg",
-      "assets\\events\\Skeletal Reforging.jpg",
-      "assets\\events\\Trustworthy Promise.jpg",
-      "assets\\events\\Bleak Bonfire Ascetic.jpg",
-      "assets\\events\\Scout Ahead.jpg",
-      "assets\\events\\Firekeeper's Boon.jpg",
-      "assets\\events\\Unhallowed Offering.jpg",
-      "assets\\events\\Scrying Stone.jpg",
-      "assets\\events\\Undead Merchant.jpg",
-      "assets\\events\\Skeletal Reforging.jpg",
-      "assets\\events\\Stolen Artifact.jpg",
-      "assets\\events\\Cracked Bonfire Ascetic.jpg",
       "assets\\events\\Pine Resin.jpg",
-      "assets\\events\\Undead Merchant.jpg",
-      "assets\\events\\Virulent Bonfire Ascetic.jpg",
-      "assets\\events\\Repair Powder.jpg",
-      "assets\\events\\Forgotten Supplies.jpg",
-      "assets\\events\\Fleeting Glory.jpg",
       "assets\\events\\Obscured Knowledge.jpg",
-      "assets\\events\\Stolen Artifact.jpg",
-      "assets\\events\\Lost Envoy.jpg",
-      "assets\\events\\Scout Ahead.jpg",
-      "assets\\events\\Lost to Time.jpg",
-      "assets\\events\\Blacksmith's Trial.jpg",
-      "assets\\events\\Fleeting Glory.jpg",
-      "assets\\events\\Alluring Skull.jpg",
-      "assets\\events\\Lifegem.jpg",
-      "assets\\events\\Big Pilgrim's Key.jpg",
+      "assets\\events\\Martial Bonfire Ascetic.jpg",
       "assets\\events\\Princess Guard.jpg",
-      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Bleak Bonfire Ascetic.jpg",
+      "assets\\events\\Trustworthy Promise.jpg",
+      "assets\\events\\Lost Envoy.jpg",
+      "assets\\events\\Hearty Bonfire Ascetic.jpg",
+      "assets\\events\\Unhallowed Offering.jpg",
+      "assets\\events\\Stolen Artifact.jpg",
+      "assets\\events\\Scout Ahead.jpg",
+      "assets\\events\\Green Blossom.jpg",
+      "assets\\events\\Skeletal Reforging.jpg",
+      "assets\\events\\Blacksmith's Trial.jpg",
+      "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
       "assets\\events\\Firekeeper's Boon.jpg",
-      "assets\\events\\Frozen Bonfire Ascetic.jpg"
+      "assets\\events\\Firekeeper's Boon.jpg",
+      "assets\\events\\Rite of Rekindling.jpg",
+      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Lifegem.jpg",
+      "assets\\events\\Rare Vagrant.jpg",
+      "assets\\events\\Cracked Bonfire Ascetic.jpg",
+      "assets\\events\\Virulent Bonfire Ascetic.jpg",
+      "assets\\events\\Frozen Bonfire Ascetic.jpg",
+      "assets\\events\\Fleeting Glory.jpg",
+      "assets\\events\\Big Pilgrim's Key.jpg",
+      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Alluring Skull.jpg",
+      "assets\\events\\Fleeting Glory.jpg",
+      "assets\\events\\Repair Powder.jpg",
+      "assets\\events\\Lost to Time.jpg",
+      "assets\\events\\Skeletal Reforging.jpg",
+      "assets\\events\\Scout Ahead.jpg",
+      "assets\\events\\Trustworthy Promise.jpg",
+      "assets\\events\\Undead Merchant.jpg",
+      "assets\\events\\Scrying Stone.jpg",
+      "assets\\events\\Stolen Artifact.jpg",
+      "assets\\events\\Undead Merchant.jpg"
     ],
     "discard_pile": [],
     "current_card": null,
     "preset": "Mixed V2"
   },
-  "event_preset": "Mixed V2",
-  "campaigns": {
-    "test": {
-      "active_expansions": [
-        "Painted World of Ariamis",
-        "The Sunless City"
-      ],
-      "selected_characters": [
-        "Deprived"
-      ],
-      "spark_count": 5,
-      "progress_index": 0,
-      "sequence": [
-        {
-          "type": "encounter",
-          "name": "Cloak and Feathers",
-          "expansion": "Painted World of Ariamis",
-          "level": 1,
-          "events": []
-        }
-      ]
-    }
-  },
-  "current_campaign": "test"
+  "event_preset": "Mixed V2"
 }

@@ -1,0 +1,86 @@
+{
+    "Defensive Swipe": {
+        "dodge": 3,
+        "left": {
+            "type": "physical",
+            "damage": 4
+        },
+        "heatup": True
+    },
+    "health": 25,
+    "heatup": 15,
+    "armor": 2,
+    "resist": 2,
+    "Charging Chop": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "heatup": True
+    },
+    "Defensive Chop": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "heatup": True
+    },
+    "Overhead Chop": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Shield Swipe": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Double Slash": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Slashing Blade": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Double Chop": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Shield Smash": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 4,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    }
+}

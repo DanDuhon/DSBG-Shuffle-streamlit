@@ -1,0 +1,14 @@
+{
+    "behavior": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 2,
+            "effect": ["bleed"]
+        },
+        "middle": {}
+    },
+    "health": 1,
+    "armor": 2,
+    "resist": 1
+}

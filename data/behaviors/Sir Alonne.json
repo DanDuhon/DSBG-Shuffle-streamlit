@@ -1,0 +1,115 @@
+{
+    "Lunging Slash Combo": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "heatup": True
+    },
+    "health": 26,
+    "heatup": 12,
+    "armor": 3,
+    "resist": 3,
+    "Triple Slash Combo": {
+        "dodge": 2,
+        "repeat": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Stabbing Slash Combo": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "heatup": True
+    },
+    "Fast Katana Lunge": {
+        "dodge": 2,
+        "right": {
+            "type": "physical",
+            "damage": 5
+        }
+    },
+    "Charging Katana Slash": {
+        "dodge": 1,
+        "right": {
+            "type": "physical",
+            "damage": 6
+        }
+    },
+    "Charging Katana Lunge": {
+        "dodge": 2,
+        "right": {
+            "type": "physical",
+            "damage": 6
+        }
+    },
+    "Dark Wave": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Life Drain": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 7
+        },
+        "right": {}
+    },
+    "Double Slash Combo": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Left Sidestep Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Stab & Slash Combo": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {
+            "type": "physical",
+            "damage": 5
+        }
+    },
+    "Right Sidestep Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Katana Plunge": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    }
+}

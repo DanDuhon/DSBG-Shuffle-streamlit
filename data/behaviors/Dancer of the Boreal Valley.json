@@ -1,0 +1,114 @@
+{
+    "Uppercut": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 34,
+    "heatup": 18,
+    "armor": 2,
+    "resist": 2,
+    "Blade Dance": {
+        "dodge": 1,
+        "repeat": 2,
+        "right": {
+            "type": "physical",
+            "damage": 5
+        },
+        "heatup": True
+    },
+    "Plunging Assault": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "heatup": True
+    },
+    "Whirling Blades": {
+        "dodge": 1,
+        "repeat": 4,
+        "right": {
+            "type": "physical",
+            "damage": 6
+        },
+        "heatup": True
+    },
+    "Double Slash": {
+        "dodge": 1,
+        "repeat": 2,
+        "right": {
+            "type": "physical",
+            "damage": 5
+        }
+    },
+    "Plunging Attack": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Triple Slash": {
+        "dodge": 1,
+        "repeat": 3,
+        "right": {
+            "type": "physical",
+            "damage": 5
+        }
+    },
+    "Lunging Thrust": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Backhand Blade Swipe": {
+        "dodge": 2,
+        "right": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Flashing Blade": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Deadly Grasp": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 7
+        },
+        "right": {}
+    },
+    "Sweeping Blade Swipe": {
+        "dodge": 2,
+        "right": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Ash Cloud": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {}
+    }
+}

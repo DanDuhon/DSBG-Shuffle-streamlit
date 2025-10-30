@@ -1,0 +1,173 @@
+{
+    "Frostbreath": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5,
+            "effect": ["frostbite"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "health": 42,
+    "heatup1": 14,
+    "heatup2": 28,
+    "armor": 3,
+    "resist": 3,
+    "Tracking Charge": {
+        "dodge": 1,
+        "right": {
+            "type": "push",
+            "damage": 5
+        },
+        "type": "move"
+    },
+    "Shove Right": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "type": "move"
+    },
+    "Shove Left": {
+        "dodge": 1,
+        "right": {
+            "type": "push",
+            "damage": 5
+        },
+        "type": "move"
+    },
+    "Crushing Charge": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "middle": {},
+        "type": "move"
+    },
+    "Jump Rush": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "middle": {},
+        "type": "move"
+    },
+    "Trampling Charge": {
+        "dodge": 1,
+        "left": {
+            "type": "push",
+            "damage": 5
+        },
+        "type": "move"
+    },
+    "Berserk Rush": {
+        "dodge": 2,
+        "repeat": 3,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {},
+        "type": "move",
+        "heatup": True
+    },
+    "Berserk Trample": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {},
+        "type": "move",
+        "heatup": True
+    },
+    "Double Swipe": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {},
+        "type": "attack"
+    },
+    "Mace Thrust": {
+        "dodge": 3,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "type": "attack"
+    },
+    "Backhand Swipe": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "right": {},
+        "type": "attack"
+    },
+    "Retreating Sweep": {
+        "dodge": 2,
+        "left": {
+            "type": "magic",
+            "damage": 5
+        },
+        "middle": {},
+        "type": "attack"
+    },
+    "Hammerfist": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "type": "attack"
+    },
+    "Handle Slam": {
+        "dodge": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {},
+        "type": "attack"
+    },
+    "Wild Swings": {
+        "dodge": 1,
+        "repeat": 3,
+        "left": {
+            "type": "magic",
+            "damage": 6
+        },
+        "middle": {},
+        "type": "attack",
+        "heatup": True
+    },
+    "Hammerfist Combo": {
+        "dodge": 1,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "type": "attack",
+        "heatup": True
+    }
+}

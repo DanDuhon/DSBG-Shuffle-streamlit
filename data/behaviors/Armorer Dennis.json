@@ -1,0 +1,50 @@
+{
+    "Soul Spear Launch": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 16,
+    "heatup": 10,
+    "armor": 1,
+    "resist": 2,
+    "Soul Greatsword": {
+        "dodge": 1,
+        "left": {
+            "type": "magic",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Soul Vortex": {
+        "dodge": 1,
+        "repeat": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Soul Flash": {
+        "dodge": 2,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "Upward Slash": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    }
+}

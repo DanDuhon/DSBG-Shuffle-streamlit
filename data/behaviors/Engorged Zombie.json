@@ -1,0 +1,13 @@
+{
+    "behavior": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 4
+        },
+        "right": {}
+    },
+    "health": 1,
+    "armor": 2,
+    "resist": 2
+}

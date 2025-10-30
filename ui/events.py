@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import os
 import base64
 import random
@@ -67,7 +66,6 @@ def render(settings):
             deck_state["current_card"] = None
             deck_state["preset"] = preset
             save_settings(settings)
-            st.rerun()
 
     with col2:
         if deck_state["current_card"]:
@@ -150,53 +148,17 @@ def render(settings):
 
     card_names = sorted(card_map.keys())  # alphabetize for easier browsing
 
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([1, 1])
     with col1:
-        # Dropdown
-        selected_name = st.selectbox("Choose a card to view", ["(none)"] + card_names)
-        
-        # Add to campaign button
-        if st.button("Add to Campaign"):
-            if "current_campaign" not in settings or not settings["current_campaign"]:
-                st.error("No active campaign selected in Campaign tab.")
-            else:
-                camp_name = settings["current_campaign"]
-                camp = settings["campaigns"][camp_name]
-                # Find eligible encounters
-                eligible = []
-                for i, item in enumerate(camp["sequence"]):
-                    if item["type"] != "encounter":
-                        continue
-                    ev_type = "rendezvous" if "rendezvous" in selected_name.lower() else "normal"
-                    has_rendezvous = any(e["type"] == "rendezvous" for e in item.get("events", []))
-                    ev_count = len(item.get("events", []))
-                    if ev_type == "normal":
-                        if ev_count < 3:
-                            eligible.append((i, item["name"]))
-                    else:  # rendezvous
-                        if ev_count < 3 or (ev_count == 3 and has_rendezvous):
-                            eligible.append((i, item["name"]))
-
-                if not eligible:
-                    st.warning("No valid encounters available for this event.")
-                else:
-                    idx_map = {f"{nm} (#{i})": i for i, nm in eligible}
-                    choice = st.selectbox("Attach to encounter:", ["(cancel)"] + list(idx_map.keys()))
-                    if choice != "(cancel)" and st.button("Confirm Attach"):
-                        target = camp["sequence"][idx_map[choice]]
-                        from ui import campaign as campaign_ui
-                        campaign_ui.add_event_to_encounter(target,
-                            "rendezvous" if "rendezvous" in selected_name.lower() else "normal",
-                            selected_name)
-                        save_settings(settings)
-                        st.rerun()
+        # Radio list of card names
+        selected_name = st.radio("Select a card:", card_names, index=None)
 
     with col2:
         # Display selected card
-        if selected_name == "(none)":
-            st.image(DECK_BACK_PATH, width=card_width, caption="None selected")
-        else:
+        if selected_name:
             st.image(card_map[selected_name], width=card_width, caption=selected_name)
+        else:
+            st.image(DECK_BACK_PATH, width=card_width, caption="None selected")
 
 
 def render_discard_pile(discard_pile, card_width: int = 100, offset: int = 20, max_iframe_height: int = 280):

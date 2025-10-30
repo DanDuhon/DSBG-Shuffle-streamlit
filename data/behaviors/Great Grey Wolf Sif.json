@@ -1,0 +1,134 @@
+{
+    "Dashing Slice": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 7
+        },
+        "right": {}
+    },
+    "health": 36,
+    "heatup": 19,
+    "armor": 2,
+    "resist": 3,
+    "Spinning Slash": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Sword Slam": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Evasive Strike": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 6
+        },
+        "middle": {}
+    },
+    "Upward Slash": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 7
+        },
+        "right": {}
+    },
+    "Pouncing Assault": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Slashing Assault": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {
+            "type": "physical",
+            "damage": 5
+        }
+    },
+    "Sidestep Cleave": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Sidestep Slash": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Slashing Retreat": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "middle": {}
+    },
+    "Feral Onslaught": {
+        "dodge": 2,
+        "repeat": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {},
+        "heatup": True
+    },
+    "Cyclone Strikes": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 7,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Savage Retreat": {
+        "dodge": 2,
+        "repeat": 3,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {},
+        "heatup": True
+    },
+    "Limping Strike": {
+        "dodge": 1,
+        "middle": {
+            "type": "physical",
+            "damage": 2
+        },
+        "right": {}
+    }
+}

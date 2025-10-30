@@ -1,0 +1,13 @@
+{
+    "behavior": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "health": 5,
+    "armor": 1,
+    "resist": 1
+}
