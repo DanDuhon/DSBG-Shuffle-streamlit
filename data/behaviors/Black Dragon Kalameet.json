@@ -9,6 +9,7 @@
         "right": {}
     },
     "health": 38,
+    "cards": 6,
     "heatup": 22,
     "armor": 4,
     "resist": 3,
@@ -108,6 +109,6 @@
             "type": "magic",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     }
 }

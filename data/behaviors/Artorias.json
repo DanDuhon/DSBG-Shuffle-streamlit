@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 25,
+    "cards": 5,
     "heatup": 15,
     "armor": 3,
     "resist": 3,
@@ -100,7 +101,7 @@
             "damage": 5
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Leaping Fury": {
         "dodge": 2,
@@ -113,7 +114,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Lunging Cleave": {
         "dodge": 2,
@@ -126,6 +127,6 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     }
 }

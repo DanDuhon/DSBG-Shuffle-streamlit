@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 26,
+    "cards": 4,
     "heatup": 12,
     "armor": 2,
     "resist": 1,
@@ -50,7 +51,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Swooping Cleave": {
         "dodge": 2,
@@ -59,7 +60,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Aerial Electric Breath": {
         "dodge": 2,
@@ -68,6 +69,6 @@
             "damage": 5
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     }
 }

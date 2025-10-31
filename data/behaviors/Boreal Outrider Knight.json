@@ -10,6 +10,7 @@
         "right": {}
     },
     "health": 26,
+    "cards": 4,
     "heatup": 13,
     "armor": 2,
     "resist": 3,
@@ -56,7 +57,7 @@
             "damage": 4
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Uppercut Slam": {
         "dodge": 2,
@@ -66,7 +67,7 @@
             "effect": ["frostbite"]
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Frost Breath": {
         "dodge": 1,
@@ -76,6 +77,6 @@
             "effect": ["frostbite"]
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     }
 }

@@ -61,7 +61,7 @@
             "damage": 5
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Hacking Slash": {
         "dodge": 2,
@@ -75,7 +75,7 @@
             "damage": 4
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Charge": {
         "dodge": 2,
@@ -85,6 +85,6 @@
             "effect": ["stagger"]
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     }
 }

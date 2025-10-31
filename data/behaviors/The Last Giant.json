@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 44,
+    "cards": 6,
     "heatup": 18,
     "armor": 3,
     "resist": 3,
@@ -58,7 +59,7 @@
             "type": "physical",
             "damage": 7
         },
-        "arm": True
+        "arm": true
     },
     "Backhand Strike": {
         "dodge": 2,
@@ -66,7 +67,7 @@
             "type": "physical",
             "damage": 7
         },
-        "arm": True
+        "arm": true
     },
     "Clubbing Blow": {
         "dodge": 2,
@@ -74,7 +75,7 @@
             "type": "physical",
             "damage": 7
         },
-        "arm": True
+        "arm": true
     },
     "Heavy Swings": {
         "dodge": 1,
@@ -83,7 +84,7 @@
             "type": "physical",
             "damage": 6
         },
-        "arm": True
+        "arm": true
     },
     "Overhead Smash": {
         "dodge": 3,
@@ -93,7 +94,7 @@
             "effect": ["stagger"]
         },
         "right": {},
-        "arm": True
+        "arm": true
     },
     "Arm Club Sweep": {
         "dodge": 2,
@@ -101,7 +102,7 @@
             "type": "physical",
             "damage": 7
         },
-        "heatup": True
+        "heatup": true
     },
     "Arm Club Backhand": {
         "dodge": 2,
@@ -109,7 +110,7 @@
             "type": "physical",
             "damage": 7
         },
-        "heatup": True
+        "heatup": true
     },
     "Beat You With It": {
         "dodge": 2,
@@ -117,7 +118,7 @@
             "type": "physical",
             "damage": 7
         },
-        "heatup": True
+        "heatup": true
     },
     "Armed Swings": {
         "dodge": 1,
@@ -126,7 +127,7 @@
             "type": "physical",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     },
     "Arm Smash": {
         "dodge": 3,
@@ -136,7 +137,7 @@
             "effect": ["stagger"]
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Falling Slam": {
         "dodge": 1,

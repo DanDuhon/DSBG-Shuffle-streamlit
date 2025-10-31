@@ -1,5 +1,6 @@
 {
     "health": 24,
+    "cards": 5,
     "armor": 3,
     "resist": 3,
     "Mega Boss Setup": {},
@@ -55,7 +56,7 @@
             "damage": 7
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Trampling Charge": {
         "dodge": 2,
@@ -107,7 +108,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Rearing Charge": {
         "dodge": 2,
@@ -140,6 +141,6 @@
             "type": "push",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     }
 }

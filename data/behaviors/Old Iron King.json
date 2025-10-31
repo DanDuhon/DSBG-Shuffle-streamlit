@@ -10,6 +10,7 @@
         "right": {}
     },
     "health": 44,
+    "cards": 6,
     "heatup": 22,
     "armor": 3,
     "resist": 3,
@@ -71,7 +72,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Firestorm": {
         "dodge": 2,
@@ -81,7 +82,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Magma Blast": {
         "dodge": 3,
@@ -91,7 +92,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Fire Beam (Left)": {
         "dodge": 1,

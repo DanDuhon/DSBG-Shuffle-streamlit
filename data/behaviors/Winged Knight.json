@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 24,
+    "cards": 4,
     "heatup": 12,
     "armor": 3,
     "resist": 1,
@@ -27,7 +28,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Whirlwind": {
         "dodge": 1,
@@ -37,7 +38,7 @@
             "damage": 4
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Pillars of Light": {
         "dodge": 1,
@@ -47,7 +48,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Sweeping Blade Swing": {
         "dodge": 1,

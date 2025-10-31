@@ -6,9 +6,10 @@
             "type": "physical",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     },
     "health": 26,
+    "cards": 5,
     "heatup": 12,
     "armor": 3,
     "resist": 3,
@@ -20,7 +21,7 @@
             "damage": 5
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Stabbing Slash Combo": {
         "dodge": 2,
@@ -29,7 +30,7 @@
             "type": "physical",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     },
     "Fast Katana Lunge": {
         "dodge": 2,

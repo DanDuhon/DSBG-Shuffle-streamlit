@@ -73,7 +73,7 @@
         },
         "middle": {},
         "type": "move",
-        "heatup": True
+        "heatup": true
     },
     "Berserk Trample": {
         "dodge": 2,
@@ -84,7 +84,7 @@
         },
         "middle": {},
         "type": "move",
-        "heatup": True
+        "heatup": true
     },
     "Double Swipe": {
         "dodge": 1,
@@ -157,7 +157,7 @@
         },
         "middle": {},
         "type": "attack",
-        "heatup": True
+        "heatup": true
     },
     "Hammerfist Combo": {
         "dodge": 1,
@@ -168,6 +168,6 @@
         },
         "middle": {},
         "type": "attack",
-        "heatup": True
+        "heatup": true
     }
 }

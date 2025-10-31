@@ -11,6 +11,7 @@
     "health": 12,
     "heatup": 7,
     "armor": 1,
+    "cards": 3,
     "resist": 1,
     "Shield Bash": {
         "dodge": 2,

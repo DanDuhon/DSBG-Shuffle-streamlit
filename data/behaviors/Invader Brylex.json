@@ -10,6 +10,7 @@
     },
     "health": 15,
     "heatup": 8,
+    "cards": 3,
     "armor": 2,
     "resist": 2,
     "Trampling Charge": {

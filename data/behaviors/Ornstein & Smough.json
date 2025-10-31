@@ -11,6 +11,7 @@
         "resist": 2,
         "heatup": 0
     },
+    "cards": 5,
     "Gliding Stab & Hammer Smash": {
         "Gliding Stab": {
             "dodge": 3,

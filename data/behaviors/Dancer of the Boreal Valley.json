@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 34,
+    "cards": 5,
     "heatup": 18,
     "armor": 2,
     "resist": 2,
@@ -18,7 +19,7 @@
             "type": "physical",
             "damage": 5
         },
-        "heatup": True
+        "heatup": true
     },
     "Plunging Assault": {
         "dodge": 1,
@@ -29,7 +30,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Whirling Blades": {
         "dodge": 1,
@@ -38,7 +39,7 @@
             "type": "physical",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     },
     "Double Slash": {
         "dodge": 1,

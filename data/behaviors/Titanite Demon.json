@@ -9,6 +9,7 @@
         "right": {}
     },
     "health": 22,
+    "cards": 4,
     "heatup": 10,
     "armor": 3,
     "resist": 2,
@@ -51,7 +52,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Vaulting Slam": {
         "dodge": 2,
@@ -60,7 +61,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Double Pole Crush": {
         "dodge": 1,
@@ -70,6 +71,6 @@
             "damage": 5
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     }
 }

@@ -9,6 +9,7 @@
         "middle": {}
     },
     "health": 22,
+    "cards": 5,
     "heatup": 11,
     "armor": 4,
     "resist": 3,
@@ -68,7 +69,7 @@
             "damage": 4
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Fiery Explosion": {
         "dodge": 2,
@@ -78,7 +79,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Flaming Double Sweep": {
         "dodge": 1,
@@ -88,7 +89,7 @@
             "damage": 6
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Flaming Sweeping Slash": {
         "dodge": 1,
@@ -97,7 +98,7 @@
             "damage": 6
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Flaming Overhead Chop": {
         "dodge": 2,
@@ -107,7 +108,7 @@
             "effect": ["stagger"]
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Flame Wave": {
         "dodge": 2,
@@ -116,7 +117,7 @@
             "damage": 5
         },
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Flaming Lunging Strike": {
         "dodge": 1,
@@ -124,6 +125,6 @@
             "type": "magic",
             "damage": 7
         },
-        "heatup": True
+        "heatup": true
     }
 }

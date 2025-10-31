@@ -9,6 +9,7 @@
         "right": {}
     },
     "health": 20,
+    "cards": 3,
     "heatup": 11,
     "armor": 0,
     "resist": 0,

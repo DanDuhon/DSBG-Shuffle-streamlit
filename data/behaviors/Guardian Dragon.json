@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 44,
+    "cards": 5,
     "heatup": 28,
     "armor": 3,
     "resist": 3,
@@ -96,6 +97,6 @@
     "Cage Grasp Inferno": {
         "dodge": 1,
         "left": {},
-        "heatup": True
+        "heatup": true
     }
 }

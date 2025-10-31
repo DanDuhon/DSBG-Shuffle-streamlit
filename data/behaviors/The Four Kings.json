@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 25,
+    "cards": 4,
     "armor": 2,
     "resist": 2,
     "Upward Slash": {

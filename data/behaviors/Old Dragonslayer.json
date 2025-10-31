@@ -8,6 +8,7 @@
         "right": {}
     },
     "health": 20,
+    "cards": 4,
     "armor": 2,
     "resist": 2,
     "Spear Lunge": {
@@ -49,7 +50,7 @@
             "type": "magic",
             "damage": 5
         },
-        "heatup": True
+        "heatup": true
     },
     "Massive Sweep": {
         "dodge": 2,
@@ -57,7 +58,7 @@
             "type": "physical",
             "damage": 5
         },
-        "heatup": True
+        "heatup": true
     },
     "Lunging Combo": {
         "dodge": 2,
@@ -69,6 +70,6 @@
             "type": "physical",
             "damage": 5
         },
-        "heatup": True
+        "heatup": true
     }
 }

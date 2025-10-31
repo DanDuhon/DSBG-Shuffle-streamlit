@@ -5,9 +5,10 @@
             "type": "physical",
             "damage": 4
         },
-        "heatup": True
+        "heatup": true
     },
     "health": 25,
+    "cards": 4,
     "heatup": 15,
     "armor": 2,
     "resist": 2,
@@ -17,7 +18,7 @@
             "type": "physical",
             "damage": 6
         },
-        "heatup": True
+        "heatup": true
     },
     "Defensive Chop": {
         "dodge": 2,
@@ -25,7 +26,7 @@
             "type": "physical",
             "damage": 5
         },
-        "heatup": True
+        "heatup": true
     },
     "Overhead Chop": {
         "dodge": 1,

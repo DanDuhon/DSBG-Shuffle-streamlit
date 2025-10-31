@@ -102,5 +102,6 @@
     "current_card": null,
     "preset": "Mixed V2"
   },
-  "event_preset": "Mixed V2"
+  "event_preset": "Mixed V2",
+  "behavior_deck_saves": []
 }

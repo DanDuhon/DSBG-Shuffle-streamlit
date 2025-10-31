@@ -7,6 +7,7 @@
         }
     },
     "health": 46,
+    "cards": 6,
     "heatup": 26,
     "armor": 3,
     "resist": 2,
@@ -90,7 +91,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Corrosive Ooze (Front Left)": {
         "dodge": 2,
@@ -101,7 +102,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Corrosive Ooze (Front Right)": {
         "dodge": 2,
@@ -112,7 +113,7 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     },
     "Corrosive Ooze (Front)": {
         "dodge": 2,
@@ -123,6 +124,6 @@
         },
         "middle": {},
         "right": {},
-        "heatup": True
+        "heatup": true
     }
 }

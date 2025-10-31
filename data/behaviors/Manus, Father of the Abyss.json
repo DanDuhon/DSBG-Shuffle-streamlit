@@ -8,6 +8,7 @@
         "middle": {}
     },
     "health": 48,
+    "cards": 5,
     "heatup": 28,
     "armor": 3,
     "resist": 3,
@@ -85,7 +86,7 @@
             "damage": 5
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Descending Darkness": {
         "dodge": 2,
@@ -94,7 +95,7 @@
             "damage": 6
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Abyss Rain": {
         "dodge": 3,
@@ -103,7 +104,7 @@
             "damage": 4
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Abyss Cage": {
         "dodge": 2,
@@ -112,7 +113,7 @@
             "damage": 6
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     },
     "Ring of Darkfire": {
         "dodge": 1,
@@ -121,6 +122,6 @@
             "damage": 7
         },
         "middle": {},
-        "heatup": True
+        "heatup": true
     }
 }
