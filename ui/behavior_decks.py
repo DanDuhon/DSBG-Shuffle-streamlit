@@ -1,5 +1,4 @@
-# ui/decks.py
-import os, random
+import random, time
 import streamlit as st
 from pathlib import Path
 from core.settings_manager import load_settings, save_settings
@@ -11,14 +10,30 @@ BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
 CARD_BACK = "assets/behavior cards/back.jpg"
 
 
+def _behavior_image_path(cfg, behavior_name: str) -> str:
+    """Map a behavior name to its corresponding image path."""
+    clean_name = bd._strip_behavior_suffix(behavior_name)
+    return f"{BEHAVIOR_CARDS_PATH}{cfg.name} - {clean_name}.jpg"
+
 def _ensure_state():
     if "behavior_deck" not in st.session_state:
         st.session_state["behavior_deck"] = None
 
-def _new_state_from_file(fpath: str, seed: int = 0):
+def _new_state_from_file(fpath: str):
     cfg = bd.load_behavior(Path(fpath))
-    state = bd.state_from_cfg(cfg, seed=seed)
-    state["selected_file"] = fpath
+    rng = random.Random()
+    
+    # Pass rng into deck builder — let it handle everything, including random heat-up
+    deck = bd.build_draw_pile(cfg, rng)
+
+    state = {
+        "draw_pile": deck,
+        "discard_pile": [],
+        "current_card": None,
+        "selected_file": str(fpath),
+        "display_cards": cfg.display_cards,
+        "entities": [e.__dict__.copy() for e in cfg.entities]
+    }
     return state, cfg
 
 def _load_cfg_for_state(state):
@@ -26,46 +41,43 @@ def _load_cfg_for_state(state):
         return None
     return bd.load_behavior(Path(state["selected_file"]))
 
-def _hp_row(entity, idx, state):
-    cols = st.columns([2, 1, 1, 1])
-    with cols[0]:
-        st.markdown(f"**{entity['label']}**")
-        bar = max(0, min(entity["hp"], entity["hp_max"]))
-        st.progress(bar / max(1, entity["hp_max"]))
-        st.caption(f"{entity['hp']} / {entity['hp_max']} HP")
+def render_health_tracker(entities):
+    tracker = st.session_state.get("hp_tracker", {})
+    debounce_window = 0.5  # seconds
 
-    with cols[1]:
-        delta = st.number_input(f"Δ HP ({entity['label']})", value=0, step=1, format="%d", key=f"hp_delta_{idx}")
-    with cols[2]:
-        apply = st.button("Apply", key=f"apply_{idx}")
-    with cols[3]:
-        reset = st.button("Full Heal", key=f"heal_{idx}")
+    # Initialize session cache for last edit timestamps
+    if "last_edit" not in st.session_state:
+        st.session_state["last_edit"] = {}
 
-    changed = False
-    triggered = []
-    if apply:
-        prev = entity["hp"]
-        new = max(0, min(entity["hp_max"], prev + int(delta)))
-        entity["hp"] = new
-        cfg_obj = _load_cfg_for_state(state)
-        if cfg_obj:
-            rng = random.Random(state.get("seed", 0))
-            # find corresponding entity in cfg
-            # we only need thresholds; entity dict already has them
-            triggered = bd.check_and_trigger_heatup(prev, new, _to_entity_dataclass(entity), state, cfg_obj, rng)
-        changed = True
-        st.rerun()
-    if reset:
-        entity["hp"] = entity["hp_max"]
-        changed = True
-        st.rerun()
-    return changed, triggered
+    for e in entities:
+        ent_id = e.id
+        label = e.label
+        hp = e.hp
+        hpmax = e.hp_max
+        heat_thresh = (e.heatup_thresholds or [None])[0]
+        heat_active = bool(heat_thresh is not None and hp <= heat_thresh)
+        reset_id = st.session_state.get("deck_reset_id", 0)
 
-def _to_entity_dataclass(edict):
-    return bd.Entity(
-        id=edict["id"], label=edict["label"], hp_max=edict["hp_max"], hp=edict["hp"],
-        heatup_thresholds=edict.get("heatup_thresholds", []), crossed=edict.get("crossed", [])
-    )
+        new_val = st.slider(
+            label,
+            min_value=0,
+            max_value=hpmax,
+            value=int(hp),
+            key=f"slider_{ent_id}_{reset_id}",
+        )
+
+        # --- Record timestamp on change
+        if new_val != hp:
+            st.session_state["last_edit"][ent_id] = time.time()
+
+        # --- Commit if stable (no movement for > debounce_window)
+        last_time = st.session_state["last_edit"].get(ent_id, 0)
+        if time.time() - last_time > debounce_window:
+            e.hp = int(new_val)
+            tracker[ent_id] = {"hp": int(new_val), "hp_max": hpmax}
+
+    st.session_state["hp_tracker"] = tracker
+    return entities
 
 def _draw_card(state):
     if not state["draw_pile"]:
@@ -75,22 +87,27 @@ def _draw_card(state):
             state["discard_pile"].append(state["current_card"])
         state["current_card"] = state["draw_pile"].pop(0)
 
-def _reset_deck(state, cfg, seed=None):
-    if seed is not None:
-        state["seed"] = int(seed)
-    rng = random.Random(state.get("seed", 0))
+def _reset_deck(state, cfg):
+    rng = random.Random()
     state["draw_pile"] = bd.build_draw_pile(cfg, rng)
     state["discard_pile"] = []
     state["current_card"] = None
-    # reset heat-up flags on entities
+
+    # Reset HP
     for e in state["entities"]:
-        e["hp"] = e["hp_max"]
-        e["crossed"] = []
+        e.hp = e.hp_max
+        e.crossed = []
+
+    # Clear session-based UI states
+    st.session_state.pop("hp_tracker", None)
+    st.session_state.pop("last_edit", None)
+    st.session_state["deck_reset_id"] = st.session_state.get("deck_reset_id", 0) + 1
+
 
 def _manual_heatup(state):
     cfg = _load_cfg_for_state(state)
     if not cfg: return
-    rng = random.Random(state.get("seed", 0))
+    rng = random.Random()
     bd.apply_heatup(state, cfg, rng, reason="manual")
 
 def _save_slot_ui(settings, state):
@@ -131,35 +148,42 @@ def render():
 
     st.subheader("Behavior Decks")
 
-    # --- selector row (left: file picker; right: seed + build/reset)
-    colL, colR = st.columns([2, 1])
-    with colL:
-        files = bd.list_behavior_files()
-        labels = [f.name[:-5] for f in files]
-        choice = st.selectbox("Choose enemy / invader / boss", options=labels, index=0 if labels else None, key="behavior_choice")
-    with colR:
-        seed = st.number_input("Seed", value=0, step=1)
+    files = bd.list_behavior_files()
+    labels = [f.name[:-5] for f in files]
+    choice = st.selectbox(
+        "Choose enemy / invader / boss",
+        options=labels,
+        index=0 if labels else None,
+        key="behavior_choice",
+    )
 
-    if choice and files:
-        fpath = str(files[labels.index(choice)])
-        cfg = bd.load_behavior(Path(fpath))
-        
-    cols = st.columns(2)
+    if not (choice and files):
+        st.info("Select a behavior file to begin.")
+        return
 
+    fpath = str(files[labels.index(choice)])
+    cfg = bd.load_behavior(Path(fpath))
+
+    # --- Regular enemy mode
     if "behavior" in cfg.raw:
+        cols = st.columns(2)
         with cols[0]:
-            # regular enemy mode
             data_card = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
             img_bytes = bi.render_data_card(data_card, cfg.raw, is_boss=False)
             st.image(img_bytes)
-
         return
-    
-    # Bosses and invaders
-    build = st.button("Build / Reset", use_container_width=True)
-    if build or st.session_state["behavior_deck"] is None or st.session_state["behavior_deck"].get("selected_file") != fpath:
-        state, cfg = _new_state_from_file(fpath, seed=int(seed))
+
+    # --- Boss / Invader mode
+    if (
+        st.session_state["behavior_deck"] is None
+        or st.session_state["behavior_deck"].get("selected_file") != fpath
+    ):
+        state, cfg = _new_state_from_file(fpath)
         st.session_state["behavior_deck"] = state
+
+    if st.button("🔄 Reset Deck and Health", key="reset_deck"):
+        state = bd.ensure_behavior_state(st.session_state)
+        _reset_deck(st.session_state["behavior_state"], cfg)
 
     state = st.session_state["behavior_deck"]
     if not state:
@@ -171,70 +195,77 @@ def render():
         st.error("Unable to load config.")
         return
 
-    # --- Reference card(s): show data card for bosses/invaders
-    st.markdown("**Reference Cards**")
+    # --- Reference Cards section
+    st.subheader("Reference Cards")
 
-    # data card is always index 0 if we had it
+    cols = st.columns(max(2, len(state["display_cards"])))
+
     if "Ornstein" in cfg.raw and "Smough" in cfg.raw:
-        # Dual boss special case
-        edited_data = bi.render_dual_boss_data_cards(cfg.raw)
+        # Dual boss special case: render each data card separately, side-by-side
+        ornstein_img, smough_img = bi.render_dual_boss_data_cards(cfg.raw)
+        dual_cols = st.columns(2)
+        for img, col in zip([ornstein_img, smough_img], dual_cols):
+            with col:
+                st.image(img, width="stretch", output_format="PNG")
     else:
-        data_path = state["display_cards"][0]
-        edited_data = bi.render_data_card(data_path, cfg.raw, is_boss=True)
-    with cols[0]:
-        st.image(edited_data)
+        for i, data_path in enumerate(state["display_cards"]):
+            if i == 0:
+                edited_img = bi.render_data_card(data_path, cfg.raw, is_boss=True)
+            else:
+                card_name = Path(data_path).stem.split(" - ")[-1]
+                edited_img = bi.render_behavior_card(
+                    data_path, cfg.raw[card_name], is_boss=True
+                )
+            with cols[i if i < len(cols) else -1]:
+                st.image(edited_img)
 
-    # --- Health block (multi-entity friendly)
-    for idx, e in enumerate(state["entities"]):
-        _hp_row(e, idx, state)
+    # --- Health block
+    st.markdown("---")
+    st.subheader("Health Tracker")
+    cfg.entities = render_health_tracker(cfg.entities)
 
     st.markdown("---")
 
-    # --- Row: Deck | Current | Discard, with actions below
+    # --- Draw pile and current card columns
     c1, c2 = st.columns(2)
-    with c1: st.markdown("**Draw Pile**")
-    st.caption(f"{len(state['draw_pile'])} cards")
-    with c2: st.markdown("**Current Card**")
-    st.caption(f"{len(state['discard_pile']) + (1 if state['current_card'] else 0)} cards played")
-
-    # --- Current card (behavior) ---
-    with c2:
-        if state.get("current_card"):
-            if cfg.name == "Ornstein & Smough":
-                current_path = state["current_card"]
-                current_name = Path(current_path).stem
-                edited_behavior = bi.render_dual_boss_behavior_card(cfg.raw, current_name)
-            else:
-                # figure out which behavior JSON we should use
-                # the filename is like "Artorias - Heavy Thrust.jpg"
-                current_path = state["current_card"]
-                current_name = Path(current_path).stem   # "Artorias - Heavy Thrust"
-                # behavior key is everything after "Artorias - "
-                beh_key = current_name.replace(f"{cfg.name} - ", "")
-                beh_json = cfg.raw.get(beh_key, {})
-                # render as boss behavior card
-                edited_behavior = bi.render_behavior_card(current_path, beh_json, is_boss=True)
-            st.image(edited_behavior)
-
     with c1:
+        st.markdown("**Draw Pile**")
+        st.caption(f"{len(state['draw_pile'])} cards remaining")
         if state["draw_pile"]:
             st.image(CARD_BACK)
         else:
-            # Pad the space so the buttons stay in the same place while the deck is empty
-            st.markdown("<div style='min-height:484px;'>", unsafe_allow_html=True)
-        draw = st.button("Draw", use_container_width=True)
-        if draw:
+            st.markdown("<div style='min-height:484px;'></div>", unsafe_allow_html=True)
+
+    with c2:
+        st.markdown("**Current Card**")
+        st.caption(
+            f"{len(state['discard_pile']) + (1 if state['current_card'] else 0)} cards played"
+        )
+        if state.get("current_card"):
+            if cfg.name == "Ornstein & Smough":
+                current_name = state["current_card"]
+                edited_behavior = bi.render_dual_boss_behavior_card(
+                    cfg.raw, current_name, boss_name=cfg.name
+                )
+            else:
+                beh_key = state["current_card"]
+                beh_json = cfg.behaviors.get(beh_key, {})
+                current_path = _behavior_image_path(cfg, beh_key)
+                edited_behavior = bi.render_behavior_card(
+                    current_path, beh_json, is_boss=True
+                )
+            st.image(edited_behavior)
+
+    # --- Action buttons
+    st.markdown("---")
+    btn_cols = st.columns(2)
+    with btn_cols[0]:
+        if st.button("Draw", width="stretch"):
             _draw_card(state)
             st.rerun()
-
-        manual_heat = st.button("Manual Heat-Up", use_container_width=True)
-        if manual_heat:
+    with btn_cols[1]:
+        if st.button("Manual Heat-Up", width="stretch"):
             _manual_heatup(state)
-            st.rerun()
-
-        reset_btn = st.button("Full Reset (same seed)", use_container_width=True)
-        if reset_btn:
-            _reset_deck(state, cfg)
             st.rerun()
 
     st.markdown("---")

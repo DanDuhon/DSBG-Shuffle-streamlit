@@ -11,7 +11,15 @@
     "heatup": 26,
     "armor": 3,
     "resist": 2,
-    "Stomach Slam": {
+    "always_display": ["Crawling Charge"],
+    "Stomach Slam 1": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Stomach Slam 2": {
         "dodge": 2,
         "middle": {
             "type": "physical",

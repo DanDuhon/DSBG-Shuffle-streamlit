@@ -249,31 +249,19 @@ def render_data_card(base_path: str, raw_json: dict, is_boss: bool) -> bytes:
     return buf.getvalue()
 
 
-def render_dual_boss_data_cards(raw_json: dict) -> bytes:
+def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
     """
-    Render the Ornstein & Smough dual-boss data cards side by side.
-    Each of the 'Ornstein' and 'Smough' keys in the JSON is treated
-    like a single-boss data definition.
+    Render the Ornstein & Smough dual-boss data cards separately, with stats applied.
+    Returns two PNG byte arrays (one for Ornstein, one for Smough).
     """
-    # Load the base images
-    ornstein_img = Image.open(ASSETS_DIR / "behavior cards" / "Ornstein - data.jpg").convert("RGBA")
-    smough_img   = Image.open(ASSETS_DIR / "behavior cards" / "Smough - data.jpg").convert("RGBA")
 
-    # Composite them side-by-side
-    combined_w = ornstein_img.width + smough_img.width + 40  # gap
-    combined_h = max(ornstein_img.height, smough_img.height)
-    combined = Image.new("RGBA", (combined_w, combined_h), (0, 0, 0, 0))
-    combined.paste(ornstein_img, (0, 0))
-    combined.paste(smough_img, (ornstein_img.width + 40, 0))
-
-    draw = ImageDraw.Draw(combined)
-
-    def draw_stats(subdata: dict, offset_x: int):
-        """Draw armor, health, resist, etc., relative to each subcard."""
+    def _draw_stats(img: Image.Image, subdata: dict) -> Image.Image:
+        """Draw armor, health, resist, etc., onto a single data card."""
+        draw = ImageDraw.Draw(img)
         coords = {
-            "armor": (350 + offset_x, 635),
-            "health": (676 + offset_x, 95),
-            "resist": (415 + offset_x, 635),
+            "armor": (350, 635),
+            "health": (676, 95),
+            "resist": (415, 635),
         }
         colors = {
             "armor": "white",
@@ -286,16 +274,25 @@ def render_dual_boss_data_cards(raw_json: dict) -> bytes:
             x, y = coords[key]
             font = FONTS.get(key, ImageFont.load_default())
             draw.text((x, y), str(value), font=font, fill=colors.get(key, "white"))
+        return img
 
-    # Draw Ornstein’s and Smough’s data values
+    # Load Ornstein and Smough base data cards
+    ornstein_img = Image.open(ASSETS_DIR / "behavior cards" / "Ornstein - data.jpg").convert("RGBA")
+    smough_img   = Image.open(ASSETS_DIR / "behavior cards" / "Smough - data.jpg").convert("RGBA")
+
+    # Draw their respective stats if available
     if "Ornstein" in raw_json:
-        draw_stats(raw_json["Ornstein"], 0)
+        ornstein_img = _draw_stats(ornstein_img, raw_json["Ornstein"])
     if "Smough" in raw_json:
-        draw_stats(raw_json["Smough"], ornstein_img.width + 40)
+        smough_img = _draw_stats(smough_img, raw_json["Smough"])
 
-    buf = io.BytesIO()
-    combined.save(buf, format="PNG")
-    return buf.getvalue()
+    # Convert both to bytes for Streamlit
+    buf_o, buf_s = io.BytesIO(), io.BytesIO()
+    ornstein_img.save(buf_o, format="PNG")
+    smough_img.save(buf_s, format="PNG")
+
+    return buf_o.getvalue(), buf_s.getvalue()
+
 
 # -----------------------------------------------------------
 # BEHAVIOR CARD RENDERING
@@ -363,22 +360,20 @@ def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, 
     return buf.getvalue()
 
 
-def render_dual_boss_behavior_card(raw_json: dict, card_name: str) -> bytes:
+def render_dual_boss_behavior_card(raw_json: dict, card_name: str, boss_name: str = "Ornstein & Smough") -> bytes:
     """
     Draw Ornstein & Smough's combined behavior card.
     Each half (Ornstein / Smough) can have independent attacks and effects.
     """
-    img_path = ASSETS_DIR / "behavior cards" / f"{card_name}.jpg"
+    img_path = ASSETS_DIR / "behavior cards" / f"{boss_name} - {card_name}.jpg"
     base = Image.open(img_path).convert("RGBA")
 
-    start_idx = card_name.index("-")
-    beh_name = card_name[start_idx+2:]
-    div_idx = beh_name.index("&")
-    ornstein_beh = beh_name[:div_idx-1]
-    smough_beh = beh_name[div_idx+2:]
+    div_idx = card_name.index("&")
+    ornstein_beh = card_name[:div_idx-1]
+    smough_beh = card_name[div_idx+2:]
 
     for boss_key, zone in [(ornstein_beh, "dual_ornstein"), (smough_beh, "dual_smough")]:
-        data = raw_json[beh_name].get(boss_key)
+        data = raw_json[card_name].get(boss_key)
         _draw_dual_attack(base, data, zone)
 
     buf = io.BytesIO()
@@ -406,10 +401,8 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
         # --- Attack icon ---
         if attack_type and damage:
             atk_icon_path = ICONS_DIR / f"attack_{attack_type}_{damage}.png"
-            print(atk_icon_path)
             if atk_icon_path.exists():
                 coords = zone_map.get(f"attack_{attack_type}", {}).get(slot)
-                print(coords)
                 if coords:
                     icon = Image.open(atk_icon_path).convert("RGBA")
                     base.alpha_composite(icon, coords)

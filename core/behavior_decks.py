@@ -1,5 +1,5 @@
 from __future__ import annotations
-import json, random
+import json, random, os, re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -37,6 +37,64 @@ class BehaviorConfig:
     deck: List[str]                 # initial draw pile
     raw: dict
     heatup: Optional[Heatup] = None
+    behaviors: dict = field(default_factory=dict)
+
+    @property
+    def data_cards(self) -> list[str]:
+        """
+        Return a list of 'data' cards (always visible). For bosses/invaders,
+        this will usually be '<Name> - data.jpg'. Regular enemies still use the same logic.
+        """
+        cards = []
+        # For bosses/invaders: always have at least one data card image
+        data_name = f"{self.name} - data.jpg"
+        cards.append(data_name)
+
+        # Special case: dual entities (e.g., Ornstein & Smough)
+        if "&" in self.name:
+            parts = [p.strip() for p in self.name.split("&")]
+            for p in parts:
+                cards.append(f"{p} - data.jpg")
+
+        return cards
+
+    @classmethod
+    def from_json(cls, name: str, raw: dict, tier: str = "boss") -> "BehaviorConfig":
+        """
+        Factory for creating a BehaviorConfig from a raw JSON dictionary.
+        Automatically handles flat vs structured formats.
+        """
+        # Determine behavior list
+        if "behaviors" in raw:
+            deck = list(raw["behaviors"].keys())
+        else:
+            # Flat structure: use all top-level dict entries except config fields
+            deck = [
+                os.path.splitext(os.path.basename(c))[0] if isinstance(c, str) else c
+                for c in deck
+            ]
+
+        # Build entities (if defined)
+        entities = raw.get("entities", [])
+
+        # Determine number of cards
+        cards = raw.get("cards", len(deck))
+
+        # Determine heatup threshold
+        heatup_val = raw.get("heatup")
+        heatup = Heatup(value=heatup_val) if heatup_val else None
+
+        # Return a complete config
+        return cls(
+            name=name,
+            tier=tier,
+            entities=entities,
+            cards=cards,
+            display_cards=[f"{name} - data.jpg"],
+            deck=deck,
+            raw=raw,
+            heatup=heatup,
+        )
 
 
 # ------------------------
@@ -51,11 +109,48 @@ def list_behavior_files() -> List[Path]:
     return sorted(DATA_DIR.glob("*.json"))
 
 
+def card_image_path(boss_name: str, behavior_name: str) -> str:
+    """Map a behavior name to its card image path."""
+    return _path(f"{boss_name} - {behavior_name}.jpg")
+
+
+def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
+    """
+    Return all behavior keys that start with the given prefix (case-insensitive).
+    Example:
+        match_behavior_prefix(cfg.behaviors, "Stomach Slam")
+        -> ["Stomach Slam 1", "Stomach Slam 2"]
+    """
+    prefix_lower = prefix.lower().strip()
+    return [k for k in behaviors if k.lower().startswith(prefix_lower)]
+
+
+def _strip_behavior_suffix(name: str) -> str:
+    """
+    Strip numeric or trailing copy markers from behavior names.
+    Example:
+        "Stomach Slam 1" -> "Stomach Slam"
+        "Stomach Slam 2" -> "Stomach Slam"
+        "Death Race 4"   -> "Death Race"
+    """
+    return re.sub(r"\s+\d+$", "", name.strip())
+
+
+def ensure_behavior_state(state):
+    if "behavior_state" not in state:
+        state["behavior_state"] = {
+            "draw_pile": [],
+            "discard_pile": [],
+            "current_card": None,
+            "entities": [],
+        }
+    return state["behavior_state"]
+
+
 # ------------------------
 # JSON Importer
 # ------------------------
 def load_behavior(fname: Path) -> BehaviorConfig:
-    """Parse your JSON format (regular enemy or boss)."""
     with open(fname, "r", encoding="utf-8") as f:
         raw = json.load(f)
 
@@ -63,51 +158,110 @@ def load_behavior(fname: Path) -> BehaviorConfig:
     hp = int(raw.get("health", 1))
     heatup_threshold = raw.get("heatup", None) if isinstance(raw.get("heatup"), int) else None
 
-    # --- Entity setup
-    entities = [
-        Entity(
-            id=name.lower().replace(" ", "_"),
-            label=name,
-            hp_max=hp,
-            hp=hp,
-            heatup_thresholds=[heatup_threshold] if heatup_threshold else [],
-            crossed=[]
+    # --- Detect multi-entity bosses dynamically
+    def is_entity_block(v: dict) -> bool:
+        """Heuristic: looks like a sub-boss data block if it defines health/armor."""
+        if not isinstance(v, dict):
+            return False
+        keys = set(v.keys())
+        return (
+            "health" in keys
+            and "armor" in keys
+            and not any(x in keys for x in ("left", "middle", "right"))
         )
-    ]
+
+    entity_blocks = {
+        k: v for k, v in raw.items()
+        if is_entity_block(v)
+    }
+
+    # --- Build entity list
+    if entity_blocks:
+        # Multi-entity boss (e.g., Ornstein & Smough, Four Kings)
+        entities = []
+        for label, data in entity_blocks.items():
+            hp_val = int(data.get("health", hp))
+            heatup_val = data.get("heatup", None)
+            entities.append(
+                Entity(
+                    id=label.lower().replace(" ", "_"),
+                    label=label,
+                    hp_max=hp_val,
+                    hp=hp_val,
+                    heatup_thresholds=[heatup_val] if isinstance(heatup_val, int) else [],
+                    crossed=[],
+                )
+            )
+    else:
+        # Regular single entity
+        entities = [
+            Entity(
+                id=name.lower().replace(" ", "_"),
+                label=name,
+                hp_max=hp,
+                hp=hp,
+                heatup_thresholds=[heatup_threshold] if heatup_threshold else [],
+                crossed=[],
+            )
+        ]
+
+    # --- Determine if this boss uses shared data (e.g., Four Kings)
+    data_sharing = bool(raw.get("data_sharing", False))
 
     # --- Display cards (always-visible data card)
     display_cards = []
     data_card_path = _path(f"{name} - data.jpg")
-    if Path(data_card_path).exists():
-        display_cards.append(data_card_path)
 
-    # --- Deck + Heat-up pool
-    deck = []
-    heatup_pool = []
+    if data_sharing:
+        # Shared card: use only the group-level data card
+        if Path(data_card_path).exists():
+            display_cards.append(data_card_path)
+    else:
+        # Per-entity data cards if they exist (e.g., Ornstein, Smough)
+        if entity_blocks:
+            for label in entity_blocks:
+                per_entity_path = _path(f"{label} - data.jpg")
+                if Path(per_entity_path).exists():
+                    display_cards.append(per_entity_path)
+        elif Path(data_card_path).exists():
+            display_cards.append(data_card_path)
 
-    for key, val in raw.items():
-        if key in ("health", "armor", "resist", "heatup"):
-            continue
-        if not isinstance(val, dict):
-            continue  # skip anything unexpected
+    # --- Always-display behavior cards
+    for extra in raw.get("always_display", []):
+        clean_name = _strip_behavior_suffix(extra)
+        extra_path = _path(f"{name} - {clean_name}.jpg")
+        if Path(extra_path).exists():
+            display_cards.append(extra_path)
 
-        img_path = _path(f"{name} - {key}.jpg")
+    # --- Determine behaviors dict
+    if "behavior" in raw:  # regular enemy
+        behaviors = {name: raw["behavior"]}
+    else:
+        behaviors = raw.get("behaviors")
+        if behaviors is None:
+            meta = {
+                "name", "cards", "tier", "heatup", "health",
+                "armor", "resist", "entities", "always_display"
+            }
 
-        if "heatup" not in val:
-            # Regular card
-            deck.append(img_path)
-        else:
-            # Heat-up-only card
-            heatup_pool.append(img_path)
+            behaviors = {
+                k: v for k, v in raw.items()
+                if isinstance(v, dict)
+                and k not in meta
+                and not is_entity_block(v)
+            }
 
-    # --- Heatup config
+    # --- Build deck and heat-up pool
+    deck = [k for k, v in behaviors.items() if not v.get("heatup", False)]
+    heatup_pool = [k for k, v in behaviors.items() if v.get("heatup", False)]
+
     heatup = None
     if heatup_pool:
         heatup = Heatup(
-            mode="add_random",   # default; can expand later
+            mode="add_random",
             pool=heatup_pool,
             per_trigger=1,
-            manual_only=(heatup_threshold is None)
+            manual_only=(heatup_threshold is None),
         )
 
     return BehaviorConfig(
@@ -118,7 +272,8 @@ def load_behavior(fname: Path) -> BehaviorConfig:
         cards=raw.get("cards"),
         deck=deck,
         heatup=heatup,
-        raw=raw
+        raw=raw,
+        behaviors=behaviors,
     )
 
 
@@ -126,16 +281,13 @@ def load_behavior(fname: Path) -> BehaviorConfig:
 # Deck + Heat-up mechanics
 # ------------------------
 def build_draw_pile(cfg: BehaviorConfig, rng: random.Random) -> list[str]:
-    """Build a shuffled pile, respecting any special boss-specific setup rules."""
-    # Step 1: Start with normal deck
-    base_deck = cfg.deck[:]
-
-    # Step 2: Apply any special rules
-    final_deck = apply_special_rules(cfg, rng)
-
-    # Step 3: Shuffle
-    rng.shuffle(final_deck)
-    return final_deck
+    """Build a shuffled deck, deterministic for a given seed."""
+    rule_func = DECK_SETUP_RULES.get(cfg.name.lower())
+    if rule_func:
+        return rule_func(cfg, rng)
+    deck = cfg.deck[:]
+    rng.shuffle(deck)
+    return deck
 
 
 def register_deck_rule(name: str):
@@ -217,6 +369,22 @@ def setup_kalameet(cfg, rng):
     return force_include(deck, include=["Mark of Calamity", "Hellfire Blast"], limit=limit, rng=rng)
 
 
+@register_deck_rule("Executioner Chariot")
+def setup_chariot(cfg, rng):
+    """
+    The first phase is always Death Race 1-4.
+    """
+    base_deck = [b for b in cfg.deck if not cfg.behaviors.get(b, {}).get("heatup", False)]
+    always_include = match_behavior_prefix(cfg.behaviors, "Death Race")
+    deck = force_include(
+        base_deck,
+        include=always_include,
+        limit=4,
+        rng=rng,
+    )
+    return deck
+
+
 @register_deck_rule("Great Grey Wolf Sif")
 def setup_sif(cfg, rng):
     """
@@ -229,35 +397,28 @@ def setup_sif(cfg, rng):
 
 @register_deck_rule("gaping dragon")
 def setup_gaping_dragon(cfg, rng):
-    """
-    Gaping Dragon:
-      - Always includes *both* "Stomach Slam" cards (two copies exist).
-      - Always includes one random Heat-Up card.
-    """
+    behaviors = cfg.behaviors
 
-    # Start with all normal behaviors (non-heatup)
-    base_deck = [b for b in cfg.deck if not cfg.behaviors[b].get("heatup", False)]
+    # base deck: non-heatup behaviors
+    base_deck   = [b for b, v in behaviors.items() if not v.get("heatup", False)]
+    # heatup pool: all behaviors marked heatup
+    heatup_pool = [b for b, v in behaviors.items() if v.get("heatup", False)]
 
-    # Get all heat-up behaviors (marked in JSON)
-    heatup_cards = [b for b in cfg.deck if cfg.behaviors[b].get("heatup", False)]
+    chosen_heatup = rng.choice(heatup_pool) if heatup_pool else None
 
-    # Randomly include one heat-up card (if available)
-    chosen_heatup = rng.choice(heatup_cards) if heatup_cards else None
-
-    # Always include both "Stomach Slam" cards.
-    # If your JSON only has one "Stomach Slam" entry, we’ll just duplicate it manually.
-    always_include = ["Stomach Slam", "Stomach Slam"]
+    # include both Stomach Slam variants if present
+    slam_cards = [b for b in behaviors.keys() if b.lower().startswith("stomach slam")]
+    always_include = list(slam_cards)
     if chosen_heatup:
         always_include.append(chosen_heatup)
 
-    # Enforce deck size limit
-    limit = cfg.raw.get("cards", len(cfg.deck))
+    limit = cfg.cards or len(base_deck)
 
-    # Use the helper to normalize and shuffle
+    # exclude any you always remove (example kept from your earlier note)
     deck = force_include(
         base_deck,
+        exclude=["Crawling Charge"],
         include=always_include,
-        exclude=[],
         limit=limit,
         rng=rng,
     )
@@ -326,33 +487,9 @@ def check_and_trigger_heatup(prev_hp: int, new_hp: int, ent: Entity, state: Dict
 def serialize_state(state: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "selected_file": state.get("selected_file"),
-        "seed": state.get("seed", 0),
         "draw_pile": state.get("draw_pile", []),
         "discard_pile": state.get("discard_pile", []),
         "current_card": state.get("current_card"),
         "display_cards": state.get("display_cards", []),
         "entities": state.get("entities", [])
-    }
-
-
-def state_from_cfg(cfg: BehaviorConfig, seed: int) -> Dict[str, Any]:
-    rng = random.Random(seed)
-    draw = build_draw_pile(cfg, rng)
-    return {
-        "selected_file": None,
-        "seed": seed,
-        "draw_pile": draw,
-        "discard_pile": [],
-        "current_card": None,
-        "display_cards": cfg.display_cards[:],
-        "entities": [
-            {
-                "id": e.id,
-                "label": e.label,
-                "hp": e.hp,
-                "hp_max": e.hp_max,
-                "heatup_thresholds": e.heatup_thresholds[:],
-                "crossed": [],
-            } for e in cfg.entities
-        ]
     }
