@@ -280,13 +280,14 @@ def load_behavior(fname: Path) -> BehaviorConfig:
 # ------------------------
 # Deck + Heat-up mechanics
 # ------------------------
-def build_draw_pile(cfg: BehaviorConfig, rng: random.Random) -> list[str]:
+def build_draw_pile(cfg: BehaviorConfig, rng: random.Random, no_shuffle: bool=False) -> list[str]:
     """Build a shuffled deck, deterministic for a given seed."""
     rule_func = DECK_SETUP_RULES.get(cfg.name.lower())
     if rule_func:
         return rule_func(cfg, rng)
     deck = cfg.deck[:]
-    rng.shuffle(deck)
+    if not no_shuffle:
+        rng.shuffle(deck)
     return deck
 
 
@@ -321,6 +322,7 @@ def force_include(
     exclude: list[str] | None = None,
     limit: int | None = None,
     rng: random.Random | None = None,
+    no_shuffle: bool = False,
 ) -> list[str]:
     """
     Utility function to normalize a deck with inclusion/exclusion rules and limit.
@@ -355,7 +357,8 @@ def force_include(
             optional_cards.remove(drop)
 
     # Shuffle final deck
-    rng.shuffle(unique_deck)
+    if not no_shuffle:
+        rng.shuffle(unique_deck)
     return unique_deck
 
 
@@ -381,6 +384,7 @@ def setup_chariot(cfg, rng):
         include=always_include,
         limit=4,
         rng=rng,
+        no_shuffle=True
     )
     return deck
 

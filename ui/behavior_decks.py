@@ -41,7 +41,7 @@ def _load_cfg_for_state(state):
         return None
     return bd.load_behavior(Path(state["selected_file"]))
 
-def render_health_tracker(entities):
+def render_health_tracker(cfg):
     tracker = st.session_state.get("hp_tracker", {})
     debounce_window = 0.5  # seconds
 
@@ -49,7 +49,7 @@ def render_health_tracker(entities):
     if "last_edit" not in st.session_state:
         st.session_state["last_edit"] = {}
 
-    for e in entities:
+    for e in cfg.entities:
         ent_id = e.id
         label = e.label
         hp = e.hp
@@ -58,13 +58,23 @@ def render_health_tracker(entities):
         heat_active = bool(heat_thresh is not None and hp <= heat_thresh)
         reset_id = st.session_state.get("deck_reset_id", 0)
 
-        new_val = st.slider(
-            label,
-            min_value=0,
-            max_value=hpmax,
-            value=int(hp),
-            key=f"slider_{ent_id}_{reset_id}",
-        )
+        if cfg.name == "Executioner Chariot" and not st.session_state.get("chariot_heatup_done", False):
+            new_val = st.slider(
+                label,
+                min_value=0,
+                max_value=hpmax,
+                value=0,
+                disabled=True,
+                key=f"slider_{ent_id}_{reset_id}",
+            )
+        else:
+            new_val = st.slider(
+                label,
+                min_value=0,
+                max_value=hpmax,
+                value=int(hp),
+                key=f"slider_{ent_id}_{reset_id}",
+            )
 
         # --- Record timestamp on change
         if new_val != hp:
@@ -77,7 +87,7 @@ def render_health_tracker(entities):
             tracker[ent_id] = {"hp": int(new_val), "hp_max": hpmax}
 
     st.session_state["hp_tracker"] = tracker
-    return entities
+    return cfg.entities
 
 def _draw_card(state):
     if not state["draw_pile"]:
@@ -93,22 +103,51 @@ def _reset_deck(state, cfg):
     state["discard_pile"] = []
     state["current_card"] = None
 
-    # Reset HP
+    # --- Reset entities in UI state (dicts)
     for e in state["entities"]:
-        e.hp = e.hp_max
-        e.crossed = []
+        if isinstance(e, dict):
+            # use hp_max if present, otherwise keep current hp
+            e["hp"] = e.get("hp_max", e.get("hp", 0))
+            e["crossed"] = []
+        else:
+            # fallback: handle Entity objects just in case
+            e.hp = e.hp_max
+            e.crossed = []
 
-    # Clear session-based UI states
+    # --- Reset entities in cfg (the ones the sliders render)
+    for ent in cfg.entities:
+        ent.hp = ent.hp_max
+        ent.crossed = []
+
+    # --- Clear session-based UI states / flags
     st.session_state.pop("hp_tracker", None)
     st.session_state.pop("last_edit", None)
     st.session_state["deck_reset_id"] = st.session_state.get("deck_reset_id", 0) + 1
+    st.session_state["chariot_heatup_done"] = False
+
 
 
 def _manual_heatup(state):
     cfg = _load_cfg_for_state(state)
-    if not cfg: return
+    if not cfg:
+        return
     rng = random.Random()
     bd.apply_heatup(state, cfg, rng, reason="manual")
+
+    # --- Special case: Executioner Chariot
+    if cfg.name == "Executioner Chariot":
+        st.session_state["chariot_heatup_done"] = True
+
+        # Rebuild from 4 regular + 1 heat-up card
+        base_cards = [b for b in cfg.deck if not cfg.behaviors.get(b, {}).get("heatup", False) and "Death Race" not in b and "Mega Boss Setup" not in b]
+        heat_cards = [b for b in cfg.behaviors if cfg.behaviors[b].get("heatup", False)]
+        rng.shuffle(base_cards)
+        rng.shuffle(heat_cards)
+        state["draw_pile"] = base_cards[:4] + heat_cards[:1]
+        rng.shuffle(state["draw_pile"])
+        state["discard_pile"].clear()
+        state["current_card"] = None
+
 
 def _save_slot_ui(settings, state):
     with st.expander("💾 Save / Load Deck State", expanded=False):
@@ -174,6 +213,9 @@ def render():
         return
 
     # --- Boss / Invader mode
+    if "chariot_heatup_done" not in st.session_state:
+        st.session_state["chariot_heatup_done"] = False
+
     if (
         st.session_state["behavior_deck"] is None
         or st.session_state["behavior_deck"].get("selected_file") != fpath
@@ -182,8 +224,7 @@ def render():
         st.session_state["behavior_deck"] = state
 
     if st.button("🔄 Reset Deck and Health", key="reset_deck"):
-        state = bd.ensure_behavior_state(st.session_state)
-        _reset_deck(st.session_state["behavior_state"], cfg)
+        _reset_deck(st.session_state["behavior_deck"], cfg)
 
     state = st.session_state["behavior_deck"]
     if not state:
@@ -200,7 +241,23 @@ def render():
 
     cols = st.columns(max(2, len(state["display_cards"])))
 
-    if "Ornstein" in cfg.raw and "Smough" in cfg.raw:
+    if cfg.name == "Executioner Chariot":
+        if not st.session_state.get("chariot_heatup_done", False):
+            edited_img = bi.render_data_card(
+                BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner Chariot.jpg",
+                cfg.raw,
+                is_boss=True,
+                no_edits=True,
+            )
+        else:
+            edited_img = bi.render_data_card(
+                BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
+                cfg.raw,
+                is_boss=True,
+            )
+        with cols[0]:
+            st.image(edited_img)
+    elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
         # Dual boss special case: render each data card separately, side-by-side
         ornstein_img, smough_img = bi.render_dual_boss_data_cards(cfg.raw)
         dual_cols = st.columns(2)
@@ -222,7 +279,7 @@ def render():
     # --- Health block
     st.markdown("---")
     st.subheader("Health Tracker")
-    cfg.entities = render_health_tracker(cfg.entities)
+    cfg.entities = render_health_tracker(cfg)
 
     st.markdown("---")
 

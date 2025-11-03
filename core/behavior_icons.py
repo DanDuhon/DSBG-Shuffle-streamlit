@@ -219,11 +219,15 @@ def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, i
 # -----------------------------------------------------------
 # DATA CARD RENDERING
 # -----------------------------------------------------------
-def render_data_card(base_path: str, raw_json: dict, is_boss: bool) -> bytes:
+def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bool=False) -> bytes:
     """
     Paint stats (health, armor, resist, maybe heatup) on the base data card.
     """
     base = Image.open(base_path).convert("RGBA")
+    if no_edits:
+        buf = io.BytesIO()
+        base.save(buf, format="PNG")
+        return buf.getvalue()
 
     # --- core stats ---
     if "armor" in raw_json:
