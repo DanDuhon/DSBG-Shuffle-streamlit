@@ -8,6 +8,7 @@
         },
         "right": {}
     },
+    "is_invader": true,
     "health": 17,
     "cards": 3,
     "heatup": 9,

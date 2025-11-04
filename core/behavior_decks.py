@@ -38,6 +38,7 @@ class BehaviorConfig:
     raw: dict
     heatup: Optional[Heatup] = None
     behaviors: dict = field(default_factory=dict)
+    is_invader: bool = False
 
     @property
     def data_cards(self) -> list[str]:
@@ -147,6 +148,20 @@ def ensure_behavior_state(state):
     return state["behavior_state"]
 
 
+def _make_king_entity(cfg, idx: int) -> Entity:
+    """Create 'King {idx}' as an Entity object."""
+    hpmax = int(cfg.raw.get("health", 25))
+    label = f"King {idx}"
+    return Entity(
+        id=f"king_{idx}",
+        label=label,
+        hp_max=hpmax,
+        hp=hpmax,
+        heatup_thresholds=[],  # Four Kings don't use standard heat-up thresholds
+        crossed=[],
+    )
+
+
 # ------------------------
 # JSON Importer
 # ------------------------
@@ -175,8 +190,21 @@ def load_behavior(fname: Path) -> BehaviorConfig:
         if is_entity_block(v)
     }
 
+    # --- Special case: The Four Kings (precreate 4 entities)
+    if name == "The Four Kings":
+        entities = [
+            Entity(
+                id=f"king_{i}",
+                label=f"King {i}",
+                hp_max=hp,
+                hp=hp,
+                heatup_thresholds=[],  # they don't use standard heatup thresholds
+                crossed=[],
+            )
+            for i in range(1, 5)
+        ]
     # --- Build entity list
-    if entity_blocks:
+    elif entity_blocks:
         # Multi-entity boss (e.g., Ornstein & Smough, Four Kings)
         entities = []
         for label, data in entity_blocks.items():
@@ -264,6 +292,8 @@ def load_behavior(fname: Path) -> BehaviorConfig:
             manual_only=(heatup_threshold is None),
         )
 
+    is_invader = bool(raw.get("is_invader", False))
+
     return BehaviorConfig(
         name=name,
         tier="enemy" if "behavior" in raw else "boss",
@@ -274,6 +304,7 @@ def load_behavior(fname: Path) -> BehaviorConfig:
         heatup=heatup,
         raw=raw,
         behaviors=behaviors,
+        is_invader=is_invader,
     )
 
 
@@ -282,12 +313,24 @@ def load_behavior(fname: Path) -> BehaviorConfig:
 # ------------------------
 def build_draw_pile(cfg: BehaviorConfig, rng: random.Random, no_shuffle: bool=False) -> list[str]:
     """Build a shuffled deck, deterministic for a given seed."""
+    # Handle special setup rules
     rule_func = DECK_SETUP_RULES.get(cfg.name.lower())
     if rule_func:
         return rule_func(cfg, rng)
-    deck = cfg.deck[:]
-    if not no_shuffle:
-        rng.shuffle(deck)
+
+    behaviors = cfg.behaviors
+
+    # Collect normal, non-heatup behaviors
+    deck = [b for b in behaviors if not behaviors[b].get("heatup", False)]
+
+    # Shuffle
+    rng.shuffle(deck)
+
+    # Respect deck size if specified
+    deck_limit = cfg.raw.get("cards")
+    if deck_limit:
+        deck = deck[: int(deck_limit)]
+
     return deck
 
 
@@ -300,7 +343,7 @@ def register_deck_rule(name: str):
 
 
 def apply_special_rules(cfg, rng):
-    """Apply any registered special rules to the boss’s deck setup."""
+    """Apply any registered special rules to the boss's deck setup."""
     boss_name = cfg.name.lower()
     rule_func = DECK_SETUP_RULES.get(boss_name)
     if rule_func:
@@ -372,6 +415,17 @@ def setup_kalameet(cfg, rng):
     return force_include(deck, include=["Mark of Calamity", "Hellfire Blast"], limit=limit, rng=rng)
 
 
+@register_deck_rule("Old Iron King")
+def setup_kalameet(cfg, rng):
+    """
+    Mark of Calamity and Hellfire Blast are always included.
+    """
+    always_include = match_behavior_prefix(cfg.behaviors, "Fire Beam")
+    deck = cfg.deck[:]
+    limit = cfg.raw.get("cards", len(deck))
+    return force_include(deck, include=always_include, limit=limit, rng=rng)
+
+
 @register_deck_rule("Executioner Chariot")
 def setup_chariot(cfg, rng):
     """
@@ -399,6 +453,46 @@ def setup_sif(cfg, rng):
     return force_include(deck, exclude=["Limping Strike"], limit=limit, rng=rng)
 
 
+@register_deck_rule("The Last Giant")
+def setup_last_giant(cfg, rng):
+    """
+    3 normal cards, 3 arm cards, never Falling Slam
+    """
+    deck = [
+        b for b, v in cfg.behaviors.items()
+        if not v.get("arm", False)
+        and not v.get("heatup", False)
+        and b != "Falling Slam"
+    ]
+    arm_cards = [b for b, v in cfg.behaviors.items() if v.get("arm", False)]
+    rng.shuffle(arm_cards)
+    limit = cfg.raw.get("cards", len(deck))
+    return force_include(deck, exclude=["Falling Slam"], include=arm_cards[:3], limit=limit, rng=rng)
+
+
+@register_deck_rule("Vordt of the Boreal Valley")
+def setup_vordt(cfg, rng):
+    """
+    Vordt uses two parallel decks: Movement and Attack.
+    Movement cards have type 'move', attack cards 'attack'.
+    """
+    behaviors = cfg.behaviors
+    move_cards = [b for b in behaviors if behaviors[b].get("type", None) == "move" and not behaviors[b].get("heatup", False)]
+    atk_cards = [b for b in behaviors if behaviors[b].get("type", None) == "attack" and not behaviors[b].get("heatup", False)]
+
+    rng.shuffle(move_cards)
+    rng.shuffle(atk_cards)
+
+    # Store both decks in cfg for the UI
+    cfg.raw["vordt_move_draw"] = move_cards[:4]
+    cfg.raw["vordt_move_discard"] = []
+    cfg.raw["vordt_attack_draw"] = atk_cards[:3]
+    cfg.raw["vordt_attack_discard"] = []
+
+    # Return a combined list (just for compatibility)
+    return move_cards + atk_cards
+
+
 @register_deck_rule("gaping dragon")
 def setup_gaping_dragon(cfg, rng):
     behaviors = cfg.behaviors
@@ -411,10 +505,8 @@ def setup_gaping_dragon(cfg, rng):
     chosen_heatup = rng.choice(heatup_pool) if heatup_pool else None
 
     # include both Stomach Slam variants if present
-    slam_cards = [b for b in behaviors.keys() if b.lower().startswith("stomach slam")]
-    always_include = list(slam_cards)
-    if chosen_heatup:
-        always_include.append(chosen_heatup)
+    always_include = match_behavior_prefix(cfg.behaviors, "Stomach Slam")
+    always_include.append(chosen_heatup)
 
     limit = cfg.cards or len(base_deck)
 
@@ -430,6 +522,121 @@ def setup_gaping_dragon(cfg, rng):
     return deck
 
 
+def _apply_sif_limping_mode(state, cfg):
+    """When triggered, replace Sif's deck with only 'Limping Strike'."""
+    limp_card = None
+    for name in cfg.behaviors.keys():
+        if "Limping Strike" in name:
+            limp_card = name
+            break
+
+    state["draw_pile"] = [limp_card]
+    state["discard_pile"] = []
+    state["current_card"] = None
+    state["sif_limping_active"] = True
+
+
+def _ornstein_smough_heatup(state, cfg, dead_boss, rng):
+    """
+    Ornstein & Smough special heat-up triggered when one reaches 0 HP:
+      - If Smough dies: Ornstein +10 HP (cap at max), deck = heatup=='Ornstein'
+      - If Ornstein dies: Smough +15 HP (cap at max), deck = heatup=='Smough'
+      - New deck is shuffled ONCE here; later recycles will not shuffle
+    """
+    # Decide survivor, heal amount, and tag for heat-up pool
+    if dead_boss == "Smough":
+        tag = "Ornstein"
+        state["disabled_smough"] = True
+        state["disabled_ornstein"] = False
+    else:  # Ornstein dead
+        tag = "Smough"
+        state["disabled_ornstein"] = True
+        state["disabled_smough"] = False
+
+    # Build the heat-up deck for the survivor tag
+    heatup_cards = [name for name, data in cfg.behaviors.items()
+                    if data.get("heatup") == tag]
+
+    # Replace deck: shuffle ONCE here
+    new_deck = heatup_cards[:]
+    rng.shuffle(new_deck)
+
+    state["draw_pile"] = new_deck
+    state["discard_pile"] = []
+    state["current_card"] = None
+
+    # Mark phase & control future recycle behavior
+    state["ornstein_smough_phase"] = tag           # 'Ornstein' or 'Smough'
+    state["os_phase_shuffled_once"] = True         # documentation flag
+    state["heatup_done"] = True                    # skip standard heat-up afterwards
+
+
+def _apply_last_giant_heatup(cfg, state, rng):
+    """The Last Giant: Add Falling Slam, remove arm cards, replace with heat-up cards."""
+    draw = state["draw_pile"]
+    discard = state["discard_pile"]
+
+    if state.get("current_card"):
+        discard.append(state["current_card"])
+        state["current_card"] = None
+    draw.extend(discard)
+    discard.clear()
+
+    if "Falling Slam" not in draw:
+        draw.append("Falling Slam")
+
+    arm_cards = [b for b, v in cfg.behaviors.items() if v.get("arm", False)]
+    draw[:] = [c for c in draw if c not in arm_cards]
+
+    heatup_cards = [b for b, v in cfg.behaviors.items() if v.get("heatup", False)]
+    rng.shuffle(heatup_cards)
+    draw.extend(heatup_cards[:3])
+
+    rng.shuffle(draw)
+
+    state["heatup_done"] = True
+
+
+def _apply_artorias_heatup(cfg, state, rng):
+    """
+    Artorias special heat-up:
+      - Return current card + discard pile to draw pile
+      - Remove 2 random (non-heatup) behavior cards
+      - Add ALL heat-up cards
+      - Shuffle the resulting draw pile
+    """
+    # Merge back discard and current
+    state["draw_pile"].extend(state.get("discard_pile", []))
+    state["discard_pile"].clear()
+
+    if state.get("current_card"):
+        state["draw_pile"].append(state["current_card"])
+        state["current_card"] = None
+
+    # Identify all heat-up cards
+    heatup_cards = [b for b, v in cfg.behaviors.items() if v.get("heatup", False)]
+    if not heatup_cards:
+        return
+
+    # Remove two random *non-heatup* cards if possible
+    removable = [b for b in state["draw_pile"] if b not in heatup_cards]
+    num_to_remove = min(2, len(removable))
+    if num_to_remove > 0:
+        to_remove = rng.sample(removable, num_to_remove)
+        state["draw_pile"] = [b for b in state["draw_pile"] if b not in to_remove]
+
+    # Add all heat-up cards
+    for card in heatup_cards:
+        if card not in state["draw_pile"]:
+            state["draw_pile"].append(card)
+
+    # Shuffle
+    rng.shuffle(state["draw_pile"])
+
+    # Mark completion
+    state["heatup_done"] = True
+
+
 def recycle_deck(state: Dict[str, Any]) -> None:
     """
     If draw pile is empty, recycle discard + current into a new draw pile
@@ -442,31 +649,218 @@ def recycle_deck(state: Dict[str, Any]) -> None:
             state["current_card"] = None
         state["draw_pile"] = new_pile
         state["discard_pile"] = []
+        
+    # Try to identify the current boss name from the loaded file
+    boss_name = None
+    if "selected_file" in state:
+        try:
+            boss_name = Path(state["selected_file"]).stem
+        except Exception:
+            boss_name = None
+
+    # --- Crossbreed Priscilla: invisibility flag
+    if boss_name == "Crossbreed Priscilla":
+        state["priscilla_invisible"] = True
+    else:
+        state.pop("priscilla_invisible", None)
 
 
-def apply_heatup(state: Dict[str, Any], cfg: BehaviorConfig, rng: random.Random, reason: str = "auto") -> None:
-    """Add/replace heat-up cards when triggered."""
-    if not cfg.heatup or not cfg.heatup.pool:
+def apply_heatup(state, cfg, rng, reason="manual"):
+    """
+    Apply the standard heat-up procedure:
+      - Happens only once
+      - Discarded and current cards return to the draw pile
+      - Add one random heat-up card
+      - Shuffle draw pile
+    """
+    # Prevent multiple heatups
+    if state.get("heatup_done", False) and cfg.name not in {"Old Dragonslayer",}:
         return
-    if cfg.heatup.manual_only and reason == "auto":
+
+    # Identify available heat-up cards
+    heatup_cards = [
+        name for name, data in cfg.behaviors.items()
+        if data.get("heatup", False)
+    ]
+    if not cfg.is_invader and not heatup_cards and cfg.name not in {"The Pursuer",}:
+        return  # Nothing to do
+
+    # Merge discard pile and current card back into draw pile
+    if cfg.name not in {"Old Dragonslayer",}:
+        state["draw_pile"].extend(state.get("discard_pile", []))
+        state["discard_pile"].clear()
+
+        if state.get("current_card"):
+            state["draw_pile"].append(state["current_card"])
+            state["current_card"] = None
+
+    chosen = None
+
+    if cfg.is_invader or cfg.name in {"The Pursuer",}:
+        if cfg.name not in {"Oliver the Collector",}:
+            base_pool = [b for b, v in cfg.behaviors.items() if not v.get("heatup", False)]
+            candidates = [b for b in base_pool if b not in state["draw_pile"]]
+            if not candidates:
+                return  # no unique card to add
+            chosen = rng.choice(candidates)
+    elif cfg.name == "Guardian Dragon":
+        state["draw_pile"] += heatup_cards
+    elif cfg.name == "The Last Giant":
+        # Don't add a random heat-up card - this is handled in the special rules
+        pass
+    else:
+        # Add one random heat-up card (not already in the deck)
+        chosen = rng.choice(heatup_cards)
+
+    if chosen and chosen not in state["draw_pile"] and cfg.name not in {"Old Dragonslayer",}:
+        state["draw_pile"].append(chosen)
+
+    # Shuffle new deck
+    if cfg.name not in {"Old Dragonslayer",}:
+        rng.shuffle(state["draw_pile"])
+
+    # --- Apply special heat-up effects (invaders, etc.)
+    _apply_special_heatup_effects(cfg, state, rng, reason=="manual")
+
+    # Mark as complete
+    if cfg.name not in {"Old Dragonslayer",}:
+        state["heatup_done"] = True
+
+
+def _apply_special_heatup_effects(cfg, state, rng, manual):
+    """Apply boss- or invader-specific heat-up modifications."""
+    effects = {
+        "Armorer Dennis": _apply_armorer_dennis_heatup,
+        "Oliver the Collector": _replace_with_missing_cards,
+        "Old Dragonslayer": _old_dragonslayer_heatup,
+        "Artorias": _apply_artorias_heatup,
+        "Smelter Demon": _apply_smelter_demon_heatup,
+        "The Pursuer": _apply_pursuer_heatup,
+        "Old Iron King": _apply_old_iron_king_heatup,
+        "The Last Giant": _apply_last_giant_heatup
+    }
+
+    if cfg.name == "Crossbreed Priscilla":
+        state["priscilla_invisible"] = True
+
+    func = effects.get(cfg.name)
+    if not func:
         return
 
-    mode = cfg.heatup.mode
-    picks = cfg.heatup.pool[:cfg.heatup.per_trigger]
-    rng.shuffle(picks)
+    # For Old Dragonslayer, handle UI confirmation externally
+    if cfg.name == "Old Dragonslayer":
+        confirmed = manual or state.get("old_dragonslayer_confirmed", False)
+        applied, needs_confirm = func(cfg, state, rng, confirmed=confirmed)
 
-    if mode == "add_random":
-        state["draw_pile"].extend(picks)
-    elif mode == "add_specific":
-        state["draw_pile"].extend(picks)
-    elif mode == "replace":
-        for i, card in enumerate(picks):
-            if i < len(state["draw_pile"]):
-                state["draw_pile"][i] = card
-            else:
-                state["draw_pile"].append(card)
+        if needs_confirm:
+            # Tell the UI to prompt the player
+            state["old_dragonslayer_pending"] = True
+            state["old_dragonslayer_confirmed"] = False
+        else:
+            # If applied or rejected, clear prompt
+            state["old_dragonslayer_pending"] = False
+            state["old_dragonslayer_confirmed"] = False
+        return
 
+    # For all others
+    func(cfg, state, rng)
+
+
+def _apply_armorer_dennis_heatup(cfg, state, rng):
+    """Increase dodge on all behaviors by +1."""
+    for bdata in cfg.behaviors.values():
+        bdata["dodge"] = int(bdata["dodge"]) + 1
+
+
+def _apply_pursuer_heatup(cfg, state, rng):
+    """The Pursuer: buff all damage by +1."""
+    # Increase all damage values by +1
+    for bdata in cfg.behaviors.values():
+        for slot in ["left", "middle", "right"]:
+            if slot not in bdata or "damage" not in bdata.get(slot, {}):
+                continue
+            bdata[slot]["damage"] = int(bdata[slot]["damage"]) + 1
+
+
+def _apply_old_iron_king_heatup(cfg, state, rng):
+    """The Pursuer: buff all damage by +1."""
+    # Increase all Fire Beam dodge and damage values by +1
+    for b in [b for b in cfg.behaviors if "Fire Beam" in b]:
+        cfg.behaviors[b]["dodge"] = int(cfg.behaviors[b]["dodge"]) + 1
+        for slot in ["left", "middle", "right"]:
+            if slot not in cfg.behaviors[b] or "damage" not in cfg.behaviors[b].get(slot, {}):
+                continue
+            cfg.behaviors[b][slot]["damage"] = int(cfg.behaviors[b][slot]["damage"]) + 1
+
+
+def _apply_smelter_demon_heatup(cfg, state, rng):
+    """Smelter Demon heat-up: replace deck with 5 random heat-up cards."""
+    # find all heat-up cards
+    heatup_cards = [
+        b for b, info in cfg.behaviors.items()
+        if info.get("heatup", False)
+    ]
+
+    # pick 5 random ones (or all if fewer than 5)
+    rng.shuffle(heatup_cards)
+    chosen = heatup_cards[:5]
+
+    # replace deck
+    state["draw_pile"] = chosen[:]
+    state["discard_pile"] = []
+    state["current_card"] = None
+
+    state["heatup_done"] = True
+
+
+def _replace_with_missing_cards(cfg, state, rng):
+    """Replace current draw pile with all cards that were not in it."""
+    all_cards = [b for b, v in cfg.behaviors.items() if not v.get("heatup", False)]
+    current_deck = set(state.get("draw_pile", []))
+    missing = [b for b in all_cards if b not in current_deck]
+
+    if not missing:
+        return
+
+    # Clear discard/current cards and use missing set as new deck
+    state["draw_pile"] = missing.copy()
+    state["discard_pile"].clear()
+    state["current_card"] = None
     rng.shuffle(state["draw_pile"])
+
+
+def _old_dragonslayer_heatup(cfg, state, rng, confirmed=False):
+    """
+    Handle Old Dragonslayer's special heat-up:
+      - Up to 3 times total
+      - Each triggered manually or by losing 4+ HP at once
+      - Adds a random heat-up card to TOP of deck (no shuffle)
+      - Returns a tuple (applied: bool, needs_confirm: bool)
+    """
+    count = state.get("old_dragonslayer_heatups", 0)
+    if count >= 3:
+        return False, False  # already maxed out
+
+    if not confirmed:
+        return False, True  # needs UI confirmation first
+
+    # Find a random heat-up card
+    heatup_cards = [b for b, v in cfg.behaviors.items() if v.get("heatup", False)]
+    if not heatup_cards:
+        return False, False
+
+    chosen = rng.choice(heatup_cards)
+    state["draw_pile"].insert(0, chosen)
+    state["old_dragonslayer_heatups"] = count + 1
+
+    return True, False  # applied successfully
+
+
+def _add_tag(bdata, tag):
+    """Example helper: add a tag field to a behavior if not present."""
+    tags = bdata.setdefault("tags", [])
+    if tag not in tags:
+        tags.append(tag)
 
 
 def check_and_trigger_heatup(prev_hp: int, new_hp: int, ent: Entity, state: Dict[str, Any],

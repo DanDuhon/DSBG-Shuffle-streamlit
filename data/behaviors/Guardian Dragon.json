@@ -94,7 +94,12 @@
         },
         "middle": {}
     },
-    "Cage Grasp Inferno": {
+    "Cage Grasp Inferno 1": {
+        "dodge": 1,
+        "left": {},
+        "heatup": true
+    },
+    "Cage Grasp Inferno 2": {
         "dodge": 1,
         "left": {},
         "heatup": true

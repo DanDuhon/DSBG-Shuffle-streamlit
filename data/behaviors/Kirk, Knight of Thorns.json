@@ -8,6 +8,7 @@
         "middle": {},
         "right": {}
     },
+    "is_invader": true,
     "health": 12,
     "heatup": 7,
     "armor": 1,
