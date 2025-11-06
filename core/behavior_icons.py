@@ -1,6 +1,8 @@
+from core.image_cache import _load_jpg_cached, _load_png_cached
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 import io
+import streamlit as st
 
 ASSETS_DIR = Path("assets")
 ICONS_DIR = ASSETS_DIR / "behavior icons"
@@ -219,6 +221,7 @@ def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, i
 # -----------------------------------------------------------
 # DATA CARD RENDERING
 # -----------------------------------------------------------
+@st.cache_data(show_spinner=False)
 def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bool=False) -> bytes:
     """
     Paint stats (health, armor, resist, maybe heatup) on the base data card.
@@ -303,6 +306,7 @@ def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
 #  - boss/invader AND regular enemy use the same behavior JSON shape
 #  - only coords differ (enemy vs boss)
 # -----------------------------------------------------------
+@st.cache_data(show_spinner=False)
 def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, base_card: Image=None) -> bytes:
     """
     Take a behavior card image (e.g. 'Artorias - Heavy Thrust.jpg')
@@ -445,3 +449,26 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
                             w, h = icon.size
                             icon = icon.resize((int(w * size_scale), int(h * size_scale)))
                         base.alpha_composite(icon, (x, y))
+
+
+# ---------- Cached asset loaders ----------
+@st.cache_resource(show_spinner=False)
+def load_behavior_base(path: str) -> Image.Image:
+    """Load and cache a base behavior/data card image as RGBA."""
+    if _load_jpg_cached:
+        return _load_jpg_cached(path).convert("RGBA")
+    return Image.open(path).convert("RGBA")
+
+@st.cache_resource(show_spinner=False)
+def load_behavior_icon(filename: str) -> Image.Image:
+    """Load and cache a behavior icon (PNG) from assets/behavior icons."""
+    from pathlib import Path as _P
+    full = _P("assets/behavior icons") / filename
+    if _load_png_cached:
+        return _load_png_cached(full)
+    return Image.open(full).convert("RGBA")
+
+@st.cache_resource(show_spinner=False)
+def load_font(size: int = 32) -> ImageFont.FreeTypeFont:
+    """Load and cache OptimusPrinceps font at a given size."""
+    return ImageFont.truetype("assets/OptimusPrinceps.ttf", size)

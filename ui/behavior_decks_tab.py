@@ -6,6 +6,11 @@ from PIL import Image, ImageOps
 from core.settings_manager import load_settings, save_settings
 from core import behavior_decks as bd
 from core import behavior_icons as bi
+from core.behavior_render_cache import (
+    render_data_card_cached,
+    render_behavior_card_cached,
+    render_behavior_deck_cached,
+)
 
 
 BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
@@ -595,7 +600,7 @@ def render():
         cols = st.columns(2)
         with cols[0]:
             data_card = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
-            img_bytes = bi.render_data_card(data_card, cfg.raw, is_boss=False)
+            img_bytes = render_data_card_cached(data_card, cfg.raw, is_boss=False)
             st.image(img_bytes)
         return
 
@@ -636,17 +641,19 @@ def render():
 
     cols = st.columns(max(2, len(state["display_cards"])))
 
+    print(cfg.raw)
+
     # Special rules for Chariot data card display based on phase.
     if cfg.name == "Executioner Chariot":
         if not st.session_state.get("chariot_heatup_done", False):
-            edited_img = bi.render_data_card(
+            edited_img = render_data_card_cached(
                 BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner Chariot.jpg",
                 cfg.raw,
                 is_boss=True,
                 no_edits=True,
             )
         else:
-            edited_img = bi.render_data_card(
+            edited_img = render_data_card_cached(
                 BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
                 cfg.raw,
                 is_boss=True,
@@ -669,10 +676,10 @@ def render():
     else:
         for i, data_path in enumerate(state["display_cards"]):
             if i == 0:
-                edited_img = bi.render_data_card(data_path, cfg.raw, is_boss=True)
+                edited_img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
             else:
                 card_name = Path(data_path).stem.split(" - ")[-1]
-                edited_img = bi.render_behavior_card(
+                edited_img = render_behavior_card_cached(
                     data_path, cfg.raw[card_name], is_boss=True
                 )
             with cols[i if i < len(cols) else -1]:
@@ -778,7 +785,7 @@ def render():
             if move_card:
                 st.caption(f"{len(state['vordt_move_discard'])} movement cards played")
                 st.image(
-                    bi.render_behavior_card(
+                    render_behavior_card_cached(
                         move_path,
                         cfg.behaviors.get(move_card, {}),
                         is_boss=True,
@@ -789,7 +796,7 @@ def render():
             if atk_card:
                 st.caption(f"{len(state['vordt_attack_discard'])} attack cards played")
                 st.image(
-                    bi.render_behavior_card(
+                    render_behavior_card_cached(
                         atk_path,
                         cfg.behaviors.get(atk_card, {}),
                         is_boss=True,
@@ -810,7 +817,7 @@ def render():
                         cfg.raw, current_name, boss_name=cfg.name
                     )
                 else:
-                    edited_behavior = bi.render_behavior_card(
+                    edited_behavior = render_behavior_card_cached(
                         _behavior_image_path(cfg, current_name),
                         cfg.behaviors.get(current_name, {}),
                         is_boss=True,
@@ -825,8 +832,9 @@ def render():
             )
             beh_key = state["current_card"]
             beh_json = cfg.behaviors.get(beh_key, {})
+            print(beh_json)
             current_path = _behavior_image_path(cfg, beh_key)
-            edited_behavior = bi.render_behavior_card(
+            edited_behavior = render_behavior_card_cached(
                 current_path, beh_json, is_boss=True
             )
             st.image(edited_behavior)
@@ -835,7 +843,7 @@ def render():
     btn_cols = st.columns(2)
     with btn_cols[0]:
         draw_label = "Draw Movement + Attack" if cfg.name == "Vordt of the Boreal Valley" else "Draw"
-        if st.button(draw_label, width="stretch"):
+        if st.button(draw_label, width="stretch", key="behavior_draw"):
             _clear_heatup_prompt()
             _draw_card(state)
             st.rerun()

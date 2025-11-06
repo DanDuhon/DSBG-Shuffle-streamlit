@@ -1,22 +1,30 @@
 import streamlit as st
 from core.encounters import list_encounters, load_valid_sets, encounter_is_valid
 from core.editedEncounterKeywords import editedEncounterKeywords
-from core.settings_manager import save_settings
 from .encounter_helpers import (
     render_card, render_original_encounter, shuffle_encounter,
     build_encounter_keywords, render_encounter_icons, apply_edited_toggle
 )
 
+# Cached wrappers to avoid repeated I/O
+@st.cache_data(show_spinner=False)
+def _list_encounters_cached():
+    return list_encounters()
+
+@st.cache_data(show_spinner=False)
+def _load_valid_sets_cached():
+    return load_valid_sets()
+
 def render(settings, valid_party, character_count):
     active_expansions = settings["active_expansions"]
 
     # --- Encounter Selection ---
-    encounters_by_expansion = list_encounters()
+    encounters_by_expansion = _list_encounters_cached()
     if not encounters_by_expansion:
         st.error("No encounters found.")
         st.stop()
 
-    valid_sets = load_valid_sets()
+    valid_sets = _load_valid_sets_cached()
 
     # Filter expansions with valid encounters
     filtered_expansions = []
@@ -65,7 +73,7 @@ def render(settings, valid_party, character_count):
             st.stop()
 
         display_names = [f"{e['name']} (level {e['level']})" for e in filtered_encounters]
-        
+
         default_label = st.session_state.get("last_encounter", {}).get("label")
         selected_label = st.selectbox(
             "Select Encounter:",
@@ -83,7 +91,7 @@ def render(settings, valid_party, character_count):
             has_edited = (encounter_name, selected_expansion) in editedEncounterKeywords
         else:
             encounter_name, key, has_edited = None, None, False
-            
+
         # Ensure edited_toggles dict exists in settings
         if "edited_toggles" not in settings:
             settings["edited_toggles"] = {}
@@ -186,17 +194,29 @@ def render(settings, valid_party, character_count):
                     "expansions_used": res["expansions_used"]
                 }
 
-        # Auto shuffle when changing encounters
+        # Auto shuffle when changing encounters (but avoid redundant work on reruns)
         if selected_label and not shuffle_clicked and not original_clicked and not toggle_changed:
-            selected_encounter = filtered_encounters[display_names.index(selected_label)]
-            res = shuffle_encounter(
-                selected_encounter, character_count, active_expansions, selected_expansion, use_edited
-            )
-            if res["ok"]:
-                st.session_state.current_encounter = res
-            else:
-                st.warning(res["message"])
-        
+            # Only auto-shuffle if we don't already have a current encounter for this selection
+            last = st.session_state.get("last_encounter", {})
+            if last.get("label") != selected_label or last.get("edited") != use_edited:
+                selected_encounter = filtered_encounters[display_names.index(selected_label)]
+                res = shuffle_encounter(
+                    selected_encounter, character_count, active_expansions, selected_expansion, use_edited
+                )
+                if res["ok"]:
+                    st.session_state.current_encounter = res
+                    st.session_state["last_encounter"] = {
+                        "label": selected_label,
+                        "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
+                        "expansion": selected_expansion,
+                        "character_count": character_count,
+                        "edited": use_edited,
+                        "enemies": res["enemies"],
+                        "expansions_used": res["expansions_used"]
+                    }
+                else:
+                    st.warning(res["message"])
+
         # Character and expansion icons
         if "current_encounter" in st.session_state:
             icons_html = render_encounter_icons(st.session_state.current_encounter)
@@ -211,9 +231,9 @@ def render(settings, valid_party, character_count):
             st.info(f"Last encounter was {st.session_state['last_encounter']['label']}")
         else:
             st.info("Select an encounter to get started.")
-            
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     # Keywords
     if "current_encounter" in st.session_state:
         current = st.session_state.current_encounter

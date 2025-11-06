@@ -1,5 +1,6 @@
 import streamlit as st
-from ui import sidebar, encounters, events, campaign, variants, behavior_decks
+import ui.campaign_tab as campaign_tab
+from ui import sidebar, encounters_tab, events_tab, behavior_variants_tab, behavior_decks_tab
 from core.settings_manager import load_settings, save_settings
 
 st.set_page_config(page_title="DSBG-Shuffle", layout="centered")
@@ -25,16 +26,16 @@ tab_encounters, tab_events, tab_campaign, tab_decks, tab_variants = st.tabs(
 )
 
 with tab_encounters:
-    encounters.render(settings, valid_party, character_count)
+    encounters_tab.render(settings, valid_party, character_count)
 
 with tab_events:
-    events.render(settings)
+    events_tab.render(settings)
 
 with tab_campaign:
-    campaign.render(settings)
+    campaign_tab.render()
 
 with tab_decks:
-    behavior_decks.render()
+    behavior_decks_tab.render()
 
 with tab_variants:
-    variants.render()
+    behavior_variants_tab.render()
