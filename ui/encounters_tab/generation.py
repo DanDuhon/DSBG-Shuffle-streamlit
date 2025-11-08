@@ -1,126 +1,31 @@
-import base64
 import streamlit as st
-from io import BytesIO
+import os
+import base64
+from json import load
 from pathlib import Path
 from PIL import Image
 
-# Use core.* modules only to avoid circular imports
-from core.encounters import (
-    load_encounter,
-    pick_random_alternative,
-    generate_encounter_image,
-)
-from core.encounterKeywords import encounterKeywords, keywordSize, keywordText
-from core.editedEncounterKeywords import editedEncounterKeywords
+from ui.encounters_tab.assets import (get_keyword_image, get_enemy_image, encounterKeywords, editedEncounterKeywords, keywordSize, keywordText, v1Expansions, v1Level4s, positions, ENCOUNTER_CARDS_DIR, EDITED_ENCOUNTER_CARDS_DIR)
 
-# -------------------------------------------------------------
-# Memory caches (Streamlit)
-# -------------------------------------------------------------
+
+ENCOUNTER_DATA_DIR = Path("data/encounters")
+VALID_SETS_PATH = Path("data/encounters_valid_sets.json")
+
+
 @st.cache_data(show_spinner=False)
-def _b64_from_image(img: Image.Image) -> str:
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode()
+def cached_encounter_image(expansion: str, level: int, name: str, data: dict, enemies: list[int], edited: bool):
+    """Cache the generated encounter image."""
+    return generate_encounter_image(expansion, level, name, data, enemies, use_edited=edited)
 
 
-# -------------------------------------------------------------
-# Public helpers used by ui.encounters (kept API-compatible)
-# -------------------------------------------------------------
-def render_card(buf, card_img, encounter_name, expansion, use_edited):
-    """Render a card with hotspots and caption"""
-    html = build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edited)
-    st.markdown(html, unsafe_allow_html=True)
+def load_valid_sets():
+    """Load the precomputed valid sets JSON file once."""
+    if VALID_SETS_PATH.exists():
+        with open(VALID_SETS_PATH, "r", encoding="utf-8") as f:
+            return load(f)
+    return {}
 
 
-def render_original_encounter(encounter_data, selected_expansion, encounter_name,
-                              encounter_level, use_edited, enemies=None):
-    """Re-render the original encounter image (not shuffled)"""
-    if enemies is None:
-        enemies = encounter_data["original"]
-
-    card_img = generate_encounter_image(
-        selected_expansion, encounter_level, encounter_name, encounter_data, enemies, use_edited
-    )
-
-    buf = BytesIO()
-    card_img.save(buf, format="PNG")
-    buf.seek(0)
-
-    return {
-        "ok": True,
-        "buf": buf,
-        "card_img": card_img,
-        "encounter_data": encounter_data,
-        "encounter_name": encounter_name,
-        "encounter_level": encounter_level,
-        "expansion": selected_expansion,
-        "enemies": enemies,
-        "expansions_used": [selected_expansion]
-    }
-
-
-def apply_edited_toggle(encounter_data, expansion, encounter_name, encounter_level,
-                        use_edited, enemies, combo):
-    """Swap between edited/original encounter visuals (no reshuffle)."""
-    card_img = generate_encounter_image(
-        expansion, encounter_level, encounter_name, encounter_data, enemies, use_edited
-    )
-
-    buf = BytesIO()
-    card_img.save(buf, format="PNG")
-    buf.seek(0)
-
-    return {
-        "ok": True,
-        "encounter_data": encounter_data,
-        "expansion": expansion,
-        "encounter_name": encounter_name,
-        "encounter_level": encounter_level,
-        "enemies": enemies,
-        "card_img": card_img,
-        "buf": buf,
-        "expansions_used": combo
-    }
-
-
-def shuffle_encounter(selected_encounter, character_count, active_expansions,
-                      selected_expansion, use_edited):
-    """Shuffle and generate a randomized encounter"""
-    name = selected_encounter["name"]
-    level = selected_encounter["level"]
-    encounter_slug = f"{selected_expansion}_{level}_{name}"
-
-    encounter_data = load_encounter(encounter_slug, character_count)
-
-    # Pick random enemies
-    combo, enemies = pick_random_alternative(encounter_data, set(active_expansions))
-    if not combo or not enemies:
-        return {"ok": False, "message": "No valid alternatives."}
-
-    card_img = generate_encounter_image(
-        selected_expansion, level, name, encounter_data, enemies, use_edited
-    )
-
-    buf = BytesIO()
-    card_img.save(buf, format="PNG")
-    buf.seek(0)
-
-    return {
-        "ok": True,
-        "buf": buf,
-        "card_img": card_img,
-        "encounter_data": encounter_data,
-        "encounter_name": name,
-        "encounter_level": level,
-        "expansion": selected_expansion,
-        "enemies": enemies,
-        "expansions_used": combo.split(",") if isinstance(combo, str) else combo
-    }
-
-
-# -------------------------------------------------------------
-# HTML / tooltip rendering
-# -------------------------------------------------------------
 def build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edited):
     """Return HTML block for card image + keyword hotspots"""
     img_b64 = base64.b64encode(buf.getvalue()).decode()
@@ -141,7 +46,7 @@ def build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edite
     </style>
     """
 
-    keywords = editedEncounterKeywords.get((encounter_name, expansion), []) if use_edited else                encounterKeywords.get((encounter_name, expansion), [])
+    keywords = editedEncounterKeywords.get((encounter_name, expansion), []) if use_edited else encounterKeywords.get((encounter_name, expansion), [])
 
     hotspots = []
     for i, keyword in enumerate(keywords):
@@ -169,15 +74,6 @@ def build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edite
     """
 
 
-def build_encounter_keywords(encounter_name, expansion, use_edited=False):
-    """Return list of (keyword, description)"""
-    keywords = editedEncounterKeywords.get((encounter_name, expansion), []) if use_edited else                encounterKeywords.get((encounter_name, expansion), [])
-    return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
-
-
-# -------------------------------------------------------------
-# Icon rendering (party + expansions)
-# -------------------------------------------------------------
 def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: str = "") -> str:
     try:
         if not path.exists():
@@ -266,3 +162,109 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
 
     html += "</div>"
     return html
+
+
+def build_encounter_keywords(encounter_name, expansion, use_edited=False):
+    """Return list of (keyword, description)"""
+    keywords = editedEncounterKeywords.get((encounter_name, expansion), []) if use_edited else encounterKeywords.get((encounter_name, expansion), [])
+    return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
+
+
+def load_encounter(encounter_slug: str, character_count: int):
+    """Load encounter JSON by name (e.g., 'Altar of Bones1.json')."""
+    file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = load(f)
+    return data
+
+
+def generate_encounter_image(expansion_name: str, level: int, encounter_name: str, data: dict, enemies: list[int], use_edited=False):
+    """Render the encounter card with enemy icons based on enemySlots layout."""
+    card_path = ENCOUNTER_CARDS_DIR / f"{expansion_name}_{level}_{encounter_name}.jpg"
+
+    if use_edited:
+        edited_path = EDITED_ENCOUNTER_CARDS_DIR / f"{expansion_name}_{level}_{encounter_name}.jpg"
+        if os.path.exists(edited_path):
+            card_path = edited_path
+        keywordLookup = editedEncounterKeywords
+    else:
+        keywordLookup = encounterKeywords
+            
+    card_img = Image.open(card_path).convert("RGBA")
+
+    for i, keyword in enumerate(keywordLookup.get((encounter_name, expansion_name), [])):
+        if keyword not in keywordSize:
+            continue
+        keywordImagePath = get_keyword_image(keyword)
+        keywordImage = Image.open(keywordImagePath).convert("RGBA").resize(keywordSize[keyword], Image.Resampling.LANCZOS)
+        card_img.alpha_composite(keywordImage, dest=(282, int(400 + (32 * i))))
+
+    enemy_slots = data.get("enemySlots", data.get("encounter_data", {}).get("enemySlots", []))
+    enemy_index = 0  # which enemy from the chosen set we’re using next
+
+    for slot_idx, enemy_count in enumerate(enemy_slots):
+        if enemy_count <= 0 or slot_idx in {4, 7, 10}: # these slots are spawns, so don't place them
+            continue
+
+        for i in range(enemy_count):
+            if enemy_index >= len(enemies):
+                break
+
+            enemy_id = enemies[enemy_index]
+            enemy_index += 1
+
+            icon_path = get_enemy_image(enemy_id)
+            icon_img = Image.open(icon_path)
+            width, height = icon_img.size
+            # Size the image down to 40 pixels based on the longer side.
+            s = 40 / (width if width > height else height)
+            icon_size = (int(round(width * s)), int(round(height * s)))
+            icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
+            # Normalize a common name mismatch so classification works
+            normalized = expansion_name.replace("Executioner's Chariot", "Executioner Chariot")
+
+            if normalized in v1Expansions:
+                lookup = "V1"
+            elif normalized in v1Level4s and level < 4:
+                lookup = "V1"
+            elif normalized in v1Level4s:
+                lookup = "V1Level4"
+            elif level == 4:
+                lookup = "V2Level4"
+            else:
+                lookup = "V2"
+
+            # This is used to center the icon no matter its width or height.
+            xOffset = int(round((40 - icon_size[0]) / 2))
+            yOffset = int(round((40 - icon_size[1]) / 2))
+            pos_table = positions.get(lookup) or positions.get("V2", {})
+            key = (slot_idx, i)
+            if key not in pos_table:
+                # Fallback to V2 if current table missing this key
+                pos_table = positions.get("V2", {})
+                if key not in pos_table:
+                    # No safe coordinate to use; skip this icon
+                    continue
+            coords = (pos_table[key][0] + xOffset, pos_table[key][1] + yOffset)
+            card_img.alpha_composite(icon_img, dest=coords)
+
+    return card_img
+
+
+@st.cache_data(show_spinner=False)
+def cached_encounter_image(expansion: str, level: int, name: str, data: dict, enemies: list[int], edited: bool):
+    """Cached wrapper for generate_encounter_image to avoid re-rendering identical encounters."""
+    return generate_encounter_image(expansion, level, name, data, enemies, use_edited=edited)
+
+
+@st.cache_data(show_spinner=False)
+def load_encounter_data(expansion: str, name: str | None = None, character_count: int = 3) -> dict:
+    """
+    Wrapper around load_encounter that can later handle list or dataclass conversion.
+    """
+    if name:
+        slug = f"{expansion}_{name}"
+        return load_encounter(slug, character_count)
+    else:
+        # Future support for all encounters in expansion
+        return {}

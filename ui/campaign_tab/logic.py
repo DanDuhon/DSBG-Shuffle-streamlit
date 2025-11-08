@@ -4,8 +4,7 @@ from typing import Optional, Union
 from ui.campaign_tab.models import ProgressNode, Campaign, EncounterChoice
 from ui.campaign_tab.assets import BOSSES_IMAGES
 from ui.campaign_tab.generation import cached_encounter_image
-from core.encounters import load_encounter
-from ui.encounter_helpers import shuffle_encounter
+from ui.encounters_tab.logic import shuffle_encounter
 
 
 def move_to_bonfire(camp: Campaign, spend_spark: bool = True):

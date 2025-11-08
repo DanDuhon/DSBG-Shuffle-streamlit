@@ -1,3 +1,90 @@
+import streamlit as st
+from PIL import Image
+from pathlib import Path
+
+
+ENCOUNTER_CARDS_DIR = Path("assets/encounter cards")
+EDITED_ENCOUNTER_CARDS_DIR = Path("assets/edited encounter cards")
+ENEMY_ICONS_DIR = Path("assets/enemy icons")
+KEYWORDS_DIR = Path("assets/keywords")
+
+v1Expansions = {
+    "Dark Souls The Board Game",
+    "Darkroot",
+    "Explorers",
+    "Iron Keep"
+}
+
+v1Level4s = {
+    "Executioner Chariot",
+    "Executioner's Chariot",  # allow both spellings
+    "Asylum Demon",
+    "Black Dragon Kalameet",
+    "Gaping Dragon",
+    "Guardian Dragon",
+    "Manus, Father of the Abyss",
+    "Old Iron King",
+    "The Four Kings",
+    "The Last Giant",
+    "Vordt of the Boreal Valley"
+}
+
+positions = {
+    "V2": {
+        (0, 0): (609, 663),
+        (0, 1): (667, 663),
+        (0, 2): (725, 663),
+        (1, 0): (609, 721),
+        (1, 1): (667, 721),
+        (1, 2): (725, 721),
+        (5, 0): (609, 911),
+        (5, 1): (667, 911),
+        (5, 2): (725, 911),
+        (6, 0): (609, 969),
+        (6, 1): (667, 969),
+        (6, 2): (725, 969),
+        (8, 0): (609, 1159),
+        (8, 1): (667, 1159),
+        (8, 2): (725, 1159),
+        (9, 0): (609, 1217),
+        (9, 1): (667, 1217),
+        (9, 2): (725, 1217)
+    },
+    "V2Level4": {},
+    "V1": {},
+    "V1Level4": {}
+}
+
+editedEncounterKeywords = {
+    ("Eye of the Storm", "Painted World of Ariamis"): ["hidden","timer"],
+    ("Frozen Revolutions", "Painted World of Ariamis"): ["trial"],
+    ("Inhospitable Ground", "Painted World of Ariamis"): ["snowstorm", "bitterCold"],
+    ('No Safe Haven', 'Painted World of Ariamis'): ["poisonMist", "snowstorm", "bitterCold"],
+    ("Promised Respite", "Painted World of Ariamis"): ["snowstorm", "bitterCold"],
+    ("The First Bastion", "Painted World of Ariamis"): ["trial","timer","timer","timer"],
+    ("Velka's Chosen", "Painted World of Ariamis"): ["barrage"],
+    ("Depths of the Cathedral", "The Sunless City"): ["mimic"],
+    ("Flooded Fortress", "The Sunless City"): ["trial", "gang"],#, "difficultTerrain", "permanentTraps"],
+    ("Illusionary Doorway", "The Sunless City"): ["illusion","timer"],
+    ("Parish Church", "The Sunless City"): ["mimic", "illusion", "trial","timer","timer"],
+    ("Kingdom's Messengers", "The Sunless City"): ["trial"],
+    ("The Grand Hall", "The Sunless City"): ["trial","mimic"],
+    ("Twilight Falls", "The Sunless City"): ["illusion"],
+    ("Dark Resurrection", "Tomb of Giants"): ["darkness"],
+    ("Death's Precipice", "Tomb of Giants"): ["barrage"],#,"blockedExits", "cramped"],
+    ("Far From the Sun", "Tomb of Giants"): ["darkness"],
+    ("Giant's Coffin", "Tomb of Giants"): ["onslaught","trial","timer"],
+    ("In Deep Water", "Tomb of Giants"): ["timer"],
+    ("Lakeview Refuge", "Tomb of Giants"): ["onslaught","darkness","trial"],
+    ("Last Rites", "Tomb of Giants"): ["timer"],
+    ("Last Shred of Light", "Tomb of Giants"): ["darkness"],
+    ("Pitch Black", "Tomb of Giants"): ["darkness"],
+    ("Skeleton Overlord", "Tomb of Giants"): ["timer"],
+    ("The Beast From the Depths", "Tomb of Giants"): ["trial"],
+    ("The Locked Grave", "Tomb of Giants"): ["trial"],
+    ("The Mass Grave", "Tomb of Giants"): ["onslaught","timer","timer","timer"]
+}
+
 encounterKeywords = {
     ("A Trusty Ally", "Tomb of Giants"): ["onslaught"],
     ("Abandoned and Forgotten", "Painted World of Ariamis"): ["eerie"],
@@ -91,3 +178,80 @@ keywordText = {
     "timer": "Timer — If the timer marker reaches the value shown in brackets, resolve the effect listed.",
     "trial": "Trial — Trials offer an extra objective providing additional rewards if completed. This is shown in parentheses, either in writing, or as a number of turns in which the characters must complete the encounter's main objective. Completing trial objectives is not mandatory to complete an encounter."
 }
+
+enemyNames = {
+    1: "Alonne Bow Knight",
+    2: "Alonne Knight Captain",
+    3: "Alonne Sword Knight",
+    4: "Black Hollow Mage",
+    5: "Bonewheel Skeleton",
+    6: "Crossbow Hollow",
+    7: "Crow Demon",
+    8: "Demonic Foliage",
+    9: "Engorged Zombie",
+    10: "Falchion Skeleton",
+    11: "Firebomb Hollow",
+    12: "Giant Skeleton Archer",
+    13: "Giant Skeleton Soldier",
+    14: "Hollow Soldier",
+    15: "Ironclad Soldier",
+    16: "Large Hollow Soldier",
+    17: "Mushroom Child",
+    18: "Mushroom Parent",
+    19: "Necromancer",
+    20: "Phalanx",
+    21: "Phalanx Hollow",
+    22: "Plow Scarecrow",
+    23: "Sentinel",
+    24: "Shears Scarecrow",
+    25: "Silver Knight Greatbowman",
+    26: "Silver Knight Spearman",
+    27: "Silver Knight Swordsman",
+    28: "Skeleton Archer",
+    29: "Skeleton Beast",
+    30: "Skeleton Soldier",
+    31: "Snow Rat",
+    32: "Stone Guardian",
+    33: "Stone Knight",
+    34: "Mimic",
+    35: "Armorer Dennis",
+    36: "Fencer Sharron",
+    37: "Invader Brylex",
+    38: "Kirk, Knight of Thorns",
+    39: "Longfinger Kirk",
+    40: "Maldron the Assassin",
+    41: "Maneater Mildred",
+    42: "Marvelous Chester",
+    43: "Melinda the Butcher",
+    44: "Oliver the Collector",
+    45: "Paladin Leeroy",
+    46: "Xanthous King Jeremiah",
+    47: "Hungry Mimic",
+    48: "Voracious Mimic"
+}
+
+
+@st.cache_data(show_spinner=False)
+def get_enemy_image(enemy_name: str):
+    """Load and cache enemy icon images."""
+    return Image.open(ENEMY_ICONS_DIR / f"{enemy_name}.png")
+
+
+@st.cache_data(show_spinner=False)
+def get_keyword_image(keyword_name: str):
+    """Load and cache keyword icon images."""
+    # Adjust path as needed
+    path = Path("assets/keywords") / f"{keyword_name}.png"
+    return Image.open(path)
+
+
+def get_enemy_image(enemy_id: int):
+    """Return image path for a given enemy ID."""
+    image_path = ENEMY_ICONS_DIR / f"{enemyNames[enemy_id]}.png"
+    return str(image_path)
+
+
+def get_keyword_image(keyword: str):
+    """Return image path for a given keyword."""
+    image_path = KEYWORDS_DIR / f"{keyword}.png"
+    return str(image_path)

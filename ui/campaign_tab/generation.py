@@ -5,8 +5,8 @@ from typing import List, Dict, Any, Union, Literal, Optional
 
 from ui.campaign_tab.models import ProgressNode, Chapter, EncounterChoice, NodeType
 from ui.campaign_tab.assets import BOSSES_FILE, EVENTS_SHORTCUTS_FILE, V2_STRUCTURE
-from ui.encounter_helpers import shuffle_encounter
-from core.encounters import list_encounters, load_valid_sets, encounter_is_valid, generate_encounter_image, load_encounter
+from ui.encounters_tab.generation import load_valid_sets, generate_encounter_image, load_encounter
+from ui.encounters_tab.logic import shuffle_encounter, list_encounters, encounter_is_valid
 
 
 Ruleset = Literal["V1", "V2"]

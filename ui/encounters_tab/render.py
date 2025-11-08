@@ -1,19 +1,42 @@
 import streamlit as st
-from core.encounters import list_encounters, load_valid_sets, encounter_is_valid
-from core.editedEncounterKeywords import editedEncounterKeywords
-from .encounter_helpers import (
-    render_card, render_original_encounter, shuffle_encounter,
-    build_encounter_keywords, render_encounter_icons, apply_edited_toggle
-)
+from io import BytesIO
 
-# Cached wrappers to avoid repeated I/O
-@st.cache_data(show_spinner=False)
-def _list_encounters_cached():
-    return list_encounters()
+from ui.encounters_tab.logic import _list_encounters_cached, _load_valid_sets_cached, filter_expansions, filter_encounters, shuffle_encounter, apply_edited_toggle
+from ui.encounters_tab.generation import editedEncounterKeywords, build_encounter_hotspots, generate_encounter_image, render_encounter_icons, build_encounter_keywords
 
-@st.cache_data(show_spinner=False)
-def _load_valid_sets_cached():
-    return load_valid_sets()
+
+def render_card(buf, card_img, encounter_name, expansion, use_edited):
+    """Render a card with hotspots and caption"""
+    html = build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edited)
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_original_encounter(encounter_data, selected_expansion, encounter_name,
+                              encounter_level, use_edited, enemies=None):
+    """Re-render the original encounter image (not shuffled)"""
+    if enemies is None:
+        enemies = encounter_data["original"]
+
+    card_img = generate_encounter_image(
+        selected_expansion, encounter_level, encounter_name, encounter_data, enemies, use_edited
+    )
+
+    buf = BytesIO()
+    card_img.save(buf, format="PNG")
+    buf.seek(0)
+
+    return {
+        "ok": True,
+        "buf": buf,
+        "card_img": card_img,
+        "encounter_data": encounter_data,
+        "encounter_name": encounter_name,
+        "encounter_level": encounter_level,
+        "expansion": selected_expansion,
+        "enemies": enemies,
+        "expansions_used": [selected_expansion]
+    }
+
 
 def render(settings, valid_party, character_count):
     active_expansions = settings["active_expansions"]
@@ -27,19 +50,7 @@ def render(settings, valid_party, character_count):
     valid_sets = _load_valid_sets_cached()
 
     # Filter expansions with valid encounters
-    filtered_expansions = []
-    for expansion_name, encounter_list in encounters_by_expansion.items():
-        has_valid = any(
-            encounter_is_valid(
-                f"{expansion_name}_{e['level']}_{e['name']}",
-                character_count,
-                tuple(active_expansions),
-                valid_sets
-            )
-            for e in encounter_list
-        )
-        if has_valid:
-            filtered_expansions.append(expansion_name)
+    filtered_expansions = filter_expansions(encounters_by_expansion, character_count, tuple(active_expansions), valid_sets)
 
     if not filtered_expansions:
         st.error("No valid expansions for the current settings.")
@@ -58,15 +69,7 @@ def render(settings, valid_party, character_count):
 
         all_encounters = encounters_by_expansion[selected_expansion]
 
-        filtered_encounters = [
-            e for e in all_encounters
-            if encounter_is_valid(
-                f"{selected_expansion}_{e['level']}_{e['name']}",
-                character_count,
-                tuple(active_expansions),
-                valid_sets
-            )
-        ]
+        filtered_encounters = filter_encounters(all_encounters, selected_expansion, character_count, tuple(active_expansions), valid_sets)
 
         if not filtered_encounters:
             st.warning("No valid encounters for the selected expansions and party size.")
