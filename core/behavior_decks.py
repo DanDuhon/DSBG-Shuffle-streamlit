@@ -7,6 +7,17 @@ from typing import List, Dict, Any, Optional
 ASSETS_DIR = Path("assets") / "behavior cards"
 DATA_DIR = Path("data") / "behaviors"
 DECK_SETUP_RULES = {}
+NG_MAX_LEVEL = 5
+_DAMAGE_BONUS_BY_LEVEL = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
+_HEALTH_LEVEL_BY_LEVEL = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
+_DODGE_BONUS_BY_LEVEL = {
+    0: 0,
+    1: 0,
+    2: 1,
+    3: 1,
+    4: 2,
+    5: 2,
+}
 
 
 @dataclass
@@ -160,6 +171,124 @@ def _make_king_entity(cfg, idx: int) -> Entity:
         heatup_thresholds=[],  # Four Kings don't use standard heat-up thresholds
         crossed=[],
     )
+
+
+def _health_extra_for_level(base_hp: int, health_level: int) -> int:
+    """
+    Compute extra max health for a given base HP and health bonus level.
+
+    Rules:
+      - base HP 1-2:   +health_level
+      - base HP 3-7:   2,3,5,6,8 for levels 1-5
+      - base HP 8-10:  +2 * health_level
+      - base HP > 10:  +10% of base (rounded up) per level
+    """
+    if health_level <= 0 or base_hp <= 0:
+        return 0
+
+    # 1-2 HP: +level
+    if base_hp <= 2:
+        return health_level
+
+    # 3-7 HP: sequence 2,3,5,6,8
+    if 3 <= base_hp <= 7:
+        seq = [0, 2, 3, 5, 6, 8]  # index by health_level
+        return seq[health_level]
+
+    # 8-10 HP: +2 * level
+    if 8 <= base_hp <= 10:
+        return 2 * health_level
+
+    # > 10 HP: +10% of base (rounded up) per level
+    per_level = (base_hp + 9) // 10  # ceil(base_hp * 0.1)
+    return per_level * health_level
+
+
+def _apply_ng_plus_to_entities(cfg: BehaviorConfig, health_level: int) -> None:
+    """Adjust entity and raw health fields in-place based on NG+ health rules."""
+    if health_level <= 0:
+        return
+
+    raw = cfg.raw
+
+    def adjust_block(block: dict) -> int:
+        base_hp = int(block.get("health", 0))
+        extra = _health_extra_for_level(base_hp, health_level)
+        new_hp = base_hp + extra
+        block["health"] = new_hp
+        return new_hp
+
+    # Regular enemy: "behavior" key lives in raw
+    if "behavior" in raw:
+        new_hp = adjust_block(raw)
+        # Single entity representing this enemy
+        for ent in cfg.entities:
+            ent.hp_max = new_hp
+            ent.hp = new_hp
+        return
+
+    # Boss / invader: may have group health + per-entity blocks (Ornstein & Smough, etc.)
+    base_top_hp = raw.get("health")
+    new_top_hp = None
+    if base_top_hp is not None:
+        new_top_hp = adjust_block(raw)
+
+    for ent in cfg.entities:
+        block = raw.get(ent.label)
+        if isinstance(block, dict) and "health" in block:
+            new_hp = adjust_block(block)
+            ent.hp_max = new_hp
+            ent.hp = new_hp
+        elif new_top_hp is not None:
+            ent.hp_max = new_top_hp
+            ent.hp = new_top_hp
+
+
+def _apply_ng_plus_to_behaviors(cfg: BehaviorConfig, damage_bonus: int, dodge_bonus: int) -> None:
+    """Adjust damage and dodge on behavior cards in-place."""
+    if damage_bonus <= 0 and dodge_bonus <= 0:
+        return
+
+    for _, bdata in cfg.behaviors.items():
+        # Dodge bonus applies to top-level "dodge" on behavior cards
+        if dodge_bonus and "dodge" in bdata:
+            bdata["dodge"] = int(bdata["dodge"]) + dodge_bonus
+
+        # Damage bonus applies to left/middle/right slots if they have "damage"
+        if damage_bonus:
+            for slot in ("left", "middle", "right"):
+                slot_data = bdata.get(slot)
+                if not isinstance(slot_data, dict):
+                    continue
+                if "damage" not in slot_data:
+                    continue
+                try:
+                    dmg_val = int(slot_data["damage"])
+                except (TypeError, ValueError):
+                    continue
+                slot_data["damage"] = dmg_val + damage_bonus
+
+
+def apply_ng_plus(cfg: BehaviorConfig, level: int) -> None:
+    """
+    Apply New Game+ modifiers in-place to a loaded BehaviorConfig.
+
+    Summary:
+      - NG+N: +N damage
+      - Health bonus level = N (scaled by base HP via _health_extra_for_level)
+      - Dodge bonus: +0 at 1, +1 at 2-3, +2 at 4-5
+    """
+    if not level or level <= 0:
+        return
+
+    level = max(0, min(int(level), NG_MAX_LEVEL))
+
+    health_level = _HEALTH_LEVEL_BY_LEVEL.get(level, level)
+    damage_bonus = _DAMAGE_BONUS_BY_LEVEL.get(level, level)
+    dodge_bonus = _DODGE_BONUS_BY_LEVEL.get(level, 0)
+
+    _apply_ng_plus_to_entities(cfg, health_level)
+    _apply_ng_plus_to_behaviors(cfg, damage_bonus, dodge_bonus)
 
 
 # ------------------------

@@ -155,6 +155,12 @@ def _load_cfg_for_state(state):
 
     # Otherwise, load fresh from disk
     cfg = bd.load_behavior(Path(state["selected_file"]))
+
+    # Apply NG+ modifiers if a level is selected
+    ng_level = st.session_state.get("ng_plus_level", 0)
+    if ng_level:
+        bd.apply_ng_plus(cfg, ng_level)
+
     state["cfg"] = cfg
     return cfg
 
@@ -594,6 +600,11 @@ def render():
 
     fpath = str(files[labels.index(choice)])
     cfg = bd.load_behavior(Path(fpath))
+
+    # Apply NG+ modifiers for previews
+    ng_level = st.session_state.get("ng_plus_level", 0)
+    if ng_level:
+        bd.apply_ng_plus(cfg, ng_level)
 
     # --- Regular enemy mode
     if "behavior" in cfg.raw:

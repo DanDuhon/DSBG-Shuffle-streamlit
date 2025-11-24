@@ -3,7 +3,8 @@ import ui.campaign_tab as campaign_tab
 import ui.encounters_tab as encounters_tab
 import ui.events_tab as events_tab
 import ui.behavior_decks_tab as behavior_decks_tab
-from ui import sidebar, behavior_variants_tab
+import ui.ngplus_tab as ngplus_tab
+from ui import sidebar
 from core.settings_manager import load_settings, save_settings
 
 st.set_page_config(page_title="DSBG-Shuffle", layout="centered")
@@ -25,7 +26,7 @@ valid_party = 0 < character_count <= 4
 
 # Tabs
 tab_encounters, tab_events, tab_campaign, tab_decks, tab_variants = st.tabs(
-    ["Encounters", "Events", "Campaign", "Behavior Decks", "Behavior Variants"]
+    ["Encounters", "Events", "Campaign", "Behavior Decks", "New Game+"]
 )
 
 with tab_encounters:
@@ -40,5 +41,5 @@ with tab_campaign:
 with tab_decks:
     behavior_decks_tab.render()
 
-with tab_variants:
-    behavior_variants_tab.render()
+with ngplus_tab:
+    ngplus_tab.render()
