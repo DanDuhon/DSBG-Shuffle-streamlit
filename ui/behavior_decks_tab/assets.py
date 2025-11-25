@@ -94,7 +94,7 @@ coords_map = {
     "enemy_health": (689, 96),
     "enemy_resist": (415, 615),
     "enemy_dodge": (710, 605),
-    "text": (100, 100),
+    "text": (95, 860),
 
     # -------- STATS: boss/invader data card --------
     # put them wherever your boss data card has the boxes
@@ -177,7 +177,7 @@ text_styles = {
     "resist": {"size": 85, "fill": "black", "font": FONT_PATH_NUMBER},
     "dodge":  {"size": 70, "fill": "black", "font": FONT_PATH_NUMBER},
     "heatup": {"size": 60, "fill": "black", "font": FONT_PATH_NUMBER},
-    "text":   {"size": 33, "fill": "black", "font": FONT_PATH_TEXT}
+    "text":   {"size": 36, "fill": "black", "font": FONT_PATH_TEXT}
 }
 
 

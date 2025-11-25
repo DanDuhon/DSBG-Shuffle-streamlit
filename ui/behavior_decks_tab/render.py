@@ -14,7 +14,7 @@ from ui.behavior_decks_tab.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
     , render_behavior_card_cached, build_behavior_catalog)
 from ui.behavior_decks_tab.models import BehaviorEntry
-from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
+from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level, MAX_NGPLUS_LEVEL
 
 
 def render():
@@ -38,6 +38,33 @@ def render():
     default_cat = st.session_state.get("behavior_category", "Main Bosses")
     if default_cat not in available_cats:
         default_cat = available_cats[0]
+
+    # --- NG+ badge / indicator ---
+    ng_level = get_current_ngplus_level()
+
+    if ng_level <= 0:
+        label = "NG+0 (Base game)"
+    else:
+        label = f"NG+{ng_level} active"
+
+    st.markdown(
+        f"""
+        <div style="text-align: left; margin-bottom: 0.25rem;">
+          <span style="
+              display:inline-block;
+              padding: 0.1rem 0.6rem;
+              border-radius: 999px;
+              font-size: 0.8rem;
+              background-color: #444444;
+              color: #ffffff;
+              opacity: 0.9;
+          ">
+            🌀 {label}
+          </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # 1) Category chooser (radio; horizontal works nicely)
     category = st.radio(
@@ -96,7 +123,7 @@ def render():
     ng_level = get_current_ngplus_level()
     cfg.raw = apply_ngplus_to_raw(cfg.raw, ng_level, enemy_name=selected_entry.name)
 
-    # --- Regular enemy mode
+    # --- Regular single-card enemy: no deck state at all
     if "behavior" in cfg.raw:
         cols = st.columns(2)
         with cols[0]:
@@ -105,24 +132,26 @@ def render():
             st.image(img_bytes)
         return
 
-    # --- Boss / Invader mode
+    # --- Boss / Invader mode ---
     if cfg.name == "The Four Kings":
-        # Only King 1 starts enabled; others show disabled
         st.session_state["enabled_kings"] = 1
 
     if "chariot_heatup_done" not in st.session_state:
         st.session_state["chariot_heatup_done"] = False
 
+    # Create / reuse deck state, but reuse the cfg we just loaded
     if (
         st.session_state["behavior_deck"] is None
         or st.session_state["behavior_deck"].get("selected_file") != fpath
     ):
-        state, cfg = _new_state_from_file(fpath)
+        state, cfg = _new_state_from_file(fpath, cfg)   # <-- pass cfg in
         st.session_state["behavior_deck"] = state
 
-        # --- Crossbreed Priscilla: ensure invisibility starts active on first load
         if cfg.name == "Crossbreed Priscilla":
             st.session_state["behavior_deck"]["priscilla_invisible"] = True
+    else:
+        state = st.session_state["behavior_deck"]
+        cfg = _load_cfg_for_state(state)
 
     if st.button("🔄 Reset Deck and Health", key="reset_deck"):
         _reset_deck(st.session_state["behavior_deck"], cfg)
@@ -194,7 +223,11 @@ def render():
     cfg.entities = render_health_tracker(cfg, state)
 
     # --- Auto Heat-Up Prompt ---
-    if st.session_state.get("pending_heatup_prompt", False) and not st.session_state.get("heatup_done", False) and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}:
+    if (
+        st.session_state.get("pending_heatup_prompt", False)
+        and (cfg.name == "Vordt of the Boreal Valley" or not st.session_state.get("heatup_done", False))
+        and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}
+    ):
         st.warning(f"⚠️ The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} has entered Heat-Up range!")
 
         confirm_cols = st.columns([1, 1])
@@ -206,7 +239,8 @@ def render():
                 st.session_state["pending_heatup_prompt"] = False
                 st.session_state["pending_heatup_target"] = None
                 st.session_state["pending_heatup_type"] = None
-                st.session_state["heatup_done"] = True
+                if cfg.name not in {"Old Dragonslayer", "Ornstein & Smough", "Vordt of the Boreal Valley"}:
+                    st.session_state["heatup_done"] = True
                 st.rerun()
         with confirm_cols[1]:
             if st.button("Cancel", key="cancel_heatup"):
@@ -392,7 +426,11 @@ def render_health_tracker(cfg, state):
                     break
 
             # --- standard heat-up threshold
-            if _heat_thresh is not None and not st.session_state.get("heatup_done", False):
+            if (
+                _boss_name != "Vordt of the Boreal Valley"
+                and _heat_thresh is not None
+                and not st.session_state.get("heatup_done", False)
+            ):
                 if val <= _heat_thresh:
                     st.session_state["pending_heatup_prompt"] = True
                     if cfg.name == "Old Dragonslayer":
@@ -401,6 +439,37 @@ def render_health_tracker(cfg, state):
                     elif cfg.name == "Artorias":
                         st.session_state["pending_heatup_target"] = "Artorias"
                         st.session_state["pending_heatup_type"] = "artorias"
+
+            if _boss_name == "Vordt of the Boreal Valley":
+                h1 = cfg.raw.get("heatup1")
+                h2 = cfg.raw.get("heatup2")
+
+                attack_done = st.session_state.get("vordt_attack_heatup_done", False)
+                move_done   = st.session_state.get("vordt_move_heatup_done", False)
+
+                crossed_attack = (
+                    isinstance(h1, int)
+                    and not attack_done
+                    and prev > h1 >= val
+                )
+                crossed_move = (
+                    isinstance(h2, int)
+                    and not move_done
+                    and prev > h2 >= val
+                )
+
+                if crossed_attack and crossed_move:
+                    st.session_state["pending_heatup_prompt"] = True
+                    st.session_state["pending_heatup_target"] = "Vordt of the Boreal Valley"
+                    st.session_state["pending_heatup_type"] = "vordt_both"
+                elif crossed_attack:
+                    st.session_state["pending_heatup_prompt"] = True
+                    st.session_state["pending_heatup_target"] = "Vordt of the Boreal Valley"
+                    st.session_state["pending_heatup_type"] = "vordt_attack"
+                elif crossed_move:
+                    st.session_state["pending_heatup_prompt"] = True
+                    st.session_state["pending_heatup_target"] = "Vordt of the Boreal Valley"
+                    st.session_state["pending_heatup_type"] = "vordt_move"
 
             # --- Old Dragonslayer: 4+ in one change
             if _boss_name == "Old Dragonslayer" and (prev - val) >= 4:
@@ -425,14 +494,12 @@ def render_health_tracker(cfg, state):
                     st.session_state["pending_heatup_target"] = "Ornstein & Smough"
                     st.session_state["pending_heatup_prompt"] = True
                     st.session_state["smough_dead_pending"] = False
-                    st.write("[DEBUG] Ornstein death detected; pending heatup prompt set.")
                 elif smo_hp <= 0 and not st.session_state.get("smough_dead_pending", False) \
                         and not st.session_state.get("smough_dead", False):
                     st.session_state["smough_dead_pending"] = True
                     st.session_state["pending_heatup_target"] = "Ornstein & Smough"
                     st.session_state["pending_heatup_prompt"] = True
                     st.session_state["ornstein_dead_pending"] = False
-                    st.write("[DEBUG] Smough death detected; pending heatup prompt set.")
 
         elif cfg.name == "The Last Giant":
             st.session_state["pending_heatup_target"] = "The Last Giant"

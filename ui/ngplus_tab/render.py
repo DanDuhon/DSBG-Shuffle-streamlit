@@ -10,7 +10,13 @@ from ui.ngplus_tab.logic import (
     apply_ngplus_to_raw,
     health_bonus_for_level,
 )
-from ui.behavior_decks_tab.generation import build_behavior_catalog
+from ui.behavior_decks_tab.generation import (
+    build_behavior_catalog,
+    render_data_card_cached,
+    render_behavior_card_cached,
+    render_dual_boss_data_cards,
+)
+from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
 from ui.behavior_decks_tab.logic import load_behavior
 
 
@@ -49,10 +55,7 @@ def _card_text_block(card: Dict[str, Any], label: str | None = None) -> None:
             effects_text = str(effects)
         lines.append(f"- Effects: {effects_text}")
 
-    if not lines:
-        st.write("_No attack info on this card._")
-    else:
-        st.markdown("\n".join(lines))
+    st.markdown("\n".join(lines))
 
 
 def render():
@@ -100,21 +103,9 @@ def render():
 - Base HP **8–10**: +2 HP per NG+ level  
 - Base HP **>10**: +10% HP per NG+ level (rounded up)  
 - **Heat-up triggers**: increased by the same amount as the HP bonus  
+- **Paladin Leeroy: Healing Talisman sets health 2 + HP bonus
+- **Maldron the Assassin: Estus Flask heals Maldron to full
 - **Sif – Limping Strike**: stays at **3** HP no matter the NG+ level  
-"""
-    )
-
-    st.markdown("#### Special: Paladin Leeroy")
-
-    st.markdown(
-        """
-Paladin Leeroy gains a once-per-life buffer in NG+:
-
-> *"The first time Leeroy's health would be  
-> reduced to 0, set his health to **X** instead."*
-
-Where **X = 2 + HP bonus from NG+** for his data card.  
-(For example, if NG+ increases his max HP by 4, X will be 6.)
 """
     )
 
@@ -161,7 +152,7 @@ Where **X = 2 + HP bonus from NG+** for his data card.
 
     # Load raw config, then apply NG+ for the current level
     cfg = load_behavior(Path(str(selected_entry.path)))
-    raw_ng = apply_ngplus_to_raw(cfg.raw, current_level, enemy_name=enemy_name)
+    raw_ng = cfg.raw  # already NG+-adjusted
 
     st.markdown(f"### {enemy_name} @ NG+{current_level}")
 
@@ -176,8 +167,40 @@ Where **X = 2 + HP bonus from NG+** for his data card.
     elif "health" in raw_ng:
         st.markdown(f"- Max HP: **{raw_ng['health']}**")
 
-    # Single-card enemy (e.g. Alonne Bow Knight)
+    # --- Data card image with NG+ applied ---
+    st.markdown("#### Data Card (NG+ applied)")
+
+    try:
+        if "behavior" in raw_ng and isinstance(raw_ng["behavior"], dict):
+            # Regular enemy / single-card enemy (e.g. Alonne Bow Knight)
+            data_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data.jpg"
+            img_bytes = render_data_card_cached(data_path, raw_ng, is_boss=False)
+            st.image(img_bytes)
+        else:
+            # Bosses / invaders
+            if enemy_name == "Executioner Chariot":
+                data_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - Executioner Chariot.jpg"
+                img_bytes = render_data_card_cached(data_path, raw_ng, is_boss=True)
+                st.image(img_bytes)
+            elif "Ornstein" in raw_ng and "Smough" in raw_ng:
+                # Use the dual-boss renderer so both data cards show up with NG+ values.
+                ornstein_img, smough_img = render_dual_boss_data_cards(raw_ng)
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.image(ornstein_img)
+                with c2:
+                    st.image(smough_img)
+            else:
+                data_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data.jpg"
+                img_bytes = render_data_card_cached(data_path, raw_ng, is_boss=True)
+                st.image(img_bytes)
+    except Exception:
+        st.info("Could not render the data card image for this encounter.")
+
+    # --- Behavior cards ---
+    # Single-card enemy: just show a quick text summary and we're done.
     if "behavior" in raw_ng and isinstance(raw_ng["behavior"], dict):
+        st.markdown("#### Behavior (summary)")
         _card_text_block(raw_ng["behavior"], "Behavior card")
         return
 
@@ -192,5 +215,31 @@ Where **X = 2 + HP bonus from NG+** for his data card.
         st.info("No behavior cards found for this enemy.")
         return
 
-    for name in sorted(behavior_keys):
-        _card_text_block(raw_ng[name], name)
+    st.markdown("#### Behavior Cards (NG+ applied)")
+
+    sorted_keys = sorted(behavior_keys)
+    default_card = st.session_state.get("ngplus_inspect_card")
+    if default_card not in sorted_keys:
+        default_card = sorted_keys[0]
+
+    card_name = st.selectbox(
+        "Behavior card",
+        sorted_keys,
+        index=sorted_keys.index(default_card),
+        key="ngplus_inspect_card",
+    )
+
+    # Render the selected behavior card as an image with NG+ values
+    try:
+        card_path = _behavior_image_path(cfg, card_name)
+        card_img = render_behavior_card_cached(
+            card_path,
+            raw_ng[card_name],
+            is_boss=True,
+        )
+        st.image(card_img)
+    except Exception:
+        st.info("Could not render this behavior card image.")
+
+    # Text summary underneath for quick reading
+    _card_text_block(raw_ng[card_name], card_name)

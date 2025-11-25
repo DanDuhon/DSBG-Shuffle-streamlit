@@ -170,20 +170,10 @@ def apply_ngplus_to_raw(
     # Only relevant for NG+ levels (>0); X = 2 + HP bonus from NG+.
     if enemy_name == "Paladin Leeroy":
         x = 2 + max(0, hp_bonus)
-        line = (
+        raw["text"] = (
             "The first time Leeroy's health would be\n"
             f"reduced to 0, set his health to {x} instead."
         )
-
-        existing = raw.get("text")
-        if existing is None:
-            raw["text"] = line
-        elif isinstance(existing, list):
-            if line not in existing:
-                raw["text"].append(line)
-        else:
-            if line not in str(existing):
-                raw["text"] = str(existing) + "\n" + line
 
     # Single-card enemies (e.g. Alonne Bow Knight)
     if "behavior" in raw and isinstance(raw["behavior"], dict):

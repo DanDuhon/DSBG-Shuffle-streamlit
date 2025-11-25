@@ -210,7 +210,6 @@ def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bo
     if "resist" in raw_json:
         _draw_text(base, "resist", str(raw_json["resist"]), is_boss)
     if "text" in raw_json:
-        print(f"Writing rule text: {raw_json['text']}")
         _draw_text(base, "text", str(raw_json["text"]), is_boss)
 
     # --- boss-only: show heatup threshold if present ---

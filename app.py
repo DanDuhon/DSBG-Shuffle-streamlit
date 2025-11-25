@@ -3,7 +3,7 @@ import ui.campaign_tab as campaign_tab
 import ui.encounters_tab as encounters_tab
 import ui.events_tab as events_tab
 import ui.behavior_decks_tab as behavior_decks_tab
-import ui.ngplus_tab as ngplus_tab
+from ui.ngplus_tab.render import render as ngplus_render
 from ui import sidebar
 from core.settings_manager import load_settings, save_settings
 
@@ -42,4 +42,4 @@ with tab_decks:
     behavior_decks_tab.render()
 
 with tab_ngplus:
-    ngplus_tab.render()
+    ngplus_render()

@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 
 from ui.behavior_decks_tab.models import BehaviorConfig, Entity, Heatup
 from ui.behavior_decks_tab.assets import _path, _strip_behavior_suffix
+from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
 
 
 DATA_DIR = Path("data/behaviors")
@@ -26,7 +27,9 @@ def _ensure_state():
         "pending_heatup_prompt": False,
         "old_dragonslayer_heatups": 0,
         "old_dragonslayer_pending": False,
-        "old_dragonslayer_confirmed": False
+        "old_dragonslayer_confirmed": False,
+        "vordt_attack_heatup_done": False,
+        "vordt_move_heatup_done": False,
     }
 
     for key, val in defaults.items():
@@ -34,16 +37,16 @@ def _ensure_state():
             st.session_state[key] = val
 
 
-def _new_state_from_file(fpath: str):
-    cfg = load_behavior(Path(fpath))
+def _new_state_from_file(fpath: str, cfg: BehaviorConfig | None = None):
+    # Reuse a pre-loaded cfg if provided
+    if cfg is None:
+        cfg = load_behavior(Path(fpath))
     rng = random.Random()
 
     if cfg.name == "The Four Kings":
-        # Replace generic entity with correctly labeled first King
         first = _make_king_entity(cfg, 1)
         cfg.entities = [first]
-    
-    # Pass rng into deck builder — let it handle everything, including random heat-up
+
     deck = build_draw_pile(cfg, rng)
 
     state = {
@@ -52,7 +55,8 @@ def _new_state_from_file(fpath: str):
         "current_card": None,
         "selected_file": str(fpath),
         "display_cards": cfg.display_cards,
-        "entities": [e.__dict__.copy() for e in cfg.entities]
+        "entities": [e.__dict__.copy() for e in cfg.entities],
+        "cfg": cfg,
     }
 
     state["original_behaviors"] = deepcopy(cfg.behaviors)
@@ -280,7 +284,8 @@ def _manual_heatup(state):
         st.session_state["pending_heatup_prompt"] = False
         st.session_state["pending_heatup_target"] = None
         st.session_state["pending_heatup_type"] = None
-        st.session_state["heatup_done"] = True
+        if cfg.name not in {"Old Dragonslayer", "Ornstein & Smough", "Vordt of the Boreal Valley"}:
+            st.session_state["heatup_done"] = True
         
 
 def _ornstein_smough_heatup_ui(state, cfg):
@@ -424,11 +429,24 @@ def _make_king_entity(cfg, idx: int) -> Entity:
 # ------------------------
 # JSON Importer
 # ------------------------
+@st.cache_data
+def _read_behavior_json(path_str: str) -> dict:
+    with open(path_str, "r", encoding="utf-8") as f:
+        return json.load(f)
+    
 def load_behavior(fname: Path) -> BehaviorConfig:
-    with open(fname, "r", encoding="utf-8") as f:
-        raw = json.load(f)
-
+    # 1) Load base raw config from JSON
+    base_raw = deepcopy(_read_behavior_json(str(fname)))  # copy so we can mutate safely
     name = fname.stem
+
+    # 2) Apply NG+ to raw before building entities / thresholds
+    level = get_current_ngplus_level()
+    raw = apply_ngplus_to_raw(
+        base_raw,
+        level,
+        enemy_name=name,
+    )
+
     hp = int(raw.get("health", 1))
     heatup_threshold = raw.get("heatup", None) if isinstance(raw.get("heatup"), int) else None
 
@@ -832,6 +850,41 @@ def _ornstein_smough_heatup(state, cfg, dead_boss, rng):
     state["heatup_done"] = True                    # skip standard heat-up afterwards
 
 
+def _apply_vordt_heatup(cfg, state, rng, which: str) -> None:
+    """
+    Add one heat-up card to Vordt's attack or move deck.
+    """
+    if which == "attack":
+        draw = state["vordt_attack_draw"]
+        discard = state["vordt_attack_discard"]
+        target_type = "attack"
+    else:
+        draw = state["vordt_move_draw"]
+        discard = state["vordt_move_discard"]
+        target_type = "move"
+
+    # Find candidate heatup cards
+    candidates = [
+        name for name, data in cfg.behaviors.items()
+        if data.get("heatup", False) and data.get("type") == target_type
+    ]
+
+    if not candidates:
+        return  # no special cards defined; nothing to do
+
+    # Try to avoid duplicates if possible
+    available = [c for c in candidates if c not in draw]
+    if not available:
+        available = candidates
+
+    chosen = rng.choice(available)
+
+    draw.extend(discard)
+    discard.clear()
+    draw.append(chosen)
+    rng.shuffle(draw)
+
+
 def _apply_last_giant_heatup(cfg, state, rng):
     """The Last Giant: Add Falling Slam, remove arm cards, replace with heat-up cards."""
     draw = state["draw_pile"]
@@ -935,7 +988,7 @@ def apply_heatup(state, cfg, rng, reason="manual"):
       - Shuffle draw pile
     """
     # Prevent multiple heatups
-    if state.get("heatup_done", False) and cfg.name not in {"Old Dragonslayer",}:
+    if state.get("heatup_done", False) and cfg.name not in {"Old Dragonslayer","Vordt of the Boreal Valley"}:
         return
 
     # Identify available heat-up cards
@@ -966,7 +1019,7 @@ def apply_heatup(state, cfg, rng, reason="manual"):
             chosen = rng.choice(candidates)
     elif cfg.name == "Guardian Dragon":
         state["draw_pile"] += heatup_cards
-    elif cfg.name == "The Last Giant":
+    elif cfg.name in {"The Last Giant", "Vordt of the Boreal Valley"}:
         # Don't add a random heat-up card - this is handled in the special rules
         pass
     else:
@@ -984,7 +1037,7 @@ def apply_heatup(state, cfg, rng, reason="manual"):
     _apply_special_heatup_effects(cfg, state, rng, reason=="manual")
 
     # Mark as complete
-    if cfg.name not in {"Old Dragonslayer",}:
+    if cfg.name not in {"Old Dragonslayer", "Vordt of the Boreal Valley"}:
         state["heatup_done"] = True
 
 
@@ -999,7 +1052,8 @@ def _apply_special_heatup_effects(cfg, state, rng, manual):
         "Smelter Demon": _apply_smelter_demon_heatup,
         "The Pursuer": _apply_pursuer_heatup,
         "Old Iron King": _apply_old_iron_king_heatup,
-        "The Last Giant": _apply_last_giant_heatup
+        "The Last Giant": _apply_last_giant_heatup,
+        "Vordt of the Boreal Valley": _apply_vordt_heatup
     }
 
     if cfg.name == "Crossbreed Priscilla":
@@ -1023,9 +1077,51 @@ def _apply_special_heatup_effects(cfg, state, rng, manual):
             state["old_dragonslayer_pending"] = False
             state["old_dragonslayer_confirmed"] = False
         return
+    elif cfg.name == "Vordt of the Boreal Valley":
+        _apply_vordt_heatup_special(cfg, state, rng, manual=manual)
+        return
 
     # For all others
     func(cfg, state, rng)
+
+
+def _apply_vordt_heatup_special(cfg, state, rng, manual: bool) -> None:
+    """
+    Vordt special heatup logic.
+
+    - HP-slider-driven heatups:
+        pending_heatup_type is set to "vordt_attack", "vordt_move" or "vordt_both".
+    - Manual button heatups:
+        we infer which stage(s) to apply based on vordt_*_heatup_done flags.
+    """
+    pending_type = st.session_state.get("pending_heatup_type")
+
+    attack_done = st.session_state.get("vordt_attack_heatup_done", False)
+    move_done   = st.session_state.get("vordt_move_heatup_done", False)
+
+    if manual and not pending_type:
+        # Manual heatup with no HP context: choose first unfinished stage(s)
+        if not attack_done and not move_done:
+            pending_type = "vordt_attack"
+        elif attack_done and not move_done:
+            pending_type = "vordt_move"
+        else:
+            # both already done; nothing to do
+            return
+
+    # Apply to the appropriate deck(s)
+    if pending_type in ("vordt_attack", "vordt_both"):
+        _apply_vordt_heatup(cfg, state, rng, which="attack")
+        st.session_state["vordt_attack_heatup_done"] = True
+
+    if pending_type in ("vordt_move", "vordt_both"):
+        _apply_vordt_heatup(cfg, state, rng, which="move")
+        st.session_state["vordt_move_heatup_done"] = True
+
+    # Clear prompt flags (used for HP-driven prompts)
+    st.session_state["pending_heatup_prompt"] = False
+    st.session_state["pending_heatup_target"] = None
+    st.session_state["pending_heatup_type"] = None
 
 
 def apply_maldron_heatup(cfg, state, rng):
@@ -1164,4 +1260,5 @@ def check_and_trigger_heatup(prev_hp: int, new_hp: int, ent: Entity, state: Dict
     for th in crossed_now:
         ent.crossed.append(th)
         apply_heatup(state, cfg, rng, reason="auto")
+        
     return crossed_now
