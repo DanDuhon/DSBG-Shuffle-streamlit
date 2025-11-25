@@ -14,20 +14,58 @@ from ui.behavior_decks_tab.generation import (
     build_behavior_catalog,
     render_data_card_cached,
     render_behavior_card_cached,
-    render_dual_boss_data_cards,
 )
-from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
-from ui.behavior_decks_tab.logic import load_behavior
+from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, CATEGORY_ORDER, CATEGORY_EMOJI
+from ui.behavior_decks_tab.logic import _read_behavior_json
+from ui.behavior_decks_tab.models import BehaviorEntry
 
 
-def _get_catalog():
-    """Reuse the same behavior catalog as the Behavior Decks tab."""
-    if "behavior_catalog" not in st.session_state:
-        st.session_state["behavior_catalog"] = build_behavior_catalog()
-    return st.session_state["behavior_catalog"]
+# ---------- Helpers ----------
+def _behavior_card_keys(raw: Dict[str, Any]) -> List[str]:
+    """
+    For boss/invader JSONs:
+    behavior cards are top-level dicts that have a 'middle' section.
+    """
+    keys: List[str] = []
+    for key, value in raw.items():
+        if isinstance(value, dict) and "middle" in value:
+            keys.append(key)
+    return keys
+
+
+def _data_card_path(enemy_name: str) -> str:
+    """
+    Best-effort data card path.
+    Tries a couple of common filenames and picks the first that exists.
+    """
+    candidates: List[str] = []
+
+    # Special-ish cases can be added here if needed
+    if enemy_name == "Executioner Chariot":
+        candidates = [
+            f"{enemy_name} - data.jpg",
+            f"{enemy_name} - Skeletal Horse.jpg",
+            f"{enemy_name} - Executioner Chariot.jpg",
+        ]
+    else:
+        candidates = [f"{enemy_name} - data.jpg"]
+
+    for filename in candidates:
+        path = Path(BEHAVIOR_CARDS_PATH + filename)
+        if path.exists():
+            return str(path)
+
+    # Fallback: just use the first candidate
+    return BEHAVIOR_CARDS_PATH + candidates[0]
+
+
+def _behavior_card_path(enemy_name: str, card_name: str) -> str:
+    """Default behavior card filename pattern."""
+    return BEHAVIOR_CARDS_PATH + f"{enemy_name} - {card_name}.jpg"
 
 
 def _card_text_block(card: Dict[str, Any], label: str | None = None) -> None:
+    """Tiny text summary under a behavior card."""
     if label:
         st.markdown(f"**{label}**")
 
@@ -55,191 +93,172 @@ def _card_text_block(card: Dict[str, Any], label: str | None = None) -> None:
             effects_text = str(effects)
         lines.append(f"- Effects: {effects_text}")
 
-    st.markdown("\n".join(lines))
+    if not lines:
+        st.write("_No attack info on this card._")
+    else:
+        st.markdown("\n".join(lines))
 
 
+# ---------- Main NG+ tab ----------
 def render():
     current_level = get_current_ngplus_level()
 
-    st.subheader("New Game+ Overview")
-    st.markdown(f"Current level from sidebar: **NG+{current_level}**")
+    # --- Overview in an expander ---
+    with st.expander("New Game+ rules overview", expanded=False):
+        st.markdown(f"**Current NG+ level (from sidebar):** NG+{current_level}")
 
-    # --- Level descriptions 0–5 ---
-    st.markdown("### Level Effects")
+        st.markdown("### Level Effects")
 
-    for lvl in range(0, MAX_NGPLUS_LEVEL + 1):
-        is_current = lvl == current_level
-        bullet = "✅" if is_current else "•"
+        for lvl in range(0, MAX_NGPLUS_LEVEL + 1):
+            is_current = lvl == current_level
+            bullet = "✅" if is_current else "•"
 
-        if lvl == 0:
-            desc = (
-                "Base game values. No bonus damage, HP, dodge, or heat-up changes."
-            )
-        else:
-            dodge_b = dodge_bonus_for_level(lvl)
-            if dodge_b == 0:
-                dodge_text = "No change to dodge difficulty."
-            elif dodge_b == 1:
-                dodge_text = "+1 to dodge difficulty."
+            if lvl == 0:
+                desc = (
+                    "Base game values. No bonus damage, HP, dodge, or heat-up changes."
+                )
             else:
-                dodge_text = "+2 to dodge difficulty."
+                dodge_b = dodge_bonus_for_level(lvl)
+                if dodge_b == 0:
+                    dodge_text = "No change to dodge difficulty."
+                elif dodge_b == 1:
+                    dodge_text = "+1 to dodge difficulty."
+                else:
+                    dodge_text = "+2 to dodge difficulty."
 
-            desc = (
-                f"+{lvl} damage on all attacks. "
-                "Max HP increases based on base HP (see rules below). "
-                "Heat-up triggers increase by the same amount as the HP bonus. "
-                f"{dodge_text}"
-            )
+                desc = (
+                    f"+{lvl} damage on all attacks. "
+                    "Max HP increases based on base HP (see rules below). "
+                    "Heat-up triggers increase by the same amount as the HP bonus. "
+                    f"{dodge_text}"
+                )
 
-        st.markdown(f"{bullet} **NG+{lvl}** – {desc}")
+            st.markdown(f"{bullet} **NG+{lvl}** – {desc}")
 
-    # --- HP & heat-up scaling summary ---
-    st.markdown("#### HP & Heat-up Scaling Rules")
+        st.markdown("#### HP & Heat-up Scaling Rules")
 
-    st.markdown(
-        """
+        st.markdown(
+            """
 - Base HP **1–3**: +1 HP per NG+ level  
 - Base HP **4–7**: +2 / +3 / +5 / +6 / +8 HP at NG+1–5  
 - Base HP **8–10**: +2 HP per NG+ level  
 - Base HP **>10**: +10% HP per NG+ level (rounded up)  
 - **Heat-up triggers**: increased by the same amount as the HP bonus  
-- **Paladin Leeroy: Healing Talisman sets health 2 + HP bonus
-- **Maldron the Assassin: Estus Flask heals Maldron to full
-- **Sif – Limping Strike**: stays at **3** HP no matter the NG+ level  
+- **Paladin Leeroy**: Healing Talisman's effect is increased by the HP bonus
+- **Maldron the Assassin**: Maldron heals to full when heating up
+- **Great Grey Wolf Sif**: Changes to only using Limping Strike **3** HP no matter the NG+ level  
 """
+        )
+
+    # --- Per-card inspector ---
+    st.subheader("Card Inspector")
+
+    # Build or reuse catalog (same pattern as Behavior Decks tab)
+    if "behavior_catalog" not in st.session_state:
+        st.session_state["behavior_catalog"] = build_behavior_catalog()
+    catalog = st.session_state["behavior_catalog"]
+
+    # Available categories
+    available_cats = [
+        c for c in CATEGORY_ORDER
+        if catalog.get(c)
+    ] or CATEGORY_ORDER
+
+    # 1 Category chooser (radio; horizontal)
+    category = st.radio(
+        "Type of enemy / boss",
+        available_cats,
+        index=0,
+        key="ngplus_category",
+        horizontal=True,
+        format_func=lambda c: f"{CATEGORY_EMOJI.get(c, '')} {c}",
     )
 
-    st.markdown("---")
-    st.subheader("Per-Card Inspector")
-
-    catalog = _get_catalog()
-    categories = [c for c, entries in catalog.items() if entries]
-    if not categories:
-        st.info("No behavior decks available.")
-        return
-
-    # Category selection (reuse previous choice if possible)
-    default_cat = st.session_state.get("ngplus_inspect_category", categories[0])
-    if default_cat not in categories:
-        default_cat = categories[0]
-
-    category = st.selectbox(
-        "Category",
-        categories,
-        index=categories.index(default_cat),
-        key="ngplus_inspect_category",
-    )
-
-    entries = catalog.get(category, [])
+    entries: List[BehaviorEntry] = catalog.get(category, [])
     if not entries:
-        st.info("No enemies in this category.")
+        st.info("No encounters found in this category.")
         return
 
     names = [e.name for e in entries]
 
-    default_enemy = st.session_state.get("ngplus_inspect_enemy")
-    if default_enemy not in names:
-        default_enemy = names[0]
+    # Preserve previous selection if possible
+    last_choice = st.session_state.get("ngplus_choice")
+    if last_choice in names:
+        default_index = names.index(last_choice)
+    else:
+        default_index = 0
 
-    enemy_name = st.selectbox(
-        "Enemy / Invader / Boss",
-        names,
-        index=names.index(default_enemy),
-        key="ngplus_inspect_enemy",
+    # 3 Actual enemy/boss dropdown
+    choice = st.selectbox(
+        "Choose enemy / invader / boss",
+        options=names,
+        index=default_index,
+        key="ngplus_choice",
     )
 
-    selected_entry = next(e for e in entries if e.name == enemy_name)
+    selected_entry = next(e for e in entries if e.name == choice)
+    fpath = Path(str(selected_entry.path))
+    enemy_name = selected_entry.name
 
-    # Load raw config, then apply NG+ for the current level
-    cfg = load_behavior(Path(str(selected_entry.path)))
-    raw_ng = cfg.raw  # already NG+-adjusted
+    # --- Load base JSON (no NG+), then apply NG+ ourselves ---
+    base_raw = _read_behavior_json(str(fpath))  # original JSON
+    raw_ng = apply_ngplus_to_raw(base_raw, current_level, enemy_name=enemy_name)
 
     st.markdown(f"### {enemy_name} @ NG+{current_level}")
 
-    # Health summary (show base + bonus)
-    base_hp = cfg.raw.get("health")
-    if isinstance(base_hp, (int, float)):
-        hp_bonus = health_bonus_for_level(int(base_hp), current_level)
-        new_hp = raw_ng.get("health", base_hp)
-        st.markdown(
-            f"- Max HP: **{new_hp}** (base {int(base_hp)} + bonus {hp_bonus})"
-        )
-    elif "health" in raw_ng:
-        st.markdown(f"- Max HP: **{raw_ng['health']}**")
-
-    # --- Data card image with NG+ applied ---
-    st.markdown("#### Data Card (NG+ applied)")
-
-    try:
-        if "behavior" in raw_ng and isinstance(raw_ng["behavior"], dict):
-            # Regular enemy / single-card enemy (e.g. Alonne Bow Knight)
-            data_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data.jpg"
-            img_bytes = render_data_card_cached(data_path, raw_ng, is_boss=False)
-            st.image(img_bytes)
-        else:
-            # Bosses / invaders
-            if enemy_name == "Executioner Chariot":
-                data_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - Executioner Chariot.jpg"
-                img_bytes = render_data_card_cached(data_path, raw_ng, is_boss=True)
-                st.image(img_bytes)
-            elif "Ornstein" in raw_ng and "Smough" in raw_ng:
-                # Use the dual-boss renderer so both data cards show up with NG+ values.
-                ornstein_img, smough_img = render_dual_boss_data_cards(raw_ng)
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.image(ornstein_img)
-                with c2:
-                    st.image(smough_img)
-            else:
-                data_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data.jpg"
-                img_bytes = render_data_card_cached(data_path, raw_ng, is_boss=True)
-                st.image(img_bytes)
-    except Exception:
-        st.info("Could not render the data card image for this encounter.")
-
-    # --- Behavior cards ---
-    # Single-card enemy: just show a quick text summary and we're done.
-    if "behavior" in raw_ng and isinstance(raw_ng["behavior"], dict):
-        st.markdown("#### Behavior (summary)")
-        _card_text_block(raw_ng["behavior"], "Behavior card")
-        return
-
-    # Multi-card boss/invader (e.g. Armorer Dennis)
-    behavior_keys = [
-        key
-        for key, value in raw_ng.items()
-        if isinstance(value, dict) and "middle" in value
-    ]
-
-    if not behavior_keys:
-        st.info("No behavior cards found for this enemy.")
-        return
-
-    st.markdown("#### Behavior Cards (NG+ applied)")
-
-    sorted_keys = sorted(behavior_keys)
-    default_card = st.session_state.get("ngplus_inspect_card")
-    if default_card not in sorted_keys:
-        default_card = sorted_keys[0]
-
-    card_name = st.selectbox(
-        "Behavior card",
-        sorted_keys,
-        index=sorted_keys.index(default_card),
-        key="ngplus_inspect_card",
+    # --- Determine enemy type & behavior-card list ---
+    is_single_card_enemy = (
+        "behavior" in base_raw and isinstance(base_raw["behavior"], dict)
     )
 
-    # Render the selected behavior card as an image with NG+ values
-    try:
-        card_path = _behavior_image_path(cfg, card_name)
-        card_img = render_behavior_card_cached(
-            card_path,
-            raw_ng[card_name],
-            is_boss=True,
-        )
-        st.image(card_img)
-    except Exception:
-        st.info("Could not render this behavior card image.")
+    if is_single_card_enemy:
+        behavior_keys: List[str] = []
+    else:
+        behavior_keys = _behavior_card_keys(raw_ng)
 
-    # Text summary underneath for quick reading
-    _card_text_block(raw_ng[card_name], card_name)
+    # Behavior dropdown is only shown for bosses/invaders with multiple cards
+    chosen_behavior_name: str | None = None
+    if behavior_keys:
+        sorted_keys = sorted(behavior_keys)
+        default_card = st.session_state.get("ngplus_inspect_card")
+        if default_card not in sorted_keys:
+            default_card = sorted_keys[0]
+
+        chosen_behavior_name = st.selectbox(
+            "Behavior card",
+            sorted_keys,
+            index=sorted_keys.index(default_card),
+            key="ngplus_inspect_card",
+        )
+
+    # ---------- Side-by-side card layout ----------
+
+    cols = st.columns(2)
+
+    # Left: data card
+    with cols[0]:
+        try:
+            data_path = _data_card_path(enemy_name)
+            img = render_data_card_cached(
+                data_path,
+                raw_ng,
+                is_boss=not is_single_card_enemy,
+            )
+            st.image(img, width="stretch")
+        except Exception:
+            st.info("Could not render the data card image for this encounter.")
+
+    # Right: selected behavior card (if any)
+    with cols[1]:
+        if chosen_behavior_name is not None:
+            try:
+                card_cfg = raw_ng[chosen_behavior_name]
+                card_path = _behavior_card_path(enemy_name, chosen_behavior_name)
+                card_img = render_behavior_card_cached(
+                    card_path,
+                    card_cfg,
+                    is_boss=not is_single_card_enemy,
+                )
+                st.image(card_img, width="stretch")
+            except Exception:
+                st.info("Could not render this behavior card image.")

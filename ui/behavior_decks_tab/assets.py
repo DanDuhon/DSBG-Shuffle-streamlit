@@ -169,7 +169,7 @@ coords_map = {
 }
 
 # -----------------------------------------------------------
-# TEXT STYLES (you can keep the same for boss)
+# TEXT STYLES
 # -----------------------------------------------------------
 text_styles = {
     "armor":  {"size": 85, "fill": "white", "font": FONT_PATH_NUMBER},

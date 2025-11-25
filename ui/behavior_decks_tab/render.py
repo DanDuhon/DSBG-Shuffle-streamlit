@@ -14,7 +14,7 @@ from ui.behavior_decks_tab.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
     , render_behavior_card_cached, build_behavior_catalog)
 from ui.behavior_decks_tab.models import BehaviorEntry
-from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level, MAX_NGPLUS_LEVEL
+from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
 
 
 def render():
