@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional
 
 
@@ -11,6 +12,15 @@ class Entity:
     hp: int
     heatup_thresholds: List[int] = field(default_factory=list)
     crossed: List[int] = field(default_factory=list)
+
+
+@dataclass
+class BehaviorEntry:
+    name: str           # "Artorias", "Silver Knight Swordsman"
+    category: str       # "Regular Enemies", "Main Bosses", etc.
+    path: Path          # Path to the JSON file
+    tier: str           # "enemy" / "boss"
+    is_invader: bool
 
 
 @dataclass
@@ -33,6 +43,7 @@ class BehaviorConfig:
     heatup: Optional[Heatup] = None
     behaviors: dict = field(default_factory=dict)
     is_invader: bool = False
+    text: str = ""
 
     @property
     def data_cards(self) -> list[str]:

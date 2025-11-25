@@ -60,7 +60,9 @@
     "Twilight Falls|The Sunless City": false,
     "Grim Reunion|The Sunless City": false,
     "The Last Bastion|Painted World of Ariamis": false,
-    "Draconic Decay|Painted World of Ariamis": false
+    "Draconic Decay|Painted World of Ariamis": false,
+    "Skittering Frenzy|Painted World of Ariamis": false,
+    "Roll Out|Painted World of Ariamis": false
   },
   "event_deck": {
     "draw_pile": [],

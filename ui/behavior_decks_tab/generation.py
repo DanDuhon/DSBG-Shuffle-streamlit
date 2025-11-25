@@ -4,9 +4,12 @@ import hashlib
 import io
 from PIL import Image, ImageDraw, ImageFont
 from typing import List, Dict, Any, Optional
+from collections import defaultdict
 
 from core.image_cache import _load_jpg_cached, _load_png_cached
-from ui.behavior_decks_tab.assets import ICONS_DIR, FONTS, coords_map, text_styles, build_icon_filename
+from ui.behavior_decks_tab.assets import ICONS_DIR, FONTS, coords_map, text_styles, build_icon_filename, CATEGORY_ORDER, BOSS_CATEGORY_MAP
+from ui.behavior_decks_tab.models import BehaviorEntry
+from ui.behavior_decks_tab.logic import load_behavior, list_behavior_files
 
 
 @st.cache_data(show_spinner=False)
@@ -81,6 +84,53 @@ def render_behavior_deck_cached(deck_key: str, cards: List[Dict[str, Any]]) -> L
     return rendered
 
 
+def infer_category(cfg) -> str:
+    """
+    Map a BehaviorConfig to one of our UI categories using:
+      - is_invader flag
+      - 'enemy' vs boss tier
+      - explicit boss name mapping
+    """
+    # 1) Invaders override everything
+    if getattr(cfg, "is_invader", False):
+        return "Invaders"
+
+    # 2) Regular enemies: configurations with 'behavior' at top level are
+    #    treated as single-enemy configs and give tier 'enemy'.:contentReference[oaicite:1]{index=1}
+    if cfg.tier == "enemy":
+        return "Regular Enemies"
+
+    # 3) Bosses: use explicit mapping
+    return BOSS_CATEGORY_MAP.get(cfg.name, "Main Bosses")
+
+
+def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
+    """Scan behavior JSON files and group them by category for the UI."""
+    files = list_behavior_files()  # returns Paths to *.json:contentReference[oaicite:2]{index=2}
+    groups: dict[str, list[BehaviorEntry]] = defaultdict(list)
+
+    for fpath in files:
+        cfg = load_behavior(fpath)   # BehaviorConfig:contentReference[oaicite:3]{index=3}
+        category = infer_category(cfg)
+
+        entry = BehaviorEntry(
+            name=cfg.name,
+            category=category,
+            path=fpath,
+            tier=cfg.tier,
+            is_invader=cfg.is_invader,
+        )
+        groups[category].append(entry)
+
+    for entries in groups.values():
+        entries.sort(key=lambda e: e.name)
+
+    for cat in CATEGORY_ORDER:
+        groups.setdefault(cat, [])
+
+    return groups
+
+
 def _hash_json(obj: Any) -> str:
     try:
         s = json.dumps(obj, sort_keys=True, separators=(",", ":"))
@@ -94,7 +144,7 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     draw = ImageDraw.Draw(img)
     # choose coord key prefix
     prefix = "boss" if is_boss else "enemy"
-    coord_key = f"{prefix}_{key}"
+    coord_key = key if key == "text" else f"{prefix}_{key}"
     if coord_key not in coords_map:
         return
     x, y = coords_map[coord_key]
@@ -159,10 +209,16 @@ def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bo
         _draw_text(base, "health", str(raw_json["health"]), is_boss)
     if "resist" in raw_json:
         _draw_text(base, "resist", str(raw_json["resist"]), is_boss)
+    if "text" in raw_json:
+        print(f"Writing rule text: {raw_json['text']}")
+        _draw_text(base, "text", str(raw_json["text"]), is_boss)
 
     # --- boss-only: show heatup threshold if present ---
     if is_boss and isinstance(raw_json.get("heatup"), int):
         _draw_text(base, "heatup", str(raw_json["heatup"]), is_boss)
+    if is_boss and isinstance(raw_json.get("heatup1"), int):
+        _draw_text(base, "heatup1", str(raw_json["heatup1"]), is_boss)
+        _draw_text(base, "heatup2", str(raw_json["heatup2"]), is_boss)
 
     # --- regular enemy: show dodge (comes from behavior.dodge) ---
     if not is_boss:

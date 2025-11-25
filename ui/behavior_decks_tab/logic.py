@@ -552,6 +552,7 @@ def load_behavior(fname: Path) -> BehaviorConfig:
         )
 
     is_invader = bool(raw.get("is_invader", False))
+    text = raw.get("text", "")
 
     return BehaviorConfig(
         name=name,
@@ -564,6 +565,7 @@ def load_behavior(fname: Path) -> BehaviorConfig:
         raw=raw,
         behaviors=behaviors,
         is_invader=is_invader,
+        text=text,
     )
 
 
@@ -990,6 +992,7 @@ def _apply_special_heatup_effects(cfg, state, rng, manual):
     """Apply boss- or invader-specific heat-up modifications."""
     effects = {
         "Armorer Dennis": _apply_armorer_dennis_heatup,
+        "Maldron the Assassin": apply_maldron_heatup,
         "Oliver the Collector": _replace_with_missing_cards,
         "Old Dragonslayer": _old_dragonslayer_heatup,
         "Artorias": _apply_artorias_heatup,
@@ -1023,6 +1026,32 @@ def _apply_special_heatup_effects(cfg, state, rng, manual):
 
     # For all others
     func(cfg, state, rng)
+
+
+def apply_maldron_heatup(cfg, state, rng):
+    """
+    Maldron the Assassin:
+      When he heats up, he returns to full health.
+    This resets HP on both the BehaviorConfig entities and the state mirror.
+    """
+    # Reset HP on the BehaviorConfig entities (source of truth)
+    for ent in getattr(cfg, "entities", []):
+        # Only touch Maldron's own entity; in case the config ever
+        # has multiple entities for some reason, this keeps it safe.
+        if "Maldron" in ent.label:
+            ent.hp = ent.hp_max
+
+    tracker = st.session_state.setdefault("hp_tracker", {})
+
+    for ent in cfg.entities:
+        ent_id = ent.id
+        # make sure HP is max in the tracker
+        tracker[ent_id] = {"hp": ent.hp_max, "hp_max": ent.hp_max}
+
+    # also mirror into the state["entities"] dicts, just to be safe
+    for ent_state in state.get("entities", []):
+        if "Maldron" in ent_state.get("label", "") and "hp_max" in ent_state:
+            ent_state["hp"] = ent_state["hp_max"]
 
 
 def _apply_armorer_dennis_heatup(cfg, state, rng):

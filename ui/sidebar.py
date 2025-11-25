@@ -58,3 +58,18 @@ def render_sidebar(settings: dict):
             key="selected_characters",
         )
         settings["selected_characters"] = selected_characters
+
+    # --- New Game+ selection ---
+    current_ng = int(st.session_state.get("ngplus_level", 0))
+
+    with st.sidebar.expander(
+        f"⬆️ New Game+ (Current: NG+{current_ng})",
+        expanded=False,
+    ):
+        level = st.radio(
+            "NG+ Level",
+            options=list(range(0, 6)),  # 0–5
+            index=current_ng,
+            key="ngplus_level",
+            format_func=lambda v: "NG+0 (Base)" if v == 0 else f"NG+{v}",
+        )

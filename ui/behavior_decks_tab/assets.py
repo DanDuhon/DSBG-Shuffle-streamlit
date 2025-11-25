@@ -7,7 +7,56 @@ from pathlib import Path
 BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
 ICONS_DIR = Path("assets/behavior icons")
 CARD_BACK = Path("assets/behavior cards/back.jpg")
-FONT_PATH = Path("assets/OptimusPrinceps.ttf")
+FONT_PATH_NUMBER = Path("assets/OptimusPrinceps.ttf")
+FONT_PATH_TEXT = Path("assets/AdobeCaslonProSemibold.ttf")
+CATEGORY_ORDER = [
+    "Regular Enemies",
+    "Invaders",
+    "Mini Bosses",
+    "Main Bosses",
+    "Mega Bosses",
+]
+CATEGORY_EMOJI = {
+    "Regular Enemies": "🗡️",
+    "Invaders":        "👤",
+    "Mini Bosses":     "⚔️",
+    "Main Bosses":     "🐺",
+    "Mega Bosses":     "🐉",
+}
+BOSS_CATEGORY_MAP = {
+    # Mini bosses
+    "Asylum Dmon": "Mini Bosses",
+    "Black Knight": "Mini Bosses",
+    "Boreal Outrider Knight": "Mini Bosses",
+    "Gargoyle": "Mini Bosses",
+    "Heavy Knight": "Mini Bosses",
+    "Old Dragonslayer": "Mini Bosses",
+    "Titanite Demon": "Mini Bosses",
+    "Winged Knight": "Mini Bosses",
+
+    # Main bosses
+    "Artorias": "Main Bosses",
+    "Crossbreed Priscilla": "Main Bosses",
+    "Dancer of the Boreal Valley": "Main Bosses",
+    "Gravelord Nito": "Main Bosses",
+    "Great Grey Wolf Sif": "Main Bosses",
+    "Ornstein & Smough": "Main Bosses",
+    "Sir Alonne": "Main Bosses",
+    "Smelter Demon": "Main Bosses",
+    "The Puruser": "Main Bosses",
+
+    # Mega bosses
+    "Black Dragon Kalameet": "Mega Bosses",
+    "Executioner Chariot": "Mega Bosses",
+    "Gaping Dragon": "Mega Bosses",
+    "Guardian Dragon": "Mega Bosses",
+    "Manus, Father of the Abyss": "Mega Bosses",
+    "Old Iron King": "Mega Bosses",
+    "Stray Demon": "Mega Bosses",
+    "The Four Kings": "Mega Bosses",
+    "The Last Giant": "Mega Bosses",
+    "Vordt of the Boreal Valley": "Mega Bosses",
+}
 
 # -----------------------------------------------------------
 # COORDS
@@ -45,6 +94,7 @@ coords_map = {
     "enemy_health": (689, 96),
     "enemy_resist": (415, 615),
     "enemy_dodge": (710, 605),
+    "text": (100, 100),
 
     # -------- STATS: boss/invader data card --------
     # put them wherever your boss data card has the boxes
@@ -122,18 +172,19 @@ coords_map = {
 # TEXT STYLES (you can keep the same for boss)
 # -----------------------------------------------------------
 text_styles = {
-    "armor":  {"size": 85, "fill": "white"},
-    "health": {"size": 60, "fill": "white"},
-    "resist": {"size": 85, "fill": "black"},
-    "dodge":  {"size": 70, "fill": "black"},
-    "heatup": {"size": 60, "fill": "black"},
+    "armor":  {"size": 85, "fill": "white", "font": FONT_PATH_NUMBER},
+    "health": {"size": 60, "fill": "white", "font": FONT_PATH_NUMBER},
+    "resist": {"size": 85, "fill": "black", "font": FONT_PATH_NUMBER},
+    "dodge":  {"size": 70, "fill": "black", "font": FONT_PATH_NUMBER},
+    "heatup": {"size": 60, "fill": "black", "font": FONT_PATH_NUMBER},
+    "text":   {"size": 33, "fill": "black", "font": FONT_PATH_TEXT}
 }
 
 
 def _load_fonts():
     try:
         return {
-            name: ImageFont.truetype(str(FONT_PATH), style["size"])
+            name: ImageFont.truetype(str(style["font"]), style["size"])
             for name, style in text_styles.items()
         }
     except Exception:

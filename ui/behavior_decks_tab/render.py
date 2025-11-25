@@ -3,17 +3,18 @@ import random
 from pathlib import Path
 
 from core.settings_manager import load_settings
-from ui.behavior_decks_tab.logic import (_ensure_state, list_behavior_files
-    , load_behavior, _new_state_from_file, _reset_deck, _load_cfg_for_state
+from ui.behavior_decks_tab.logic import (_ensure_state, load_behavior
+    , _new_state_from_file, _reset_deck, _load_cfg_for_state
     , _draw_card, _manual_heatup, apply_heatup, _clear_heatup_prompt
     , _ornstein_smough_heatup_ui)
 from ui.behavior_decks_tab.assets import (BEHAVIOR_CARDS_PATH, CARD_BACK
-    , _dim_greyscale
-    , _behavior_image_path)
+    , _dim_greyscale, _behavior_image_path, CATEGORY_ORDER, CATEGORY_EMOJI)
 from ui.behavior_decks_tab.persistance import _save_slot_ui
 from ui.behavior_decks_tab.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
-    , render_behavior_card_cached)
+    , render_behavior_card_cached, build_behavior_catalog)
+from ui.behavior_decks_tab.models import BehaviorEntry
+from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
 
 
 def render():
@@ -22,41 +23,78 @@ def render():
 
     st.subheader("Behavior Decks")
 
-    files = list_behavior_files()
-    labels = [f.name[:-5] for f in files]
+    # Build or reuse catalog
+    if "behavior_catalog" not in st.session_state:
+        st.session_state["behavior_catalog"] = build_behavior_catalog()
+    catalog = st.session_state["behavior_catalog"]
+
+    # Available categories (non-empty ones only is nice UX)
+    available_cats = [
+        c for c in CATEGORY_ORDER
+        if catalog.get(c)  # optional: only show if it has entries
+    ] or CATEGORY_ORDER
+
+    # Default to last used category, else "Main Bosses"
+    default_cat = st.session_state.get("behavior_category", "Main Bosses")
+    if default_cat not in available_cats:
+        default_cat = available_cats[0]
+
+    # 1) Category chooser (radio; horizontal works nicely)
+    category = st.radio(
+        "Type of enemy / boss",
+        available_cats,
+        index=available_cats.index(default_cat),
+        key="behavior_category",
+        horizontal=True,
+        format_func=lambda c: f"{CATEGORY_EMOJI.get(c, '')} {c}",
+    )
+
+    entries: list[BehaviorEntry] = catalog.get(category, [])
+    if not entries:
+        st.info("No encounters found in this category.")
+        return
+
+    # 2) Optional search box within the category (nice UX touch)
+    filter_text = st.text_input(
+        "Filter by name",
+        value="",
+        key="behavior_filter",
+        placeholder="e.g., Artorias, Knight, Kalameet...",
+    ).strip().lower()
+
+    filtered_entries = [
+        e for e in entries
+        if not filter_text or filter_text in e.name.lower()
+    ]
+
+    if not filtered_entries:
+        st.info("No matches in this category.")
+        return
+
+    names = [e.name for e in filtered_entries]
+
+    # Preserve previous selection if possible
+    last_choice = st.session_state.get("behavior_choice")
+    if last_choice in names:
+        default_index = names.index(last_choice)
+    else:
+        default_index = 0
+
+    # 3) Actual enemy/boss dropdown, but now short
     choice = st.selectbox(
         "Choose enemy / invader / boss",
-        options=labels,
-        index=0 if labels else None,
+        options=names,
+        index=default_index,
         key="behavior_choice",
     )
 
-    if "last_selected_boss" not in st.session_state or st.session_state["last_selected_boss"] != choice:
-        # Reset per-boss heat-up and prompt flags
-        for key in [
-            "heatup_done",
-            "pending_heatup_prompt",
-            "pending_heatup_target",
-            "pending_heatup_type",
-        ]:
-            st.session_state[key] = False if key == "heatup_done" else None
-
-        # Also clear boss-specific pending flags if any
-        for key in [
-            "smough_dead_pending", "ornstein_dead_pending",
-            "old_dragonslayer_pending",
-        ]:
-            if key in st.session_state:
-                st.session_state[key] = False
-
-        st.session_state["last_selected_boss"] = choice
-
-    if not (choice and files):
-        st.info("Select a behavior file to begin.")
-        return
-
-    fpath = str(files[labels.index(choice)])
+    selected_entry = next(e for e in filtered_entries if e.name == choice)
+    fpath = str(selected_entry.path)
     cfg = load_behavior(Path(fpath))
+
+    # Apply NG+ scaling to the raw config
+    ng_level = get_current_ngplus_level()
+    cfg.raw = apply_ngplus_to_raw(cfg.raw, ng_level, enemy_name=selected_entry.name)
 
     # --- Regular enemy mode
     if "behavior" in cfg.raw:

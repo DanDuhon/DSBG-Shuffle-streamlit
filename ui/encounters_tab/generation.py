@@ -80,10 +80,19 @@ def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: s
             return ""
         data = path.read_bytes()
         b64 = base64.b64encode(data).decode("ascii")
+
+        style = (
+            f"height:{height_px}px; "
+            f"max-height:none; "
+            f"width:auto; "
+            f"max-width:none; "
+            f"{extra_css}"
+        )
+
         return (
             f"<img src='data:image/png;base64,{b64}' "
             f"title='{title}' alt='{title}' "
-            f"style='height:{height_px}px; {extra_css}'/>"
+            f"style='{style}'/>"
         )
     except Exception:
         return ""
@@ -153,8 +162,18 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
         if fname in seen:
             continue
         seen.add(fname)
-        tag = _img_tag_from_path(exps_dir / fname, title=label,
-                                 extra_css="object-fit:contain; border-radius:6px;")
+
+        if fname == "Executioner Chariot.png":
+            height_px = 36
+        else:
+            height_px = 30
+
+        tag = _img_tag_from_path(
+            exps_dir / fname,
+            title=label,
+            height_px=height_px,
+            extra_css="object-fit:contain; border-radius:6px;",
+        )
         if tag:
             html += tag
         else:
