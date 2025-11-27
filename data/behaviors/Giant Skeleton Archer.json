@@ -13,5 +13,6 @@
     },
     "health": 5,
     "armor": 1,
-    "resist": 1
+    "resist": 1,
+	"order_num": 1
 }

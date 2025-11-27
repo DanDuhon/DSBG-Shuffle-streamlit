@@ -1,3 +1,4 @@
+#ui/events_tab/assets.py
 import streamlit as st
 from pathlib import Path
 import base64

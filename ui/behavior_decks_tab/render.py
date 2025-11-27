@@ -1,3 +1,4 @@
+#ui/behavior_decks_tab/render.py
 import streamlit as st
 import random
 from pathlib import Path
@@ -34,90 +35,74 @@ def render():
         if catalog.get(c)  # optional: only show if it has entries
     ] or CATEGORY_ORDER
 
-    # Default to last used category, else "Main Bosses"
-    default_cat = st.session_state.get("behavior_category", "Main Bosses")
+    # Default to last used category, else "Regular Enemies"
+    default_cat = st.session_state.get("behavior_category", "Regular Enemies")
     if default_cat not in available_cats:
         default_cat = available_cats[0]
 
-    # --- NG+ badge / indicator ---
-    ng_level = get_current_ngplus_level()
+    with st.expander("Enemy Selector", expanded=True):
+        # --- NG+ badge / indicator ---
+        ng_level = get_current_ngplus_level()
 
-    if ng_level <= 0:
-        label = "NG+0 (Base game)"
-    else:
-        label = f"NG+{ng_level} active"
+        if ng_level <= 0:
+            label = "NG+0 (Base game)"
+        else:
+            label = f"NG+{ng_level} active"
 
-    st.markdown(
-        f"""
-        <div style="text-align: left; margin-bottom: 0.25rem;">
-          <span style="
-              display:inline-block;
-              padding: 0.1rem 0.6rem;
-              border-radius: 999px;
-              font-size: 0.8rem;
-              background-color: #444444;
-              color: #ffffff;
-              opacity: 0.9;
-          ">
-            🌀 {label}
-          </span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+            f"""
+            <div style="text-align: left; margin-bottom: 0.25rem;">
+            <span style="
+                display:inline-block;
+                padding: 0.1rem 0.6rem;
+                border-radius: 999px;
+                font-size: 0.8rem;
+                background-color: #444444;
+                color: #ffffff;
+                opacity: 0.9;
+            ">
+                🌀 {label}
+            </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # 1) Category chooser (radio; horizontal works nicely)
-    category = st.radio(
-        "Type of enemy / boss",
-        available_cats,
-        index=available_cats.index(default_cat),
-        key="behavior_category",
-        horizontal=True,
-        format_func=lambda c: f"{CATEGORY_EMOJI.get(c, '')} {c}",
-    )
+        # 1) Category chooser (radio; horizontal works nicely)
+        category = st.radio(
+            "Type of enemy / boss",
+            available_cats,
+            index=available_cats.index(default_cat),
+            key="behavior_category",
+            horizontal=True,
+            format_func=lambda c: f"{CATEGORY_EMOJI.get(c, '')} {c}",
+        )
 
-    entries: list[BehaviorEntry] = catalog.get(category, [])
-    if not entries:
-        st.info("No encounters found in this category.")
-        return
+        entries: list[BehaviorEntry] = catalog.get(category, [])
+        if not entries:
+            st.info("No encounters found in this category.")
+            return
 
-    # 2) Optional search box within the category (nice UX touch)
-    filter_text = st.text_input(
-        "Filter by name",
-        value="",
-        key="behavior_filter",
-        placeholder="e.g., Artorias, Knight, Kalameet...",
-    ).strip().lower()
+        names = [e.name for e in entries]
 
-    filtered_entries = [
-        e for e in entries
-        if not filter_text or filter_text in e.name.lower()
-    ]
+        # Preserve previous selection if possible
+        last_choice = st.session_state.get("behavior_choice")
+        if last_choice in names:
+            default_index = names.index(last_choice)
+        else:
+            default_index = 0
 
-    if not filtered_entries:
-        st.info("No matches in this category.")
-        return
+        # 3) Actual enemy/boss dropdown, but now short
+        choice = st.selectbox(
+            "Choose enemy / invader / boss",
+            options=names,
+            index=default_index,
+            key="behavior_choice",
+        )
 
-    names = [e.name for e in filtered_entries]
-
-    # Preserve previous selection if possible
-    last_choice = st.session_state.get("behavior_choice")
-    if last_choice in names:
-        default_index = names.index(last_choice)
-    else:
-        default_index = 0
-
-    # 3) Actual enemy/boss dropdown, but now short
-    choice = st.selectbox(
-        "Choose enemy / invader / boss",
-        options=names,
-        index=default_index,
-        key="behavior_choice",
-    )
-
-    selected_entry = next(e for e in filtered_entries if e.name == choice)
-    fpath = str(selected_entry.path)
-    cfg = load_behavior(Path(fpath))
+        selected_entry = next(e for e in entries if e.name == choice)
+        fpath = str(selected_entry.path)
+        cfg = load_behavior(Path(fpath))
 
     # Apply NG+ scaling to the raw config
     ng_level = get_current_ngplus_level()

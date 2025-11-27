@@ -1,3 +1,4 @@
+#ui/sidebar.py
 import streamlit as st
 from core.characters import CHARACTER_EXPANSIONS
 

@@ -1,3 +1,4 @@
+#ui/campaign_tab/models.py
 from typing import List, Optional, Union, Literal
 from dataclasses import dataclass, field
 

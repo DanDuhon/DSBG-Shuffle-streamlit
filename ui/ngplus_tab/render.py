@@ -1,3 +1,4 @@
+#ui/ngplus_tab/render.py
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -62,41 +63,6 @@ def _data_card_path(enemy_name: str) -> str:
 def _behavior_card_path(enemy_name: str, card_name: str) -> str:
     """Default behavior card filename pattern."""
     return BEHAVIOR_CARDS_PATH + f"{enemy_name} - {card_name}.jpg"
-
-
-def _card_text_block(card: Dict[str, Any], label: str | None = None) -> None:
-    """Tiny text summary under a behavior card."""
-    if label:
-        st.markdown(f"**{label}**")
-
-    dodge = card.get("dodge")
-    mid = card.get("middle", {})
-    dmg = mid.get("damage")
-    dmg_type = mid.get("type")
-    effects = mid.get("effect")
-
-    lines: List[str] = []
-
-    if dodge is not None:
-        lines.append(f"- Dodge difficulty: **{dodge}**")
-
-    if dmg is not None:
-        if dmg_type:
-            lines.append(f"- Attack: **{dmg}** ({dmg_type})")
-        else:
-            lines.append(f"- Attack: **{dmg}**")
-
-    if effects:
-        if isinstance(effects, list):
-            effects_text = ", ".join(str(e) for e in effects)
-        else:
-            effects_text = str(effects)
-        lines.append(f"- Effects: {effects_text}")
-
-    if not lines:
-        st.write("_No attack info on this card._")
-    else:
-        st.markdown("\n".join(lines))
 
 
 # ---------- Main NG+ tab ----------

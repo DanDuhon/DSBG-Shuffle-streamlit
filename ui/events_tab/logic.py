@@ -1,5 +1,7 @@
+#ui/events_tab/logic.py
 import json
 import random
+import os
 import streamlit as st
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -13,6 +15,105 @@ V2_EXPANSIONS = [
     "Tomb of Giants",
     "The Sunless City",
 ]
+RENDEZVOUS_EVENTS = {
+    "Bleak Bonfire Ascetic",
+    "Bloodstained Bonfire Ascetic",
+    "Cracked Bonfire Ascetic",
+    "Frozen Bonfire Ascetic",
+    "Hearty Bonfire Ascetic",
+    "Martial Bonfire Ascetic",
+    "Rare Vagrant",
+    "Scout Ahead",
+    "Trustworthy Promise",
+    "Undead Merchant",
+    "Virulent Bonfire Ascetic",
+}
+EVENT_BEHAVIOR_MODIFIERS = {
+    "Bleak Bonfire Ascetic": [
+        {
+            "id": "bleak_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "bleak_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "dodge_difficulty",
+            "op": "add",
+            "value": 1,
+            "description": "+1 dodge difficulty from Bleak Bonfire Ascetic event"
+        }
+    ],
+    "Bloodstained Bonfire Ascetic": [
+        {
+            "id": "bloodstained_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "bloodstained_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "bleed",
+            "op": "flag",
+            "value": True,
+            "description": "Bleed from Bloodstained Bonfire Ascetic event"
+        }
+    ],
+    "Cracked Bonfire Ascetic": [
+        {
+            "id": "cracked_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "cracked_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "stagger",
+            "op": "flag",
+            "value": True,
+            "description": "Stagger from Cracked Bonfire Ascetic event"
+        }
+    ],
+    "Frozen Bonfire Ascetic": [
+        {
+            "id": "frozen_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "frozen_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "frostbite",
+            "op": "flag",
+            "value": True,
+            "description": "Frostbite from Frozen Bonfire Ascetic event"
+        }
+    ],
+    "Hearty Bonfire Ascetic": [
+        {
+            "id": "hearty_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "hearty_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "max_hp",
+            "op": "add",
+            "value": 1,
+            "description": "+1 max HP from Hearty Bonfire Ascetic event"
+        }
+    ],
+    "Martial Bonfire Ascetic": [
+        {
+            "id": "martial_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "martial_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "damage",
+            "op": "add",
+            "value": 1,
+            "description": "+1 damage from Martial Bonfire Ascetic event"
+        }
+    ],
+    "Virulent Bonfire Ascetic": [
+        {
+            "id": "virulent_bonfire_ascetic_dodge",
+            "source": "event",
+            "source_id": "virulent_bonfire_ascetic",
+            "target": "all_enemies",
+            "stat": "poison",
+            "op": "flag",
+            "value": True,
+            "description": "Poison from Virulent Bonfire Ascetic event"
+        }
+    ],
+}
 
 
 # --- Loaders ---
@@ -86,6 +187,34 @@ def initialize_event_deck(preset: str, configs: Optional[Dict[str, dict]] = None
         "current_card": None,
         "preset": preset,
     }
+
+
+def _attach_event_to_current_encounter(card_path: str) -> None:
+    """Attach an event card image to the current encounter, enforcing the rendezvous rule."""
+    if not card_path:
+        return
+
+    if "encounter_events" not in st.session_state:
+        st.session_state.encounter_events = []
+
+    base = os.path.splitext(os.path.basename(str(card_path)))[0]
+    is_rendezvous = base in RENDEZVOUS_EVENTS
+
+    events = st.session_state.encounter_events
+
+    # If this is a rendezvous card, drop any existing rendezvous
+    if is_rendezvous:
+        events = [ev for ev in events if not ev.get("is_rendezvous")]
+
+    event_obj = {
+        "id": base,
+        "name": base,
+        "path": str(card_path),
+        "is_rendezvous": is_rendezvous,
+    }
+
+    events.append(event_obj)
+    st.session_state.encounter_events = events
 
 
 def draw_event_card():

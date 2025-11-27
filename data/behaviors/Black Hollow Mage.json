@@ -9,5 +9,6 @@
     },
     "health": 5,
     "armor": 2,
-    "resist": 3
+    "resist": 3,
+	"order_num": 8
 }

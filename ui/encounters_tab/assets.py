@@ -1,3 +1,4 @@
+#ui/encounters_tab/assets.py
 import streamlit as st
 from PIL import Image
 from pathlib import Path

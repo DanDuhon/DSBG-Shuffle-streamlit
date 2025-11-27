@@ -1,3 +1,4 @@
+#ui/behavior_decks_tab/models.py
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,6 +22,7 @@ class BehaviorEntry:
     path: Path          # Path to the JSON file
     tier: str           # "enemy" / "boss"
     is_invader: bool
+    order_num: int = 10
 
 
 @dataclass

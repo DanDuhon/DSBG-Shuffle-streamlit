@@ -1,3 +1,4 @@
+#ui/behavior_decks_tab/generation.py
 import streamlit as st
 import json
 import hashlib
@@ -119,6 +120,7 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
             path=fpath,
             tier=cfg.tier,
             is_invader=cfg.is_invader,
+            order_num=getattr(cfg, "order_num", 10)
         )
         groups[category].append(entry)
 

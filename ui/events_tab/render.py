@@ -1,5 +1,7 @@
+#ui/events_tab/render.py
 import os
 import streamlit as st
+from collections import Counter
 from ui.events_tab.logic import (
     load_event_configs,
     initialize_event_deck,
@@ -8,13 +10,15 @@ from ui.events_tab.logic import (
     put_current_on_bottom,
     put_current_on_top,
     build_deck_for_preset,
-    DECK_STATE_KEY
+    _attach_event_to_current_encounter,
+    DECK_STATE_KEY,
+    RENDEZVOUS_EVENTS,
 )
 from ui.events_tab.assets import DECK_BACK_PATH, PRESETS, img_to_base64
 from core.settings_manager import save_settings
 
 
-def render(settings):
+def render(settings, attach_to_encounter: bool = False):
     """Main UI renderer for the Events tab."""
     configs = load_event_configs()
 
@@ -87,12 +91,19 @@ def render(settings):
             card = deck_state["current_card"] or str(DECK_BACK_PATH)
             st.image(card, width=card_width)
 
+            if deck_state["current_card"]:
+                if st.button("Attach Current to Encounter", key="attach_current_event"):
+                    _attach_event_to_current_encounter(deck_state["current_card"])
+                    st.success("Event attached to current encounter.")
+            else:
+                st.caption("Draw a card to attach it to the current encounter.")
+
         with col_discard:
             st.subheader("Discard Pile")
             render_discard_pile(deck_state["discard_pile"], card_width=110)
 
     # --- Card Browser ---
-    render_card_browser(preset, configs)
+    render_card_browser(preset, configs, attach_to_encounter=attach_to_encounter)
 
 
 def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_height=300):
@@ -122,23 +133,69 @@ def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_heig
     st.components.v1.html(container_html, height=max_iframe_height)
 
 
-def render_card_browser(preset, configs):
+def render_card_browser(preset, configs, attach_to_encounter: bool = False):
     st.markdown("---")
     st.subheader("Browse All Cards in Preset")
 
-    all_cards = build_deck_for_preset(st.session_state[DECK_STATE_KEY]["preset"] or preset, configs)
-    # Unique names only for browsing
+    all_cards = build_deck_for_preset(
+        st.session_state[DECK_STATE_KEY]["preset"] or preset,
+        configs,
+    )
+
+    # Build name list + map from name → path (last one wins)
+    name_list = []
     card_map = {}
     for path in all_cards:
         name = os.path.splitext(os.path.basename(path))[0]
-        card_map[name] = path  # last one wins, fine for browsing
+        name_list.append(name)
+        card_map[name] = path
 
+    # Count copies
+    counts = Counter(name_list)
+
+    # Sorted list of *base* names (these will be the actual option values)
     names = sorted(card_map.keys())
+
+    def format_label(name: str) -> str:
+        count = counts[name]
+        return f"{name} x{count}" if count > 1 else name
+
     col_a, col_b = st.columns([1, 2])
     with col_a:
-        selected_name = st.radio("Select a card:", names, index=None)
+        selected_name = st.radio(
+            "Select a card:",
+            names,
+            index=None,
+            key="card_browser_choice",
+            format_func=format_label,   # <- show "Name xN" when N > 1
+        )
+
     with col_b:
         if selected_name:
-            st.image(card_map[selected_name], width=get_card_width(layout_width=900, col_ratio=2, total_ratio=3, max_width=420), caption=selected_name)
+            path = card_map[selected_name]
+            st.image(
+                path,
+                width=get_card_width(
+                    layout_width=900,
+                    col_ratio=2,
+                    total_ratio=3,
+                    max_width=420,
+                ),
+                caption=format_label(selected_name),
+            )
+
+            if attach_to_encounter:
+                if st.button("Attach Selected to Encounter", key="attach_selected_event"):
+                    _attach_event_to_current_encounter(path)
+                    st.success("Event attached to current encounter.")
         else:
-            st.image(DECK_BACK_PATH, width=get_card_width(layout_width=900, col_ratio=2, total_ratio=3, max_width=420), caption="None selected")
+            st.image(
+                DECK_BACK_PATH,
+                width=get_card_width(
+                    layout_width=900,
+                    col_ratio=2,
+                    total_ratio=3,
+                    max_width=420,
+                ),
+                caption="None selected",
+            )

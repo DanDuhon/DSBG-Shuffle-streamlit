@@ -1,3 +1,4 @@
+#ui/encounters_tab/generation.py
 import streamlit as st
 import os
 import base64
