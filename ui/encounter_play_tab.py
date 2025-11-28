@@ -31,6 +31,14 @@ def _get_encounter_id(encounter: dict):
     return None
 
 
+def _get_player_count() -> int:
+    try:
+        pc = int(st.session_state.get("player_count", 1))
+    except Exception:
+        pc = 1
+    return max(pc, 1)
+
+
 def _ensure_play_state(encounter_id):
     """
     Keep a small piece of state for the Play tab.
@@ -390,50 +398,126 @@ def _render_encounter_triggers(encounter: dict, play_state: dict, settings: dict
     for trig in triggers:
         current_val = state.get(trig.id, trig.default_value or 0)
 
-        # Build label with enemy placeholders and optional {value}
-        display_text = render_trigger_template(
-            trig.template,
-            enemy_names=enemy_names,
-            value=current_val if trig.kind in ("counter", "numeric") else None,
-        )
-
-        # You could visually de-emphasize triggers not relevant to the current phase,
-        # but for now just show them normally.
         if trig.kind == "checkbox":
+            old_val = bool(current_val)
+            player_count = _get_player_count()
+
+            # Build label:
+            # - If template is present, render it (with {players}, {players+N}, etc.)
+            # - If label is also present, use "Label: rendered_template"
+            if trig.template:
+                rendered = render_trigger_template(
+                    trig.template,
+                    enemy_names=enemy_names,
+                    player_count=player_count,
+                )
+                if trig.label:
+                    label_text = f"{trig.label}: {rendered}"
+                else:
+                    label_text = rendered
+            else:
+                # No template → just use label
+                label_text = trig.label or ""
+
             new_val = st.checkbox(
-                display_text,
-                value=bool(current_val),
+                label_text,
+                value=old_val,
                 key=f"trigger_{encounter_key}_{trig.id}",
             )
             state[trig.id] = new_val
 
-        elif trig.kind == "counter":
-            c1, c2, c3 = st.columns([3, 1, 1])
-            with c1:
-                st.markdown(display_text)
-            with c2:
-                if st.button("−", key=f"trigger_dec_{encounter_key}_{trig.id}"):
-                    new_val = max(trig.min_value, int(current_val) - 1)
-                    state[trig.id] = new_val
-            with c3:
-                if st.button("+", key=f"trigger_inc_{encounter_key}_{trig.id}"):
-                    upper = trig.max_value if trig.max_value is not None else int(current_val) + 1
-                    new_val = min(upper, int(current_val) + 1)
-                    state[trig.id] = new_val
+            # One-shot effect when flipping False -> True
+            if trig.effect_template and (not old_val and new_val):
+                effect = render_trigger_template(
+                    trig.effect_template,
+                    enemy_names=enemy_names,
+                    player_count=player_count,
+                )
+                st.info(effect)
 
+        # ----- COUNTER (e.g. The First Bastion lever) -----
+        elif trig.kind == "counter":
+            old_val = int(current_val)
+            new_val = old_val
+
+            # Layout: label (left) and - / + buttons (right)
+            c_label, c_minus, c_plus = st.columns([3, 1, 1])
+
+            # First process buttons (so state is updated before we render label)
+            with c_minus:
+                if st.button("➖", key=f"trigger_dec_{encounter_key}_{trig.id}"):
+                    new_val = max(trig.min_value, old_val - 1)
+
+            with c_plus:
+                if st.button("➕", key=f"trigger_inc_{encounter_key}_{trig.id}"):
+                    upper = trig.max_value if trig.max_value is not None else old_val + 1
+                    base = max(new_val, old_val)
+                    new_val = min(upper, base + 1)
+
+            # If the value changed this run, update state and fire any step effect
+            if new_val != old_val:
+                state[trig.id] = new_val
+
+                # Only fire step_effects on increments
+                if trig.step_effects and new_val > old_val:
+                    tmpl = trig.step_effects.get(new_val)
+                    if tmpl:
+                        effect = render_trigger_template(
+                            tmpl,
+                            enemy_names=enemy_names,
+                        )
+                        st.info(effect)
+
+            effective_val = state[trig.id]
+
+            # Now build the label using the UPDATED value
+            suffix = ""
+            if trig.template:
+                suffix = render_trigger_template(
+                    trig.template,
+                    enemy_names=enemy_names,
+                    value=effective_val,
+                )
+            if trig.label and suffix:
+                label_text = f"{trig.label}: {suffix}"
+            else:
+                label_text = trig.label or suffix
+
+            with c_label:
+                st.markdown(label_text)
+
+        # ----- NUMERIC (e.g. barrels per tile) -----
         elif trig.kind == "numeric":
+            value_int = int(current_val)
+
+            suffix = ""
+            if trig.template:
+                suffix = render_trigger_template(
+                    trig.template,
+                    enemy_names=enemy_names,
+                    value=value_int,
+                )
+            if trig.label and suffix:
+                label_text = f"{trig.label}: {suffix}"
+            else:
+                label_text = trig.label or suffix
+
             new_val = st.number_input(
-                display_text,
+                label_text,
                 min_value=trig.min_value,
                 max_value=trig.max_value if trig.max_value is not None else 999,
-                value=int(current_val),
+                value=value_int,
                 key=f"trigger_num_{encounter_key}_{trig.id}",
             )
             state[trig.id] = new_val
 
+        # ----- TIMER OBJECTIVE -----
         elif trig.kind == "timer_objective":
-            # Purely display for now; no input, just status.
-            st.markdown(f"- {display_text}")
+            label_text = trig.label or render_trigger_template(
+                trig.template or "", enemy_names=enemy_names
+            )
+
+            st.markdown(f"- {label_text}")
             if trig.timer_target is not None and play_state["timer"] >= trig.timer_target:
                 if trig.stop_on_complete:
                     stop_on_timer_objective = True

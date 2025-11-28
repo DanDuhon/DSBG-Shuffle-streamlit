@@ -231,6 +231,57 @@ enemyNames = {
     48: "Voracious Mimic"
 }
 
+enemyNameWithArticle = {
+    1: "an Alonne Bow Knight",
+    2: "an Alonne Knight Captain",
+    3: "an Alonne Sword Knight",
+    4: "a Black Hollow Mage",
+    5: "a Bonewheel Skeleton",
+    6: "a Crossbow Hollow",
+    7: "a Crow Demon",
+    8: "a Demonic Foliage",
+    9: "an Engorged Zombie",
+    10: "a Faalchion Skeleton",
+    11: "a Firebomb Hollow",
+    12: "a Giant Skeleton Archer",
+    13: "a Giant Skeleton Soldier",
+    14: "a Hollow Soldier",
+    15: "an Ironclad Soldier",
+    16: "a Large Hollow Soldier",
+    17: "a Mushroom Child",
+    18: "a Mushroom Parent",
+    19: "a Necromancer",
+    20: "a Phalanx",
+    21: "a Phalanx Hollow",
+    22: "a Plow Scarecrow",
+    23: "a Sentinel",
+    24: "a Shears Scarecrow",
+    25: "a Silver Knight Greatbowman",
+    26: "a Silver Knight Spearman",
+    27: "a Silver Knight Swordsman",
+    28: "a Skeleton Archer",
+    29: "a Skeleton Beast",
+    30: "a Skeleton Soldier",
+    31: "a Snow Rat",
+    32: "a Stone Guardian",
+    33: "a Stone Knight",
+    34: "a Mimic",
+    35: "Armorer Dennis",
+    36: "Fencer Sharron",
+    37: "Invader Brylex",
+    38: "Kirk, Knight of Thorns",
+    39: "Longfinger Kirk",
+    40: "Maldron the Assassin",
+    41: "Maneater Mildred",
+    42: "Marvelous Chester",
+    43: "Melinda the Butcher",
+    44: "Oliver the Collector",
+    45: "Paladin Leeroy",
+    46: "Xanthous King Jeremiah",
+    47: "a Hungry Mimic",
+    48: "a Voracious Mimic"
+}
+
 
 @st.cache_data(show_spinner=False)
 def get_enemy_image(enemy_name: str):

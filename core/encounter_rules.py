@@ -49,27 +49,29 @@ class EncounterRule:
 
         return True
 
-    def render(self, *, enemy_names: List[str]) -> str:
-        """
-        Render template with dynamic pieces substituted.
-
-        Supported placeholders:
-          - {enemy1}, {enemy2}, ...  (1-based indices into enemy_names)
-        """
-
+    def render(self, *, enemy_names: List[str], player_count: Optional[int] = None) -> str:
         def _sub_enemy(match: re.Match) -> str:
             idx_1_based = int(match.group(1))
             idx = idx_1_based - 1
             if 0 <= idx < len(enemy_names):
                 return enemy_names[idx]
-            # Fallback: leave something obvious if lookup fails
             return f"[enemy{idx_1_based}?]"
 
         text = _ENEMY_PATTERN.sub(_sub_enemy, self.template)
+
+        if player_count is not None:
+            def _sub_players_plus(m: re.Match) -> str:
+                offset = int(m.group(1))
+                return str(player_count + offset)
+
+            text = _PLAYERS_PLUS_PATTERN.sub(_sub_players_plus, text)
+            text = text.replace("{players}", str(player_count))
+
         return text
 
 
 _ENEMY_PATTERN = re.compile(r"{enemy(\d+)}")
+_PLAYERS_PLUS_PATTERN = re.compile(r"{players\+(\d+)}")
 
 
 # Mapping:
@@ -412,30 +414,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             ),
         ],
     },
-    # Example only; fill with real data as needed.
-    #
-    # "Cloak and Feathers|Core Set": {
-    #     "default": [
-    #         # Always visible, any phase / timer
-    #         EncounterRule(
-    #             template="TODO: Always-on rule text for Cloak and Feathers.",
-    #         ),
-    #         # Enemy phase, timer >= 2
-    #         EncounterRule(
-    #             template="TODO: Enemy-phase rule once the Timer is 2 or more.",
-    #             phase="enemy",
-    #             timer_min=2,
-    #         ),
-    #     ],
-    #     "edited": [
-    #         # Edited-only rule at Timer == 3 (enemy phase only)
-    #         EncounterRule(
-    #             template="TODO: Edited variant rule at Timer 3.",
-    #             phase="enemy",
-    #             timer_eq=3,
-    #         ),
-    #     ],
-    # },
 }
 
 
