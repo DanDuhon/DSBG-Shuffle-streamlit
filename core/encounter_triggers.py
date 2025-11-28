@@ -11,33 +11,21 @@ TriggerKind = Literal["checkbox", "counter", "numeric", "timer_objective"]
 
 @dataclass(frozen=True)
 class EncounterTrigger:
-    """
-    A UI-level trigger / tracker for an encounter.
-
-    - id: stable key per encounter ("lever", "chest", "trial", "barrels_tile1", etc.)
-    - template: label text; can include:
-        • {enemy1}, {enemy2}, ... for shuffled enemy names (like rules)
-        • {value} for the current counter / numeric value (optional)
-    - kind:
-        • "checkbox"       → simple on/off (e.g. chest opened, trial complete)
-        • "counter"        → small integer with +/- buttons (e.g. lever activations)
-        • "numeric"        → direct number input (e.g. barrels on tile)
-        • "timer_objective"→ shows a Timer goal (optionally disables Next Turn)
-    - phase: "enemy" / "player" / "any":
-        purely for highlighting / grouping if you want it later.
-    - min_value / max_value:
-        bounds for "counter" / "numeric".
-    - default_value:
-        initial value when an encounter is first loaded.
-    - timer_target:
-        for "timer_objective": Timer value at which the objective is considered reached.
-    - stop_on_complete:
-        if True and timer_target reached, you *can* choose to disable Next Turn.
-    """
-
     id: str
-    template: str
-    kind: TriggerKind
+
+    # Short text for the widget ("Chest opened", "Lever", "Trial", etc.)
+    label: str
+
+    # What kind of control this is
+    kind: TriggerKind  # "checkbox" | "counter" | "numeric" | "timer_objective"
+
+    # Optional status text (can contain {value}, {enemy1}, etc.) shown next to/under label
+    template: Optional[str] = None
+
+    # Optional one-shot effect text shown when the trigger fires
+    # (e.g. "Spawn a {enemy4} and a {enemy5} on ...")
+    effect_template: Optional[str] = None
+
     phase: Phase = "any"
     min_value: int = 0
     max_value: Optional[int] = None
@@ -74,6 +62,14 @@ def render_trigger_template(
 
 
 ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
+    "Gnashing Beaks|Painted World of Ariamis": [
+        EncounterTrigger(
+            id="gnashing_beaks_chest",
+            template="Chest opened: Spawn a {enemy4} and a {enemy5} on enemy spawn 1 on tile 1, and a {enemy6} on enemy spawn 2 on tile 1.",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
     # ---------- EXAMPLES ONLY: you’ll fill out the real data ----------
     "The First Bastion|Painted World of Ariamis": [
         # Lever: activate 3 times, spawn {enemy1} each time
