@@ -6,7 +6,7 @@ from json import load
 from pathlib import Path
 from PIL import Image
 
-from ui.encounters_tab.assets import (get_keyword_image, get_enemy_image, encounterKeywords, editedEncounterKeywords, keywordSize, keywordText, v1Expansions, v1Level4s, positions, ENCOUNTER_CARDS_DIR, EDITED_ENCOUNTER_CARDS_DIR)
+from ui.encounters_tab.assets import (get_keyword_image, get_enemy_image_by_id, encounterKeywords, editedEncounterKeywords, keywordSize, keywordText, v1Expansions, v1Level4s, positions, ENCOUNTER_CARDS_DIR, EDITED_ENCOUNTER_CARDS_DIR)
 
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
@@ -233,7 +233,7 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
             enemy_id = enemies[enemy_index]
             enemy_index += 1
 
-            icon_path = get_enemy_image(enemy_id)
+            icon_path = get_enemy_image_by_id(enemy_id)
             icon_img = Image.open(icon_path)
             width, height = icon_img.size
             # Size the image down to 40 pixels based on the longer side.

@@ -49,7 +49,7 @@ class EncounterRule:
 
         return True
 
-    def render(self, *, enemy_names: List[str], player_count: Optional[int] = None) -> str:
+    def render(self, enemy_pattern, players_plus_pattern, *, enemy_names: List[str], player_count: Optional[int] = None) -> str:
         def _sub_enemy(match: re.Match) -> str:
             idx_1_based = int(match.group(1))
             idx = idx_1_based - 1
@@ -57,21 +57,17 @@ class EncounterRule:
                 return enemy_names[idx]
             return f"[enemy{idx_1_based}?]"
 
-        text = _ENEMY_PATTERN.sub(_sub_enemy, self.template)
+        text = enemy_pattern.sub(_sub_enemy, self.template)
 
         if player_count is not None:
             def _sub_players_plus(m: re.Match) -> str:
                 offset = int(m.group(1))
                 return str(player_count + offset)
 
-            text = _PLAYERS_PLUS_PATTERN.sub(_sub_players_plus, text)
+            text = players_plus_pattern.sub(_sub_players_plus, text)
             text = text.replace("{players}", str(player_count))
 
         return text
-
-
-_ENEMY_PATTERN = re.compile(r"{enemy(\d+)}")
-_PLAYERS_PLUS_PATTERN = re.compile(r"{players\+(\d+)}")
 
 
 # Mapping:
@@ -216,7 +212,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Distant Tower|Painted World of Ariamis": {
         "default": [
             EncounterRule(
-                template="Barrage: At the end of each character's turn, that character must make a defense roll using only their dodge dice.\n\nIf no dodge symbols are rolled, the character suffers 2 damage and Stagger.",
+                template="Barrage: At the end of each character's turn, that character must make a defense roll using only their dodge dice. If no dodge symbols are rolled, the character suffers 2 damage and Stagger.",
                 phase="player"
             )
         ],
@@ -274,7 +270,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Central Plaza|Painted World of Ariamis": {
         "default": [
             EncounterRule(
-                template="Barrage: At the end of each character's turn, that character must make a defense roll using only their dodge dice.\n\nIf no dodge symbols are rolled, the character suffers 2 damage and Stagger.",
+                template="Barrage: At the end of each character's turn, that character must make a defense roll using only their dodge dice. If no dodge symbols are rolled, the character suffers 2 damage and Stagger.",
                 phase="player"
             ),
             EncounterRule(
@@ -290,15 +286,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="player"
             ),
             EncounterRule(
-                template="When a tile is made active, reset the Timer.",
-                phase="player"
-            ),
-            EncounterRule(
-                template="Characters can only leave a tile if there are no {enemy1}s on it.",
-                phase="player"
-            ),
-            EncounterRule(
-                template="When all {enemy3}s have been killed on tiles 1 and 2, spawn a {enemy3} on both enemy spawn nodes on tile 3.",
+                template="Characters can only leave a tile if there are no {enemy1_plural} on it.",
                 phase="player"
             ),
         ],
@@ -330,7 +318,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Eye of the Storm|Painted World of Ariamis": {
         "default": [
             EncounterRule(
-                template="Hidden: After declaring an attack, players must discard a die of their choice before rolling.\n\nIf the attack only has a single die already, ignore this rule.",
+                template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
                 phase="player"
             ),
             EncounterRule(
@@ -340,7 +328,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         ],
         "edited": [
             EncounterRule(
-                template="Hidden: After declaring an attack, players must discard a die of their choice before rolling.\n\nIf the attack only has a single die already, ignore this rule.",
+                template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
                 phase="player"
             ),
             EncounterRule(
@@ -353,7 +341,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="player"
             ),
             EncounterRule(
-                template="Once all {enemy1}s have been killed, spawn the {enemy6} on enemy spawn node 2 on tile 3.",
+                template="Once {enemy_list:1,2,3,4} have been killed, spawn a {enemy6} on enemy spawn node 2 on tile 3.",
                 phase="player"
             ),
         ],
@@ -364,7 +352,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 template="Reduce the node model limit to two.",
             ),
             EncounterRule(
-                template="{enemy7}s ignore barrels during movement.",
+                template="{enemy7_plural} ignore barrels during movement.",
                 phase="enemy"
             ),
             EncounterRule(
@@ -377,7 +365,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 template="Reduce the node model limit to two.",
             ),
             EncounterRule(
-                template="{enemy7}s ignore barrels during movement.",
+                template="{enemy7_plural} ignore barrels during movement.",
                 phase="enemy"
             ),
             EncounterRule(

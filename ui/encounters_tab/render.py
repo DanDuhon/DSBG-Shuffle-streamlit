@@ -13,7 +13,6 @@ from ui.encounters_tab.logic import (
 )
 from ui.encounters_tab.generation import (
     editedEncounterKeywords,
-    build_encounter_hotspots,
     generate_encounter_image,
     render_encounter_icons,
     build_encounter_keywords,
@@ -81,10 +80,8 @@ def render_event_card(event_obj):
 
 
 # --- Encounter helpers --------------------------------------------------------
-def render_card(buf, card_img, encounter_name, expansion, use_edited):
-    """Render a card with hotspots and caption."""
-    html = build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edited)
-    st.markdown(html, unsafe_allow_html=True)
+def render_card(card_img):
+    st.image(card_img, width="stretch")
 
 
 def render_original_encounter(
@@ -171,7 +168,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     # LEFT COLUMN – SETUP / EVENT / SAVE
     # -------------------------------------------------------------------------
     with col_controls:
-        st.subheader("Encounter Setup")
+        st.markdown("#### Encounter Setup")
 
         # Expansion selection
         selected_expansion = st.selectbox(
@@ -193,6 +190,40 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
         if not filtered_encounters:
             st.warning("No valid encounters for the selected expansions and party size.")
+            st.stop()
+
+        # --- Level filter radio buttons (only show levels that exist) ---
+        level_values = sorted({e["level"] for e in filtered_encounters})
+
+        level_filter = "All"
+        if len(level_values) > 1:
+            level_options = ["All"] + [str(lv) for lv in level_values]
+            prev_level = st.session_state.get("encounter_level_filter", "All")
+            if prev_level not in level_options:
+                prev_level = "All"
+
+            level_filter = st.radio(
+                "Encounter level",
+                level_options,
+                index=level_options.index(prev_level),
+                horizontal=True,
+                key="encounter_level_filter",
+            )
+        elif len(level_values) == 1:
+            # Only a single level available – implicitly filter to it
+            level_filter = str(level_values[0])
+
+        if level_filter != "All":
+            try:
+                level_int = int(level_filter)
+                filtered_encounters = [
+                    e for e in filtered_encounters if e["level"] == level_int
+                ]
+            except ValueError:
+                pass
+
+        if not filtered_encounters:
+            st.warning("No encounters at this level for the current filters.")
             st.stop()
 
         display_names = [
@@ -249,8 +280,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         st.session_state["last_toggle"] = use_edited
 
         # --- Shuffle / Original buttons ---
-        shuffle_clicked = st.button("Shuffle", width="stretch")
-        original_clicked = st.button("Original", width="stretch")
+        col_shuffle, col_original = st.columns(2)
+        with col_shuffle:
+            shuffle_clicked = st.button("Shuffle", width="stretch")
+        with col_original:
+            original_clicked = st.button("Original", width="stretch")
 
         # Shuffle
         if shuffle_clicked and selected_label:
@@ -371,61 +405,6 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         st.markdown("---")
 
         # ---------------------------------------------------------
-        # Event attachment
-        # ---------------------------------------------------------
-        st.subheader("Event Management")
-
-        col_ev1, col_ev2 = st.columns(2)
-        with col_ev1:
-            if st.button("Attach Random Event", width="stretch"):
-                # Ensure event deck exists and has a preset
-                if DECK_STATE_KEY not in st.session_state:
-                    st.session_state[DECK_STATE_KEY] = {
-                        "draw_pile": [],
-                        "discard_pile": [],
-                        "current_card": None,
-                        "preset": None,
-                    }
-
-                deck_state = st.session_state[DECK_STATE_KEY]
-                configs = load_event_configs()
-
-                preset = (
-                    deck_state.get("preset")
-                    or settings.get("event_deck", {}).get("preset")
-                    or PRESETS[0]
-                )
-
-                # Initialize if empty or preset changed
-                if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
-                    initialize_event_deck(preset, configs=configs)
-
-                # Draw and attach
-                draw_event_card()
-                save_settings(settings)  # persist deck state if you like
-                deck_state = st.session_state[DECK_STATE_KEY]
-                card_path = deck_state.get("current_card")
-                if card_path:
-                    _attach_event_to_current_encounter(card_path)
-
-        with col_ev2:
-            if st.button("Clear Events", width="stretch"):
-                st.session_state.encounter_events = []
-
-        # Small summary line
-        events = st.session_state.encounter_events
-        if events:
-            rendezvous_count = sum(1 for ev in events if ev.get("is_rendezvous"))
-            st.caption(
-                f"{len(events)} event(s) attached "
-                f"({rendezvous_count} rendezvous)."
-            )
-        else:
-            st.caption("No events attached yet.")
-
-        st.markdown("---")
-
-        # ---------------------------------------------------------
         # Save / Load curated encounters
         # ---------------------------------------------------------
         st.subheader("Saved Encounters")
@@ -477,15 +456,9 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             c1, c2 = st.columns(2)
 
             with c1:
-                st.markdown("#### Encounter")
+                st.markdown("#### Encounter Card")
                 encounter = st.session_state.current_encounter
-                render_card(
-                    encounter["buf"],
-                    encounter["card_img"],
-                    encounter["encounter_name"],
-                    encounter["expansion"],
-                    use_edited,
-                )
+                render_card(encounter["card_img"])
 
                 # Divider between card and rules
                 st.markdown(
@@ -515,9 +488,61 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 st.markdown("#### Events")
 
                 events = st.session_state.get("encounter_events", [])
+
+                # Event controls (attach / clear) in this column
+                col_ev1, col_ev2 = st.columns(2)
+                with col_ev1:
+                    if st.button(
+                        "Attach Random Event",
+                        width="stretch",
+                        key="enc_attach_random_event",
+                    ):
+                        # Ensure event deck exists and has a preset
+                        if DECK_STATE_KEY not in st.session_state:
+                            st.session_state[DECK_STATE_KEY] = {
+                                "draw_pile": [],
+                                "discard_pile": [],
+                                "current_card": None,
+                                "preset": None,
+                            }
+
+                        deck_state = st.session_state[DECK_STATE_KEY]
+                        configs = load_event_configs()
+
+                        preset = (
+                            deck_state.get("preset")
+                            or settings.get("event_deck", {}).get("preset")
+                            or PRESETS[0]
+                        )
+
+                        # Initialize if empty or preset changed
+                        if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
+                            initialize_event_deck(preset, configs=configs)
+
+                        # Draw and attach
+                        draw_event_card()
+                        save_settings(settings)
+                        deck_state = st.session_state[DECK_STATE_KEY]
+                        card_path = deck_state.get("current_card")
+                        if card_path:
+                            _attach_event_to_current_encounter(card_path)
+                        events = st.session_state.get("encounter_events", [])
+
+                with col_ev2:
+                    if st.button(
+                        "Clear Events",
+                        width="stretch",
+                        key="enc_clear_events",
+                    ):
+                        st.session_state.encounter_events = []
+                        events = []
+
+                # Summary line
                 if not events:
-                    st.caption("No events attached.")
-                else:
+                    st.caption("No events attached yet.")
+
+                # Event card images
+                if events:
                     ncols = 2
                     for row_start in range(0, len(events), ncols):
                         row_events = events[row_start:row_start + ncols]

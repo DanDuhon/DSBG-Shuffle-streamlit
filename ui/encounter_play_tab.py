@@ -1,9 +1,12 @@
 import streamlit as st
+import re
 import base64
 from datetime import datetime
 from pathlib import Path
+from typing import List, Optional
 
 from ui.events_tab.logic import EVENT_BEHAVIOR_MODIFIERS
+from ui.behavior_decks_tab.generation import load_behavior
 from ui.encounters_tab.assets import enemyNames
 from core.encounter_rules import (
     make_encounter_key,
@@ -11,18 +14,590 @@ from core.encounter_rules import (
     get_upcoming_rules_for_encounter,
 )
 from core.encounter_triggers import (
-    ENCOUNTER_TRIGGERS,
     EncounterTrigger,
-    render_trigger_template,
+    get_triggers_for_encounter,
+)
+
+# ---------------------------------------------------------------------
+# Text + template helpers
+# ---------------------------------------------------------------------
+
+TIMER_ICON_PATH = Path("assets") / "timer.png"
+BEHAVIOR_CARD_DIR = Path("assets") / "behavior_cards"
+
+# {enemy1}, {enemy2}, etc.
+_ENEMY_PATTERN = re.compile(r"{enemy(\d+)}")
+# {enemy1_plural} explicit plural
+_ENEMY_PLURAL_PATTERN = re.compile(r"{enemy(\d+)_plural}")
+# {enemy1}s -> pluralize the enemy name
+_ENEMY_S_PATTERN = re.compile(r"{enemy(\d+)}s\b")
+# {players+3}, {players+1}, etc.
+_PLAYERS_PLUS_PATTERN = re.compile(r"{players\+(\d+)}")
+# {enemy_list:1,2,3} -> grouped phrase from multiple enemy indices
+_ENEMY_LIST_PATTERN = re.compile(r"{enemy_list:([^}]+)}")
+
+_VOWELS = set("AEIOUaeiou")
+
+# ---------------------------------------------------------------------
+# Hard timer limits for encounters (no visible trigger)
+# ---------------------------------------------------------------------
+
+# Values here are *offsets from party size*:
+#   actual_limit = player_count + offset
+_HARD_TIMER_LIMITS = {
+    # Corvian Host: "Kill all enemies before the Timer reaches {players+5}"
+    "Corvian Host|Painted World of Ariamis": {
+        "default": 5,   # limit = players + 5
+    },
+    # Add more encounters here later if needed
+}
+
+# Optional caps for phrases like "on {players+0} tiles" in objective text.
+# Values are the maximum number of tiles that physically exist in the encounter.
+OBJECTIVE_TILE_CAPS = {
+    # Example: whatever encounter this objective belongs to
+    # "Some Encounter Name|Painted World of Ariamis": 3,
+    "Central Plaza|Painted World of Ariamis": 3,
+}
+
+# Mapping from encounter key -> variant ("default"/"edited") -> objective/trial templates.
+# Each template can use {enemyN}, {players}, {players+N}, etc.
+ENCOUNTER_OBJECTIVES = {
+    "Cloak and Feathers|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+        },
+    },
+    "Frozen Sentries|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "No Safe Haven|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy3}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Painted Passage|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Promised Respite|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Roll Out|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Skittering Frenzy|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Survive until the Timer reaches {players+2}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The First Bastion|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Activate the lever 3 times. Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy4}."
+            ],
+        },
+        "edited": {
+            "objectives": [
+                "Activate the lever 3 times. Reach the exit node.",
+            ],
+            "trials": [
+                "Kill a {enemy4}."
+            ],
+        },
+    },
+    "Unseen Scurrying|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Abandoned and Forgotten|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reveal three blank trap tokens.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Cold Snap|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy4}."
+            ],
+        },
+    },
+    "Corrupted Hovel|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Kill all enemies before the Timer reaches {players+2}"
+            ],
+        },
+    },
+    "Distant Tower|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy5}."
+            ],
+        },
+    },
+    "Gnashing Beaks|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Open the chest. Reach the exit node.",
+            ],
+            "trials": [
+                "Open the chest before the Timer reaches {players+3}."
+            ],
+        },
+    },
+    "Inhospitable Ground|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Montrous Maw|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Skeletal Spokes|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Survive until the Timer reaches {players+2}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Snowblind|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Central Plaza|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies on {players+0} tiles. Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Corvian Host|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies before the Timer reaches {players+5}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Deathly Freeze|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Draconic Decay|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Eye of the Storm|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy6}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Frozen Revolutions|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Activate both levers. Reach the exit node.",
+            ],
+            "trials": [
+                "No barrels are discarded."
+            ],
+        },
+    },
+    "The Last Bastion|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Kill the {enemy1} first."
+            ],
+        },
+    },
+    "Trecherous Tower|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reveal four blank trap tokens.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Velka's Chosen|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy3}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+}
+
+
+def _safe_enemy_name(enemy_names: List[str], idx_1_based: int) -> str:
+    idx = idx_1_based - 1
+    if 0 <= idx < len(enemy_names):
+        return enemy_names[idx]
+    return f"[enemy{idx_1_based}?]"
+
+
+# Hard-coded irregular plurals – extend as needed
+_IRREGULAR_ENEMY_PLURALS = {
+}
+
+
+def _pluralize_enemy_name(name: str) -> str:
+    """Best-effort pluralization with a small irregulars table."""
+    if name in _IRREGULAR_ENEMY_PLURALS:
+        return _IRREGULAR_ENEMY_PLURALS[name]
+
+    parts = name.split()
+    if not parts:
+        return name
+
+    last = parts[-1]
+    lower = last.lower()
+
+    # Swordsman -> Swordsmen
+    if lower.endswith("man"):
+        plural_last = last[:-3] + "men"
+    # Hollow -> Hollows (default)
+    # Knights -> Knights (we won't get here because of irregulars)
+    elif lower.endswith(("s", "x", "z", "ch", "sh")):
+        plural_last = last + "es"
+    # Party -> Parties
+    elif lower.endswith("y") and len(last) > 1 and last[-2].lower() not in "aeiou":
+        plural_last = last[:-1] + "ies"
+    else:
+        plural_last = last + "s"
+
+    return " ".join(parts[:-1] + [plural_last])
+
+
+def _apply_enemy_placeholders(template: str, enemy_names: List[str]) -> str:
+    """Replace {enemyN}, {enemyN_plural}, and {enemyN}s with proper names/plurals."""
+
+    # 1) {enemyN}s -> plural of the enemy name
+    def _sub_plural_s(match: re.Match) -> str:
+        idx_1_based = int(match.group(1))
+        base = _safe_enemy_name(enemy_names, idx_1_based)
+        return _pluralize_enemy_name(base)
+
+    text = _ENEMY_S_PATTERN.sub(_sub_plural_s, template)
+
+    # 2) {enemyN_plural} -> plural form
+    def _sub_plural(match: re.Match) -> str:
+        idx_1_based = int(match.group(1))
+        base = _safe_enemy_name(enemy_names, idx_1_based)
+        return _pluralize_enemy_name(base)
+
+    text = _ENEMY_PLURAL_PATTERN.sub(_sub_plural, text)
+
+    # 3) {enemyN} -> single name
+    def _sub_single(match: re.Match) -> str:
+        idx_1_based = int(match.group(1))
+        return _safe_enemy_name(enemy_names, idx_1_based)
+
+    text = _ENEMY_PATTERN.sub(_sub_single, text)
+    return text
+
+
+def _apply_player_placeholders(text: str, player_count: int) -> str:
+    """Handle {players} and {players+N} placeholders."""
+
+    def _sub_players_plus(m: re.Match) -> str:
+        offset = int(m.group(1))
+        return str(player_count + offset)
+
+    text = _PLAYERS_PLUS_PATTERN.sub(_sub_players_plus, text)
+    return text.replace("{players}", str(player_count))
+
+
+def _format_enemy_list_from_indices(indices_str: str, enemy_names: List[str]) -> str:
+    """
+    Given something like '1,2,3,4' and the enemy_names list, return a phrase like:
+      - 'four Phalanx Hollows'
+      - 'two Phalanx Hollows and two Hollow Soldiers'
+      - 'both Phalanx Hollows' (if exactly two of one type)
+    """
+    # Parse "1,2,3,4" -> [1, 2, 3, 4]
+    idxs: list[int] = []
+    for part in indices_str.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            idxs.append(int(part))
+        except ValueError:
+            continue
+
+    # Map indices to names (1-based indices)
+    names: list[str] = []
+    for idx_1 in idxs:
+        idx0 = idx_1 - 1
+        if 0 <= idx0 < len(enemy_names):
+            names.append(enemy_names[idx0])
+
+    # Group by name, preserving first-seen order
+    groups: list[dict] = []
+    seen: dict[str, dict] = {}
+    for name in names:
+        if name in seen:
+            seen[name]["count"] += 1
+        else:
+            g = {"name": name, "count": 1}
+            seen[name] = g
+            groups.append(g)
+
+    if not groups:
+        return ""
+
+    def number_word(n: int) -> str:
+        words = {
+            1: "one",
+            2: "two",
+            3: "three",
+            4: "four",
+            5: "five",
+            6: "six",
+            7: "seven",
+            8: "eight",
+            9: "nine",
+            10: "ten",
+        }
+        return words.get(n, str(n))
+
+    parts: list[str] = []
+    for g in groups:
+        n = g["count"]
+        name = g["name"]
+        if n == 1:
+            phrase = name
+        elif n == 2 and len(groups) == 1:
+            # Exactly two of a single enemy type -> 'both Xs'
+            phrase = f"both {_pluralize_enemy_name(name)}"
+        else:
+            phrase = f"{number_word(n)} {_pluralize_enemy_name(name)}"
+        parts.append(phrase)
+
+    # Natural-language join
+    if len(parts) == 1:
+        return parts[0]
+    if len(parts) == 2:
+        return f"{parts[0]} and {parts[1]}"
+    return ", ".join(parts[:-1]) + ", and " + parts[-1]
+
+
+# For collapsing things like "Phalanx Hollow, Phalanx Hollow, ... killed."
+_DUPLICATE_ENEMY_LIST_PATTERN = re.compile(
+    r"^(?P<names>.+?) killed(\.)?$", re.IGNORECASE
 )
 
 
-TIMER_ICON_PATH = Path("assets") / "timer.png"
+def _collapse_duplicate_enemy_list(text: str) -> str:
+    """
+    Collapse 'Phalanx Hollow, Phalanx Hollow, Phalanx Hollow, and Phalanx Hollow killed.'
+    into 'All Phalanx Hollows killed.' and similar patterns.
+    """
+    stripped = text.strip()
+    m = _DUPLICATE_ENEMY_LIST_PATTERN.match(stripped)
+    if not m:
+        return text
+
+    names_str = m.group("names")
+    # Split on commas and "and"
+    parts = re.split(r",\s*|\s+and\s+", names_str)
+    parts = [p.strip() for p in parts if p.strip()]
+    if len(parts) <= 1:
+        return text
+
+    first = parts[0]
+    if not all(p == first for p in parts):
+        return text
+
+    count = len(parts)
+    plural = _pluralize_enemy_name(first)
+    if count == 2:
+        prefix = "two"
+    elif count == 3:
+        prefix = "three"
+    elif count == 4:
+        prefix = "four"
+    if names_str[0].isupper():
+        prefix = prefix.capitalize()
+
+    out = f"{prefix} {plural} killed"
+    if stripped.endswith("."):
+        out += "."
+    return out
+
+
+_TILE_PHRASE_PATTERN = re.compile(r"\bon\s+(\d+)\s+tiles\b", re.IGNORECASE)
+
+
+def _cap_tiles_in_text(text: str, max_tiles: int) -> str:
+    """
+    If text contains phrases like 'on 4 tiles' but the encounter only has
+    max_tiles (e.g. 3), clamp the number to max_tiles.
+
+    E.g. 'Kill all enemies on 4 tiles.' -> 'Kill all enemies on 3 tiles.'
+    """
+
+    def repl(m: re.Match) -> str:
+        n = int(m.group(1))
+        if n <= max_tiles:
+            return m.group(0)
+        return m.group(0).replace(str(n), str(max_tiles), 1)
+
+    return _TILE_PHRASE_PATTERN.sub(repl, text)
+
+
+def _fix_indefinite_articles(text: str) -> str:
+    """
+    Fix simple 'a'/'an' issues like 'a Alonne Knight' -> 'an Alonne Knight'.
+    This is intentionally lightweight, not full English grammar.
+    """
+    pattern = re.compile(r"\b(a|an)\s+([A-Za-z])")
+
+    def repl(match: re.Match) -> str:
+        article, first_char = match.group(1), match.group(2)
+        if first_char in _VOWELS:
+            return f"an {first_char}"
+        else:
+            return f"a {first_char}"
+
+    return pattern.sub(repl, text)
+
+
+def _render_text_template(
+    template: str,
+    enemy_names: List[str],
+    *,
+    value: Optional[int] = None,
+    player_count: Optional[int] = None,
+) -> str:
+    text = template
+
+    # 1) {enemy_list:1,2,3} – group and format those enemies as a phrase
+    def _sub_enemy_list(m: re.Match) -> str:
+        indices_str = m.group(1)
+        return _format_enemy_list_from_indices(indices_str, enemy_names)
+
+    text = _ENEMY_LIST_PATTERN.sub(_sub_enemy_list, text)
+
+    # 2) Regular enemy placeholders ({enemyN}, {enemyN}s, {enemyN_plural})
+    text = _apply_enemy_placeholders(text, enemy_names)
+
+    # 3) Players and players+N
+    if player_count is None:
+        player_count = _get_player_count()
+    if player_count is not None:
+        text = _apply_player_placeholders(text, player_count)
+
+    # 4) {value} for counters / numerics
+    if value is not None:
+        text = text.replace("{value}", str(value))
+
+    # 5) Grammar cleanups
+    text = _collapse_duplicate_enemy_list(text)
+    text = _fix_indefinite_articles(text)
+
+    return text
 
 
 # ---------------------------------------------------------------------
 # Helpers: state + ids
 # ---------------------------------------------------------------------
+
+
 def _get_encounter_id(encounter: dict):
     """Best-effort way to identify the current encounter for resetting state."""
     for key in ("id", "slug", "encounter_slug", "encounter_name"):
@@ -37,6 +612,113 @@ def _get_player_count() -> int:
     except Exception:
         pc = 1
     return max(pc, 1)
+
+
+# ---------------------------------------------------------------------
+# Special timer behaviour for specific encounters
+# ---------------------------------------------------------------------
+
+# Per-encounter / per-variant timer tweaks:
+# - manual_increment: don't auto-increase Timer on player→enemy; show a button instead
+# - reset_button: show a button that resets Timer to 0 (without changing phase)
+_SPECIAL_TIMER_BEHAVIORS = {
+    "Eye of the Storm|Painted World of Ariamis": {
+        "edited": {
+            "manual_increment": True,
+            "manual_increment_label": "Increase Timer (no enemies on active tiles)",
+            "manual_increment_help": (
+                "Only click this at the end of a character's turn if there are no "
+                "enemies on any active tile."
+            ),
+            "manual_increment_log": "Timer increased (no enemies on active tiles).",
+        }
+    },
+    "Corvian Host|Painted World of Ariamis": {
+        "default": {
+            "reset_button": True,
+            "reset_button_label": "Tile made active (reset Timer)",
+            "reset_button_help": (
+                "When a tile is made active, reset the Timer to 0 (objective: "
+                "kill all enemies before time runs out)."
+            ),
+            "reset_button_log": "Timer reset to 0 because a tile was made active.",
+        }
+    },
+}
+
+
+def _get_timer_behavior_for_encounter(encounter: dict, settings: dict) -> dict:
+    """
+    Return a small config dict describing any special timer behavior
+    for the current encounter (if any).
+    """
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+
+    variants = _SPECIAL_TIMER_BEHAVIORS.get(encounter_key)
+    if not variants:
+        return {}
+
+    if edited and "edited" in variants:
+        return variants["edited"]
+
+    return variants.get("default", {})
+
+
+def _compute_stop_on_timer_objective(encounter: dict, settings: dict, play_state: dict) -> bool:
+    """
+    Decide if Next Turn should be disabled because a timer-based
+    objective has expired.
+
+    Sources:
+    - Visible timer_objective triggers (if any).
+    - Hidden encounter-level limits from _HARD_TIMER_LIMITS.
+    """
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+    player_count = _get_player_count()
+
+    # 1) Visible timer_objective triggers (if you ever use them)
+    triggers = get_triggers_for_encounter(
+        encounter_key=encounter_key,
+        edited=edited,
+    )
+    if triggers:
+        for trig in triggers:
+            if (
+                trig.kind == "timer_objective"
+                and trig.stop_on_complete
+                and trig.timer_target is not None
+            ):
+                # For triggers we treat timer_target as an absolute value.
+                if play_state["timer"] >= trig.timer_target:
+                    return True
+
+    # 2) Hidden encounter-level hard timer caps
+    caps = _HARD_TIMER_LIMITS.get(encounter_key)
+    if caps:
+        # Pick default vs edited variant if present
+        offset = caps.get("edited" if edited else "default")
+        if offset is not None:
+            limit = player_count + offset
+            if play_state["timer"] >= limit:
+                return True
+
+    return False
 
 
 def _ensure_play_state(encounter_id):
@@ -56,6 +738,23 @@ def _ensure_play_state(encounter_id):
         st.session_state["encounter_play"] = state
 
     return state
+
+
+def _apply_pending_action(play_state: dict, timer_behavior: dict) -> None:
+    """
+    If the last run scheduled a pending turn action (next, prev, reset),
+    apply it *before* rendering anything.
+    """
+    action = st.session_state.pop("encounter_play_pending_action", None)
+
+    disable_auto_timer = bool(timer_behavior.get("manual_increment", False))
+
+    if action == "next":
+        _advance_turn(play_state, disable_auto_timer=disable_auto_timer)
+    elif action == "prev":
+        _previous_turn(play_state)
+    elif action == "reset":
+        _reset_play_state(play_state)
 
 
 def _log(play_state: dict, text: str):
@@ -106,6 +805,90 @@ def _get_enemy_display_names(encounter: dict) -> list[str]:
     return names
 
 
+def _get_objective_config(encounter: dict, settings: dict) -> Optional[dict]:
+    """
+    Return the objective config dict for this encounter, or None if not defined.
+
+    The dict has shape:
+      {
+        "objectives": [template_str, ...],
+        "trials": [template_str, ...],
+      }
+    """
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+    variants = ENCOUNTER_OBJECTIVES.get(encounter_key)
+    if not variants:
+        return None
+
+    if edited and "edited" in variants:
+        return variants["edited"]
+
+    return variants.get("default")
+
+
+def _render_objectives(encounter: dict, settings: dict) -> None:
+    cfg = _get_objective_config(encounter, settings)
+    if not cfg:
+        return
+
+    enemy_names = _get_enemy_display_names(encounter)
+    player_count = _get_player_count()
+
+    # Figure out if there is a tile cap for this encounter
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+    tile_cap = OBJECTIVE_TILE_CAPS.get(encounter_key)
+
+    primary = cfg.get("objectives") or []
+    trials = cfg.get("trials") or []
+
+    if len(primary) + len(trials) == 0:
+        return
+
+    st.markdown("#### Objective")
+
+    # Main objectives
+    for template in primary:
+        text = _render_text_template(
+            template,
+            enemy_names,
+            player_count=player_count,
+        )
+        if tile_cap is not None:
+            text = _cap_tiles_in_text(text, tile_cap)
+        st.markdown(f"- {text}", unsafe_allow_html=True)
+
+    if trials:
+        st.markdown("#### Trial")
+        for template in trials:
+            text = _render_text_template(
+                template,
+                enemy_names,
+                player_count=player_count,
+            )
+            if tile_cap is not None:
+                text = _cap_tiles_in_text(text, tile_cap)
+            st.markdown(f"- {text}", unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------
+# Rules + upcoming rules
+# ---------------------------------------------------------------------
+
+
 def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
     st.markdown("#### Rules")
 
@@ -129,13 +912,18 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
     )
 
     enemy_names = _get_enemy_display_names(encounter)
+    player_count = _get_player_count()
 
     if not current_rules:
         st.caption("No rules to show for this encounter in the current state.")
     else:
         for rule in current_rules:
-            text = rule.render(enemy_names=enemy_names)
-            st.markdown(f"- {text}")
+            text = _render_text_template(
+                rule.template,
+                enemy_names,
+                player_count=player_count,
+            )
+            st.markdown(f"- {text}", unsafe_allow_html=True)
 
     # --- Upcoming rules: inline section (no expander) ---
     upcoming = get_upcoming_rules_for_encounter(
@@ -145,25 +933,25 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
         max_lookahead=3,  # show next 3 Timer step(s); tweak if you like
     )
 
-    st.markdown("**Upcoming rules**")
+    if upcoming:
+        st.markdown("**Upcoming rules**")
 
-    if not upcoming:
-        st.caption("No upcoming rules.")
+        for trigger_timer, rule in upcoming:
+            phase_label = {
+                "enemy": "Enemy Phase",
+                "player": "Player Phase",
+                "any": "Any Phase",
+            }.get(rule.phase, "Any Phase")
 
-    for trigger_timer, rule in upcoming:
-        phase_label = {
-            "enemy": "Enemy Phase",
-            "player": "Player Phase",
-            "any": "Any Phase",
-        }.get(rule.phase, "Any Phase")
-        text = rule.render(enemy_names=enemy_names)
-        st.markdown(
-            f"- **Timer {trigger_timer} · {phase_label}** — {text}"
-        )
-
-
-def _get_encounter_trigger_defs(encounter_key: str) -> list[EncounterTrigger]:
-    return ENCOUNTER_TRIGGERS.get(encounter_key, [])
+            text = _render_text_template(
+                rule.template,
+                enemy_names,
+                player_count=player_count,
+            )
+            st.markdown(
+                f"- **Timer {trigger_timer} · {phase_label}** — {text}",
+                unsafe_allow_html=True,
+            )
 
 
 def _ensure_trigger_state(encounter_key: str, triggers: list[EncounterTrigger]) -> dict:
@@ -188,6 +976,8 @@ def _ensure_trigger_state(encounter_key: str, triggers: list[EncounterTrigger]) 
 # ---------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------
+
+
 def render(settings: dict) -> None:
     """
     Encounter Play tab.
@@ -204,10 +994,20 @@ def render(settings: dict) -> None:
     encounter_id = _get_encounter_id(encounter)
     play_state = _ensure_play_state(encounter_id)
 
+    # Per-encounter special timer behaviour (manual increment, reset button, etc.)
+    timer_behavior = _get_timer_behavior_for_encounter(encounter, settings)
+
+    # Apply any pending action (from button click in the previous run)
+    _apply_pending_action(play_state, timer_behavior)
+
+    # Decide if any timer objective wants to stop progression
+    stop_on_timer_objective = _compute_stop_on_timer_objective(
+        encounter, settings, play_state
+    )
+
     # -----------------------------------------------------------------
-    # Main layout: 3 columns
-    # Left: timer/phase + controls + triggers + rules + events + log
-    # Middle: encounter card
+    # Main layout: 2 columns
+    # Left: objectives + timer/phase + controls + rules + triggers + events + log
     # Right: enemy behavior cards (placeholder for now)
     # -----------------------------------------------------------------
     col_left, col_mid, col_right = st.columns([1, 1, 1], gap="large")
@@ -215,36 +1015,49 @@ def render(settings: dict) -> None:
     with col_left:
         timer_phase_container = st.container()
         controls_container = st.container()
-        rest_container = st.container()
 
-        # First: figure out if any timer_objective wants to stop play
-        # (purely based on current timer + triggers definition)
-        stop_on_timer_objective = _render_encounter_triggers(encounter, play_state, settings)
-
-        # Then controls (can use stop_on_timer_objective)
-        with controls_container:
-            _render_turn_controls(play_state, stop_on_timer_objective=stop_on_timer_objective)
-
-        # Finally, timer+phase (after button clicks update state)
+        # Timer + phase (top row)
         with timer_phase_container:
             _render_timer_and_phase(play_state)
 
-        # Rules, events, log
-        with rest_container:
-            _render_rules(encounter, settings, play_state)
+        # Turn controls (Next Turn can be disabled by timer objective)
+        with controls_container:
+            _render_turn_controls(
+                play_state,
+                stop_on_timer_objective=stop_on_timer_objective,
+                timer_behavior=timer_behavior,
+            )
+            _render_encounter_triggers(encounter, play_state, settings)
             _render_attached_events()
             _render_log(play_state)
 
     with col_mid:
-        _render_encounter_card(encounter)
+        objectives_container = st.container()
+
+        # Objectives (including Trials)
+        with objectives_container:
+            _render_objectives(encounter, settings)
+
+        rest_container = st.container()
+
+        # Rest of the info stack:
+        # Rules
+        # Encounter Triggers
+        # Attached Events
+        # Turn Log
+        with rest_container:
+            _render_rules(encounter, settings, play_state)
+
 
     with col_right:
-        _render_enemy_behaviors_placeholder(encounter)
+        _render_enemy_behaviors(encounter)
 
 
 # ---------------------------------------------------------------------
 # Left column: timer/phase, buttons, triggers, rules, events, log
 # ---------------------------------------------------------------------
+
+
 def _render_timer_and_phase(play_state: dict) -> None:
     # One row: [Timer icon count] | [Enemy Phase / Player Phase]
     c1, c2 = st.columns([1.4, 1])
@@ -281,21 +1094,28 @@ def _render_timer_and_phase(play_state: dict) -> None:
         )
 
 
-def _advance_turn(play_state: dict) -> None:
+def _advance_turn(play_state: dict, disable_auto_timer: bool = False) -> None:
     """
     Smart 'Next Turn' behavior:
 
     - Start: Timer 0, Enemy Phase.
     - Enemy → Player (no timer change).
-    - Player → Enemy and **timer +1**.
+    - Player → Enemy and **timer +1**, unless disable_auto_timer is True.
     """
     if play_state["phase"] == "enemy":
         play_state["phase"] = "player"
         _log(play_state, "Advanced to Player Phase")
-    else:  # player -> enemy, increment timer
-        play_state["timer"] += 1
-        play_state["phase"] = "enemy"
-        _log(play_state, "Advanced to Enemy Phase; timer increased")
+    else:  # player -> enemy
+        if not disable_auto_timer:
+            play_state["timer"] += 1
+            play_state["phase"] = "enemy"
+            _log(play_state, "Advanced to Enemy Phase; timer increased")
+        else:
+            play_state["phase"] = "enemy"
+            _log(
+                play_state,
+                "Advanced to Enemy Phase (Timer unchanged due to encounter rule)",
+            )
 
 
 def _previous_turn(play_state: dict) -> None:
@@ -327,14 +1147,22 @@ def _reset_play_state(play_state: dict) -> None:
     _log(play_state, "Play state reset (Timer 0, Enemy Phase)")
 
 
-def _render_turn_controls(play_state: dict, stop_on_timer_objective: bool = False) -> None:
+def _render_turn_controls(
+    play_state: dict,
+    stop_on_timer_objective: bool = False,
+    timer_behavior: Optional[dict] = None,
+) -> None:
+    if timer_behavior is None:
+        timer_behavior = {}
+
     st.markdown("#### Turn Controls")
 
     b1, b2, b3 = st.columns(3)
 
     with b1:
         if st.button("Previous Turn", key="encounter_play_prev_turn"):
-            _previous_turn(play_state)
+            st.session_state["encounter_play_pending_action"] = "prev"
+            st.rerun()
 
     with b2:
         if st.button(
@@ -342,40 +1170,82 @@ def _render_turn_controls(play_state: dict, stop_on_timer_objective: bool = Fals
             key="encounter_play_next_turn",
             disabled=stop_on_timer_objective,
         ):
-            _advance_turn(play_state)
+            st.session_state["encounter_play_pending_action"] = "next"
+            st.rerun()
 
     with b3:
         if st.button("Reset", key="encounter_play_reset"):
-            _reset_play_state(play_state)
+            st.session_state["encounter_play_pending_action"] = "reset"
+            st.rerun()
 
     if stop_on_timer_objective:
         st.caption("Time has run out; Next Turn is disabled for this encounter.")
-    else:
-        st.caption(
-            "Flow: **Enemy → Player → Enemy (+1 Timer)**. "
-            "Use Previous Turn if you click Next Turn by mistake."
-        )
+
+    # --- Special timer actions (per-encounter) ---
+    has_manual_inc = bool(timer_behavior.get("manual_increment"))
+    has_reset_btn = bool(timer_behavior.get("reset_button"))
+
+    if has_manual_inc or has_reset_btn:
+        st.markdown("##### Special Timer Actions")
+        cols = st.columns((1 if has_manual_inc else 0) + (1 if has_reset_btn else 0))
+
+        col_idx = 0
+
+        # Manual 'Increase Timer' button (Eye of the Storm edited)
+        if has_manual_inc:
+            label = timer_behavior.get(
+                "manual_increment_label",
+                "Increase Timer",
+            )
+            help_text = timer_behavior.get("manual_increment_help")
+            log_text = timer_behavior.get(
+                "manual_increment_log",
+                "Timer manually increased.",
+            )
+
+            with cols[col_idx]:
+                if st.button(
+                    label,
+                    key="encounter_play_manual_timer_increase",
+                ):
+                    play_state["timer"] += 1
+                    _log(play_state, log_text)
+                    st.rerun()
+            col_idx += 1
+            if help_text:
+                st.caption(help_text)
+
+        # 'Reset Timer' button (Corvian Host: tile made active)
+        if has_reset_btn:
+            label = timer_behavior.get(
+                "reset_button_label",
+                "Reset Timer (special rule)",
+            )
+            help_text = timer_behavior.get("reset_button_help")
+            log_text = timer_behavior.get(
+                "reset_button_log",
+                "Timer reset due to special rule.",
+            )
+
+            with cols[col_idx]:
+                if st.button(
+                    label,
+                    key="encounter_play_special_timer_reset",
+                ):
+                    old_timer = play_state["timer"]
+                    play_state["timer"] = 0
+                    _log(
+                        play_state,
+                        f"{log_text} (was {old_timer}, now 0)",
+                    )
+                    st.rerun()
+            if help_text:
+                st.caption(help_text)
 
 
-def _get_encounter_triggers(encounter: dict):
-    """
-    Placeholder: later this can pull structured triggers from encounter data.
+def _render_encounter_triggers(encounter: dict, play_state: dict, settings: dict) -> None:
+    st.markdown("#### Encounter Triggers")
 
-    For now, always returns an empty list so the section stays hidden.
-    """
-    return encounter.get("triggers", []) or []
-
-
-def _render_encounter_triggers(encounter: dict, play_state: dict, settings: dict) -> bool:
-    """
-    Render encounter-specific triggers and trackers.
-
-    Returns:
-        stop_on_timer_objective: bool
-            True if there is a timer_objective with stop_on_complete=True
-            that has been reached. You *can* use this to disable Next Turn.
-    """
-    # Build encounter key (same as for rules)
     name = (
         encounter.get("encounter_name")
         or encounter.get("name")
@@ -384,123 +1254,72 @@ def _render_encounter_triggers(encounter: dict, play_state: dict, settings: dict
     expansion = encounter.get("expansion", "Unknown Expansion")
     encounter_key = make_encounter_key(name=name, expansion=expansion)
 
-    triggers = _get_encounter_trigger_defs(encounter_key)
-    if not triggers:
-        return False  # nothing to render, nothing to block
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
 
-    st.markdown("#### Encounter Triggers")
+    triggers = get_triggers_for_encounter(
+        encounter_key=encounter_key,
+        edited=edited,
+    )
+    if not triggers:
+        st.caption("No special triggers defined for this encounter yet.")
+        return
 
     enemy_names = _get_enemy_display_names(encounter)
     state = _ensure_trigger_state(encounter_key, triggers)
 
-    stop_on_timer_objective = False
-
     for trig in triggers:
-        current_val = state.get(trig.id, trig.default_value or 0)
+        # Phase-gating: only show if it applies in the current phase
+        if trig.phase not in ("any", play_state["phase"]):
+            continue
 
+        # ----- CHECKBOX -----
         if trig.kind == "checkbox":
-            old_val = bool(current_val)
-            player_count = _get_player_count()
+            prev = bool(state.get(trig.id, trig.default_value or False))
 
-            # Build label:
-            # - If template is present, render it (with {players}, {players+N}, etc.)
-            # - If label is also present, use "Label: rendered_template"
+            suffix = ""
             if trig.template:
-                rendered = render_trigger_template(
+                suffix = _render_text_template(
                     trig.template,
-                    enemy_names=enemy_names,
-                    player_count=player_count,
+                    enemy_names,
                 )
-                if trig.label:
-                    label_text = f"{trig.label}: {rendered}"
-                else:
-                    label_text = rendered
+
+            if trig.label and suffix:
+                label_text = f"{trig.label}: {suffix}"
             else:
-                # No template → just use label
-                label_text = trig.label or ""
+                label_text = trig.label or suffix or trig.id
 
             new_val = st.checkbox(
                 label_text,
-                value=old_val,
-                key=f"trigger_{encounter_key}_{trig.id}",
+                value=prev,
+                key=f"trigger_cb_{encounter_key}_{trig.id}",
             )
+
+            # One-shot effect when it flips False -> True
+            if new_val and not prev and trig.effect_template:
+                effect_text = _render_text_template(
+                    trig.effect_template,
+                    enemy_names,
+                )
+                st.info(effect_text)
+
             state[trig.id] = new_val
 
-            # One-shot effect when flipping False -> True
-            if trig.effect_template and (not old_val and new_val):
-                effect = render_trigger_template(
-                    trig.effect_template,
-                    enemy_names=enemy_names,
-                    player_count=player_count,
-                )
-                st.info(effect)
-
-        # ----- COUNTER (e.g. The First Bastion lever) -----
+        # ----- COUNTER -----
         elif trig.kind == "counter":
-            old_val = int(current_val)
-            new_val = old_val
-
-            # Layout: label (left) and - / + buttons (right)
-            c_label, c_minus, c_plus = st.columns([3, 1, 1])
-
-            # First process buttons (so state is updated before we render label)
-            with c_minus:
-                if st.button("➖", key=f"trigger_dec_{encounter_key}_{trig.id}"):
-                    new_val = max(trig.min_value, old_val - 1)
-
-            with c_plus:
-                if st.button("➕", key=f"trigger_inc_{encounter_key}_{trig.id}"):
-                    upper = trig.max_value if trig.max_value is not None else old_val + 1
-                    base = max(new_val, old_val)
-                    new_val = min(upper, base + 1)
-
-            # If the value changed this run, update state and fire any step effect
-            if new_val != old_val:
-                state[trig.id] = new_val
-
-                # Only fire step_effects on increments
-                if trig.step_effects and new_val > old_val:
-                    tmpl = trig.step_effects.get(new_val)
-                    if tmpl:
-                        effect = render_trigger_template(
-                            tmpl,
-                            enemy_names=enemy_names,
-                        )
-                        st.info(effect)
-
-            effective_val = state[trig.id]
-
-            # Now build the label using the UPDATED value
-            suffix = ""
-            if trig.template:
-                suffix = render_trigger_template(
-                    trig.template,
-                    enemy_names=enemy_names,
-                    value=effective_val,
-                )
-            if trig.label and suffix:
-                label_text = f"{trig.label}: {suffix}"
-            else:
-                label_text = trig.label or suffix
-
-            with c_label:
-                st.markdown(label_text)
-
-        # ----- NUMERIC (e.g. barrels per tile) -----
-        elif trig.kind == "numeric":
-            value_int = int(current_val)
+            value_int = int(state.get(trig.id, trig.default_value or 0))
 
             suffix = ""
             if trig.template:
-                suffix = render_trigger_template(
+                suffix = _render_text_template(
                     trig.template,
-                    enemy_names=enemy_names,
+                    enemy_names,
                     value=value_int,
                 )
+
             if trig.label and suffix:
                 label_text = f"{trig.label}: {suffix}"
             else:
-                label_text = trig.label or suffix
+                label_text = trig.label or suffix or trig.id
 
             new_val = st.number_input(
                 label_text,
@@ -509,31 +1328,69 @@ def _render_encounter_triggers(encounter: dict, play_state: dict, settings: dict
                 value=value_int,
                 key=f"trigger_num_{encounter_key}_{trig.id}",
             )
+
+            # Show per-step effects as the counter increases
+            if trig.step_effects and new_val > value_int:
+                for step in range(value_int + 1, new_val + 1):
+                    tmpl = trig.step_effects.get(step)
+                    if tmpl:
+                        effect_text = _render_text_template(
+                            tmpl,
+                            enemy_names,
+                        )
+                        st.info(effect_text)
+
+            state[trig.id] = new_val
+
+        # ----- NUMERIC (plain number) -----
+        elif trig.kind == "numeric":
+            value_int = int(state.get(trig.id, trig.default_value or 0))
+
+            suffix = ""
+            if trig.template:
+                suffix = _render_text_template(
+                    trig.template,
+                    enemy_names,
+                    value=value_int,
+                )
+
+            if trig.label and suffix:
+                label_text = f"{trig.label}: {suffix}"
+            else:
+                label_text = trig.label or suffix or trig.id
+
+            new_val = st.number_input(
+                label_text,
+                value=value_int,
+                key=f"trigger_numeric_{encounter_key}_{trig.id}",
+            )
             state[trig.id] = new_val
 
         # ----- TIMER OBJECTIVE -----
         elif trig.kind == "timer_objective":
-            label_text = trig.label or render_trigger_template(
-                trig.template or "", enemy_names=enemy_names
+            label_text = trig.label or _render_text_template(
+                trig.template or "",
+                enemy_names,
             )
 
             st.markdown(f"- {label_text}")
-            if trig.timer_target is not None and play_state["timer"] >= trig.timer_target:
+
+            target_timer = None
+            if trig.timer_target is not None:
+                # Same semantics as _compute_stop_on_timer_objective:
+                # timer_target is an offset from player_count.
+                target_timer = _get_player_count() + trig.timer_target
+
+            if (
+                target_timer is not None
+                and play_state["timer"] >= target_timer
+            ):
                 if trig.stop_on_complete:
-                    stop_on_timer_objective = True
-                st.caption(f"✅ Objective reached at Timer {trig.timer_target}.")
-            elif trig.timer_target is not None:
-                st.caption(f"⏳ Objective triggers at Timer {trig.timer_target}.")
-
-    return stop_on_timer_objective
-
-
-def _get_rules_for_encounter(encounter: dict, settings: dict):
-    """
-    Placeholder hook for your actual rules system.
-    """
-    rules = encounter.get("rules") or []
-    return [str(r) for r in rules]
+                    st.caption(f"✅ Objective reached at Timer {target_timer}.")
+                else:
+                    st.caption("✅ Objective condition met.")
+            elif target_timer is not None:
+                st.caption(f"⏳ Objective fails once Timer reaches {target_timer}.")
 
 
 def _render_attached_events() -> None:
@@ -559,7 +1416,10 @@ def _render_attached_events() -> None:
             )
             if mods:
                 for m in mods:
-                    desc = m.get("description") or f"{m.get('stat')} {m.get('op')} {m.get('value')}"
+                    desc = (
+                        m.get("description")
+                        or f"{m.get('stat')} {m.get('op')} {m.get('value')}"
+                    )
                     st.caption(f"  • {desc}")
             else:
                 st.caption("  • No special behavior modifiers recorded (yet).")
@@ -584,6 +1444,38 @@ def _render_log(play_state: dict) -> None:
 # ---------------------------------------------------------------------
 # Middle column: encounter card
 # ---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
+# Enemy behavior card helpers
+# ---------------------------------------------------------------------
+def _find_behavior_cards_for_enemy(enemy_name: str) -> list[Path]:
+    json_dir = Path("data") / "behaviors"
+    json_path = json_dir / f"{enemy_name}.json"
+    if not json_path.exists():
+        return []
+
+    cfg = load_behavior(json_path)
+
+    return [Path(p) for p in getattr(cfg, "display_cards", []) or []]
+
+
+def _get_distinct_enemy_names(encounter: dict) -> list[str]:
+    """
+    Return distinct enemy display names in encounter order.
+    Uses the same enemy name resolution as _get_enemy_display_names().
+    """
+    all_names = _get_enemy_display_names(encounter)
+    seen = set()
+    out: list[str] = []
+
+    for name in all_names:
+        if name not in seen:
+            seen.add(name)
+            out.append(name)
+
+    return out
+
+
 def _render_encounter_card(encounter: dict) -> None:
     st.markdown("#### Encounter Card")
     img = encounter.get("card_img")
@@ -596,20 +1488,28 @@ def _render_encounter_card(encounter: dict) -> None:
 # ---------------------------------------------------------------------
 # Right column: enemy behavior cards (placeholder)
 # ---------------------------------------------------------------------
-def _render_enemy_behaviors_placeholder(encounter: dict) -> None:
-    st.markdown("#### Enemy Behavior Cards")
 
-    st.caption(
-        "Placeholder: behavior cards for each distinct enemy in this "
-        "encounter will appear here in descending **order_num** order."
-    )
 
-    enemies = encounter.get("enemies") or encounter.get("figures") or []
-    if enemies:
-        st.caption("Detected enemies (for future behavior cards):")
-        for e in enemies:
-            if isinstance(e, dict):
-                label = e.get("name") or e.get("id") or str(e)
-            else:
-                label = str(e)
-            st.markdown(f"- {label}")
+def _render_enemy_behaviors(encounter: dict) -> None:
+    st.markdown("#### Enemy Cards")
+
+    enemy_names = _get_distinct_enemy_names(encounter)
+    if not enemy_names:
+        st.caption("No enemies detected for this encounter.")
+        return
+
+    # For now we keep encounter order. If you have an 'order_num' field
+    # in your enemy metadata, you can sort enemy_names by that here
+    # before rendering.
+
+    col_left, col_right = st.columns(2)
+
+    for idx, name in enumerate(enemy_names):
+        col = col_left if idx % 2 == 0 else col_right
+        with col:
+            st.markdown(f"**{name}**")
+
+            card_paths = _find_behavior_cards_for_enemy(name)
+            for p in card_paths:
+                # Use column width so it feels like a neat grid
+                st.image(str(p), width="stretch")

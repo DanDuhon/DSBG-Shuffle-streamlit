@@ -21,7 +21,10 @@
     "Vordt of the Boreal Valley"
   ],
   "selected_characters": [
-    "Deprived"
+    "Deprived",
+    "Assassin",
+    "Cleric",
+    "Herald"
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,
@@ -40,7 +43,7 @@
     "Bridge Too Far|Tomb of Giants": false,
     "Abandoned Storeroom|Tomb of Giants": false,
     "Far From the Sun|Tomb of Giants": false,
-    "The First Bastion|Painted World of Ariamis": false,
+    "The First Bastion|Painted World of Ariamis": true,
     "Cold Snap|Painted World of Ariamis": false,
     "Unseen Scurrying|Painted World of Ariamis": false,
     "Depths of the Cathedral|The Sunless City": true,
@@ -77,7 +80,10 @@
     "Central Plaza|Painted World of Ariamis": false,
     "Corvian Host|Painted World of Ariamis": false,
     "Deathly Freeze|Painted World of Ariamis": false,
-    "Trecherous Tower|Painted World of Ariamis": false
+    "Trecherous Tower|Painted World of Ariamis": false,
+    "Quiet Graveyard|Executioner Chariot": false,
+    "Asylum's North Hall|Asylum Demon": false,
+    "Velka's Chosen|Painted World of Ariamis": false
   },
   "event_deck": {
     "draw_pile": [],
