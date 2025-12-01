@@ -215,6 +215,7 @@ def _attach_event_to_current_encounter(card_path: str) -> None:
 
     events.append(event_obj)
     st.session_state.encounter_events = events
+    st.rerun()
 
 
 def draw_event_card():

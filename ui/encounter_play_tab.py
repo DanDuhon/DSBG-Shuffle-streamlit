@@ -4,10 +4,11 @@ import base64
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+from copy import deepcopy
 
-from ui.events_tab.logic import EVENT_BEHAVIOR_MODIFIERS
-from ui.behavior_decks_tab.generation import load_behavior
-from ui.encounters_tab.assets import enemyNames
+from ui.events_tab.events_logic import EVENT_BEHAVIOR_MODIFIERS
+from ui.encounters_tab.encounters_logic import ENCOUNTER_BEHAVIOR_MODIFIERS
+from ui.encounters_tab.encounters_assets import enemyNames
 from core.encounter_rules import (
     make_encounter_key,
     get_rules_for_encounter,
@@ -17,6 +18,13 @@ from core.encounter_triggers import (
     EncounterTrigger,
     get_triggers_for_encounter,
 )
+from ui.behavior_decks_tab.behavior_decks_generation import (
+    render_data_card_cached,
+    build_behavior_catalog,
+)
+from ui.behavior_decks_tab.behavior_decks_logic import load_behavior
+from ui.behavior_decks_tab.behavior_decks_models import BehaviorEntry
+from ui.behavior_decks_tab.behavior_decks_assets import BEHAVIOR_CARDS_PATH
 
 # ---------------------------------------------------------------------
 # Text + template helpers
@@ -786,6 +794,76 @@ def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> 
     return bool(edited_toggles.get(encounter_key, False))
 
 
+def _get_behavior_entry_by_name() -> dict[str, BehaviorEntry]:
+    """
+    Build (or reuse) a mapping from behavior name -> BehaviorEntry.
+
+    Uses the same catalog that the Behavior Decks tab uses, so we get
+    consistent order_num values and file paths.
+    """
+    # Cache the catalog in session_state so we don't rebuild it every rerun
+    if "behavior_catalog" not in st.session_state:
+        st.session_state["behavior_catalog"] = build_behavior_catalog()
+
+    catalog: dict[str, list[BehaviorEntry]] = st.session_state["behavior_catalog"]
+
+    if "behavior_entry_by_name" not in st.session_state:
+        by_name: dict[str, BehaviorEntry] = {}
+        for entries in catalog.values():
+            for entry in entries:
+                # BehaviorEntry.name is what Behavior Decks uses as the UI label
+                # If duplicates exist across categories, first one wins.
+                if entry.name not in by_name:
+                    by_name[entry.name] = entry
+        st.session_state["behavior_entry_by_name"] = by_name
+
+    return st.session_state["behavior_entry_by_name"]
+
+
+def _get_sorted_enemy_names(encounter: dict) -> list[str]:
+    """
+    Return distinct enemy names for this encounter, sorted by
+    descending order_num (higher order_num first).
+
+    - Uses _get_enemy_display_names() to respect the shuffled encounter enemies.
+    - Looks up BehaviorEntry.order_num via the shared behavior catalog.
+    """
+    raw_names = _get_enemy_display_names(encounter)
+    if not raw_names:
+        return []
+
+    entry_by_name = _get_behavior_entry_by_name()
+
+    # Preserve first-appearance per encounter for tie-breaking
+    seen: set[str] = set()
+    info: list[tuple[str, int, int]] = []  # (name, order_num, first_index)
+
+    for idx, name in enumerate(raw_names):
+        if name in seen:
+            continue
+        seen.add(name)
+
+        entry = entry_by_name.get(name)
+        # Default order_num matches build_behavior_catalog's fallback (10)
+        order_num = entry.order_num if entry is not None else 10
+        info.append((name, order_num, idx))
+
+    # Sort: primary = order_num desc, secondary = encounter order asc
+    info.sort(key=lambda t: (-t[1], t[2]))
+    return [name for (name, _, _) in info]
+
+
+def _get_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
+    """
+    Reuse the Behavior Decks catalog so we don't rescan the filesystem
+    on every rerun.
+    """
+    cache_key = "behavior_catalog"
+    if cache_key not in st.session_state:
+        st.session_state[cache_key] = build_behavior_catalog()
+    return st.session_state[cache_key]
+
+
 def _get_enemy_display_names(encounter: dict) -> list[str]:
     """
     Return human-readable names for the shuffled enemies in this encounter.
@@ -803,6 +881,44 @@ def _get_enemy_display_names(encounter: dict) -> list[str]:
             names.append(enemyNames[eid])
 
     return names
+
+
+def _get_enemy_behavior_entries_for_encounter(encounter: dict) -> list[BehaviorEntry]:
+    """
+    Take the shuffled encounter enemies and return a list of unique
+    BehaviorEntry objects in descending order_num (no duplicates).
+
+    This lets us show one behavior stack per distinct enemy type.
+    """
+    enemy_names = _get_enemy_display_names(encounter)
+    if not enemy_names:
+        return []
+
+    # Preserve first-appearance order but drop duplicates
+    seen: set[str] = set()
+    ordered_unique_names: list[str] = []
+    for name in enemy_names:
+        if name not in seen:
+            seen.add(name)
+            ordered_unique_names.append(name)
+
+    catalog = _get_behavior_catalog()
+
+    # Flatten the catalog into name → BehaviorEntry
+    by_name: dict[str, BehaviorEntry] = {}
+    for entries in catalog.values():
+        for entry in entries:
+            # BehaviorEntry.name is what the Behavior Decks UI uses
+            if entry.name not in by_name:
+                by_name[entry.name] = entry
+
+    result: list[BehaviorEntry] = []
+    for name in ordered_unique_names:
+        entry = by_name.get(name)
+        if entry:
+            result.append(entry)
+
+    return result
 
 
 def _get_objective_config(encounter: dict, settings: dict) -> Optional[dict]:
@@ -1485,31 +1601,229 @@ def _render_encounter_card(encounter: dict) -> None:
         st.caption("Encounter card not available (no image in state).")
 
 
+def _modifier_applies_to_enemy(mod: dict, enemy_name: str) -> bool:
+    """
+    Return True if this behavior modifier should apply to the given enemy.
+
+    We support:
+      - no 'enemy' field → applies to all enemies
+      - 'enemy': "Name"   → exact match
+      - 'enemy': ["A","B"] → applies if enemy_name in that list
+    """
+    target = mod.get("enemy")
+    if not target:
+        return True
+    if isinstance(target, str):
+        return target == enemy_name
+    if isinstance(target, (list, tuple, set)):
+        return enemy_name in target
+    return False
+
+
+def _describe_behavior_mod(mod: dict) -> str:
+    """
+    Build a human-readable description for a behavior modifier.
+    Falls back to 'stat op value' if no explicit description is provided.
+    """
+    if "description" in mod and mod["description"]:
+        return str(mod["description"])
+
+    stat = mod.get("stat", "?")
+    op = mod.get("op", "?")
+    value = mod.get("value", "?")
+    return f"{stat} {op} {value}"
+
+
+def _apply_single_behavior_modifier(raw: dict, mod: dict) -> None:
+    """
+    Apply a single modifier in-place to raw JSON.
+
+    Expected fields in mod:
+      - stat: dotted path into raw JSON, e.g. "health", "armor", "behaviors.Slam.damage"
+      - op:   "+", "-", "*", "/", "set" (or "=")
+      - value: numeric
+    """
+    path = mod.get("stat")
+    if not path:
+        return
+
+    try:
+        value = float(mod.get("value"))
+    except (TypeError, ValueError):
+        return
+
+    keys = str(path).split(".")
+    d = raw
+    for k in keys[:-1]:
+        if not isinstance(d, dict) or k not in d:
+            return
+        d = d[k]
+
+    last = keys[-1]
+    old = d.get(last)
+    if not isinstance(old, (int, float)):
+        return
+
+    op = mod.get("op", "+")
+    if op == "+":
+        new = old + value
+    elif op == "-":
+        new = old - value
+    elif op == "*":
+        new = old * value
+    elif op == "/":
+        if value == 0:
+            return
+        new = old / value
+    elif op in ("set", "="):
+        new = value
+    else:
+        return
+
+    # Preserve integer-ness if the original was an int
+    if isinstance(old, int):
+        d[last] = int(round(new))
+    else:
+        d[last] = new
+
+
+def _gather_behavior_mods_for_enemy(encounter: dict, enemy_name: str) -> list[tuple[dict, str, str]]:
+    """
+    Collect all behavior modifiers affecting this enemy for the current encounter:
+
+      - From attached events (EVENT_BEHAVIOR_MODIFIERS)
+      - From the encounter itself (ENCOUNTER_BEHAVIOR_MODIFIERS)
+
+    Return a list of tuples: (mod_dict, source_kind, source_label)
+      - source_kind: "event" or "encounter"
+      - source_label: event name or "" for encounter-level
+    """
+    mods: list[tuple[dict, str, str]] = []
+
+    # --- Encounter-level mods (may have default/edited variants) ---
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    settings = st.session_state.get("user_settings", {})
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+
+    enc_mods_cfg = ENCOUNTER_BEHAVIOR_MODIFIERS.get(encounter_key)
+    enc_mod_list: list[dict] = []
+
+    if isinstance(enc_mods_cfg, dict):
+        if edited and "edited" in enc_mods_cfg:
+            enc_mod_list = enc_mods_cfg.get("edited") or []
+        else:
+            enc_mod_list = enc_mods_cfg.get("default") or enc_mods_cfg.get("base") or []
+    elif isinstance(enc_mods_cfg, list):
+        enc_mod_list = enc_mods_cfg
+
+    for m in enc_mod_list or []:
+        if _modifier_applies_to_enemy(m, enemy_name):
+            mods.append((m, "encounter", ""))
+
+    # --- Event-level mods ---
+    events = st.session_state.get("encounter_events", [])
+    for ev in events:
+        ev_name = ev.get("name") or ev.get("id")
+        ev_mods = EVENT_BEHAVIOR_MODIFIERS.get(ev_name) or EVENT_BEHAVIOR_MODIFIERS.get(
+            ev.get("id")
+        )
+        if not ev_mods:
+            continue
+
+        for m in ev_mods:
+            if _modifier_applies_to_enemy(m, enemy_name):
+                mods.append((m, "event", ev_name or ""))
+
+    return mods
+
+
+def _apply_behavior_mods_to_raw(raw: dict, mods: list[dict]) -> dict:
+    """
+    Return a deep-copied raw JSON with all mods applied.
+    """
+    if not mods:
+        return raw
+    patched = deepcopy(raw)
+    for m in mods:
+        _apply_single_behavior_modifier(patched, m)
+    return patched
+
+
 # ---------------------------------------------------------------------
 # Right column: enemy behavior cards (placeholder)
 # ---------------------------------------------------------------------
 
 
 def _render_enemy_behaviors(encounter: dict) -> None:
-    st.markdown("#### Enemy Cards")
+    """
+    Right-hand column: show enemy data + behavior cards for all distinct
+    enemies in this encounter, using the Behavior Decks pipeline.
 
-    enemy_names = _get_distinct_enemy_names(encounter)
-    if not enemy_names:
-        st.caption("No enemies detected for this encounter.")
+    - One stack per distinct enemy type (based on the shuffled list).
+    - Uses NG+ scaling via load_behavior.
+    - Applies encounter/event behavior modifiers to the raw JSON before rendering.
+    """
+    st.markdown("#### Enemy Behavior Cards")
+
+    entries = _get_enemy_behavior_entries_for_encounter(encounter)
+    if not entries:
+        st.caption("No enemy behavior data found for this encounter.")
         return
 
-    # For now we keep encounter order. If you have an 'order_num' field
-    # in your enemy metadata, you can sort enemy_names by that here
-    # before rendering.
+    # Sort by order_num descending (higher priority first)
+    entries = sorted(
+        entries,
+        key=lambda e: getattr(e, "order_num", 10),
+        reverse=True,
+    )
 
-    col_left, col_right = st.columns(2)
+    # Two sub-columns so we don't get a super tall single column
+    col_a, col_b = st.columns(2, gap="medium")
 
-    for idx, name in enumerate(enemy_names):
-        col = col_left if idx % 2 == 0 else col_right
-        with col:
-            st.markdown(f"**{name}**")
+    for i, entry in enumerate(entries):
+        target_col = col_a if i % 2 == 0 else col_b
+        with target_col:
+            # Load behavior config (NG+ already applied inside load_behavior)
+            cfg = load_behavior(entry.path)
+            enemy_name = cfg.name
 
-            card_paths = _find_behavior_cards_for_enemy(name)
-            for p in card_paths:
-                # Use column width so it feels like a neat grid
-                st.image(str(p), width="stretch")
+            # Gather all behavior modifiers that apply to this enemy
+            mod_tuples = _gather_behavior_mods_for_enemy(encounter, enemy_name)
+            mod_dicts = [m for (m, _, _) in mod_tuples]
+            print(mod_dicts)
+
+            # Apply mods to raw json before rendering data card
+            raw_for_render = _apply_behavior_mods_to_raw(cfg.raw, mod_dicts)
+            print(raw_for_render)
+
+            # Always show the data card for this enemy/boss if available
+            data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
+            data_bytes = render_data_card_cached(
+                data_card_path,
+                raw_for_render,
+                is_boss=(cfg.tier == "boss"),
+            )
+            if data_bytes is not None:
+                st.image(data_bytes, width="stretch")
+
+            # If there are active modifiers, show a small list under the card
+            if mod_tuples:
+                st.caption("_Behavior modifiers in effect:_")
+                for mod, source_kind, source_label in mod_tuples:
+                    desc = _describe_behavior_mod(mod)
+                    if not desc:
+                        continue
+
+                    if source_kind == "event":
+                        prefix = f"Event: {source_label}" if source_label else "Event"
+                    else:
+                        prefix = "Encounter"
+
+                    st.caption(f"  • {prefix} — {desc}")

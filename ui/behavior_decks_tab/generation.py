@@ -120,7 +120,7 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
             path=fpath,
             tier=cfg.tier,
             is_invader=cfg.is_invader,
-            order_num=getattr(cfg, "order_num", 10)
+            order_num=getattr(cfg, "raw", {}).get("order_num", 10)
         )
         groups[category].append(entry)
 

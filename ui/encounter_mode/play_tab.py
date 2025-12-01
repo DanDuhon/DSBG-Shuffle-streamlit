@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+import streamlit as st
+
+from core.encounter_rules import make_encounter_key
+from core.encounter import timer as timer_mod
+from ui.encounter_mode import play_state
+from ui.encounter_mode import play_panels
+
+
+def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
+    """
+    Best-effort way to figure out whether this encounter is using the
+    'edited' version. This mirrors the helper in play_panels so the
+    timer logic can share the same decision.
+    """
+    # 1) Encounter dict itself
+    if isinstance(encounter.get("edited"), bool):
+        return encounter["edited"]
+
+    # 2) Session state override (if you set one from Setup)
+    if isinstance(st.session_state.get("current_encounter_edited"), bool):
+        return st.session_state["current_encounter_edited"]
+
+    # 3) Settings-level toggle keyed by encounter key
+    edited_toggles = settings.get("edited_toggles", {})
+    return bool(edited_toggles.get(encounter_key, False))
+
+
+def render(settings: dict) -> None:
+    """
+    Encounter Play tab.
+
+    Assumes:
+    - Setup tab has populated st.session_state.current_encounter
+    - Events tab has optionally populated st.session_state.encounter_events
+    """
+    if "current_encounter" not in st.session_state:
+        st.info("Use the **Setup** tab to select and shuffle an encounter first.")
+        return
+
+    encounter = st.session_state.current_encounter
+    encounter_id = play_state.get_encounter_id(encounter)
+    play = play_state.ensure_play_state(encounter_id)
+
+    # Build encounter key + edited flag once so timer & panels agree
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+
+    # Per-encounter special timer behaviour (manual increment, reset button, etc.)
+    timer_behavior = timer_mod.get_timer_behavior(encounter, edited=edited)
+
+    # Apply any pending action (from button click in the previous run)
+    play_state.apply_pending_action(play, timer_behavior)
+
+    # Decide if any timer objective wants to stop progression
+    player_count = play_state.get_player_count()
+    stop_on_timer_objective = timer_mod.should_stop_on_timer_objective(
+        encounter=encounter,
+        edited=edited,
+        player_count=player_count,
+        timer_value=play["timer"],
+    )
+
+    # -----------------------------------------------------------------
+    # Main layout: 3 columns
+    # Left: timer/phase + controls + triggers + events + log
+    # Middle: objectives + rules
+    # Right: enemy behavior cards (placeholder for now)
+    # -----------------------------------------------------------------
+    col_left, col_mid, col_right = st.columns([1, 1, 1], gap="large")
+
+    # LEFT COLUMN
+    with col_left:
+        timer_phase_container = st.container()
+        controls_container = st.container()
+
+        # Timer + phase (top row)
+        with timer_phase_container:
+            play_panels._render_timer_and_phase(play)
+
+        # Turn controls (Next Turn can be disabled by timer objective)
+        with controls_container:
+            play_panels._render_turn_controls(
+                play,
+                stop_on_timer_objective=stop_on_timer_objective,
+                timer_behavior=timer_behavior,
+            )
+            play_panels._render_encounter_triggers(encounter, play, settings)
+            play_panels._render_attached_events()
+            play_panels._render_log(play)
+
+    # MIDDLE COLUMN
+    with col_mid:
+        objectives_container = st.container()
+
+        # Objectives (including Trials)
+        with objectives_container:
+            play_panels._render_objectives(encounter, settings)
+
+        rest_container = st.container()
+
+        # Rest of the info stack:
+        # Rules (which incorporate timer/phase-aware upcoming rules)
+        with rest_container:
+            play_panels._render_rules(encounter, settings, play)
+
+    # RIGHT COLUMN
+    with col_right:
+        play_panels._render_enemy_behaviors(encounter)
