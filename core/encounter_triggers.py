@@ -40,6 +40,7 @@ class EncounterTrigger:
 # inner key   -> variant: "default" (non-edited) or "edited"
 # list value  -> EncounterTrigger definitions for that variant
 EncounterTriggersMap = Dict[str, Dict[str, List[EncounterTrigger]]]
+EventTriggersMap = Dict[str, List[EncounterTrigger]]
 
 
 def render_trigger_template(
@@ -97,6 +98,16 @@ def get_triggers_for_encounter(
         return variants["edited"]
 
     return variants.get("default", [])
+
+
+def get_triggers_for_event(*, event_key: str) -> List[EncounterTrigger]:
+    """
+    Return the triggers defined for a specific event card.
+
+    `event_key` should match the key used in EVENT_TRIGGERS (usually the
+    event's id, but you can also use the printed name if you prefer).
+    """
+    return EVENT_TRIGGERS.get(event_key, [])
 
 
 ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
@@ -241,4 +252,25 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
+}
+
+EVENT_TRIGGERS: EventTriggersMap = {
+    "Blacksmith's Trial": [
+        EncounterTrigger(
+            id="blacksmiths_trial",
+            label="",
+            template="Event (Blacksmith's Trial): Reroll an attack or defense roll.",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
+    "Fleeting Glory": [
+        EncounterTrigger(
+            id="fleeting_glory",
+            label="",
+            template="If a character would die, instead clear the endurance bar.",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
 }

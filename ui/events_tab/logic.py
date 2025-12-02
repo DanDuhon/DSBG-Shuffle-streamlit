@@ -15,6 +15,7 @@ V2_EXPANSIONS = [
     "Tomb of Giants",
     "The Sunless City",
 ]
+
 RENDEZVOUS_EVENTS = {
     "Bleak Bonfire Ascetic",
     "Bloodstained Bonfire Ascetic",
@@ -28,6 +29,7 @@ RENDEZVOUS_EVENTS = {
     "Undead Merchant",
     "Virulent Bonfire Ascetic",
 }
+
 EVENT_BEHAVIOR_MODIFIERS = {
     "Bleak Bonfire Ascetic": [
         {
@@ -113,6 +115,111 @@ EVENT_BEHAVIOR_MODIFIERS = {
             "description": "Poison from Virulent Bonfire Ascetic event"
         }
     ],
+}
+
+EVENT_REWARDS: Dict[str, List[dict]] = {
+    "Blacksmith's Trial": [
+        {
+            "type": "text",
+            "text": "Search the treasure deck until an upgrade card is revealed, then either add it to the inventory or use it to upgrade a card. Then, shuffle the treasure deck."
+        },
+    ],
+    "Bleak Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Bloodstained Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Cracked Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Frozen Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Hearty Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Martial Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Virulent Bonfire Ascetic": [
+        {
+            "type": "souls",
+            "per_player": 1,
+            "flat": 2
+        },
+    ],
+    "Trustworthy Promise": [
+        {
+            "type": "text",
+            "text": "Toss the Patches token. If it lands bright side face up, double the amount of souls the characters earn from the encounter. If it lands with the corroded side face up, the characters do not earn any souls from the encounter."
+        },
+    ],
+    "Undead Merchant": [
+        {
+            "type": "text",
+            "text": "The party can purchase treasure."
+        },
+    ],
+    "Fleeting Glory": [
+        {
+            "type": "souls_multiplier",
+            "multiplier": 2
+        },
+    ],
+    # # Example: an event that just gives extra souls
+    # "Bloodstained Bonfire Ascetic": [
+    #     {
+    #         "type": "souls",
+    #         "per_player": 1,
+    #         "text": "Event reward: each character gains 1 extra soul.",
+    #     },
+    # ],
+
+    # # Example: event that grants treasure and a descriptive string
+    # "Corvian Spoils": [
+    #     {
+    #         "type": "treasure",
+    #         "flat": 1,
+    #         "text": "Event reward: draw 1 treasure card.",
+    #     },
+    #     {
+    #         "type": "text",
+    #         "text": "If you cleared the encounter without any characters dying, draw 1 additional treasure card.",  # text-only condition
+    #     },
+    # ],
+
+    # # Example: lore-only event with no numeric reward
+    # "Mysterious Painting Fragment": [
+    #     {
+    #         "type": "text",
+    #         "text": "You discover a cryptic clue. (No mechanical reward.)",
+    #     },
+    # ],
 }
 
 
