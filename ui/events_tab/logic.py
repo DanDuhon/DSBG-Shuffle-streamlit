@@ -17,23 +17,25 @@ V2_EXPANSIONS = [
 ]
 
 RENDEZVOUS_EVENTS = {
+    "Big Pilgrim's Key",
     "Bleak Bonfire Ascetic",
     "Bloodstained Bonfire Ascetic",
     "Cracked Bonfire Ascetic",
     "Frozen Bonfire Ascetic",
     "Hearty Bonfire Ascetic",
+    "Lost Envoy",
     "Martial Bonfire Ascetic",
     "Rare Vagrant",
     "Scout Ahead",
     "Trustworthy Promise",
     "Undead Merchant",
-    "Virulent Bonfire Ascetic",
+    "Virulent Bonfire Ascetic"
 }
 
 EVENT_BEHAVIOR_MODIFIERS = {
     "Bleak Bonfire Ascetic": [
         {
-            "id": "bleak_bonfire_ascetic_dodge",
+            "id": "bleak_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "bleak_bonfire_ascetic",
             "target": "all_enemies",
@@ -45,7 +47,7 @@ EVENT_BEHAVIOR_MODIFIERS = {
     ],
     "Bloodstained Bonfire Ascetic": [
         {
-            "id": "bloodstained_bonfire_ascetic_dodge",
+            "id": "bloodstained_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "bloodstained_bonfire_ascetic",
             "target": "all_enemies",
@@ -57,7 +59,7 @@ EVENT_BEHAVIOR_MODIFIERS = {
     ],
     "Cracked Bonfire Ascetic": [
         {
-            "id": "cracked_bonfire_ascetic_dodge",
+            "id": "cracked_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "cracked_bonfire_ascetic",
             "target": "all_enemies",
@@ -69,7 +71,7 @@ EVENT_BEHAVIOR_MODIFIERS = {
     ],
     "Frozen Bonfire Ascetic": [
         {
-            "id": "frozen_bonfire_ascetic_dodge",
+            "id": "frozen_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "frozen_bonfire_ascetic",
             "target": "all_enemies",
@@ -81,11 +83,11 @@ EVENT_BEHAVIOR_MODIFIERS = {
     ],
     "Hearty Bonfire Ascetic": [
         {
-            "id": "hearty_bonfire_ascetic_dodge",
+            "id": "hearty_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "hearty_bonfire_ascetic",
             "target": "all_enemies",
-            "stat": "max_hp",
+            "stat": "health",
             "op": "add",
             "value": 1,
             "description": "+1 max HP from Hearty Bonfire Ascetic event"
@@ -93,7 +95,7 @@ EVENT_BEHAVIOR_MODIFIERS = {
     ],
     "Martial Bonfire Ascetic": [
         {
-            "id": "martial_bonfire_ascetic_dodge",
+            "id": "martial_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "martial_bonfire_ascetic",
             "target": "all_enemies",
@@ -105,7 +107,7 @@ EVENT_BEHAVIOR_MODIFIERS = {
     ],
     "Virulent Bonfire Ascetic": [
         {
-            "id": "virulent_bonfire_ascetic_dodge",
+            "id": "virulent_bonfire_ascetic_effect",
             "source": "event",
             "source_id": "virulent_bonfire_ascetic",
             "target": "all_enemies",

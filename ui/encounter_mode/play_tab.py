@@ -99,17 +99,20 @@ def render(settings: dict) -> None:
     # MIDDLE COLUMN
     with col_mid:
         objectives_container = st.container()
+        rest_container = st.container()
+        rewards_container = st.container()
 
         # Objectives (including Trials)
         with objectives_container:
             play_panels._render_objectives(encounter, settings)
 
-        rest_container = st.container()
-
-        # Rest of the info stack:
         # Rules (which incorporate timer/phase-aware upcoming rules)
         with rest_container:
             play_panels._render_rules(encounter, settings, play)
+
+        # Rewards summary
+        with rewards_container:
+            play_panels._render_rewards(encounter, settings)
 
     # RIGHT COLUMN
     with col_right:

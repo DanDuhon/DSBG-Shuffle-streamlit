@@ -117,7 +117,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 id="the_first_bastion_lever",
                 label="Lever activations",
                 kind="counter",
-                template="{value}/3",
+                template="",
                 min_value=0,
                 max_value=3,
                 default_value=0,
@@ -142,6 +142,102 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 label="",
                 template="Trial complete.",
                 kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Promised Respite|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="promised_respite_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="promised_respite_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Abandoned and Forgotten|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="abandoned_and_forgotten_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="abandoned_and_forgotten_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Trecherous Tower|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="trecherous_tower_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="trecherous_tower_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Central Plaza|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="central_plaza_tiles_cleared",
+                label="Tiles cleared of enemies",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="central_plaza_tiles_cleared",
+                label="Tiles cleared of enemies",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
                 phase="player",
             ),
         ],

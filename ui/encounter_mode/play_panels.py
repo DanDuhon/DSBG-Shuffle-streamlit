@@ -89,6 +89,25 @@ def _get_enemy_display_names(encounter: dict) -> list[str]:
     return names
 
 
+def _render_behavior_card_image(data_bytes: bytes, *, is_player_phase: bool) -> None:
+    """
+    Show a behavior data card image. During the player phase, render it in
+    grayscale as an extra visual cue.
+    """
+    try:
+        b64 = base64.b64encode(data_bytes).decode("utf-8")
+        # Always stretch to container width; conditionally add grayscale filter
+        style = "width:100%; height:auto;"
+        if is_player_phase:
+            style += " filter: grayscale(100%);"
+
+        html = f"<img src='data:image/jpeg;base64,{b64}' style='{style}' />"
+        st.markdown(html, unsafe_allow_html=True)
+    except Exception:
+        # Fallback: if anything goes wrong, just show the normal image
+        st.image(data_bytes, width="stretch")
+
+
 # ---------------------------------------------------------------------
 # Objectives
 # ---------------------------------------------------------------------
@@ -150,6 +169,252 @@ def _render_objectives(encounter: dict, settings: dict) -> None:
             if tile_cap is not None:
                 text = templates.cap_tiles_in_text(text, tile_cap)
             st.markdown(f"- {text}", unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------
+# Rewards
+# ---------------------------------------------------------------------
+
+
+def _render_rewards(encounter: dict, settings: dict) -> None:
+    """
+    Render a Rewards section for the encounter, combining:
+    - Encounter-level rewards from ENCOUNTER_REWARDS
+    - Trial rewards gated by their checkbox triggers
+    - Event-level rewards from EVENT_REWARDS for any attached events
+    """
+    st.markdown("#### Rewards")
+
+    # Build encounter key and edited flag (mirrors _render_objectives)
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+    player_count = get_player_count()
+    enemy_names = _get_enemy_display_names(encounter)
+
+    # Trigger state (used for trials, counters, and modifiers)
+    triggers = get_triggers_for_encounter(
+        encounter_key=encounter_key,
+        edited=edited,
+    )
+    trigger_state = _ensure_trigger_state(encounter_key, triggers)
+
+    # Aggregate totals across encounter + events
+    totals = {
+        "souls": 0,
+        "treasure": 0,
+        "event": 0,
+        "refresh_heroic": 0,
+        "refresh_luck": 0,
+        "refresh_estus": 0,
+        "search": 0,
+        "shortcut": 0,
+    }
+    special_lines: list[str] = []
+    souls_multipliers: list[int] = []
+
+    # ---- Encounter-level rewards ----
+    from core.encounter_rewards import get_reward_config_for_key  # local import to avoid cycles
+
+    enc_cfg = get_reward_config_for_key(encounter_key, edited=edited)
+    if enc_cfg:
+        _apply_rewards_from_config(
+            enc_cfg,
+            source_label="Encounter",
+            totals=totals,
+            special_lines=special_lines,
+            souls_multipliers=souls_multipliers,
+            trigger_state=trigger_state,
+            player_count=player_count,
+            enemy_names=enemy_names,
+        )
+
+    # ---- Event-level rewards ----
+    events = st.session_state.get("encounter_events", [])
+    try:
+        # You already added EVENT_REWARDS next to EVENT_BEHAVIOR_MODIFIERS
+        from ui.events_tab.logic import EVENT_REWARDS  # type: ignore
+    except ImportError:
+        EVENT_REWARDS = {}  # type: ignore[assignment]
+
+    for ev in events:
+        ev_name = ev.get("name") or ev.get("title") or ev.get("id")
+        if not ev_name:
+            continue
+        ev_rewards = EVENT_REWARDS.get(ev_name)  # type: ignore[index]
+        if not ev_rewards:
+            continue
+
+        # Wrap in a minimal config so we can reuse the same helper
+        ev_cfg = {"rewards": ev_rewards}
+        _apply_rewards_from_config(
+            ev_cfg,  # type: ignore[arg-type]
+            source_label=f"Event: {ev_name}",
+            totals=totals,
+            special_lines=special_lines,
+            souls_multipliers=souls_multipliers,
+            trigger_state=trigger_state,
+            player_count=player_count,
+            enemy_names=enemy_names,
+        )
+
+    # ---- Apply souls multipliers after everything else ----
+    if totals["souls"] and souls_multipliers:
+        mult = 1
+        for m in souls_multipliers:
+            if m and m != 1:
+                mult *= m
+        if mult != 1:
+            totals["souls"] *= mult
+
+    # If nothing to show, bail out
+    if not any(totals.values()) and not special_lines:
+        st.caption("No reward data configured for this encounter.")
+        return
+
+    # ---- Summary layout ----
+    if totals["souls"]:
+        st.markdown(f"- {totals['souls']} souls")
+    if totals["treasure"]:
+        st.markdown(f"- Draw {totals['treasure']} treasures")
+    if totals["event"]:
+        st.markdown(f"- Draw {totals['event']+1} events")
+    if totals["refresh_heroic"]:
+        st.markdown(f"- Refresh Heroic Action")
+    if totals["refresh_luck"]:
+        st.markdown(f"- Refresh Luck")
+    if totals["refresh_estus"]:
+        st.markdown(f"- Refresh Estus Flask")
+    if totals["search"]:
+        st.markdown(f"- Search reward (check the encounter card)")
+    if totals["shortcut"]:
+        st.markdown(f"- Shortcut")
+
+
+def _apply_rewards_from_config(
+    cfg,
+    *,
+    source_label: str,
+    totals: dict,
+    special_lines: list[str],
+    souls_multipliers: list[int],
+    trigger_state: dict,
+    player_count: int,
+    enemy_names: list[str],
+) -> None:
+    """
+    Apply rewards from a single EncounterRewardsConfig-like dict into the
+    running totals and details.
+
+    Understands:
+    - rewards + trial_rewards
+    - numeric fields: flat, per_player, per_counter, per_player_per_counter
+    - refresh_resource for refresh rewards
+    - modifiers.souls_multiplier (if present)
+    """
+    rewards = list(cfg.get("rewards", []))
+
+    # Gate trial rewards behind their checkbox triggers
+    for r in cfg.get("trial_rewards", []):
+        trial_id = r.get("trial_trigger_id")
+        if trial_id and not trigger_state.get(trial_id):
+            continue
+        rewards.append(r)
+
+    # Base rewards
+    for r in rewards:
+        rtype = r.get("type")
+        if not rtype:
+            continue
+
+        counter_val = 0
+        counter_id = r.get("counter_trigger_id")
+        if counter_id:
+            try:
+                counter_val = int(trigger_state.get(counter_id, 0) or 0)
+            except Exception:
+                counter_val = 0
+
+        flat = int(r.get("flat", 0) or 0)
+        per_player = int(r.get("per_player", 0) or 0)
+        per_counter = int(r.get("per_counter", 0) or 0)
+        per_ppc = int(r.get("per_player_per_counter", 0) or 0)
+
+        amount = flat
+        amount += per_player * player_count
+        amount += per_counter * counter_val
+        amount += per_ppc * player_count * counter_val
+
+        # Numeric types update totals
+        if rtype == "souls":
+            totals["souls"] += amount
+        elif rtype == "treasure":
+            totals["treasure"] += amount
+        elif rtype == "event":
+            totals["event"] += amount
+        elif rtype == "refresh":
+            resource = r.get("refresh_resource") or ""
+            if resource == "heroic":
+                totals["refresh_heroic"] += amount
+            elif resource == "luck":
+                totals["refresh_luck"] += amount
+            elif resource == "estus":
+                totals["refresh_estus"] += amount
+        elif rtype == "search":
+            totals["search"] += 1
+        elif rtype == "shortcut":
+            totals["shortcut"] += 1
+
+        # Human-readable detail line if text is provided or needed
+        text_template = r.get("text")
+        if text_template:
+            text = templates.render_text_template(
+                text_template,
+                enemy_names,
+                value=counter_val,
+                player_count=player_count,
+            )
+            special_lines.append(f"{source_label}: {text}")
+        elif rtype in ("search", "shortcut", "text"):
+            # Fallback generic labels if no explicit text
+            if rtype == "search":
+                special_lines.append(
+                    f"{source_label}: Resolve a search effect (see card)."
+                )
+            elif rtype == "shortcut":
+                special_lines.append(
+                    f"{source_label}: Unlock a shortcut (see encounter card)."
+                )
+            elif rtype == "text":
+                # Bare text with no template – nothing to render
+                pass
+
+    # Optional modifiers (currently only souls_multiplier)
+    for mod in cfg.get("modifiers", []):
+        if mod.get("type") != "souls_multiplier":
+            continue
+        trig_id = mod.get("trigger_id")
+        if trig_id and not trigger_state.get(trig_id):
+            continue
+        mult = int(mod.get("multiplier", 1) or 1)
+        if mult <= 1:
+            continue
+        souls_multipliers.append(mult)
+
+        mod_text = mod.get("text")
+        if mod_text:
+            text = templates.render_text_template(
+                mod_text,
+                enemy_names,
+                player_count=player_count,
+            )
+            special_lines.append(f"{source_label}: {text}")
 
 
 # ---------------------------------------------------------------------
@@ -232,7 +497,6 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
 
         # Then per-event rules, grouped under headings
         for label, rules_for_event in event_rule_groups:
-            st.markdown(f"**Event: {label}**")
             for rule in rules_for_event:
                 text = templates.render_text_template(
                     rule.template,
@@ -559,14 +823,8 @@ def _render_encounter_triggers(
 
     # --- Render all sources ---
     for src in sources:
-        kind = src["kind"]
         scope_key = src["scope_key"]
-        label = src["label"]
         triggers = src["triggers"]
-
-        # Sub-heading for event-based triggers so they’re easy to distinguish
-        if kind == "event" and label:
-            st.markdown(f"**Event: {label}**")
 
         # Ensure state bucket for this group (encounter or event)
         state = _ensure_trigger_state(scope_key, triggers)
@@ -790,17 +1048,45 @@ def _get_enemy_behavior_entries_for_encounter(encounter: dict) -> List[BehaviorE
     return entries
 
 
-def _mod_applies_to_enemy(mod: Dict[str, Any], enemy_name: str) -> bool:
+def _mod_applies_to_enemy(
+    mod: Dict[str, Any],
+    enemy_name: str,
+    encounter: dict,
+) -> bool:
     """
-    For now, everything is 'all_enemies', but this gives you a hook to
-    target specific enemies later (enemy_name, enemy_id, etc.).
+    Return True if this modifier applies to this enemy in this encounter.
+
+    Supports:
+    - target == "all_enemies"
+    - target == "enemy_name"
+    - target_alt_indices: list of 0-based enemy positions in the
+      encounter's shuffled enemy list.
     """
+    # Optional per-index targeting (0-based indices into the encounter enemies)
+    alt_indices = mod.get("target_alt_indices")
+    if alt_indices is not None:
+        enemy_names = _get_enemy_display_names(encounter)
+        target_names: set[str] = set()
+
+        for idx in alt_indices:
+            idx0 = int(idx)
+            if 0 <= idx0 < len(enemy_names):
+                target_names.add(enemy_names[idx0])
+
+        # If nothing resolved or this enemy isn't in the targeted set,
+        # this mod does not apply to this enemy.
+        if not target_names or enemy_name not in target_names:
+            return False
+
+    # Then apply the simpler "target" field rules.
     target = mod.get("target", "all_enemies")
     if target == "all_enemies":
         return True
     if target == "enemy_name" and mod.get("enemy_name") == enemy_name:
         return True
-    # Extend with more targeting rules as needed
+
+    # If alt_indices was present and we didn't early-return False above,
+    # but "target" is something unknown, just treat it as non-matching.
     return False
 
 
@@ -824,7 +1110,7 @@ def _gather_behavior_mods_for_enemy(
 
     if encounter_slug:
         for mod in ENCOUNTER_BEHAVIOR_MODIFIERS.get(encounter_slug, []):
-            if not _mod_applies_to_enemy(mod, enemy_name):
+            if not _mod_applies_to_enemy(mod, enemy_name, encounter):
                 continue
 
             mod_id = mod.get("id")
@@ -848,7 +1134,7 @@ def _gather_behavior_mods_for_enemy(
             if not key:
                 continue
             for mod in EVENT_BEHAVIOR_MODIFIERS.get(key, []):
-                if not _mod_applies_to_enemy(mod, enemy_name):
+                if not _mod_applies_to_enemy(mod, enemy_name, encounter):
                     continue
 
                 mod_id = mod.get("id")
@@ -906,7 +1192,7 @@ def _apply_behavior_mods_to_raw(
                 yield node
 
     # Flags that should show up as status icons on attacks
-    EFFECT_FLAG_STATS = {"bleed", "poison", "frostbite", "toxic"}
+    EFFECT_FLAG_STATS = {"bleed", "poison", "frostbite", "stagger", "calamity", "corrosion"}
 
     for mod in mods:
         stat = mod.get("stat")
@@ -915,6 +1201,22 @@ def _apply_behavior_mods_to_raw(
 
         if not stat or not op:
             continue
+
+        # Scaling based on number of characters
+        if val is None:
+            base = mod.get("base")
+            per_player = mod.get("per_player")
+
+            if base is not None or per_player is not None:
+                amount = 0
+
+                if isinstance(base, (int, float)):
+                    amount += base
+
+                if isinstance(per_player, (int, float)):
+                    amount += per_player * get_player_count()
+
+                val = amount
 
         # --- Status flags (Bleed, etc.) -> add to effect[] on attacks ---
         if op == "flag" and stat in EFFECT_FLAG_STATS:
@@ -959,6 +1261,10 @@ def _apply_behavior_mods_to_raw(
                         patched["dodge_difficulty"] = float(old) + float(val)
                     except Exception:
                         patched["dodge_difficulty"] = val
+            continue
+
+        if op == "set":
+            patched[stat] = val
             continue
 
         # --- Fallback: old simple behavior ---
@@ -1018,12 +1324,16 @@ def _render_enemy_behaviors(encounter: dict) -> None:
     """
     st.markdown("#### Enemy Behavior Cards")
 
+    # Check whose phase it is so we can gray out cards during the player phase
+    play = st.session_state.get("encounter_play", {})
+    is_player_phase = play.get("phase") == "player"
+
     entries = _get_enemy_behavior_entries_for_encounter(encounter)
     if not entries:
         st.caption("No enemy behavior data found for this encounter.")
         return
 
-    # Sort by order_num descending (higher priority first)
+    # Sort by order_num descending (higher priority / tougher first)
     entries = sorted(
         entries,
         key=lambda e: getattr(e, "order_num", 10),
@@ -1033,12 +1343,18 @@ def _render_enemy_behaviors(encounter: dict) -> None:
     # Two sub-columns so we don't get a super tall single column
     col_a, col_b = st.columns(2, gap="medium")
 
+    # For the combined summary below all cards
+    all_enemy_names: list[str] = []
+    # key: (mod_id_or_key, source_kind, source_label) -> info dict
+    aggregated_mods: dict[tuple[str, str, str], dict[str, Any]] = {}
+
     for i, entry in enumerate(entries):
         target_col = col_a if i % 2 == 0 else col_b
         with target_col:
             # Load behavior config (NG+ already applied inside load_behavior)
             cfg = load_behavior(entry.path)
             enemy_name = cfg.name
+            all_enemy_names.append(enemy_name)
 
             # Gather all behavior modifiers that apply to this enemy
             mod_tuples = _gather_behavior_mods_for_enemy(encounter, enemy_name)
@@ -1055,19 +1371,71 @@ def _render_enemy_behaviors(encounter: dict) -> None:
                 is_boss=(cfg.tier == "boss"),
             )
             if data_bytes is not None:
-                st.image(data_bytes, width="stretch")
+                _render_behavior_card_image(
+                    data_bytes,
+                    is_player_phase=is_player_phase,
+                )
 
-            # If there are active modifiers, show a small list under the card
-            if mod_tuples:
-                st.caption("_Behavior modifiers in effect:_")
-                for mod, source_kind, source_label in mod_tuples:
-                    desc = _describe_behavior_mod(mod)
-                    if not desc:
-                        continue
+        # Outside the column context: aggregate mods for the global summary
+        for mod, source_kind, source_label in mod_tuples:
+            desc = _describe_behavior_mod(mod)
+            if not desc:
+                continue
 
-                    if source_kind == "event":
-                        prefix = f"Event: {source_label}" if source_label else "Event"
-                    else:
-                        prefix = "Encounter"
+            # Use id if present; fall back to description
+            mod_id = mod.get("id") or desc
+            label = source_label or ""
+            key = (mod_id, source_kind, label)
 
-                    st.caption(f"  • {prefix} — {desc}")
+            info = aggregated_mods.get(key)
+            if info is None:
+                info = {
+                    "mod": mod,
+                    "source_kind": source_kind,
+                    "source_label": label,
+                    "desc": desc,
+                    "enemy_names": set(),  # type: ignore[assignment]
+                }
+                aggregated_mods[key] = info
+
+            info["enemy_names"].add(enemy_name)  # type: ignore[index]
+
+    # Render a single combined list of behavior modifiers under all cards
+    if aggregated_mods:
+        st.markdown("#### Behavior modifiers in effect")
+
+        unique_enemy_names = set(all_enemy_names)
+
+        # Nice stable ordering: encounter first, then events, then by label/desc
+        def _sort_key(info: dict[str, Any]) -> tuple:
+            kind = info["source_kind"]
+            # Encounter before event
+            kind_order = 0 if kind == "encounter" else 1
+            return (
+                kind_order,
+                info.get("source_label", "") or "",
+                info.get("desc", ""),
+            )
+
+        for info in sorted(aggregated_mods.values(), key=_sort_key):
+            enemies = sorted(info["enemy_names"])  # type: ignore[index]
+            if len(enemies) == len(unique_enemy_names):
+                applies_to = "all enemies"
+            elif len(enemies) == 1:
+                applies_to = enemies[0]
+            else:
+                applies_to = ", ".join(enemies)
+
+            source_kind = info["source_kind"]
+            label = info.get("source_label") or ""
+            desc = info["desc"]
+
+            if source_kind == "event":
+                prefix = f"Event: {label}" if label else "Event"
+            else:
+                prefix = "Encounter"
+
+            st.markdown(
+                f"- **{prefix}** — {desc}  \n"
+                f"  _Applies to: {applies_to}_"
+            )
