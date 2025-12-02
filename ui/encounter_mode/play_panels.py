@@ -15,6 +15,7 @@ from core.encounter_rules import (
 from core.encounter_triggers import (
     EncounterTrigger,
     get_triggers_for_encounter,
+    get_triggers_for_event,
 )
 
 from core.encounter import templates
@@ -372,26 +373,26 @@ def _render_turn_controls(
 
 
 def _ensure_trigger_state(
-    encounter_key: str,
+    scope_key: str,
     triggers: list[EncounterTrigger],
 ) -> dict:
     """
-    Ensure we have a state dict for this encounter's triggers in session_state.
+    Ensure we have a state dict for this trigger group (encounter or event)
+    in session_state.
     """
     all_state = st.session_state.setdefault("encounter_triggers", {})
-    enc_state = all_state.setdefault(encounter_key, {})
+    scope_state = all_state.setdefault(scope_key, {})
 
     for trig in triggers:
-        if trig.id not in enc_state:
+        if trig.id not in scope_state:
             if trig.kind in ("counter", "numeric"):
-                enc_state[trig.id] = int(trig.default_value or 0)
+                scope_state[trig.id] = int(trig.default_value or 0)
             elif trig.kind == "checkbox":
-                enc_state[trig.id] = bool(trig.default_value or False)
+                scope_state[trig.id] = bool(trig.default_value or False)
             elif trig.kind == "timer_objective":
-                # Could track "acknowledged" if you want; for now it's unused.
-                enc_state[trig.id] = False
+                scope_state[trig.id] = False
 
-    return enc_state
+    return scope_state
 
 
 def _render_encounter_triggers(
@@ -411,142 +412,206 @@ def _render_encounter_triggers(
 
     edited = _detect_edited_flag(encounter_key, encounter, settings)
 
-    triggers = get_triggers_for_encounter(
+    # --- Gather all trigger sources: encounter + attached events ---
+    encounter_triggers = get_triggers_for_encounter(
         encounter_key=encounter_key,
         edited=edited,
     )
-    if not triggers:
+
+    enemy_names = _get_enemy_display_names(encounter)
+
+    sources: list[dict] = []
+
+    # 1) Encounter-level triggers (same as before)
+    if encounter_triggers:
+        sources.append(
+            {
+                "kind": "encounter",
+                "scope_key": encounter_key,
+                "label": None,
+                "triggers": encounter_triggers,
+            }
+        )
+
+    # 2) Event-level triggers (NEW)
+    events = st.session_state.get("encounter_events", []) or []
+    for ev in events:
+        ev_id = ev.get("id")
+        ev_name = ev.get("name") or ev_id or ""
+
+        ev_triggers: list[EncounterTrigger] = []
+        scope_key: str | None = None
+
+        # Allow either id or name as key into EVENT_TRIGGERS
+        for key in (ev_id, ev_name):
+            if not key:
+                continue
+            trig_list = get_triggers_for_event(event_key=key)
+            if trig_list:
+                ev_triggers = trig_list
+                scope_key = f"event:{key}"
+                break
+
+        if ev_triggers and scope_key:
+            sources.append(
+                {
+                    "kind": "event",
+                    "scope_key": scope_key,
+                    "label": ev_name,
+                    "triggers": ev_triggers,
+                }
+            )
+
+    if not sources:
         st.caption("No special triggers defined for this encounter yet.")
         return
 
-    enemy_names = _get_enemy_display_names(encounter)
-    state = _ensure_trigger_state(encounter_key, triggers)
+    # --- Render all sources ---
+    for src in sources:
+        kind = src["kind"]
+        scope_key = src["scope_key"]
+        label = src["label"]
+        triggers = src["triggers"]
 
-    for trig in triggers:
-        # Phase-gating: only show if it applies in the current phase
-        if trig.phase not in ("any", play_state["phase"]):
-            continue
+        # Sub-heading for event-based triggers so they’re easy to distinguish
+        if kind == "event" and label:
+            st.markdown(f"**Event: {label}**")
 
-        # ----- CHECKBOX -----
-        if trig.kind == "checkbox":
-            prev = bool(state.get(trig.id, trig.default_value or False))
+        # Ensure state bucket for this group (encounter or event)
+        state = _ensure_trigger_state(scope_key, triggers)
 
-            suffix = ""
-            if trig.template:
-                suffix = templates.render_text_template(
-                    trig.template,
-                    enemy_names,
-                )
+        # Make widget keys stable & unique per group
+        widget_scope = scope_key.replace("|", "_")
 
-            if trig.label and suffix:
-                label_text = f"{trig.label}: {suffix}"
-            else:
-                label_text = trig.label or suffix or trig.id
+        for trig in triggers:
+            # Phase-gating: only show if it applies in the current phase
+            if trig.phase not in ("any", play_state["phase"]):
+                continue
 
-            new_val = st.checkbox(
-                label_text,
-                value=prev,
-                key=f"trigger_cb_{encounter_key}_{trig.id}",
-            )
+            # ----- CHECKBOX -----
+            if trig.kind == "checkbox":
+                prev = bool(state.get(trig.id, trig.default_value or False))
 
-            # One-shot effect when it flips False -> True
-            if new_val and not prev and trig.effect_template:
-                effect_text = templates.render_text_template(
-                    trig.effect_template,
-                    enemy_names,
-                )
-                st.info(effect_text)
+                suffix = ""
+                if trig.template:
+                    suffix = templates.render_text_template(
+                        trig.template,
+                        enemy_names,
+                    )
 
-            state[trig.id] = new_val
-
-        # ----- COUNTER -----
-        elif trig.kind == "counter":
-            value_int = int(state.get(trig.id, trig.default_value or 0))
-
-            suffix = ""
-            if trig.template:
-                suffix = templates.render_text_template(
-                    trig.template,
-                    enemy_names,
-                    value=value_int,
-                )
-
-            if trig.label and suffix:
-                label_text = f"{trig.label}: {suffix}"
-            else:
-                label_text = trig.label or suffix or trig.id
-
-            new_val = st.number_input(
-                label_text,
-                min_value=trig.min_value,
-                max_value=trig.max_value if trig.max_value is not None else 999,
-                value=value_int,
-                key=f"trigger_num_{encounter_key}_{trig.id}",
-            )
-
-            # Show per-step effects as the counter increases
-            if trig.step_effects and new_val > value_int:
-                for step in range(value_int + 1, new_val + 1):
-                    tmpl = trig.step_effects.get(step)
-                    if tmpl:
-                        effect_text = templates.render_text_template(
-                            tmpl,
-                            enemy_names,
-                        )
-                        st.info(effect_text)
-
-            state[trig.id] = new_val
-
-        # ----- NUMERIC (plain number) -----
-        elif trig.kind == "numeric":
-            value_int = int(state.get(trig.id, trig.default_value or 0))
-
-            suffix = ""
-            if trig.template:
-                suffix = templates.render_text_template(
-                    trig.template,
-                    enemy_names,
-                    value=value_int,
-                )
-
-            if trig.label and suffix:
-                label_text = f"{trig.label}: {suffix}"
-            else:
-                label_text = trig.label or suffix or trig.id
-
-            new_val = st.number_input(
-                label_text,
-                value=value_int,
-                key=f"trigger_numeric_{encounter_key}_{trig.id}",
-            )
-            state[trig.id] = new_val
-
-        # ----- TIMER OBJECTIVE -----
-        elif trig.kind == "timer_objective":
-            label_text = trig.label or templates.render_text_template(
-                trig.template or "",
-                enemy_names,
-            )
-
-            st.markdown(f"- {label_text}")
-
-            target_timer: Optional[int] = None
-            if trig.timer_target is not None:
-                # For triggers we treat timer_target as an offset from player_count.
-                target_timer = get_player_count() + trig.timer_target
-
-            if (
-                target_timer is not None
-                and play_state["timer"] >= target_timer
-            ):
-                if trig.stop_on_complete:
-                    st.caption(f"✅ Objective reached at Timer {target_timer}.")
+                if trig.label and suffix:
+                    label_text = f"{trig.label}: {suffix}"
                 else:
-                    st.caption("✅ Objective condition met.")
-            elif target_timer is not None:
-                st.caption(
-                    f"⏳ Objective fails once Timer reaches {target_timer}."
+                    label_text = trig.label or suffix or trig.id
+
+                new_val = st.checkbox(
+                    label_text,
+                    value=prev,
+                    key=f"trigger_cb_{widget_scope}_{trig.id}",
                 )
+
+                # One-shot effect when it flips False -> True
+                if new_val and not prev and trig.effect_template:
+                    effect_text = templates.render_text_template(
+                        trig.effect_template,
+                        enemy_names,
+                    )
+                    st.info(effect_text)
+
+                state[trig.id] = new_val
+
+            # ----- COUNTER -----
+            elif trig.kind == "counter":
+                value_int = int(state.get(trig.id, trig.default_value or 0))
+
+                suffix = ""
+                if trig.template:
+                    suffix = templates.render_text_template(
+                        trig.template,
+                        enemy_names,
+                        value=value_int,
+                    )
+
+                if trig.label and suffix:
+                    label_text = f"{trig.label}: {suffix}"
+                else:
+                    label_text = trig.label or suffix or trig.id
+
+                new_val = st.number_input(
+                    label_text,
+                    min_value=trig.min_value,
+                    max_value=(
+                        trig.max_value if trig.max_value is not None else 999
+                    ),
+                    value=value_int,
+                    key=f"trigger_num_{widget_scope}_{trig.id}",
+                )
+
+                # Show per-step effects as the counter increases
+                if trig.step_effects and new_val > value_int:
+                    for step in range(value_int + 1, new_val + 1):
+                        tmpl = trig.step_effects.get(step)
+                        if tmpl:
+                            effect_text = templates.render_text_template(
+                                tmpl,
+                                enemy_names,
+                            )
+                            st.info(effect_text)
+
+                state[trig.id] = new_val
+
+            # ----- NUMERIC (plain number) -----
+            elif trig.kind == "numeric":
+                value_int = int(state.get(trig.id, trig.default_value or 0))
+
+                suffix = ""
+                if trig.template:
+                    suffix = templates.render_text_template(
+                        trig.template,
+                        enemy_names,
+                        value=value_int,
+                    )
+
+                if trig.label and suffix:
+                    label_text = f"{trig.label}: {suffix}"
+                else:
+                    label_text = trig.label or suffix or trig.id
+
+                new_val = st.number_input(
+                    label_text,
+                    value=value_int,
+                    key=f"trigger_numeric_{widget_scope}_{trig.id}",
+                )
+                state[trig.id] = new_val
+
+            # ----- TIMER OBJECTIVE -----
+            elif trig.kind == "timer_objective":
+                label_text = trig.label or templates.render_text_template(
+                    trig.template or "",
+                    enemy_names,
+                )
+
+                st.markdown(f"- {label_text}")
+
+                target_timer: Optional[int] = None
+                if trig.timer_target is not None:
+                    # For triggers in the UI we treat timer_target as an offset from player_count.
+                    target_timer = get_player_count() + trig.timer_target
+
+                if (
+                    target_timer is not None
+                    and play_state["timer"] >= target_timer
+                ):
+                    if trig.stop_on_complete:
+                        st.caption(
+                            f"✅ Objective reached at Timer {target_timer}."
+                        )
+                    else:
+                        st.caption("✅ Objective condition met.")
+                elif target_timer is not None:
+                    st.caption(
+                        f"⏳ Objective fails once Timer reaches {target_timer}."
+                    )
 
 
 # ---------------------------------------------------------------------
