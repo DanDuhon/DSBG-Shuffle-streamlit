@@ -6,6 +6,8 @@ with open("C:\\Users\\lenle\\Documents\\GitHub\\DSBG-Shuffle\\lib\\dsbg_shuffle_
 directory_path = "D:\\GitHub\\DSBG-Shuffle-streamlit\\data\\encounters"
 #directory_path = "D:\\GitHub\\DSBG-Shuffle-streamlit\\assets\\encounter cards"
 for index, filename in enumerate(os.listdir(directory_path)):
+    if "all_encounter" in filename:
+        continue
     old_file_path = os.path.join(directory_path, filename)
 
     # Check if it's a file and not a directory

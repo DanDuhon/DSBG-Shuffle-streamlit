@@ -1,7 +1,9 @@
 #ui/encounters_tab/assets.py
 import streamlit as st
+from dataclasses import dataclass
 from PIL import Image
 from pathlib import Path
+from typing import List, Dict
 
 
 ENCOUNTER_CARDS_DIR = Path("assets/encounter cards")
@@ -232,6 +234,40 @@ enemyNames = {
 }
 
 
+@dataclass(frozen=True)
+class SpecialRuleIconPlacement:
+    """
+    One enemy icon to render on the encounter card.
+
+    enemy_index:
+        0-based index into encounter["enemies"] after shuffling.
+
+    x_pct, y_pct:
+        Position on the card as percentages of the card image width/height.
+        (0-100, where (0,0) is top-left.)
+
+    size_px:
+        Icon size in pixels. Optional; you can tweak per-icon if needed.
+    """
+    enemy_index: int
+    x_pct: float
+    y_pct: float
+    size_px: int = 40
+
+
+# Keyed by "<encounter_name>|<expansion>"
+SPECIAL_RULE_ICON_LAYOUTS: Dict[str, List[SpecialRuleIconPlacement]] = {
+    # Example: Velka's Chosen
+    "Velka's Chosen|Painted World of Ariamis": [
+        # These x/y values are just placeholders – you’ll tune them by eye.
+        SpecialRuleIconPlacement(enemy_index=0, x_pct=20.0, y_pct=72.0),
+        SpecialRuleIconPlacement(enemy_index=1, x_pct=60.0, y_pct=72.0),
+    ],
+
+    # Add more encounters here as needed…
+}
+
+
 @st.cache_data(show_spinner=False)
 def get_enemy_image_by_name(enemy_name: str):
     """Load and cache enemy icon images."""
@@ -256,3 +292,19 @@ def get_keyword_image(keyword: str):
     """Return image path for a given keyword."""
     image_path = KEYWORDS_DIR / f"{keyword}.png"
     return str(image_path)
+
+
+def get_enemy_icon_path_for_index(encounter: dict, enemy_index: int) -> str | None:
+    """
+    Resolve the icon path for the enemy at a given 0-based index in
+    encounter["enemies"].
+
+    Returns None if there is no such enemy or no icon for it.
+    """
+    enemies = encounter.get("enemies") or []
+    if not (0 <= enemy_index < len(enemies)):
+        return None
+
+    eid = enemies[enemy_index]
+    icon_path = f"assets/enemy icons/{enemyNames[eid]}.png"
+    return icon_path

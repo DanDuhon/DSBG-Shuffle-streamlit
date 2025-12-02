@@ -2,6 +2,8 @@
 import streamlit as st
 import os
 import base64
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
 from json import load
 from pathlib import Path
 from PIL import Image
@@ -11,6 +13,46 @@ from ui.encounters_tab.assets import (get_keyword_image, get_enemy_image_by_id, 
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
 VALID_SETS_PATH = Path("data/encounters_valid_sets.json")
+
+@dataclass(frozen=True)
+class SpecialRuleEnemyIcon:
+    """
+    One enemy icon stamped into the *special rules* area.
+
+    enemy_index:
+        0-based index into the `enemies` list passed into
+        generate_encounter_image. So:
+
+            enemy_index = 0 -> enemy1
+            enemy_index = 1 -> enemy2
+            enemy_index = 2 -> enemy3
+            ...
+
+    x, y:
+        Pixel coordinates of the TOP-LEFT of a 40x40 "icon box"
+        on the encounter card image (same semantics as `positions`).
+
+    size:
+        Max dimension (in pixels) to scale the icon to. Defaults to 40
+        to match the main enemy grid icons.
+    """
+    enemy_index: int
+    x: int
+    y: int
+    size: int = 40
+
+
+# Keyed by (encounter_name, expansion_name)
+SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]] = {
+    # EXAMPLE ONLY – you’ll plug in real coordinates:
+    #
+    # ("Velka's Chosen", "Painted World of Ariamis"): [
+    #     # Put enemy1 icon in the special rules area
+    #     SpecialRuleEnemyIcon(enemy_index=0, x=320, y=460),
+    #     # Put enemy2 icon a bit to the right
+    #     SpecialRuleEnemyIcon(enemy_index=1, x=360, y=460),
+    # ],
+}
 
 
 @st.cache_data(show_spinner=False)
@@ -198,7 +240,14 @@ def load_encounter(encounter_slug: str, character_count: int):
     return data
 
 
-def generate_encounter_image(expansion_name: str, level: int, encounter_name: str, data: dict, enemies: list[int], use_edited=False):
+def generate_encounter_image(
+    expansion_name: str,
+    level: int,
+    encounter_name: str,
+    data: dict,
+    enemies: list[int],
+    use_edited=False,
+):
     """Render the encounter card with enemy icons based on enemySlots layout."""
     card_path = ENCOUNTER_CARDS_DIR / f"{expansion_name}_{level}_{encounter_name}.jpg"
 
@@ -209,21 +258,31 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
         keywordLookup = editedEncounterKeywords
     else:
         keywordLookup = encounterKeywords
-            
+
     card_img = Image.open(card_path).convert("RGBA")
 
+    # ---------------------------------------------------------
+    # 1) Keywords
+    # ---------------------------------------------------------
     for i, keyword in enumerate(keywordLookup.get((encounter_name, expansion_name), [])):
         if keyword not in keywordSize:
             continue
         keywordImagePath = get_keyword_image(keyword)
-        keywordImage = Image.open(keywordImagePath).convert("RGBA").resize(keywordSize[keyword], Image.Resampling.LANCZOS)
+        keywordImage = (
+            Image.open(keywordImagePath)
+            .convert("RGBA")
+            .resize(keywordSize[keyword], Image.Resampling.LANCZOS)
+        )
         card_img.alpha_composite(keywordImage, dest=(282, int(400 + (32 * i))))
 
+    # ---------------------------------------------------------
+    # 2) Main enemy grid icons (existing behavior)
+    # ---------------------------------------------------------
     enemy_slots = data.get("enemySlots", data.get("encounter_data", {}).get("enemySlots", []))
     enemy_index = 0  # which enemy from the chosen set we’re using next
 
     for slot_idx, enemy_count in enumerate(enemy_slots):
-        if enemy_count <= 0 or slot_idx in {4, 7, 10}: # these slots are spawns, so don't place them
+        if enemy_count <= 0 or slot_idx in {4, 7, 10}:  # these slots are spawns, so don't place them
             continue
 
         for i in range(enemy_count):
@@ -236,10 +295,16 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
             icon_path = get_enemy_image_by_id(enemy_id)
             icon_img = Image.open(icon_path)
             width, height = icon_img.size
+
             # Size the image down to 40 pixels based on the longer side.
-            s = 40 / (width if width > height else height)
+            max_side = width if width > height else height
+            if max_side <= 0:
+                continue
+
+            s = 40 / max_side
             icon_size = (int(round(width * s)), int(round(height * s)))
             icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
+
             # Normalize a common name mismatch so classification works
             normalized = expansion_name.replace("Executioner's Chariot", "Executioner Chariot")
 
@@ -257,6 +322,7 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
             # This is used to center the icon no matter its width or height.
             xOffset = int(round((40 - icon_size[0]) / 2))
             yOffset = int(round((40 - icon_size[1]) / 2))
+
             pos_table = positions.get(lookup) or positions.get("V2", {})
             key = (slot_idx, i)
             if key not in pos_table:
@@ -265,8 +331,44 @@ def generate_encounter_image(expansion_name: str, level: int, encounter_name: st
                 if key not in pos_table:
                     # No safe coordinate to use; skip this icon
                     continue
+
             coords = (pos_table[key][0] + xOffset, pos_table[key][1] + yOffset)
             card_img.alpha_composite(icon_img, dest=coords)
+
+    # ---------------------------------------------------------
+    # 3) Special rules enemy icons
+    # ---------------------------------------------------------
+    # Use the same `enemies` list, but pick specific indices according
+    # to the per-encounter layout above.
+    key = (encounter_name, expansion_name)
+    special_icons = SPECIAL_RULE_ENEMY_ICON_SLOTS.get(key, [])
+
+    for cfg in special_icons:
+        idx = cfg.enemy_index
+        # 0-based index into the shuffled enemies list
+        if not (0 <= idx < len(enemies)):
+            continue
+
+        enemy_id = enemies[idx]
+        icon_path = get_enemy_image_by_id(enemy_id)
+        icon_img = Image.open(icon_path)
+        width, height = icon_img.size
+
+        max_side = width if width > height else height
+        if max_side <= 0:
+            continue
+
+        # Scale to 20
+        s = 20 / max_side
+        icon_size = (int(round(width * s)), int(round(height * s)))
+        icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
+
+        # Center inside the 20 x 20 box
+        xOffset = int(round((20 - icon_size[0]) / 2))
+        yOffset = int(round((20 - icon_size[1]) / 2))
+
+        dest = (cfg.x + xOffset, cfg.y + yOffset)
+        card_img.alpha_composite(icon_img, dest=dest)
 
     return card_img
 
