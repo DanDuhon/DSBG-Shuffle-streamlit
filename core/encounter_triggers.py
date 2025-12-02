@@ -259,7 +259,7 @@ EVENT_TRIGGERS: EventTriggersMap = {
         EncounterTrigger(
             id="blacksmiths_trial",
             label="",
-            template="Event (Blacksmith's Trial): Reroll an attack or defense roll.",
+            template="Blacksmith's Trial event: Reroll an attack or defense roll.",
             kind="checkbox",
             phase="player",
         ),
@@ -268,7 +268,16 @@ EVENT_TRIGGERS: EventTriggersMap = {
         EncounterTrigger(
             id="fleeting_glory",
             label="",
-            template="If a character would die, instead clear the endurance bar.",
+            template="Fleeting Glory event: If a character would die, instead clear the endurance bar.",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
+    "Princess Guard": [
+        EncounterTrigger(
+            id="fleeting_glory",
+            label="",
+            template="Princess Guard event: If a character is attacked and would die, ignore the attack.",
             kind="checkbox",
             phase="player",
         ),

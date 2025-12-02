@@ -76,6 +76,8 @@ class EncounterRule:
 # list value  -> EncounterRule definitions for that variant
 EncounterRulesMap = Dict[str, Dict[str, List[EncounterRule]]]
 
+EventRulesMap = Dict[str, List[EncounterRule]]
+
 
 ENCOUNTER_RULES: EncounterRulesMap = {
     "Cloak and Feathers|Painted World of Ariamis": {
@@ -404,6 +406,42 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     },
 }
 
+# Event-level rules.
+# These use the same EncounterRule dataclass, but are keyed directly
+# by a string that should match either the event's id or its printed name.
+EVENT_RULES: EventRulesMap = {
+    "Alluring Skull": [
+        EncounterRule(
+            template="Alluring Skull event: The character with Alluring Skull gets +1 dodge.",
+            phase="player",
+        ),
+    ],
+    "Green Blossom": [
+        EncounterRule(
+            template="Green Blossom event: The character with Green Blossom can move any number of nodes without spending stamina.",
+            phase="player",
+        ),
+    ],
+    "Lifegem": [
+        EncounterRule(
+            template="Lifegem event: The character with Lifegem heals 1 damage at the start of their turn.",
+            phase="player",
+        ),
+    ],
+    "Pine Resin": [
+        EncounterRule(
+            template="Pine Resin event: The character with Pine Resin adds +1 to their damage total.",
+            phase="player",
+        ),
+    ],
+    "Repair Powder": [
+        EncounterRule(
+            template="Repair Powder event: The character with Repair Powder reduces damage taken from enemy attacks by 1.",
+            phase="player",
+        ),
+    ],
+}
+
 
 def make_encounter_key(*, name: str, expansion: str) -> str:
     """Helper to build a stable key for ENCOUNTER_RULES."""
@@ -481,5 +519,56 @@ def get_upcoming_rules_for_encounter(
             upcoming.append((trigger_timer, r))
 
     # Sort by when they will trigger
+    upcoming.sort(key=lambda pair: pair[0])
+    return upcoming
+
+
+def get_rules_for_event(
+    *,
+    event_key: str,
+    timer: int,
+    phase: str,
+) -> List[EncounterRule]:
+    """
+    Return the rules that apply *right now* for a given event.
+
+    `event_key` should match the key used in EVENT_RULES (usually the event's
+    id, but you can also use the printed name).
+    """
+    rules = EVENT_RULES.get(event_key, [])
+    return [r for r in rules if r.matches(timer=timer, phase=phase)]
+
+
+def get_upcoming_rules_for_event(
+    *,
+    event_key: str,
+    current_timer: int,
+    max_lookahead: int = 3,
+) -> List[tuple[int, EncounterRule]]:
+    """
+    Return (timer_value, rule) pairs for EVENT_RULES entries that will become
+    active within the next `max_lookahead` timer steps.
+
+    Mirrors get_upcoming_rules_for_encounter but on a per-event basis.
+    """
+    rules = EVENT_RULES.get(event_key, [])
+    upcoming: list[tuple[int, EncounterRule]] = []
+
+    for r in rules:
+        trigger_timer: Optional[int] = None
+
+        if r.timer_eq is not None:
+            if current_timer < r.timer_eq <= current_timer + max_lookahead:
+                trigger_timer = r.timer_eq
+
+        elif r.timer_min is not None:
+            # Rule becomes active at timer_min, if it's in the future window
+            if current_timer < r.timer_min <= current_timer + max_lookahead:
+                trigger_timer = r.timer_min
+
+        # We ignore timer_max-only or always-on rules for "upcoming"
+        if trigger_timer is not None:
+            upcoming.append((trigger_timer, r))
+
     upcoming.sort(key=lambda pair: pair[0])
     return upcoming

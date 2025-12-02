@@ -124,6 +124,11 @@ EVENT_REWARDS: Dict[str, List[dict]] = {
             "text": "Search the treasure deck until an upgrade card is revealed, then either add it to the inventory or use it to upgrade a card. Then, shuffle the treasure deck."
         },
     ],
+    "Big Pilgrim's Key": [
+        {
+            "type": "shortcut",
+        }
+    ],
     "Bleak Bonfire Ascetic": [
         {
             "type": "souls",
@@ -183,12 +188,6 @@ EVENT_REWARDS: Dict[str, List[dict]] = {
         {
             "type": "text",
             "text": "The party can purchase treasure."
-        },
-    ],
-    "Fleeting Glory": [
-        {
-            "type": "souls_multiplier",
-            "multiplier": 2
         },
     ],
     # # Example: an event that just gives extra souls

@@ -11,6 +11,8 @@ from core.encounter_rules import (
     make_encounter_key,
     get_rules_for_encounter,
     get_upcoming_rules_for_encounter,
+    get_rules_for_event,
+    get_upcoming_rules_for_event,
 )
 from core.encounter_triggers import (
     EncounterTrigger,
@@ -169,21 +171,58 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
 
     edited = _detect_edited_flag(encounter_key, encounter, settings)
 
-    # Rules that apply *right now*
-    current_rules = get_rules_for_encounter(
-        encounter_key=encounter_key,
-        edited=edited,
-        timer=play_state["timer"],
-        phase=play_state["phase"],  # "enemy" or "player"
-    )
-
     enemy_names = _get_enemy_display_names(encounter)
     player_count = get_player_count()
+    timer = play_state["timer"]
+    phase = play_state["phase"]  # "enemy" or "player"
 
-    if not current_rules:
+    # ------------------------------------------------------------------
+    # Encounter-level rules that apply *right now*
+    # ------------------------------------------------------------------
+    current_encounter_rules = get_rules_for_encounter(
+        encounter_key=encounter_key,
+        edited=edited,
+        timer=timer,
+        phase=phase,
+    )
+
+    # ------------------------------------------------------------------
+    # Event-level rules that apply *right now*
+    # ------------------------------------------------------------------
+    events = st.session_state.get("encounter_events", []) or []
+    event_rule_groups: list[tuple[str, list]] = []
+
+    for ev in events:
+        ev_id = ev.get("id")
+        ev_name = ev.get("name")
+        label = ev_name or ev_id or ""
+
+        rules_for_event: list = []
+
+        # Allow either id or name as key into EVENT_RULES
+        for key in (ev_id, ev_name):
+            if not key:
+                continue
+
+            rules_for_event = get_rules_for_event(
+                event_key=key,
+                timer=timer,
+                phase=phase,
+            )
+            if rules_for_event:
+                break
+
+        if rules_for_event:
+            event_rule_groups.append((label, rules_for_event))
+
+    # ------------------------------------------------------------------
+    # Render current rules
+    # ------------------------------------------------------------------
+    if not current_encounter_rules and not event_rule_groups:
         st.caption("No rules to show for this encounter in the current state.")
     else:
-        for rule in current_rules:
+        # Encounter-level rules first
+        for rule in current_encounter_rules:
             text = templates.render_text_template(
                 rule.template,
                 enemy_names,
@@ -191,18 +230,63 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
             )
             st.markdown(f"- {text}", unsafe_allow_html=True)
 
-    # --- Upcoming rules: inline section (no expander) ---
-    upcoming = get_upcoming_rules_for_encounter(
+        # Then per-event rules, grouped under headings
+        for label, rules_for_event in event_rule_groups:
+            st.markdown(f"**Event: {label}**")
+            for rule in rules_for_event:
+                text = templates.render_text_template(
+                    rule.template,
+                    enemy_names,
+                    player_count=player_count,
+                )
+                st.markdown(f"- {text}", unsafe_allow_html=True)
+
+    # ------------------------------------------------------------------
+    # Upcoming rules: encounter + events
+    # ------------------------------------------------------------------
+    upcoming_combined: list[tuple[int, str | None, Any]] = []
+
+    # Encounter-level upcoming rules
+    enc_upcoming = get_upcoming_rules_for_encounter(
         encounter_key=encounter_key,
         edited=edited,
-        current_timer=play_state["timer"],
+        current_timer=timer,
         max_lookahead=3,  # show next 3 Timer step(s); tweak if you like
     )
+    for trigger_timer, rule in enc_upcoming:
+        upcoming_combined.append((trigger_timer, None, rule))
 
-    if upcoming:
+    # Event-level upcoming rules
+    for ev in events:
+        ev_id = ev.get("id")
+        ev_name = ev.get("name")
+        label = ev_name or ev_id or ""
+
+        for key in (ev_id, ev_name):
+            if not key:
+                continue
+
+            ev_upcoming = get_upcoming_rules_for_event(
+                event_key=key,
+                current_timer=timer,
+                max_lookahead=3,
+            )
+            if not ev_upcoming:
+                continue
+
+            for trigger_timer, rule in ev_upcoming:
+                upcoming_combined.append((trigger_timer, label, rule))
+
+            # Avoid double-fetching for id+name if both map to same rules
+            break
+
+    if upcoming_combined:
+        # Sort by when they will trigger
+        upcoming_combined.sort(key=lambda t: t[0])
+
         st.markdown("**Upcoming rules**")
 
-        for trigger_timer, rule in upcoming:
+        for trigger_timer, source_label, rule in upcoming_combined:
             phase_label = {
                 "enemy": "Enemy Phase",
                 "player": "Player Phase",
@@ -214,8 +298,15 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
                 enemy_names,
                 player_count=player_count,
             )
+
+            # Prefix with event label if this comes from an event
+            if source_label:
+                prefix = f"[{source_label}] "
+            else:
+                prefix = ""
+
             st.markdown(
-                f"- **Timer {trigger_timer} · {phase_label}** — {text}",
+                f"- **Timer {trigger_timer} · {phase_label}** — {prefix}{text}",
                 unsafe_allow_html=True,
             )
 

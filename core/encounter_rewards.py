@@ -23,11 +23,11 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
                 {
                     "type": "souls",
                     # 2 souls per character
-                    "per_player": 2,
-                    "text": "{players}×2 souls (base reward)",
+                    "per_player": 1,
+                    "flat": 3,
                 },
                 {
-                    "type": "treasure",
+                    "type": "refresh",
                     "flat": 1,
                     "text": "Draw 1 treasure card.",
                 },
