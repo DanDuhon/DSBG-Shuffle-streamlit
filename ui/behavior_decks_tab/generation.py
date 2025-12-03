@@ -147,6 +147,8 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     # choose coord key prefix
     prefix = "boss" if is_boss else "enemy"
     coord_key = key if key == "text" else f"{prefix}_{key}"
+    if coord_key == "enemy_health" and int(value) >= 10:
+        coord_key = "boss_health"
     if coord_key not in coords_map:
         return
     x, y = coords_map[coord_key]
@@ -193,7 +195,7 @@ def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, i
             base.alpha_composite(icon, (x, y))
 
 
-@st.cache_data(show_spinner=False)
+#@st.cache_data(show_spinner=False)
 def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bool=False) -> bytes:
     """
     Paint stats (health, armor, resist, maybe heatup) on the base data card.

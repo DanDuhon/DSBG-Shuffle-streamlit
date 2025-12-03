@@ -89,25 +89,6 @@ def _get_enemy_display_names(encounter: dict) -> list[str]:
     return names
 
 
-def _render_behavior_card_image(data_bytes: bytes, *, is_player_phase: bool) -> None:
-    """
-    Show a behavior data card image. During the player phase, render it in
-    grayscale as an extra visual cue.
-    """
-    try:
-        b64 = base64.b64encode(data_bytes).decode("utf-8")
-        # Always stretch to container width; conditionally add grayscale filter
-        style = "width:100%; height:auto;"
-        if is_player_phase:
-            style += " filter: grayscale(100%);"
-
-        html = f"<img src='data:image/jpeg;base64,{b64}' style='{style}' />"
-        st.markdown(html, unsafe_allow_html=True)
-    except Exception:
-        # Fallback: if anything goes wrong, just show the normal image
-        st.image(data_bytes, width="stretch")
-
-
 # ---------------------------------------------------------------------
 # Objectives
 # ---------------------------------------------------------------------
@@ -1324,10 +1305,6 @@ def _render_enemy_behaviors(encounter: dict) -> None:
     """
     st.markdown("#### Enemy Behavior Cards")
 
-    # Check whose phase it is so we can gray out cards during the player phase
-    play = st.session_state.get("encounter_play", {})
-    is_player_phase = play.get("phase") == "player"
-
     entries = _get_enemy_behavior_entries_for_encounter(encounter)
     if not entries:
         st.caption("No enemy behavior data found for this encounter.")
@@ -1371,10 +1348,9 @@ def _render_enemy_behaviors(encounter: dict) -> None:
                 is_boss=(cfg.tier == "boss"),
             )
             if data_bytes is not None:
-                _render_behavior_card_image(
-                    data_bytes,
-                    is_player_phase=is_player_phase,
-                )
+                st.image(data_bytes, width="stretch")
+                # Small vertical spacer between rows
+                st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
 
         # Outside the column context: aggregate mods for the global summary
         for mod, source_kind, source_label in mod_tuples:

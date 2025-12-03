@@ -115,5 +115,5 @@ def render(settings: dict) -> None:
             play_panels._render_rewards(encounter, settings)
 
     # RIGHT COLUMN
-    with col_right:
+    with col_right.container(height=500):
         play_panels._render_enemy_behaviors(encounter)
