@@ -33,17 +33,22 @@ class SpecialRuleEnemyIcon:
         on the encounter card image (same semantics as `positions`).
 
     size:
-        Max dimension (in pixels) to scale the icon to. Defaults to 40
-        to match the main enemy grid icons.
+        Max dimension (in pixels) to scale the icon to.
     """
     enemy_index: int
     x: int
     y: int
-    size: int = 40
+    size: int = 25
 
 
 # Keyed by (encounter_name, expansion_name)
 SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]] = {
+    ("The First Bastion", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=1, x=725, y=434),
+        SpecialRuleEnemyIcon(enemy_index=2, x=380, y=480),
+        SpecialRuleEnemyIcon(enemy_index=3, x=430, y=400),
+        SpecialRuleEnemyIcon(enemy_index=3, x=500, y=505),
+    ]
     # EXAMPLE ONLY – you’ll plug in real coordinates:
     #
     # ("Velka's Chosen", "Painted World of Ariamis"): [
@@ -255,28 +260,11 @@ def generate_encounter_image(
         edited_path = EDITED_ENCOUNTER_CARDS_DIR / f"{expansion_name}_{level}_{encounter_name}.jpg"
         if os.path.exists(edited_path):
             card_path = edited_path
-        keywordLookup = editedEncounterKeywords
-    else:
-        keywordLookup = encounterKeywords
 
     card_img = Image.open(card_path).convert("RGBA")
 
     # ---------------------------------------------------------
-    # 1) Keywords
-    # ---------------------------------------------------------
-    for i, keyword in enumerate(keywordLookup.get((encounter_name, expansion_name), [])):
-        if keyword not in keywordSize:
-            continue
-        keywordImagePath = get_keyword_image(keyword)
-        keywordImage = (
-            Image.open(keywordImagePath)
-            .convert("RGBA")
-            .resize(keywordSize[keyword], Image.Resampling.LANCZOS)
-        )
-        card_img.alpha_composite(keywordImage, dest=(282, int(400 + (32 * i))))
-
-    # ---------------------------------------------------------
-    # 2) Main enemy grid icons (existing behavior)
+    # 1) Main enemy grid icons
     # ---------------------------------------------------------
     enemy_slots = data.get("enemySlots", data.get("encounter_data", {}).get("enemySlots", []))
     enemy_index = 0  # which enemy from the chosen set we’re using next
@@ -358,14 +346,14 @@ def generate_encounter_image(
         if max_side <= 0:
             continue
 
-        # Scale to 20
-        s = 20 / max_side
+        # Scale to cfg.size
+        s = cfg.size / max_side
         icon_size = (int(round(width * s)), int(round(height * s)))
         icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
 
-        # Center inside the 20 x 20 box
-        xOffset = int(round((20 - icon_size[0]) / 2))
-        yOffset = int(round((20 - icon_size[1]) / 2))
+        # Center inside the cfg.size x cfg.size box whose top-left is (cfg.x, cfg.y)
+        xOffset = int(round((cfg.size - icon_size[0]) / 2))
+        yOffset = int(round((cfg.size - icon_size[1]) / 2))
 
         dest = (cfg.x + xOffset, cfg.y + yOffset)
         card_img.alpha_composite(icon_img, dest=dest)
