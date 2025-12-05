@@ -4,7 +4,9 @@
         "middle": {
             "type": "physical",
             "damage": 6,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -20,7 +22,9 @@
         "left": {
             "type": "physical",
             "damage": 6,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "middle": {}
     },
@@ -28,7 +32,8 @@
         "dodge": 3,
         "middle": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "right": {}
     },
@@ -45,7 +50,9 @@
         "dodge": 2,
         "left": {
             "type": "magic",
-            "damage": 5
+            "damage": 5,
+			"push": true,
+			"node": true
         },
         "middle": {},
         "right": {}

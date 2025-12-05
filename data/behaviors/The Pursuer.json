@@ -12,6 +12,7 @@
     "heatup": 12,
     "armor": 3,
     "resist": 2,
+	"text": "He arrives not with ceremony, but with inevitability. A towering knight clad in dark, corroded armor, the Pursuer glides across the battlefield with an eerie, relentless focus, his massive shield and greatsword always angled toward you—as though nothing else in the world exists. A cursed wind coils around his weapon, hungry and cold, eager to claim yet another soul for the corruption he serves.\n\nThe Pursuer does not patrol, does not wander; he hunts. From ramparts to rampart, from forgotten keep to crumbling tower, he appears wherever your path grows too bold, as if drawn to your stubborn refusal to die. Each encounter with him feels less like chance and more like fate closing in, a reminder that in Drangleic, some debts cannot be escaped—only confronted, blade to blade.",
     "Wide Blade Swing 2": {
         "dodge": 1,
         "middle": {

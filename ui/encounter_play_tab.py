@@ -1797,11 +1797,9 @@ def _render_enemy_behaviors(encounter: dict) -> None:
             # Gather all behavior modifiers that apply to this enemy
             mod_tuples = _gather_behavior_mods_for_enemy(encounter, enemy_name)
             mod_dicts = [m for (m, _, _) in mod_tuples]
-            print(mod_dicts)
 
             # Apply mods to raw json before rendering data card
             raw_for_render = _apply_behavior_mods_to_raw(cfg.raw, mod_dicts)
-            print(raw_for_render)
 
             # Always show the data card for this enemy/boss if available
             data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"

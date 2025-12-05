@@ -11,6 +11,7 @@
     "heatup": 25,
     "armor": 2,
     "resist": 1,
+	"text": "Crossbreed Priscilla stands silent amid the falling ash, a pale figure half-lost in the Painted World's snowbound gloom. Neither fully dragon nor wholly divine, she is a secret the gods chose to hide rather than face, exiled to a canvas prison rather than slain outright. Her presence is strangely serene, more guardian than executioner, yet the scythe at her side and the clawed tail behind her speak of the violence she has endured and the power she has learned to wield.\n\nShe does not rush to slaughter; she warns. Those who press forward despite her gentle dismissal find the air itself turning treacherous, footsteps swallowed by frost and blood drawn by an invisible reaper. To fight Priscilla is to choose this tragedy—forcing a forgotten soul, who only wished to be left alone, to bare her fangs and carve her existence into the snow.",
     "Flanking Slash": {
         "dodge": 1,
         "middle": {

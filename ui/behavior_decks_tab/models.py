@@ -86,7 +86,7 @@ class BehaviorConfig:
         entities = raw.get("entities", [])
 
         # Determine number of cards
-        cards = raw.get("cards", len(deck))
+        cards = raw["cards"]
 
         # Determine heatup threshold
         heatup_val = raw.get("heatup")

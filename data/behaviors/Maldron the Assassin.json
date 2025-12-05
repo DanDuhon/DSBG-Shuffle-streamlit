@@ -18,7 +18,8 @@
         "repeat": 2,
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
         "right": {}
     },

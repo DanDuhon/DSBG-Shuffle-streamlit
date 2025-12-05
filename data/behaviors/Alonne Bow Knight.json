@@ -1,7 +1,7 @@
 {
 	"behavior": {
 		"dodge": 2,
-		"middle": {"type": "physical", "damage": 4},
+		"middle": {"type": "physical", "damage": 4, "push": true},
 		"right": {}
 	},
 	"health": 1,

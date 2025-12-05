@@ -3,7 +3,8 @@
         "dodge": 1,
         "left": {
             "type": "magic",
-            "damage": 3
+            "damage": 3,
+			"node": true
         },
         "middle": {}
     },

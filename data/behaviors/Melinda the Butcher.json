@@ -4,7 +4,8 @@
         "repeat": 2,
         "middle": {
             "type": "physical",
-            "damage": 3
+            "damage": 3,
+			"push": true
         },
         "right": {}
     },
@@ -19,7 +20,8 @@
         "repeat": 2,
         "left": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
         "middle": {}
     },
@@ -28,7 +30,8 @@
         "repeat": 3,
         "left": {
             "type": "physical",
-            "damage": 3
+            "damage": 3,
+			"push": true
         },
         "middle": {}
     },
@@ -37,7 +40,9 @@
         "middle": {
             "type": "physical",
             "damage": 5,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -46,7 +51,9 @@
         "repeat": 2,
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "right": {}
     }

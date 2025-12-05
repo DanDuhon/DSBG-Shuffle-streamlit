@@ -18,7 +18,8 @@
         "dodge": 2,
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
         "right": {}
     },
@@ -26,7 +27,9 @@
         "dodge": 1,
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -43,7 +46,8 @@
         "dodge": 1,
         "left": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "middle": {},
         "right": {}

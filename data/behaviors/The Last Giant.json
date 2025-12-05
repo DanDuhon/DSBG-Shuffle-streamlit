@@ -12,6 +12,7 @@
     "heatup": 18,
     "armor": 3,
     "resist": 3,
+	"text": "He is the last remaining of his kind, left brutally maimed, with the swords of the fallen spitefully embedded in his stony flesh. Imprisoned and left to rot beneath a forest filled with the corpses of his brethren, he prepares for his final breath — yet the willful and strong soul of his kind denies him rest. Do not think him weak or mistake the pitiful creature for an easy opponent, for he is neither.\n\nOnce, when his people ravaged the land, the creature now known as the Last Giant was their king, the greatest amongst them. The Last Giant is no barbarian to be conquered, but a powerful spirit who for generations laid waste to an entire kingdom in retribution for a slight visited upon him by mankind. Though he was eventually defeated by an anonymous hero of old, due to his immense strength he could only be imprisoned below the fort where he fell.\n\nFace him with wary respect for his iron will and power. Both yet remain within him now, and he will punish those who seek to finally rid the world of his kind.",
     "Right Foot Stomp": {
         "dodge": 2,
         "middle": {

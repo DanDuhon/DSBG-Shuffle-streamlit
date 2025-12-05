@@ -3,7 +3,8 @@
         "dodge": 2,
         "middle": {
             "type": "physical",
-            "damage": 3
+            "damage": 3,
+			"node": true
         },
         "right": {
             "repeat": 2
@@ -12,5 +13,6 @@
     "health": 1,
     "armor": 1,
     "resist": 1,
-	"order_num": 8
+	"order_num": 8,
+	"range": 0
 }

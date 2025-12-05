@@ -5,8 +5,9 @@ from copy import deepcopy
 import base64
 import streamlit as st
 
-from ui.events_tab.logic import EVENT_BEHAVIOR_MODIFIERS
+from ui.events_tab.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS
 from ui.encounters_tab.assets import enemyNames
+from ui.encounter_mode import invader_panel
 from core.encounter_rules import (
     make_encounter_key,
     get_rules_for_encounter,
@@ -20,14 +21,15 @@ from core.encounter_triggers import (
     get_triggers_for_event,
 )
 
-from core.encounter import templates
-from core.encounter import objectives as obj_mod
+from core.encounter import templates, objectives as obj_mod
+from core.encounter_rewards import get_v1_reward_config_for_encounter
 from ui.encounter_mode.play_state import get_player_count, log_entry
 
 from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
 from ui.behavior_decks_tab.generation import render_data_card_cached, build_behavior_catalog
 from ui.behavior_decks_tab.logic import load_behavior
 from ui.behavior_decks_tab.models import BehaviorEntry
+from ui.behavior_decks_tab import render as behavior_decks_render
 from ui.encounters_tab.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
 
 
@@ -36,6 +38,7 @@ from ui.encounters_tab.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
 # ---------------------------------------------------------------------
 
 TIMER_ICON_PATH = Path("assets") / "timer.png"
+V2_EXPANSIONS_SET = set(V2_EXPANSIONS)
 
 # Optional caps for phrases like "on 4 tiles" in objective text.
 # Values are the maximum number of tiles that physically exist in the encounter.
@@ -49,6 +52,38 @@ OBJECTIVE_TILE_CAPS = {
 # ---------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------
+
+def _is_v2_encounter(encounter: dict) -> bool:
+    """
+    Decide whether an encounter should be treated as a V2 card.
+
+    Priority:
+    - explicit 'version' / 'encounter_version' field on the encounter
+    - otherwise, expansion membership in V2_EXPANSIONS
+    """
+    version = (
+        encounter.get("version")
+        or encounter.get("encounter_version")
+        or ""
+    ).upper()
+
+    if version.startswith("V1"):
+        return False
+    if version.startswith("V2"):
+        return True
+
+    expansion = encounter.get("expansion")
+    return expansion in V2_EXPANSIONS_SET
+
+
+def _is_v1_encounter(encounter: dict) -> bool:
+    """
+    Everything that isn't explicitly V2 is treated as V1-style:
+    - basic objective
+    - basic rewards
+    - no rules / triggers / events
+    """
+    return not _is_v2_encounter(encounter)
 
 
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
@@ -107,6 +142,13 @@ def _render_objectives(encounter: dict, settings: dict) -> None:
     )
     expansion = encounter.get("expansion", "Unknown Expansion")
     encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    # --- V1: fixed objective text ------------------------------------
+    if _is_v1_encounter(encounter):
+        st.markdown("#### Objective")
+        st.markdown("- Kill all enemies.")
+        return
+    # -----------------------------------------------------------------
 
     edited = _detect_edited_flag(encounter_key, encounter, settings)
     cfg = obj_mod.get_objective_config_for_key(encounter_key, edited=edited)
@@ -178,6 +220,7 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
     edited = _detect_edited_flag(encounter_key, encounter, settings)
     player_count = get_player_count()
     enemy_names = _get_enemy_display_names(encounter)
+    is_v1 = _is_v1_encounter(encounter)
 
     # Trigger state (used for trials, counters, and modifiers)
     triggers = get_triggers_for_encounter(
@@ -203,7 +246,11 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
     # ---- Encounter-level rewards ----
     from core.encounter_rewards import get_reward_config_for_key  # local import to avoid cycles
 
-    enc_cfg = get_reward_config_for_key(encounter_key, edited=edited)
+    if is_v1:
+        enc_cfg = get_v1_reward_config_for_encounter(encounter)
+    else:
+        enc_cfg = get_reward_config_for_key(encounter_key, edited=edited)
+
     if enc_cfg:
         _apply_rewards_from_config(
             enc_cfg,
@@ -217,33 +264,35 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
         )
 
     # ---- Event-level rewards ----
-    events = st.session_state.get("encounter_events", [])
-    try:
-        # You already added EVENT_REWARDS next to EVENT_BEHAVIOR_MODIFIERS
-        from ui.events_tab.logic import EVENT_REWARDS  # type: ignore
-    except ImportError:
-        EVENT_REWARDS = {}  # type: ignore[assignment]
+    # V1 encounter cards cannot have attached events mechanically in Encounter Mode.
+    if not is_v1:
+        events = st.session_state.get("encounter_events", [])
+        try:
+            # You already added EVENT_REWARDS next to EVENT_BEHAVIOR_MODIFIERS
+            from ui.events_tab.logic import EVENT_REWARDS  # type: ignore
+        except ImportError:
+            EVENT_REWARDS = {}  # type: ignore[assignment]
 
-    for ev in events:
-        ev_name = ev.get("name") or ev.get("title") or ev.get("id")
-        if not ev_name:
-            continue
-        ev_rewards = EVENT_REWARDS.get(ev_name)  # type: ignore[index]
-        if not ev_rewards:
-            continue
+        for ev in events:
+            ev_name = ev.get("name") or ev.get("title") or ev.get("id")
+            if not ev_name:
+                continue
+            ev_rewards = EVENT_REWARDS.get(ev_name)  # type: ignore[index]
+            if not ev_rewards:
+                continue
 
-        # Wrap in a minimal config so we can reuse the same helper
-        ev_cfg = {"rewards": ev_rewards}
-        _apply_rewards_from_config(
-            ev_cfg,  # type: ignore[arg-type]
-            source_label=f"Event: {ev_name}",
-            totals=totals,
-            special_lines=special_lines,
-            souls_multipliers=souls_multipliers,
-            trigger_state=trigger_state,
-            player_count=player_count,
-            enemy_names=enemy_names,
-        )
+            # Wrap in a minimal config so we can reuse the same helper
+            ev_cfg = {"rewards": ev_rewards}
+            _apply_rewards_from_config(
+                ev_cfg,  # type: ignore[arg-type]
+                source_label=f"Event: {ev_name}",
+                totals=totals,
+                special_lines=special_lines,
+                souls_multipliers=souls_multipliers,
+                trigger_state=trigger_state,
+                player_count=player_count,
+                enemy_names=enemy_names,
+            )
 
     # ---- Apply souls multipliers after everything else ----
     if totals["souls"] and souls_multipliers:
@@ -404,6 +453,10 @@ def _apply_rewards_from_config(
 
 
 def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
+    # V1 encounter cards have no special rules/triggers section in Encounter Mode.
+    if _is_v1_encounter(encounter):
+        return
+    
     st.markdown("#### Rules")
 
     # Build encounter key (name + expansion or however your data is structured)
@@ -736,6 +789,10 @@ def _render_encounter_triggers(
     play_state: dict,
     settings: dict,
 ) -> None:
+    # No triggers for V1 encounter cards.
+    if _is_v1_encounter(encounter):
+        return
+    
     st.markdown("#### Encounter Triggers")
 
     name = (
@@ -949,7 +1006,13 @@ def _render_encounter_triggers(
 # ---------------------------------------------------------------------
 
 
-def _render_attached_events() -> None:
+def _render_attached_events(encounter: dict) -> None:
+    # V1 encounters cannot have attached events in Encounter Mode.
+    # Also clear any stale events that might be left over from a V2 run.
+    if _is_v1_encounter(encounter):
+        st.session_state.pop("encounter_events", None)
+        return
+    
     events = st.session_state.get("encounter_events", [])
 
     with st.expander("Attached Events"):
@@ -1104,6 +1167,10 @@ def _gather_behavior_mods_for_enemy(
             mods.append((mod, "encounter", enc_label))
 
     # --- Event-level mods ---
+    # V1 encounters ignore events (no attached event behavior mods).
+    if _is_v1_encounter(encounter):
+        return mods
+    
     events = st.session_state.get("encounter_events", []) or []
     for ev in events:
         ev_id = ev.get("id")
@@ -1188,16 +1255,34 @@ def _apply_behavior_mods_to_raw(
             base = mod.get("base")
             per_player = mod.get("per_player")
 
-            if base is not None or per_player is not None:
-                amount = 0
+            if isinstance(per_player, (int, float)):
+                amount += per_player * get_player_count()
 
-                if isinstance(base, (int, float)):
-                    amount += base
+            val = amount
 
-                if isinstance(per_player, (int, float)):
-                    amount += per_player * get_player_count()
+        # --- Push / node flags: per-attack booleans, not status effects ---
+        # Encounter/event modifiers may say "push" or "node" with op "flag"/"set".
+        # Treat those as booleans on each real attack node (left/middle/right).
+        if stat in {"push", "node"} and op in {"flag", "set"}:
+            for node in _iter_attack_nodes():
+                # Only apply push to physical/magic attacks; never to type=="push".
+                if stat == "push":
+                    if node.get("type") not in ("physical", "magic"):
+                        continue
 
-                val = amount
+                # Only touch nodes that are actual attacks.
+                if (
+                    "damage" not in node
+                    and "effect" not in node
+                    and "type" not in node
+                ):
+                    continue
+
+                node[stat] = True if val is None else bool(val)
+
+            # Also keep a top-level flag for convenience / future use.
+            patched[stat] = True if val is None else bool(val)
+            continue
 
         # --- Status flags (Bleed, etc.) -> add to effect[] on attacks ---
         if op == "flag" and stat in EFFECT_FLAG_STATS:
@@ -1305,7 +1390,28 @@ def _render_enemy_behaviors(encounter: dict) -> None:
     """
     st.markdown("#### Enemy Behavior Cards")
 
-    entries = _get_enemy_behavior_entries_for_encounter(encounter)
+    # Start with the standard encounter enemies
+    enemy_entries = _get_enemy_behavior_entries_for_encounter(encounter)
+
+    # Also include any invaders present in this encounter so that
+    # added invaders from Setup are visible here as well. We treat
+    # them exactly like other enemies for data-card purposes, but
+    # avoid duplicates by name.
+    try:
+        invader_entries = invader_panel._get_invader_behavior_entries_for_encounter(encounter)
+    except Exception:
+        invader_entries = []
+
+    if invader_entries:
+        existing_names = {getattr(e, "name", None) for e in enemy_entries}
+        merged: List[BehaviorEntry] = list(enemy_entries)
+        for inv in invader_entries:
+            if getattr(inv, "name", None) not in existing_names:
+                merged.append(inv)
+        entries = merged
+    else:
+        entries = enemy_entries
+
     if not entries:
         st.caption("No enemy behavior data found for this encounter.")
         return
@@ -1415,3 +1521,69 @@ def _render_enemy_behaviors(encounter: dict) -> None:
                 f"- **{prefix}** — {desc}  \n"
                 f"  _Applies to: {applies_to}_"
             )
+
+
+def _render_invaders_and_bosses(encounter: dict) -> None:
+    """
+    Right-hand column: embed a trimmed Behavior Decks UI for
+    invaders and bosses only.
+
+    This reuses the full Behavior Decks implementation (deck
+    simulator + health tracker), but we temporarily filter the
+    behavior catalog so only invader/boss decks appear, and we
+    try to default to something from the current encounter.
+    """
+    # Build the full catalog once, then filter it
+    full_catalog = build_behavior_catalog()
+    trimmed: Dict[str, List[BehaviorEntry]] = {}
+    all_entries: List[BehaviorEntry] = []
+
+    for cat, entries in full_catalog.items():
+        filtered = [e for e in entries if getattr(e, "is_invader", False)]
+        if filtered:
+            trimmed[cat] = filtered
+            all_entries.extend(filtered)
+
+    if not all_entries:
+        st.caption("No invader decks found.")
+        return
+
+    # Try to default the selection to an invader/boss that actually appears
+    # in this encounter, if any.
+    enemy_names = _get_enemy_display_names(encounter)
+    available_names = {e.name for e in all_entries}
+
+    for name in enemy_names:
+        if name in available_names:
+            # Only set the default if nothing has been chosen yet
+            st.session_state.setdefault("behavior_choice", name)
+            break
+
+    # Temporarily override the catalog Behavior Decks uses so that its
+    # category radio + selector only see these invader/boss entries.
+    original_catalog = st.session_state.get("behavior_catalog")
+    st.session_state["behavior_catalog"] = trimmed
+
+    # Prefer the "Invaders" category if it exists; otherwise make sure the
+    # current category is valid for our trimmed catalog.
+    if "Invaders" in trimmed:
+        st.session_state.setdefault("behavior_category", "Invaders")
+    else:
+        current_cat = st.session_state.get("behavior_category")
+        if current_cat not in trimmed:
+            # Pick a deterministic first category for a stable UI
+            st.session_state["behavior_category"] = sorted(trimmed.keys())[0]
+
+    try:
+        # This renders:
+        # - Enemy/boss selector (now limited to invaders/bosses)
+        # - Behavior deck controls (draw, reshuffle, etc.)
+        # - Health tracker + heat-up logic
+        behavior_decks_render()
+    finally:
+        # Restore whatever catalog the Behavior Decks tab (or other code)
+        # was using before we overrode it.
+        if original_catalog is not None:
+            st.session_state["behavior_catalog"] = original_catalog
+        else:
+            st.session_state.pop("behavior_catalog", None)

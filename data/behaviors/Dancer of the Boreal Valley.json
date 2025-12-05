@@ -12,6 +12,7 @@
     "heatup": 18,
     "armor": 2,
     "resist": 2,
+	"text": "She moves like smoke around a dying flame—elongated, inhuman, her every step a contortion of pain and grace. Once a loyal knight of Irithyll, the Dancer was twisted into a living instrument of the Pontiff’s will, her body stretched and broken until it matched the cruel elegance of the blades she now wields. The air around her seems to dim and warp, as if even the firelight refuses to draw too near.\n\nThere is no battle cry, no roar of challenge—only the soft scrape of metal and the low, haunting rattle of chain and plate. Her dance is a funeral waltz, and each sweeping arc of her swords carves invisible lines where life and death exchange places. To face the Dancer is to step willingly onto her stage, knowing that the final step of her choreography is meant to end with your body left cooling on the cathedral floor.",
     "Blade Dance": {
         "dodge": 1,
         "repeat": 2,

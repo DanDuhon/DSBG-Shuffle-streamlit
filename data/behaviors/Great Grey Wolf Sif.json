@@ -12,6 +12,7 @@
     "heatup": 19,
     "armor": 2,
     "resist": 3,
+	"text": "Atop a mound of weathered swords and broken promises, the Great Grey Wolf Sif stands guard, fur matted by age and battle, eyes gleaming with a mournful resolve. The greatsword clenched between her jaws is not a trophy, but a burden—an oath inherited from a fallen friend she refuses to abandon. Each step she takes is heavy with memory, yet her movements remain swift and deadly, a final barrier between you and the grave she has sworn to protect.\n\nThere is no malice in Sif’s attack, only necessity. Her howls echo through the clearing like a lament for a time when she was not alone, when the one she now defends in death still walked beside her in life. As the battle wears on and her strength fades, her swings grow slower, more desperate, as if some part of her remembers why you’ve come—and wishes there had been another way.",
     "Spinning Slash": {
         "dodge": 1,
         "left": {

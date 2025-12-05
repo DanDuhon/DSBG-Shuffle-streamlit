@@ -577,6 +577,114 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
     },
 }
 
+# Number of chests printed on each V1 encounter card.
+# Key format matches make_encounter_key: "<encounter_name>|<expansion>".
+V1_CHEST_COUNTS: Dict[str, int] = {
+    "Broken Passageway|Dark Souls The Board Game": 1,
+    "Dark Hollow|Dark Souls The Board Game": 1,
+    "Forsaken Depths|Dark Souls The Board Game": 1,
+    "Ghostly Keep|Dark Souls The Board Game": 1,
+    "Hollow Cave|Dark Souls The Board Game": 1,
+    "Unlighted Chamber|Dark Souls The Board Game": 1,
+    "Burned Gardens|Dark Souls The Board Game": 1,
+    "High Wall of Lothric|Dark Souls The Board Game": 1,
+    "Lost Labyrinth|Dark Souls The Board Game": 1,
+    "Empty Crypt|Dark Souls The Board Game": 1,
+    "Lost Shrine|Dark Souls The Board Game": 1,
+    "Pit of the Dead|Dark Souls The Board Game": 1,
+    "Profane Shrine|Dark Souls The Board Game": 1,
+    "Wretched Gardens|Dark Souls The Board Game": 1,
+    "Fearful Woods|Darkroot": 1,
+    "Wild Glades|Darkroot": 1,
+    "Stone Hollow|Darkroot": 1,
+    "Withered Thicket|Darkroot": 1,
+    "Dark Woods|Darkroot": 1,
+    "Hydra Lake|Darkroot": 1,
+    "Halls of the Forsworn|Explorers": 1,
+    "Unholy Tunnels|Explorers": 1,
+    "Lost Grotto|Explorers": 1,
+    "Gallery of the Hidden Warrior": 1,
+    "Charred Keep|Iron Keep": 1,
+    "Furnace Room|Iron Keep": 1,
+    "Searing Hallway|Iron Keep": 1,
+    "Smouldering Labyrinth|Iron Keep": 1,
+    "Castle Aflame|Iron Keep": 1,
+    "Sweltering Sanctum|Iron Keep": 1,
+    "Quiet Graveyard|Executioner Chariot": 1,
+    "Misty Burial Site|Executioner Chariot": 1,
+    "Desolace Cemetery|Executioner Chariot": 1,
+    "Gate of Peril|Executioner Chariot": 1,
+    "Huntsman's Copse|Executioner Chariot": 1,
+    "Undead Purgatory|Executioner Chariot": 1,
+    "Asylum's North Hall|Asylum Demon": 1,
+    "Shattered Cell|Asylum Demon": 1,
+    "Gough's Perch|Black Dragon Kalameet": 1,
+    "Great Stone Bridge|Black Dragon Kalameet": 1,
+    "Perilous Crossing|Black Dragon Kalameet": 1,
+    "Darkened Chamber|Gaping Dragon": 1,
+    "Outskirts of Blighttown|Gaping Dragon": 2,
+    "Sewers of Lordran|Gaping Dragon": 1,
+    "The Depths|Gaping Dragon": 1,
+    "Dragon Shrine|Guardian Dragon": 1,
+    "Manor Foregarden|Guardian Dragon": 1,
+    "Research Library|Guardian Dragon": 1,
+    "Scholar's Hall|Guardian Dragon": 1,
+    "Shadow of the Abyss|Manus, Father of the Abyss": 1,
+    "The Desecrated Grave|Manus, Father of the Abyss": 1,
+    "Fortress Gates|Old Iron King": 1,
+    "Ironhearth Hall|Old Iron King": 1,
+    "Lava Path|Old Iron King": 1,
+    "Cursed Cavern|The Four Kings": 1,
+    "Edge of the Abyss|The Four Kings": 1,
+    "Hall of Wraiths|The Four Kings": 1,
+    "New Londo Ruins|The Four Kings": 1,
+    "Forest of Fallen Giants|The Last Giant": 1,
+    "The Petrified Fallen|The Last Giant": 1,
+    "Guarded Path|Vordt of the Boreal Valley": 1,
+    "The Dog's Domain|Vordt of the Boreal Valley": 1
+}
+
+
+def get_v1_reward_config_for_encounter(
+    encounter: dict,
+) -> EncounterRewardsConfig:
+    """
+    Generic reward formula for V1 encounter cards.
+
+    - 2 souls per character
+    - +2 treasure draws per chest printed on the encounter card
+
+    Chest counts are looked up in V1_CHEST_COUNTS using the usual
+    "<encounter_name>|<expansion>" key. Unknown encounters default
+    to 0 chests.
+    """
+    name = (
+        encounter.get("encounter_name")
+        or encounter.get("name")
+        or "Unknown Encounter"
+    )
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+
+    chest_count = V1_CHEST_COUNTS.get(encounter_key, 0)
+
+    rewards: List[RewardConfig] = [
+        {
+            "type": "souls",
+            "per_player": 2,
+        },
+    ]
+
+    if chest_count:
+        rewards.append(
+            {
+                "type": "treasure",
+                "flat": 2 * chest_count,
+            }
+        )
+
+    return {"rewards": rewards}
+
 
 def get_reward_config_for_key(
     encounter_key: str,

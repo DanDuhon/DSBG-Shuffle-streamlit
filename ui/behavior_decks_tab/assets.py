@@ -26,7 +26,7 @@ CATEGORY_EMOJI = {
 }
 BOSS_CATEGORY_MAP = {
     # Mini bosses
-    "Asylum Dmon": "Mini Bosses",
+    "Asylum Demon": "Mini Bosses",
     "Black Knight": "Mini Bosses",
     "Boreal Outrider Knight": "Mini Bosses",
     "Gargoyle": "Mini Bosses",
@@ -95,6 +95,7 @@ coords_map = {
     "enemy_health": (689, 96),
     "enemy_resist": (415, 615),
     "enemy_dodge": (710, 605),
+    "enemy_range": (80, 630),
     "text": (95, 860),
 
     # -------- STATS: boss/invader data card --------
@@ -104,11 +105,25 @@ coords_map = {
     "boss_resist": (415, 635),
     "boss_heatup": (655, 640),
 
+    # -------- PUSH ICONS --------
+    "push": {
+        "left": (40, 735),
+        "middle": (287, 735),
+        "right": (440, 735),
+    },
+
+    # -------- NODE ATTACK ICONS --------
+    "node": {
+        "left": (50, 895),
+        "middle": (297, 895),
+        "right": (450, 895),
+    },
+
     # -------- REPEAT ICONS --------
     # regular enemy repeat
     "enemy_repeat": {
         "middle": (344, 786),
-        "right": (440, 320),
+        "right": (600, 790),
     },
     # boss / invader repeat
     "boss_repeat": (344, 588),
@@ -177,6 +192,7 @@ text_styles = {
     "health": {"size": 60, "fill": "white", "font": FONT_PATH_NUMBER},
     "resist": {"size": 85, "fill": "black", "font": FONT_PATH_NUMBER},
     "dodge":  {"size": 70, "fill": "black", "font": FONT_PATH_NUMBER},
+    "range":  {"size": 85, "fill": "black", "font": FONT_PATH_NUMBER},
     "heatup": {"size": 60, "fill": "black", "font": FONT_PATH_NUMBER},
     "text":   {"size": 36, "fill": "black", "font": FONT_PATH_TEXT}
 }

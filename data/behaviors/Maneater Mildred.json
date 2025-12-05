@@ -3,7 +3,9 @@
         "dodge": 1,
         "middle": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -17,7 +19,9 @@
         "dodge": 2,
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -36,7 +40,8 @@
         "middle": {
             "type": "physical",
             "damage": 4,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"node": true
         },
         "right": {}
     },
@@ -45,7 +50,9 @@
         "middle": {
             "type": "physical",
             "damage": 4,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "right": {}
     }

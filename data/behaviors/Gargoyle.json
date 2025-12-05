@@ -12,6 +12,7 @@
     "heatup": 12,
     "armor": 2,
     "resist": 1,
+	"text": "Perched high above the ruined battlements, the Gargoyle waits with the patience of carved stone, a mockery of the city it watches over. Its wings, cracked and weathered, unfurl in a storm of dust as it rouses from its false slumber, eyes kindling with a baleful, ember-bright awareness. What once might have been a mere ornament of faith has been twisted by time and lingering magic into a living sentinel, bound to strike down any who dare approach its domain.\n\nWhen it takes flight, the air fills with the thunder of beating wings and the scrape of ancient metal. Tail, axe, and flame all come in brutal succession, a barrage meant to send intruders tumbling from the heights in terror. The Gargoyle does not pursue glory or vengeance; it simply fulfills the last command carved into its existence—guard the bell, guard the tower, and cast all who climb back down into the depths below.",
     "Halberd Thrust": {
         "dodge": 1,
         "middle": {

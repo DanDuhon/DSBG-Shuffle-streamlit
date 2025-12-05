@@ -36,7 +36,8 @@
         "dodge": 2,
         "middle": {
             "type": "magic",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "right": {}
     },
@@ -44,7 +45,8 @@
         "dodge": 1,
         "middle": {
             "type": "magic",
-            "damage": 6
+            "damage": 6,
+			"node": true
         },
         "right": {}
     }

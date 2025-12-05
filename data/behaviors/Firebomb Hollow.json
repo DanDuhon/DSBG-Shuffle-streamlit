@@ -3,7 +3,9 @@
         "dodge": 1,
         "middle": {
             "type": "magic",
-            "damage": 3
+            "damage": 3,
+			"push": true,
+			"node": true
         },
         "right": {}
     },

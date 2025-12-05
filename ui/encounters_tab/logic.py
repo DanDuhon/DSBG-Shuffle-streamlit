@@ -7,7 +7,6 @@ from random import choice
 from collections import defaultdict
 
 from ui.encounters_tab.generation import generate_encounter_image, load_encounter, load_valid_sets, ENCOUNTER_DATA_DIR
-from ui.encounters_tab.models import Encounter
 
 
 ENCOUNTER_BEHAVIOR_MODIFIERS = {
@@ -181,7 +180,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "source": "encounter",
             "source_id": "Painted World of Ariamis_2_Corrupted Hovel",
             "target_alt_indices": [1,3],
-            "stat": "node_attack",
+            "stat": "node",
             "op": "flag",
             "value": True,
             "description": "Node attack from special rules.",
@@ -300,7 +299,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "source": "encounter",
             "source_id": "Painted World of Ariamis_3_Deathly Freeze",
             "target_alt_indices": [2,6],
-            "stat": "node_attack",
+            "stat": "node",
             "op": "flag",
             "value": True,
             "description": "Node attack from special rules.",

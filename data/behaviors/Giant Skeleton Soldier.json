@@ -7,7 +7,8 @@
         },
         "middle": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "right": {}
     },

@@ -39,10 +39,13 @@ def ensure_play_state(encounter_id):
     return state
 
 
-def apply_pending_action(play_state: dict, timer_behavior: dict) -> None:
+def apply_pending_action(play_state: dict, timer_behavior: dict):
     """
     If the last run scheduled a pending turn action (next, prev, reset),
-    apply it *before* rendering anything.
+    apply it *before* rendering anything, and return the action string.
+
+    Returns:
+        "next", "prev", "reset", or None if no pending action was set.
     """
     action = st.session_state.pop("encounter_play_pending_action", None)
 
@@ -54,6 +57,8 @@ def apply_pending_action(play_state: dict, timer_behavior: dict) -> None:
         previous_turn(play_state)
     elif action == "reset":
         reset_play_state(play_state)
+
+    return action
 
 
 def log_entry(play_state: dict, text: str):

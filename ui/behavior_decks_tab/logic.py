@@ -60,6 +60,7 @@ def _new_state_from_file(fpath: str, cfg: BehaviorConfig | None = None):
         "display_cards": cfg.display_cards,
         "entities": [e.__dict__.copy() for e in cfg.entities],
         "cfg": cfg,
+        "heatup_done": False,
     }
 
     state["original_behaviors"] = deepcopy(cfg.behaviors)
@@ -205,6 +206,7 @@ def _reset_deck(state, cfg):
         state["priscilla_invisible"] = True
     elif cfg.name == "Great Grey Wolf Sif":
         state["sif_limping"] = False
+        state["sif_limping_active"] = False
         st.session_state.pop("sif_limping_triggered", None)
     elif cfg.name == "The Four Kings":
         state["four_kings_summons"] = 0
@@ -580,7 +582,7 @@ def load_behavior(fname: Path) -> BehaviorConfig:
         tier="enemy" if "behavior" in raw else "boss",
         entities=entities,
         display_cards=display_cards,
-        cards=raw.get("cards"),
+        cards=raw.get("cards", len(deck)),
         deck=deck,
         heatup=heatup,
         raw=raw,
@@ -635,7 +637,7 @@ def apply_special_rules(cfg, rng):
 
 def build_dual_boss_draw_pile(cfg: BehaviorConfig, rng: random.Random) -> List[str]:
     """Build a shuffled pile of length = cards count, unless cards not specified."""
-    count = cfg.raw.get("cards", len(cfg.deck))  # fallback: all cards
+    count = cfg.raw["cards"]
     pile = cfg.deck[:count] if len(cfg.deck) >= count else cfg.deck[:]
     rng.shuffle(pile)
     return pile
@@ -693,7 +695,7 @@ def setup_kalameet(cfg, rng):
     Mark of Calamity and Hellfire Blast are always included.
     """
     deck = cfg.deck[:]
-    limit = cfg.raw.get("cards", len(deck))
+    limit = cfg.raw["cards"]
     return force_include(deck, include=["Mark of Calamity", "Hellfire Blast"], limit=limit, rng=rng)
 
 
@@ -704,7 +706,7 @@ def setup_kalameet(cfg, rng):
     """
     always_include = match_behavior_prefix(cfg.behaviors, "Fire Beam")
     deck = cfg.deck[:]
-    limit = cfg.raw.get("cards", len(deck))
+    limit = cfg.raw["cards"]
     return force_include(deck, include=always_include, limit=limit, rng=rng)
 
 
@@ -731,7 +733,7 @@ def setup_sif(cfg, rng):
     Limping Strike is always excluded.
     """
     deck = cfg.deck[:]
-    limit = cfg.raw.get("cards", len(deck))
+    limit = cfg.raw["cards"]
     return force_include(deck, exclude=["Limping Strike"], limit=limit, rng=rng)
 
 
@@ -748,7 +750,7 @@ def setup_last_giant(cfg, rng):
     ]
     arm_cards = [b for b, v in cfg.behaviors.items() if v.get("arm", False)]
     rng.shuffle(arm_cards)
-    limit = cfg.raw.get("cards", len(deck))
+    limit = cfg.raw["cards"]
     return force_include(deck, exclude=["Falling Slam"], include=arm_cards[:3], limit=limit, rng=rng)
 
 
@@ -815,7 +817,25 @@ def _apply_sif_limping_mode(state, cfg):
     state["draw_pile"] = [limp_card]
     state["discard_pile"] = []
     state["current_card"] = None
+
+    # Track that we've entered limping mode
+    state["sif_limping"] = True
     state["sif_limping_active"] = True
+    st.session_state["sif_limping_triggered"] = True
+
+
+def _revert_sif_limping_mode(state, cfg):
+    """Restore Sif's normal deck when she is no longer limping."""
+    rng = random.Random()
+
+    # Rebuild Sif's normal deck (Limping Strike excluded by setup_sif)
+    state["draw_pile"] = build_draw_pile(cfg, rng)
+    state["discard_pile"] = []
+    state["current_card"] = None
+
+    state["sif_limping"] = False
+    state["sif_limping_active"] = False
+    st.session_state.pop("sif_limping_triggered", None)
 
 
 def _ornstein_smough_heatup(state, cfg, dead_boss, rng):

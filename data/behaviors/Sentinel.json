@@ -3,7 +3,8 @@
         "dodge": 1,
         "middle": {
             "type": "physical",
-            "damage": 6
+            "damage": 6,
+			"node": true
         },
         "right": {}
     },

@@ -4,6 +4,7 @@ import streamlit as st
 import ui.encounters_tab as encounters_tab
 import ui.events_tab as events_tab
 from ui.encounter_mode import play_tab
+from ui.boss_mode.boss_mode_render import render as boss_mode_render
 from ui import sidebar
 from core.settings_manager import load_settings, save_settings
 
@@ -91,14 +92,23 @@ character_count = len(selected_characters)
 valid_party = 0 < character_count <= 4
 st.session_state["player_count"] = character_count
 
-# --- Encounter Mode only ---
-setup, events, play = st.tabs(["Setup", "Events", "Play"])
 
-with setup:
-    encounters_tab.render(settings, valid_party, character_count)
+mode = st.sidebar.radio(
+    "Mode",
+    ["Encounter Mode", "Boss Mode"],
+    key="mode",
+)
 
-with events:
-    events_tab.render(settings, attach_to_encounter=True)
+if mode == "Encounter Mode":
+    setup, events, play = st.tabs(["Setup", "Events", "Play"])
 
-with play:
-    play_tab.render(settings)
+    with setup:
+        encounters_tab.render(settings, valid_party, character_count)
+
+    with events:
+        events_tab.render(settings, attach_to_encounter=True)
+
+    with play:
+        play_tab.render(settings)
+elif mode == "Boss Mode":
+    boss_mode_render()

@@ -11,6 +11,7 @@
     "heatup": 26,
     "armor": 3,
     "resist": 2,
+	"text": "Some are so lost that they are not even worthy of a place amongst the shambling and vengeful corpses of the Undead Burg. Their fate instead is to eternally wander the endless corridors of the flooded and labyrinthine Depths, banished forever from the light of the sun. The Gaping Dragon is one such creature, an abomination hideously transformed by its ravenous hunger.\n\nA distant descendant of the ancient Everlasting Dragons, the Gaping Dragon still retains the prehensile hands and wings of its ancestors but has long lost any other claim to their likeness. To feed the creature’s bulbous stomach, gluttony has warped the Gaping Dragon’s ribcage into a cavernous maw—the horrific feature which gives the monstrosity its name. The dragon’s sheer weight has long since robbed it of the ability of flight and has forced the growth of two further legs to support its body. Even the creature’s head has receded, leaving only an ugly proboscis it uses to further detect prey; little other function remains.\n\nTruly this terrible creature belongs in the Depths, a realm of horror that makes even the darkest of nightmares pale in comparison.",
     "always_display": ["Crawling Charge"],
     "Stomach Slam 1": {
         "dodge": 2,

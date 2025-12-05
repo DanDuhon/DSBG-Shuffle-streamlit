@@ -59,7 +59,7 @@
     "Shattered Dungeon|Dark Souls The Board Game": false,
     "The Deeps|Dark Souls The Board Game": false,
     "Castle Break In|The Sunless City": false,
-    "Eye of the Storm|Painted World of Ariamis": true,
+    "Eye of the Storm|Painted World of Ariamis": false,
     "Twilight Falls|The Sunless City": false,
     "Grim Reunion|The Sunless City": false,
     "The Last Bastion|Painted World of Ariamis": false,
@@ -83,7 +83,10 @@
     "Trecherous Tower|Painted World of Ariamis": false,
     "Quiet Graveyard|Executioner Chariot": false,
     "Asylum's North Hall|Asylum Demon": false,
-    "Velka's Chosen|Painted World of Ariamis": false
+    "Velka's Chosen|Painted World of Ariamis": false,
+    "Black Dungeon|Dark Souls The Board Game": false,
+    "Burned Gardens|Dark Souls The Board Game": false,
+    "Courtyard of Lothric|Vordt of the Boreal Valley": false
   },
   "event_deck": {
     "draw_pile": [],

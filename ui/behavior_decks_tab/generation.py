@@ -146,7 +146,7 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     draw = ImageDraw.Draw(img)
     # choose coord key prefix
     prefix = "boss" if is_boss else "enemy"
-    coord_key = key if key == "text" else f"{prefix}_{key}"
+    coord_key = f"{prefix}_{key}"
     if coord_key == "enemy_health" and int(value) >= 10:
         coord_key = "boss_health"
     if coord_key not in coords_map:
@@ -195,7 +195,46 @@ def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, i
             base.alpha_composite(icon, (x, y))
 
 
-#@st.cache_data(show_spinner=False)
+def _overlay_push_node_icon(
+    base: Image.Image,
+    slot: str,
+    *,
+    is_boss: bool,
+    kind: str,  # "push" or "node"
+) -> None:
+    """
+    Draw a push/node marker for a given attack slot.
+
+    Looks for coords in:
+      - coords_map["boss_push"] / coords_map["boss_node"] for bosses
+      - coords_map["enemy_push"] / coords_map["enemy_node"] for enemies
+    falling back to coords_map["push"] / coords_map["node"] if those exist.
+    """
+    assert kind in ("push", "node")
+
+    prefix = "boss" if is_boss else "enemy"
+    coord_map = (
+        coords_map.get(f"{prefix}_{kind}")
+        or coords_map.get(kind)
+    )
+    if not coord_map:
+        return
+
+    xy = coord_map.get(slot)
+    if not xy:
+        return
+    x, y = xy
+
+    icon_filename = f"{kind}.png"  # e.g., push.png / node.png
+    icon_path = ICONS_DIR / icon_filename
+    if not icon_path.exists():
+        return
+
+    icon = Image.open(icon_path).convert("RGBA")
+    base.alpha_composite(icon, (x, y))
+
+
+@st.cache_data(show_spinner=False)
 def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bool=False) -> bytes:
     """
     Paint stats (health, armor, resist, maybe heatup) on the base data card.
@@ -215,6 +254,11 @@ def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bo
         _draw_text(base, "resist", str(raw_json["resist"]), is_boss)
     if "text" in raw_json:
         _draw_text(base, "text", str(raw_json["text"]), is_boss)
+    if "range" in raw_json:
+        # If this behavior explicitly defines a range (e.g., range 0),
+        # write it onto the card using the coords_map entry for range.
+        # Expects coords_map["boss_range"] / coords_map["enemy_range"] to exist.
+        _draw_text(base, "range", str(raw_json["range"]), is_boss)
 
     # --- boss-only: show heatup threshold if present ---
     if is_boss and isinstance(raw_json.get("heatup"), int):
@@ -333,6 +377,14 @@ def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, 
         effects = spec.get("effect")
         if effects:
             _overlay_effect_icons(base, effects, slot, is_boss=is_boss)
+
+        # --- Push / Node overlays ---
+        # Push: only for physical/magic attacks, never for type == "push"
+        if spec.get("push") and behavior_json[slot]["type"] in {"physical", "magic"}:
+            _overlay_push_node_icon(base, slot, is_boss=is_boss, kind="push")
+
+        if spec.get("node") and behavior_json[slot]["type"] in {"physical", "magic"}:
+            _overlay_push_node_icon(base, slot, is_boss=is_boss, kind="node")
 
         x, y = slot_coords[slot]
         base.alpha_composite(icon, (x, y))

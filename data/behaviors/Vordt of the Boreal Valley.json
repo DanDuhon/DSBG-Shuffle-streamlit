@@ -14,6 +14,7 @@
     "heatup2": 14,
     "armor": 3,
     "resist": 3,
+	"text": "The vile watchdog of the Boreal Valley, Vordt is tasked with standing sentinel over the gates that lead from the Undead Settlement to the Castle of Lothric. His only companions in this unholy duty are the reanimated dead, hollow soldiers, and Lothric Knights, the living long since passed from this still and broken place. Truly little sign of humanity remains to Vordt, who roams endlessly amongst the ranks of the dead, wreathed in icy mist.\n\nOnce an outrider knight in the service of the corrupt Pontiff Sulyvahn, Vordt was driven to the depths of insanity by the gift of the Pontiff ’s Left Eye. To stare into the black depths of such a bewitched stone is to be ensnared by the endless torment of battles which lead only to death. Not a single soul that dared to look survived intact—Vordt, no exception.\n\nVordt of the Boreal Valley exists now only as a savage and mindless beast, his mind long since riven into madness by endless visions of bloodshed and carnage. He is never to be found far from the fleeting steps of the ethereal Dancer, for their shared torment is the only memory of the life that once existed for them both.",
     "always_display": ["Frostbreath"],
     "Tracking Charge": {
         "dodge": 1,

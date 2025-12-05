@@ -3,6 +3,7 @@
     "cards": 5,
     "armor": 3,
     "resist": 3,
+	"text": "When the curse of undeath descended upon the realm of the Old Iron King, he decreed that those afflicted would be confined to the Huntsman’s Copse, a dark glade in which they would be hunted like vermin. Furthermore, a hellish gaol for the victims was created: the Undead Purgatory. In this grisly prison, the victims of unlife would be tortured and maimed at the behest of the King, a punishment for daring to rise against humanity.\n\nThe empire of the Old Iron King has long since been decimated and the lands of Drangleic fallen to the undead, yet still the miserable Purgatory remains, teeming with those that once were banished here. Their excruciation continues, for the watcher over their unholy torment, the Executioner’s Chariot, endures.",
     "Mega Boss Setup": {},
     "Death Race 1": {
         "dodge": 1,

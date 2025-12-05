@@ -4,7 +4,8 @@
         "repeat": 2,
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
         "right": {}
     },
@@ -54,7 +55,9 @@
         "repeat": 3,
         "left": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "middle": {},
         "right": {}

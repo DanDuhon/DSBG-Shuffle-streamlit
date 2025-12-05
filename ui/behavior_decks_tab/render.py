@@ -7,7 +7,8 @@ from core.settings_manager import load_settings
 from ui.behavior_decks_tab.logic import (_ensure_state, load_behavior
     , _new_state_from_file, _reset_deck, _load_cfg_for_state
     , _draw_card, _manual_heatup, apply_heatup, _clear_heatup_prompt
-    , _ornstein_smough_heatup_ui)
+    , _ornstein_smough_heatup_ui, _apply_sif_limping_mode
+    , _revert_sif_limping_mode)
 from ui.behavior_decks_tab.assets import (BEHAVIOR_CARDS_PATH, CARD_BACK
     , _dim_greyscale, _behavior_image_path, CATEGORY_ORDER, CATEGORY_EMOJI)
 from ui.behavior_decks_tab.persistance import _save_slot_ui
@@ -382,7 +383,7 @@ def render_health_tracker(cfg, state):
 
     for e in cfg.entities:
         ent_id = e.id                 # must be unique: "ornstein", "smough", "king_1"
-        label = e.label               # "Ornstein", "Smough", "King 1"
+        label = f"{e.label} HP"               # "Ornstein", "Smough", "King 1"
         hp = e.hp
         hpmax = e.hp_max
         heat_thresh = (e.heatup_thresholds or [None])[0]
@@ -410,11 +411,20 @@ def render_health_tracker(cfg, state):
                     ent.hp = val
                     break
 
+            # --- Great Grey Wolf Sif: enter/exit limping mode around 3 HP
+            if _boss_name == "Great Grey Wolf Sif":
+                # Enter limping mode
+                if val <= 3 and not state.get("sif_limping_active", False):
+                    _apply_sif_limping_mode(state, cfg)
+                # Leave limping mode if healed above 3
+                elif val > 3 and state.get("sif_limping_active", False):
+                    _revert_sif_limping_mode(state, cfg)
+
             # --- standard heat-up threshold
             if (
                 _boss_name != "Vordt of the Boreal Valley"
                 and _heat_thresh is not None
-                and not st.session_state.get("heatup_done", False)
+                and not state.get("heatup_done", False)
             ):
                 if val <= _heat_thresh:
                     st.session_state["pending_heatup_prompt"] = True

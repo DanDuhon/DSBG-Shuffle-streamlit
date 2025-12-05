@@ -1,6 +1,7 @@
 #ui/encounters_tab/render.py
 import streamlit as st
 import os
+import pyautogui
 from io import BytesIO
 
 from ui.encounters_tab.logic import (
@@ -23,6 +24,11 @@ from ui.events_tab.logic import (
     draw_event_card,
     DECK_STATE_KEY,
     RENDEZVOUS_EVENTS,
+)
+from ui.behavior_decks_tab.generation import build_behavior_catalog
+from ui.behavior_decks_tab.models import BehaviorEntry
+from ui.encounter_mode.invader_panel import (
+    _get_invader_behavior_entries_for_encounter,
 )
 from ui.events_tab.assets import PRESETS
 from core.settings_manager import save_settings
@@ -162,12 +168,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         st.session_state.encounter_events = []
 
     # --- Two-column layout: controls | cards ---
-    col_controls, col_cards = st.columns([1, 2])
+    col_controls, col_enc, col_event = st.columns([0.5, 0.575, 1])
 
     # -------------------------------------------------------------------------
-    # LEFT COLUMN – SETUP / EVENT / SAVE
+    # LEFT COLUMN – SETUP / SAVE
     # -------------------------------------------------------------------------
-    with col_controls:
+    with col_controls.container(height=int(pyautogui.size().height*0.65)):
         st.markdown("#### Encounter Setup")
 
         # Expansion selection
@@ -307,6 +313,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     "enemies": res["enemies"],
                     "expansions_used": res["expansions_used"],
                 }
+                _apply_added_invaders_to_current_encounter()
             else:
                 st.warning(res.get("message", "Unable to shuffle encounter."))
 
@@ -331,6 +338,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     "enemies": res["enemies"],
                     "expansions_used": res["expansions_used"],
                 }
+                _apply_added_invaders_to_current_encounter()
 
         # Apply edited/original toggle when we already have a current encounter
         if toggle_changed and "current_encounter" in st.session_state:
@@ -355,6 +363,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     "enemies": res["enemies"],
                     "expansions_used": res["expansions_used"],
                 }
+                _apply_added_invaders_to_current_encounter()
 
         # Auto-shuffle when encounter selection changes (and no explicit button pressed)
         if (
@@ -389,10 +398,15 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         "enemies": res["enemies"],
                         "expansions_used": res["expansions_used"],
                     }
+                    _apply_added_invaders_to_current_encounter()
                     # Only clear events when we actually switched encounters
                     st.session_state.encounter_events = []
                 else:
                     st.warning(res.get("message", "Unable to build encounter."))
+
+        # --- Optional invader configuration for this encounter ---
+        if "current_encounter" in st.session_state:
+            _render_invader_setup_controls(st.session_state.current_encounter)
 
         # Character / expansion icons
         if "current_encounter" in st.session_state:
@@ -447,112 +461,351 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     "expansions_used": payload.get("expansions_used"),
                 }
 
+                # Reconstruct 'added invaders' from payload['invaders']
+                _restore_added_invaders_from_payload(payload)
+                _apply_added_invaders_to_current_encounter()
+
     # -------------------------------------------------------------------------
     # RIGHT COLUMN – CARDS
     # -------------------------------------------------------------------------
-    with col_cards:
+    with col_enc:
         if "current_encounter" in st.session_state:
-            # Two-card layout: Encounter | Event
-            c1, c2 = st.columns(2)
+            encounter = st.session_state.current_encounter
+            render_card(encounter["card_img"])
 
-            with c1:
-                st.markdown("#### Encounter Card")
-                encounter = st.session_state.current_encounter
-                render_card(encounter["card_img"])
+            # Divider between card and rules
+            st.markdown(
+                "<hr style='margin: 0.5rem 0 0.75rem 0; border-color: #333;' />",
+                unsafe_allow_html=True,
+            )
 
-                # Divider between card and rules
-                st.markdown(
-                    "<hr style='margin: 0.5rem 0 0.75rem 0; border-color: #333;' />",
-                    unsafe_allow_html=True,
+            # -------------------------------------------------------------------------
+            # Keywords below the encounter card
+            # -------------------------------------------------------------------------
+            if "current_encounter" in st.session_state:
+                current = st.session_state.current_encounter
+                keyword_items = build_encounter_keywords(
+                    current["encounter_name"],
+                    current["expansion"],
+                    use_edited,
                 )
+            else:
+                keyword_items = []
 
-                # -------------------------------------------------------------------------
-                # Keywords below the encounter card
-                # -------------------------------------------------------------------------
-                if "current_encounter" in st.session_state:
-                    current = st.session_state.current_encounter
-                    keyword_items = build_encounter_keywords(
-                        current["encounter_name"],
-                        current["expansion"],
-                        use_edited,
-                    )
-                else:
-                    keyword_items = []
-
-                if keyword_items:
-                    with st.expander("Special Rules Reference", expanded=False):
-                        for _, text in keyword_items:
-                            st.markdown(text)
-
-            with c2:
-                st.markdown("#### Events")
-
-                events = st.session_state.get("encounter_events", [])
-
-                # Event controls (attach / clear) in this column
-                col_ev1, col_ev2 = st.columns(2)
-                with col_ev1:
-                    if st.button(
-                        "Attach Random Event",
-                        width="stretch",
-                        key="enc_attach_random_event",
-                    ):
-                        # Ensure event deck exists and has a preset
-                        if DECK_STATE_KEY not in st.session_state:
-                            st.session_state[DECK_STATE_KEY] = {
-                                "draw_pile": [],
-                                "discard_pile": [],
-                                "current_card": None,
-                                "preset": None,
-                            }
-
-                        deck_state = st.session_state[DECK_STATE_KEY]
-                        configs = load_event_configs()
-
-                        preset = (
-                            deck_state.get("preset")
-                            or settings.get("event_deck", {}).get("preset")
-                            or PRESETS[0]
-                        )
-
-                        # Initialize if empty or preset changed
-                        if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
-                            initialize_event_deck(preset, configs=configs)
-
-                        # Draw and attach
-                        draw_event_card()
-                        save_settings(settings)
-                        deck_state = st.session_state[DECK_STATE_KEY]
-                        card_path = deck_state.get("current_card")
-                        if card_path:
-                            _attach_event_to_current_encounter(card_path)
-                        events = st.session_state.get("encounter_events", [])
-
-                with col_ev2:
-                    if st.button(
-                        "Clear Events",
-                        width="stretch",
-                        key="enc_clear_events",
-                    ):
-                        st.session_state.encounter_events = []
-                        events = []
-
-                # Summary line
-                if not events:
-                    st.caption("No events attached yet.")
-
-                # Event card images
-                if events:
-                    ncols = 2
-                    for row_start in range(0, len(events), ncols):
-                        row_events = events[row_start:row_start + ncols]
-                        cols = st.columns(ncols)  # always 2 columns
-
-                        for i, ev in enumerate(row_events):
-                            with cols[i]:
-                                st.image(ev["path"], width="stretch")
+            if keyword_items:
+                with st.expander("Special Rules Reference", expanded=False):
+                    for _, text in keyword_items:
+                        st.markdown(text)
 
         elif "last_encounter" in st.session_state:
             st.info(f"Last encounter was {st.session_state['last_encounter']['label']}")
         else:
             st.info("Select an encounter to get started.")
+
+    with col_event.container(height=int(pyautogui.size().height*0.65)):
+        st.markdown("#### Events")
+
+        events = st.session_state.get("encounter_events", [])
+
+        # Event controls (attach / clear) in this column
+        col_ev1, col_ev2, col_ev3 = st.columns(3)
+        with col_ev1:
+            if st.button(
+                "Attach Random Event",
+                width="stretch",
+                key="enc_attach_random_event",
+            ):
+                # Ensure event deck exists and has a preset
+                if DECK_STATE_KEY not in st.session_state:
+                    st.session_state[DECK_STATE_KEY] = {
+                        "draw_pile": [],
+                        "discard_pile": [],
+                        "current_card": None,
+                        "preset": None,
+                    }
+
+                deck_state = st.session_state[DECK_STATE_KEY]
+                configs = load_event_configs()
+
+                preset = (
+                    deck_state.get("preset")
+                    or settings.get("event_deck", {}).get("preset")
+                    or PRESETS[0]
+                )
+
+                # Initialize if empty or preset changed
+                if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
+                    initialize_event_deck(preset, configs=configs)
+
+                # Draw and attach
+                draw_event_card()
+                save_settings(settings)
+                deck_state = st.session_state[DECK_STATE_KEY]
+                card_path = deck_state.get("current_card")
+                if card_path:
+                    _attach_event_to_current_encounter(card_path)
+                events = st.session_state.get("encounter_events", [])
+
+        with col_ev2:
+            if st.button(
+                "Clear Events",
+                width="stretch",
+                key="enc_clear_events",
+            ):
+                st.session_state.encounter_events = []
+                events = []
+
+        # Summary line
+        if not events:
+            st.caption("No events attached yet.")
+
+        # Event card images
+        if events:
+            ncols = 3
+            for row_start in range(0, len(events), ncols):
+                row_events = events[row_start:row_start + ncols]
+                cols = st.columns(ncols)
+
+                for i, ev in enumerate(row_events):
+                    with cols[i]:
+                        st.image(ev["path"], width="stretch")
+
+
+# -------------------------------------------------------------------------
+# Invader helpers for Setup tab
+# -------------------------------------------------------------------------
+
+ADDED_INVADERS_KEY = "encounter_added_invaders_by_key"
+
+_KIRK_KNIGHT = "kirk, knight of thorns"
+_KIRK_LONGFINGER = "longfinger kirk"
+
+
+def _norm_invader_name(name: str) -> str:
+    return str(name).strip().lower()
+
+
+def _invader_map_key(encounter: dict) -> str:
+    """
+    Build a stable key for 'added invaders' based on the encounter identity
+    (expansion + level + name). This intentionally ignores 'edited' so that
+    added invaders persist across original/edited toggles.
+    """
+    exp = encounter.get("expansion") or "?"
+    lvl = encounter.get("encounter_level") or encounter.get("level") or "?"
+    name = encounter.get("encounter_name") or encounter.get("name") or "?"
+    return f"{exp}|{lvl}|{name}"
+
+
+def _get_all_invader_entries() -> list[BehaviorEntry]:
+    """
+    Return all BehaviorEntry objects that are invaders (is_invader=True),
+    reusing the behavior catalog from the Behavior Decks tab if present.
+    """
+    catalog = st.session_state.get("behavior_catalog")
+    if catalog is None:
+        catalog = build_behavior_catalog()
+        st.session_state["behavior_catalog"] = catalog
+
+    entries: list[BehaviorEntry] = []
+    for per_cat in catalog.values():
+        for entry in per_cat:
+            if getattr(entry, "is_invader", False) and entry.name:
+                entries.append(entry)
+    return entries
+
+
+def _apply_added_invaders_to_current_encounter() -> None:
+    """
+    Combine 'locked' invaders (those that come from the encounter itself)
+    with user-added invaders and store them on encounter['invaders'] so
+    the Invaders tab can pick them up.
+
+    Locked invaders are derived from the encounter enemies via the same
+    detection logic used in invader_panel, but ignoring any existing
+    encounter['invaders'] value.
+    """
+    if "current_encounter" not in st.session_state:
+        return
+
+    encounter = st.session_state.current_encounter
+    key = _invader_map_key(encounter)
+    added_map = st.session_state.get(ADDED_INVADERS_KEY, {})
+    added = added_map.get(key, []) or []
+
+    # If nothing has been added, we don't need an explicit 'invaders' list;
+    # the Invaders tab will fall back to enemy display names. :contentReference[oaicite:2]{index=2}
+    if not added:
+        # But if there *is* already an explicit invaders list from elsewhere,
+        # leave it alone.
+        return
+
+    # Derive locked invaders from enemies only (ignore any existing 'invaders').
+    enc_for_auto = dict(encounter)
+    enc_for_auto.pop("invaders", None)
+
+    auto_entries = _get_invader_behavior_entries_for_encounter(enc_for_auto)
+    locked_names = [e.name for e in auto_entries]
+
+    seen: set[str] = set()
+    combined: list[str] = []
+
+    def _add_name(n: str) -> None:
+        k = _norm_invader_name(n)
+        if k in seen:
+            return
+        seen.add(k)
+        combined.append(n)
+
+    for n in locked_names:
+        _add_name(n)
+    for n in added:
+        _add_name(n)
+
+    encounter["invaders"] = combined
+    st.session_state.current_encounter = encounter
+
+
+def _restore_added_invaders_from_payload(payload: dict) -> None:
+    """
+    When loading a saved encounter, reconstruct the 'added invaders' list
+    for this encounter key by comparing payload['invaders'] to the invaders
+    that can be derived from its enemies.
+    """
+    inv = payload.get("invaders")
+    if not inv:
+        return
+
+    # Build the "locked" set from enemies only.
+    enc_for_auto = dict(payload)
+    enc_for_auto.pop("invaders", None)
+    auto_entries = _get_invader_behavior_entries_for_encounter(enc_for_auto)
+    auto_norms = {_norm_invader_name(e.name) for e in auto_entries}
+
+    added: list[str] = []
+
+    if isinstance(inv, (list, tuple)):
+        for item in inv:
+            if isinstance(item, dict):
+                name = (
+                    item.get("name")
+                    or item.get("display_name")
+                    or item.get("id")
+                )
+            else:
+                name = str(item)
+
+            if not name:
+                continue
+
+            if _norm_invader_name(name) not in auto_norms:
+                added.append(name)
+
+    if not added:
+        return
+
+    key = _invader_map_key(payload)
+    added_map = st.session_state.setdefault(ADDED_INVADERS_KEY, {})
+    added_map[key] = added
+    st.session_state[ADDED_INVADERS_KEY] = added_map
+
+
+def _render_invader_setup_controls(encounter: dict) -> None:
+    """
+    Expander in the Setup tab to add/remove invaders for the current encounter.
+
+    - Locked invaders (from enemies) are listed but cannot be removed.
+    - Added invaders can be removed.
+    - Only one of each invader per encounter.
+    - 'Kirk, Knight of Thorns' and 'Longfinger Kirk' are mutually exclusive.
+    """
+    key = _invader_map_key(encounter)
+
+    with st.expander("Invaders for this encounter", expanded=False):
+        st.caption(
+            "Add extra invaders to this encounter. "
+            "Invaders that are part of the encounter setup itself "
+            "cannot be removed here."
+        )
+
+        # ----- Locked invaders (from enemies / encounter data) -----
+
+        enc_for_auto = dict(encounter)
+        enc_for_auto.pop("invaders", None)
+        locked_entries = _get_invader_behavior_entries_for_encounter(enc_for_auto)
+        locked_names = [e.name for e in locked_entries]
+
+        if locked_names:
+            st.markdown("**From encounter enemies (cannot remove):**")
+            for name in locked_names:
+                st.markdown(f"- {name}")
+
+        # ----- Added invaders (per encounter key) -----
+
+        added_map = st.session_state.setdefault(ADDED_INVADERS_KEY, {})
+        added_names: list[str] = list(added_map.get(key, []))
+
+        if added_names:
+            st.markdown("**Added invaders:**")
+            for idx, name in enumerate(added_names):
+                c1, c2 = st.columns([3, 1])
+                with c1:
+                    st.markdown(f"- {name}")
+                with c2:
+                    if st.button(
+                        "X",
+                        key=f"remove_invader_{key}_{idx}",
+                    ):
+                        added_names = [n for n in added_names if n != name]
+                        added_map[key] = added_names
+                        st.session_state[ADDED_INVADERS_KEY] = added_map
+                        _apply_added_invaders_to_current_encounter()
+                        st.rerun()
+
+        # ----- Add new invader -----
+
+        present_norms = {
+            _norm_invader_name(n) for n in (locked_names + added_names)
+        }
+
+        all_invaders = _get_all_invader_entries()
+        candidate_names: list[str] = []
+
+        for entry in sorted(all_invaders, key=lambda e: e.name):
+            nm = entry.name
+            kn = _norm_invader_name(nm)
+            if kn in present_norms:
+                continue
+
+            # Enforce Kirk / Kirk mutual exclusivity
+            if kn == _KIRK_KNIGHT and _KIRK_LONGFINGER in present_norms:
+                continue
+            if kn == _KIRK_LONGFINGER and _KIRK_KNIGHT in present_norms:
+                continue
+
+            candidate_names.append(nm)
+
+        if not candidate_names:
+            st.caption("No additional invaders available to add.")
+            return
+
+        choice = st.selectbox(
+            "Add invader:",
+            options=["(none)"] + candidate_names,
+            key=f"invader_add_select_{key}",
+        )
+
+        if choice != "(none)" and st.button(
+            "Add invader", key=f"invader_add_btn_{key}"
+        ):
+            if choice not in added_names:
+                added_names.append(choice)
+                added_map[key] = added_names
+                st.session_state[ADDED_INVADERS_KEY] = added_map
+                _apply_added_invaders_to_current_encounter()
+                st.rerun()
+
+        st.caption(
+            "Note: 'Kirk, Knight of Thorns' and 'Longfinger Kirk' "
+            "cannot both be present in the same encounter."
+        )

@@ -10,5 +10,6 @@
     "health": 5,
     "armor": 2,
     "resist": 2,
-	"order_num": 8
+	"order_num": 8,
+	"range": 0
 }

@@ -59,6 +59,14 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
     # ],
 }
 
+EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]] = {
+    # Only add entries here when the edited card needs different coordinates.
+    # Example:
+    # ("Velka's Chosen", "Painted World of Ariamis"): [
+    #     SpecialRuleEnemyIcon(enemy_index=0, x=330, y=448),
+    # ],
+}
+
 
 @st.cache_data(show_spinner=False)
 def cached_encounter_image(expansion: str, level: int, name: str, data: dict, enemies: list[int], edited: bool):
@@ -289,10 +297,6 @@ def generate_encounter_image(
             if max_side <= 0:
                 continue
 
-            s = 40 / max_side
-            icon_size = (int(round(width * s)), int(round(height * s)))
-            icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
-
             # Normalize a common name mismatch so classification works
             normalized = expansion_name.replace("Executioner's Chariot", "Executioner Chariot")
 
@@ -307,9 +311,14 @@ def generate_encounter_image(
             else:
                 lookup = "V2"
 
+            size = 40 if "V2" in lookup else 150
+            s = size / max_side
+            icon_size = (int(round(width * s)), int(round(height * s)))
+            icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
+
             # This is used to center the icon no matter its width or height.
-            xOffset = int(round((40 - icon_size[0]) / 2))
-            yOffset = int(round((40 - icon_size[1]) / 2))
+            xOffset = int(round((size - icon_size[0]) / 2))
+            yOffset = int(round((size - icon_size[1]) / 2))
 
             pos_table = positions.get(lookup) or positions.get("V2", {})
             key = (slot_idx, i)
@@ -326,10 +335,16 @@ def generate_encounter_image(
     # ---------------------------------------------------------
     # 3) Special rules enemy icons
     # ---------------------------------------------------------
-    # Use the same `enemies` list, but pick specific indices according
-    # to the per-encounter layout above.
-    key = (encounter_name, expansion_name)
-    special_icons = SPECIAL_RULE_ENEMY_ICON_SLOTS.get(key, [])
+    cfg_key = (encounter_name, expansion_name)
+
+    if use_edited:
+        # Prefer edited layout if it exists, otherwise fall back to base layout
+        special_icons = EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS.get(
+            cfg_key,
+            SPECIAL_RULE_ENEMY_ICON_SLOTS.get(cfg_key, []),
+        )
+    else:
+        special_icons = SPECIAL_RULE_ENEMY_ICON_SLOTS.get(cfg_key, [])
 
     for cfg in special_icons:
         idx = cfg.enemy_index

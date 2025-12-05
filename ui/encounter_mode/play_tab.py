@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import streamlit as st
-
+import pyautogui
 from core.encounter_rules import make_encounter_key
 from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state
 from ui.encounter_mode import play_panels
+from ui.encounter_mode import invader_panel
 
 
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
@@ -57,7 +58,12 @@ def render(settings: dict) -> None:
     timer_behavior = timer_mod.get_timer_behavior(encounter, edited=edited)
 
     # Apply any pending action (from button click in the previous run)
-    play_state.apply_pending_action(play, timer_behavior)
+    action = play_state.apply_pending_action(play, timer_behavior)
+
+    # If the user hit the Reset button, also reset any invader decks/HP
+    # tied to this encounter.
+    if action == "reset":
+        invader_panel.reset_invaders_for_encounter(encounter)
 
     # Decide if any timer objective wants to stop progression
     player_count = play_state.get_player_count()
@@ -93,7 +99,7 @@ def render(settings: dict) -> None:
                 timer_behavior=timer_behavior,
             )
             play_panels._render_encounter_triggers(encounter, play, settings)
-            play_panels._render_attached_events()
+            play_panels._render_attached_events(encounter)
             play_panels._render_log(play)
 
     # MIDDLE COLUMN
@@ -115,5 +121,14 @@ def render(settings: dict) -> None:
             play_panels._render_rewards(encounter, settings)
 
     # RIGHT COLUMN
-    with col_right.container(height=500):
-        play_panels._render_enemy_behaviors(encounter)
+    with col_right.container(height=int(pyautogui.size().height * 0.65)):
+        tab_enemies, tab_invaders = st.tabs(["Encounter Enemies", "Invaders"])
+
+        # Standard encounter enemies
+        with tab_enemies:
+            play_panels._render_enemy_behaviors(encounter)
+
+        # Invader behavior decks + HP tracker (only shows content if
+        # this encounter actually has invaders with behavior decks).
+        with tab_invaders:
+            invader_panel.render_invaders_tab(encounter)
