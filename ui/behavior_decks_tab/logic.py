@@ -46,10 +46,6 @@ def _new_state_from_file(fpath: str, cfg: BehaviorConfig | None = None):
         cfg = load_behavior(Path(fpath))
     rng = random.Random()
 
-    if cfg.name == "The Four Kings":
-        first = _make_king_entity(cfg, 1)
-        cfg.entities = [first]
-
     deck = build_draw_pile(cfg, rng)
 
     state = {
@@ -70,6 +66,10 @@ def _new_state_from_file(fpath: str, cfg: BehaviorConfig | None = None):
         state["vordt_move_discard"] = []
         state["vordt_attack_draw"] = cfg.raw["vordt_attack_draw"][:]
         state["vordt_attack_discard"] = []
+        
+    if cfg.name == "Vordt of the Boreal Valley":
+        state["vordt_frostbreath_pending"] = False
+        state["vordt_frostbreath_active"] = False
 
     return state, cfg
 
@@ -127,6 +127,14 @@ def _draw_card(state):
         move_card = draw_from("vordt_move_draw", "vordt_move_discard")
         atk_card = draw_from("vordt_attack_draw", "vordt_attack_discard")
         state["current_card"] = (move_card, atk_card)
+
+        # Frostbreath: active only on the first draw after a heatup
+        if state.get("vordt_frostbreath_pending"):
+            state["vordt_frostbreath_active"] = True
+            state["vordt_frostbreath_pending"] = False
+        else:
+            state["vordt_frostbreath_active"] = False
+            
         return
 
     # Ensure deck availability
@@ -198,6 +206,9 @@ def _reset_deck(state, cfg):
         cfg.raw["vordt_move_discard"] = []
         cfg.raw["vordt_attack_draw"] = state["vordt_attack_draw"][:]
         cfg.raw["vordt_attack_discard"] = []
+        
+        state["vordt_frostbreath_pending"] = False
+        state["vordt_frostbreath_active"] = False
     elif cfg.name == "Old Dragonslayer":
         state["old_dragonslayer_heatups"] = 0
         state["old_dragonslayer_pending"] = False
@@ -210,6 +221,7 @@ def _reset_deck(state, cfg):
         st.session_state.pop("sif_limping_triggered", None)
     elif cfg.name == "The Four Kings":
         state["four_kings_summons"] = 0
+        state["enabled_kings"] = 1
         st.session_state["enabled_kings"] = 1
         # restore all kings to full hp
         for ent in cfg.entities:
@@ -269,8 +281,8 @@ def _manual_heatup(state):
         return
     rng = random.Random()
 
-    # --- Special case: Executioner Chariot
-    if cfg.name == "Executioner Chariot":
+    # --- Special case: Executioner's Chariot
+    if cfg.name == "Executioner's Chariot":
         st.session_state["chariot_heatup_done"] = True
 
         # Rebuild from 4 regular + 1 heat-up card
@@ -696,7 +708,7 @@ def setup_kalameet(cfg, rng):
     """
     deck = cfg.deck[:]
     limit = cfg.raw["cards"]
-    return force_include(deck, include=["Mark of Calamity", "Hellfire Blast"], limit=limit, rng=rng)
+    return force_include(deck, exclude=["Fiery Ruin"], include=["Mark of Calamity", "Hellfire Blast"], limit=limit, rng=rng)
 
 
 @register_deck_rule("Old Iron King")
@@ -710,7 +722,7 @@ def setup_kalameet(cfg, rng):
     return force_include(deck, include=always_include, limit=limit, rng=rng)
 
 
-@register_deck_rule("Executioner Chariot")
+@register_deck_rule("Executioner's Chariot")
 def setup_chariot(cfg, rng):
     """
     The first phase is always Death Race 1-4.
@@ -752,6 +764,16 @@ def setup_last_giant(cfg, rng):
     rng.shuffle(arm_cards)
     limit = cfg.raw["cards"]
     return force_include(deck, exclude=["Falling Slam"], include=arm_cards[:3], limit=limit, rng=rng)
+
+
+@register_deck_rule("Guardian Dragon")
+def setup_guardian_dragon(cfg, rng):
+    """
+    Fiery Breath is always excluded.
+    """
+    deck = cfg.deck[:]
+    limit = cfg.raw["cards"]
+    return force_include(deck, exclude=["Fiery Breath"], limit=limit, rng=rng)
 
 
 @register_deck_rule("Vordt of the Boreal Valley")
@@ -1140,6 +1162,10 @@ def _apply_vordt_heatup_special(cfg, state, rng, manual: bool) -> None:
     if pending_type in ("vordt_move", "vordt_both"):
         _apply_vordt_heatup(cfg, state, rng, which="move")
         st.session_state["vordt_move_heatup_done"] = True
+        
+    # Show Frostbreath on the next draw after any heatup
+    if pending_type in ("vordt_attack", "vordt_move", "vordt_both"):
+        state["vordt_frostbreath_pending"] = True
 
     # Clear prompt flags (used for HP-driven prompts)
     st.session_state["pending_heatup_prompt"] = False

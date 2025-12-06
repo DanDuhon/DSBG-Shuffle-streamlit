@@ -219,7 +219,7 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
             continue
         seen.add(fname)
 
-        if fname == "Executioner Chariot.png":
+        if fname == "Executioner's Chariot.png":
             height_px = 36
         else:
             height_px = 30
@@ -298,7 +298,7 @@ def generate_encounter_image(
                 continue
 
             # Normalize a common name mismatch so classification works
-            normalized = expansion_name.replace("Executioner's Chariot", "Executioner Chariot")
+            normalized = expansion_name.replace("Executioner's Chariot", "Executioner's Chariot")
 
             if normalized in v1Expansions:
                 lookup = "V1"

@@ -1,11 +1,13 @@
 # ui/boss_mode_tab.py
 import random
+import pyautogui
 import streamlit as st
 
 from ui.behavior_decks_tab.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,
     CATEGORY_EMOJI,
+    _behavior_image_path
 )
 from ui.behavior_decks_tab.logic import (
     _ensure_state,
@@ -29,7 +31,7 @@ from ui.behavior_decks_tab.render import render_health_tracker
 
 
 BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
-CARD_DISPLAY_WIDTH = 380
+CARD_DISPLAY_WIDTH = int(380 * (pyautogui.size().height / 1400))
 
 
 def _get_boss_mode_state_key(entry) -> str:
@@ -118,15 +120,14 @@ def render():
             st.rerun()
             
     # Draw / Heat-up buttons
-    c_btns = st.columns([1, 1])
-    with c_btns[0]:
+    c_hp_btns = st.columns([1, 1])
+    with c_hp_btns[0]:
+        cfg.entities = render_health_tracker(cfg, state)
+    with c_hp_btns[1]:
         if st.button("Draw next card"):
             _draw_card(state)
-    with c_btns[1]:
         if st.button("Manual Heat-Up"):
             _manual_heatup(state)
-            
-    cfg.entities = render_health_tracker(cfg, state)
 
     # --- Heat-Up confirmation prompt (Boss Mode) ---
     if (
@@ -205,14 +206,23 @@ def render():
 
     # LEFT: Data Card
     with col_left:
-        if cfg.name == "Executioner Chariot":
-            # you can keep the existing pre/post-heatup swap logic if you like
-            # or just always show the main data card
-            img = render_data_card_cached(
-                BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg",
-                cfg.raw,
-                is_boss=True,
-            )
+        if cfg.name == "Executioner's Chariot":
+            # Phase 1: show the Chariot card
+            # Phase 2 (after heat-up): show the Skeletal Horse card
+            if not st.session_state.get("chariot_heatup_done", False):
+                img = render_data_card_cached(
+                    BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner's Chariot.jpg",
+                    cfg.raw,
+                    is_boss=True,
+                    no_edits=True,  # matches Behavior Decks tab behavior
+                )
+            else:
+                img = render_data_card_cached(
+                    BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
+                    cfg.raw,
+                    is_boss=True,
+                )
+
             st.image(img, width=CARD_DISPLAY_WIDTH)
 
         elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
@@ -222,6 +232,40 @@ def render():
                 st.image(o_img, width=CARD_DISPLAY_WIDTH)
             with s_col:
                 st.image(s_img, width=CARD_DISPLAY_WIDTH)
+        # Special case for Vordt's Frostbreath
+        elif cfg.name == "Vordt of the Boreal Valley":
+            data_path = cfg.display_cards[0] if cfg.display_cards else None
+            if data_path:
+                data_img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
+
+                if state.get("vordt_frostbreath_active", False):
+                    # Find the Frostbreath behavior key (handles "Frostbreath", "Frost Breath", etc.)
+                    frost_key = None
+                    for key in cfg.behaviors.keys():
+                        name_lower = key.lower()
+                        if "frost" in name_lower and "breath" in name_lower:
+                            frost_key = key
+                            break
+
+                    if frost_key:
+                        frost_path = _behavior_image_path(cfg, frost_key)
+                        frost_img = render_behavior_card_cached(
+                            frost_path,
+                            cfg.behaviors[frost_key],
+                            is_boss=True,
+                        )
+                        # Show data card + Frostbreath side-by-side
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.image(data_img, width=CARD_DISPLAY_WIDTH)
+                        with c2:
+                            st.image(frost_img, width=CARD_DISPLAY_WIDTH)
+                    else:
+                        # Safety fallback: just show data card
+                        st.image(data_img, width=CARD_DISPLAY_WIDTH)
+                else:
+                    # Normal Vordt display, no Frostbreath this draw
+                    st.image(data_img, width=CARD_DISPLAY_WIDTH)
         else:
             # first display card is always the data card
             data_path = cfg.display_cards[0] if cfg.display_cards else None
@@ -229,33 +273,116 @@ def render():
                 img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
                 st.image(img, width=CARD_DISPLAY_WIDTH)
 
-        st.markdown("---")
-
     # RIGHT: Deck + current card
     with col_right:
-        # Current card image
         current = state.get("current_card")
+
         if not current:
+            # No card drawn yet => show card back
             st.image(CARD_BACK, width=CARD_DISPLAY_WIDTH)
         else:
+        # --- Ornstein & Smough dual-boss case ---
             if cfg.name == "Ornstein & Smough":
-                img = render_dual_boss_behavior_card(cfg.raw, current, state)
+                current_name = current
+
+                if current_name:
+                    # Phase 1: combined card, e.g. "Swiping Combo & Bonzai Drop"
+                    if "&" in (current_name or ""):
+                        img = render_dual_boss_behavior_card(
+                            cfg.raw,
+                            current_name,
+                            boss_name=cfg.name,
+                        )
+                    # Phase 2: single behavior card, e.g. "Charged Swiping Combo"
+                    else:
+                        img = render_behavior_card_cached(
+                            _behavior_image_path(cfg, current_name),
+                            cfg.behaviors.get(current_name, {}),
+                            is_boss=True,
+                        )
+
+                    st.image(img, width=CARD_DISPLAY_WIDTH)
+
+            # --- Vordt of the Boreal Valley: movement + attack decks ---
+            elif cfg.name == "Vordt of the Boreal Valley" and isinstance(current, tuple):
+                move_card, atk_card = current
+
+                # Show the cards side-by-side
+                c1, c2 = st.columns(2)
+                with c1:
+                    move_path = _behavior_image_path(cfg, move_card)
+                    st.image(
+                        render_behavior_card_cached(
+                            move_path,
+                            cfg.behaviors.get(move_card, {}),
+                            is_boss=True,
+                        ),
+                        width=CARD_DISPLAY_WIDTH,
+                    )
+                with c2:
+                    atk_path = _behavior_image_path(cfg, atk_card)
+                    st.image(
+                        render_behavior_card_cached(
+                            atk_path,
+                            cfg.behaviors.get(atk_card, {}),
+                            is_boss=True,
+                        ),
+                        width=CARD_DISPLAY_WIDTH,
+                    )
+
+            # --- Gaping Dragon: Stomach Slam shows Crawling Charge alongside ---
+            elif cfg.name == "Gaping Dragon" and current.startswith("Stomach Slam"):
+                # Stomach Slam image
+                stomach_path = _behavior_image_path(cfg, current)
+                stomach_img = render_behavior_card_cached(
+                    stomach_path,
+                    cfg.behaviors[current],
+                    is_boss=True,
+                )
+
+                # Find Crawling Charge in the behaviors (handles things like "Crawling Charge 2")
+                crawl_key = None
+                for key in cfg.behaviors.keys():
+                    if key.startswith("Crawling Charge"):
+                        crawl_key = key
+                        break
+
+                if crawl_key:
+                    crawl_path = _behavior_image_path(cfg, crawl_key)
+                    crawl_img = render_behavior_card_cached(
+                        crawl_path,
+                        cfg.behaviors[crawl_key],
+                        is_boss=True,
+                    )
+
+                    # Show them side-by-side
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.image(stomach_img, width=CARD_DISPLAY_WIDTH)
+                    with c2:
+                        st.image(crawl_img, width=CARD_DISPLAY_WIDTH)
+                else:
+                    # Fallback: if Crawling Charge isn't found for some reason,
+                    # at least show Stomach Slam
+                    st.image(stomach_img, width=CARD_DISPLAY_WIDTH)
+
+            # --- Normal single-card case ---
             else:
-                base_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - {current}.jpg"
+                base_path = _behavior_image_path(cfg, current)
                 img = render_behavior_card_cached(
                     base_path,
                     cfg.behaviors[current],
                     is_boss=True,
                 )
-            st.image(img, width=CARD_DISPLAY_WIDTH)
+                st.image(img, width=CARD_DISPLAY_WIDTH)
 
-        # Deck status summary
-        st.markdown("---")
-        st.caption(
-            f"Draw pile: {len(state.get('draw_pile', []))} cards"
-            f" • Discard: {len(state.get('discard_pile', []))} cards"
-        )
-
-    # --- Heat-Up confirmation (reuse existing logic)
-    # If you like, you can literally factor the block from behavior_decks_tab.render
-    # into a helper and call it here so the behavior is identical.
+        if cfg.name == "Vordt of the Boreal Valley":
+            st.caption(
+                f"{len(state.get('vordt_move_discard', [])) + (1 if current else 0)} movement cards played"
+                f" • {len(state.get('vordt_attack_discard', [])) + (1 if current else 0)} attack cards played"
+            )
+        else:
+            st.caption(
+                f"Draw pile: {len(state.get('draw_pile', []))} cards"
+                f" • Discard: {len(state.get('discard_pile', [])) + (1 if current else 0)} cards"
+            )

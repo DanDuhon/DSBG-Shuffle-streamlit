@@ -613,7 +613,7 @@ def list_encounters():
             "name": encounter_name,
             "expansion": expansion,
             "level": int(level),
-            "version": "V1" if int(level) < 4 and expansion.lower() in {"dark souls the board game", "darkroot", "explorers", "iron keep", "executioner chariot"} else "V2"
+            "version": "V1" if int(level) < 4 and expansion.lower() in {"dark souls the board game", "darkroot", "explorers", "iron keep", "executioner's chariot"} else "V2"
         }
 
 

@@ -445,9 +445,9 @@
         {
           "boss": {
             "kind": "node",
-            "name": "Executioner Chariot",
+            "name": "Executioner's Chariot",
             "type": "mega boss",
-            "expansion": "Executioner Chariot",
+            "expansion": "Executioner's Chariot",
             "level": null,
             "completed": false,
             "ever_completed": false,

@@ -107,11 +107,11 @@
         "encounters": [4],
         "expansions": ["Black Dragon Kalameet"]
     },
-    "Executioner Chariot": {
-        "name": "Executioner Chariot",
+    "Executioner's Chariot": {
+        "name": "Executioner's Chariot",
         "type": "mega boss",
         "encounters": [4],
-        "expansions": ["Executioner Chariot"]
+        "expansions": ["Executioner's Chariot"]
     },
     "Gaping Dragon": {
         "name": "Gaping Dragon",

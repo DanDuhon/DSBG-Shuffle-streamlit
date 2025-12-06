@@ -158,10 +158,10 @@ def render():
     cols = st.columns(max(2, len(state["display_cards"])))
 
     # Special rules for Chariot data card display based on phase.
-    if cfg.name == "Executioner Chariot":
+    if cfg.name == "Executioner's Chariot":
         if not st.session_state.get("chariot_heatup_done", False):
             edited_img = render_data_card_cached(
-                BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner Chariot.jpg",
+                BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner's Chariot.jpg",
                 cfg.raw,
                 is_boss=True,
                 no_edits=True,
@@ -503,7 +503,7 @@ def render_health_tracker(cfg, state):
         disabled_flag = False
 
         # CHARIOT: locked pre-heatup
-        if cfg.name == "Executioner Chariot" and not st.session_state.get("chariot_heatup_done", False):
+        if cfg.name == "Executioner's Chariot" and not st.session_state.get("chariot_heatup_done", False):
             disabled_flag = True
 
         # --- Ornstein & Smough: disable if dead
@@ -513,16 +513,20 @@ def render_health_tracker(cfg, state):
             elif "Smough" in label and st.session_state.get("smough_dead", False):
                 disabled_flag = True
 
-        # --- The Four Kings: enable sliders incrementally
+        # --- The Four Kings: add sliders as kings are summoned ---
         elif cfg.name == "The Four Kings":
             enabled_count = state.get("enabled_kings", 1)
-            st.session_state["enabled_kings"] = enabled_count  # keep in sync for UI continuity
+            st.session_state["enabled_kings"] = enabled_count  # keep in sync
+
+            # e.label is "King 1", "King 2", etc.
             try:
-                king_num = int(label.split()[-1])
+                king_num = int(e.label.split()[-1])
             except Exception:
                 king_num = 1
+
+            # If this king hasn't been summoned yet, don't render a slider for it
             if king_num > enabled_count:
-                disabled_flag = True
+                continue
 
         st.slider(
             label,

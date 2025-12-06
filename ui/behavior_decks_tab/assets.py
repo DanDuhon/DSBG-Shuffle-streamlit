@@ -48,7 +48,7 @@ BOSS_CATEGORY_MAP = {
 
     # Mega bosses
     "Black Dragon Kalameet": "Mega Bosses",
-    "Executioner Chariot": "Mega Bosses",
+    "Executioner's Chariot": "Mega Bosses",
     "Gaping Dragon": "Mega Bosses",
     "Guardian Dragon": "Mega Bosses",
     "Manus, Father of the Abyss": "Mega Bosses",

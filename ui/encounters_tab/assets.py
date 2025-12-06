@@ -17,7 +17,7 @@ v1Expansions = {
 }
 
 v1Level4s = {
-    "Executioner Chariot",
+    "Executioner's Chariot",
     "Executioner's Chariot",  # allow both spellings
     "Asylum Demon",
     "Black Dragon Kalameet",

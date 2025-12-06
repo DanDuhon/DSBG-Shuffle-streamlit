@@ -164,7 +164,7 @@ def apply_ngplus_to_raw(
         if enemy_name == "Vordt of the Boreal Valley":
             raw["heatup1"] = int(raw["heatup1"]) + hp_bonus
             raw["heatup2"] = int(raw["heatup2"]) + hp_bonus
-        if not enemy_name in {"Old Dragonslayer", "The Four Kings", "Executioner Chariot"}:
+        if not enemy_name in {"Old Dragonslayer", "The Four Kings", "Executioner's Chariot"}:
             raw["heatup"] = int(raw["heatup"]) + hp_bonus
 
     # ----- Paladin Leeroy special rule text -----

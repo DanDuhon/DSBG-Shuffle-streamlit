@@ -12,7 +12,7 @@ all_expansions = [
     "Iron Keep",
     "Characters Expansion",
     "Phantoms",
-    "Executioner Chariot",
+    "Executioner's Chariot",
     "Asylum Demon",
     "Black Dragon Kalameet",
     "Gaping Dragon",

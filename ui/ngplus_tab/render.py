@@ -42,11 +42,11 @@ def _data_card_path(enemy_name: str) -> str:
     candidates: List[str] = []
 
     # Special-ish cases can be added here if needed
-    if enemy_name == "Executioner Chariot":
+    if enemy_name == "Executioner's Chariot":
         candidates = [
             f"{enemy_name} - data.jpg",
             f"{enemy_name} - Skeletal Horse.jpg",
-            f"{enemy_name} - Executioner Chariot.jpg",
+            f"{enemy_name} - Executioner's Chariot.jpg",
         ]
     else:
         candidates = [f"{enemy_name} - data.jpg"]
