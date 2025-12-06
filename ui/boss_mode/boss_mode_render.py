@@ -227,11 +227,24 @@ def render():
 
         elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
             o_img, s_img = render_dual_boss_data_cards(cfg.raw)
-            o_col, s_col = st.columns(2)
-            with o_col:
-                st.image(o_img, width=CARD_DISPLAY_WIDTH)
-            with s_col:
+
+            ornstein_dead = st.session_state.get("ornstein_dead", False)
+            smough_dead = st.session_state.get("smough_dead", False)
+
+            # If one is dead (phase 2), show only the survivor's data card
+            if ornstein_dead and not smough_dead:
+                # Smough survives
                 st.image(s_img, width=CARD_DISPLAY_WIDTH)
+            elif smough_dead and not ornstein_dead:
+                # Ornstein survives
+                st.image(o_img, width=CARD_DISPLAY_WIDTH)
+            else:
+                # Phase 1 (both alive) or weird edge case: show both
+                o_col, s_col = st.columns(2)
+                with o_col:
+                    st.image(o_img, width=CARD_DISPLAY_WIDTH)
+                with s_col:
+                    st.image(s_img, width=CARD_DISPLAY_WIDTH)
         # Special case for Vordt's Frostbreath
         elif cfg.name == "Vordt of the Boreal Valley":
             data_path = cfg.display_cards[0] if cfg.display_cards else None
