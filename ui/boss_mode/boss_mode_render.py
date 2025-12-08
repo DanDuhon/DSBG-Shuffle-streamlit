@@ -1,10 +1,10 @@
 # ui/boss_mode_tab.py
 import random
 import pyautogui
+import json
 import streamlit as st
-import io
 
-from PIL import Image
+from ui.encounters_tab.generation import generate_encounter_image
 from ui.behavior_decks_tab.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,
@@ -30,274 +30,34 @@ from ui.behavior_decks_tab.generation import (
     render_dual_boss_behavior_card,
 )
 from ui.behavior_decks_tab.render import render_health_tracker
+from ui.boss_mode.guardian_dragon_fiery_breath import (
+    GUARDIAN_DRAGON_NAME, 
+    GUARDIAN_CAGE_PREFIX, 
+    _guardian_fiery_next_pattern, 
+    _guardian_render_fiery_breath
+)
+from ui.boss_mode.kalameet_fiery_ruin import (
+    BLACK_DRAGON_KALAMEET_NAME, 
+    KALAMEET_HELLFIRE_PREFIX, 
+    _kalameet_next_pattern, 
+    _kalameet_render_fiery_ruin
+)
+from ui.boss_mode.old_iron_king_blasted_nodes import (
+    OLD_IRON_KING_NAME,
+    OIK_FIRE_BEAM_PREFIX,
+    _oik_blasted_next_pattern,
+    _oik_render_blasted_nodes,
+)
+from ui.boss_mode.executioners_chariot_death_race import (
+    EXECUTIONERS_CHARIOT_NAME,
+    DEATH_RACE_BEHAVIOR_NAME,
+    _ec_death_race_next_pattern,
+    _ec_render_death_race_aoe,
+)
 
 
 BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
 CARD_DISPLAY_WIDTH = int(380 * (pyautogui.size().height / 1400))
-NODE_COORDS = [
-    (0, 0),
-    (0, 2),
-    (0, 4),
-    (0, 6),
-    (1, 1),
-    (1, 3),
-    (1, 5),
-    (2, 0),
-    (2, 2),
-    (2, 4),
-    (2, 6),
-    (3, 1),
-    (3, 3),
-    (3, 5),
-    (4, 0),
-    (4, 2),
-    (4, 4),
-    (4, 6),
-    (5, 1),
-    (5, 3),
-    (5, 5),
-    (6, 0),
-    (6, 2),
-    (6, 4),
-    (6, 6),
-]
-GUARDIAN_DRAGON_NAME = "Guardian Dragon"
-GUARDIAN_FIERY_BREATH_NAME = "Fiery Breath"
-GUARDIAN_CAGE_PREFIX = "Cage Grasp Inferno"
-GUARDIAN_FIERY_DECK_SIZE = 4
-GUARDIAN_STANDARD_PATTERNS = [
-    {
-        "dest": (0, 0),
-        "aoe": [
-            (2, 0),
-            (1, 1),
-            (0, 2),
-            (1, 3),
-            (2, 2),
-            (3, 1),
-            (3, 3),
-        ],
-    },
-    {
-        "dest": (6, 0),
-        "aoe": [
-            (4, 0),
-            (3, 1),
-            (5, 1),
-            (4, 2),
-            (6, 2),
-            (3, 3),
-            (5, 3),
-        ],
-    },
-    {
-        "dest": (6, 6),
-        "aoe": [
-            (4, 6),
-            (3, 5),
-            (5, 5),
-            (4, 4),
-            (6, 4),
-            (3, 3),
-            (5, 3),
-        ],
-    },
-    {
-        "dest": (0, 6),
-        "aoe": [
-            (2, 6),
-            (1, 5),
-            (3, 5),
-            (0, 4),
-            (2, 4),
-            (1, 3),
-            (3, 3),
-        ],
-    },
-]
-
-
-def _guardian_node_distance(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
-
-
-def _guardian_fiery_generate_pattern(base_pattern, rng=None):
-    """
-    Return a pattern similar to base_pattern, but with some AoE nodes
-    jittered to nearby nodes so each deck build feels a bit different.
-
-    base_pattern: {"dest": (x, y), "aoe": [(x, y), ...]}
-    """
-    if rng is None:
-        rng = random.Random()
-
-    dest = base_pattern["dest"]
-    base_aoe = list(base_pattern["aoe"])
-    aoe = set(base_aoe)
-
-    for node in base_aoe:
-        # With some probability, try to move this node to a nearby one.
-        if rng.random() < 0.4:
-            candidates = [
-                cand
-                for cand in NODE_COORDS
-                if cand != dest
-                and cand != node
-                and _guardian_node_distance(cand, dest) <= 4
-                and _guardian_node_distance(cand, node) <= 3
-            ]
-            if candidates:
-                new_node = rng.choice(candidates)
-                aoe.discard(node)
-                aoe.add(new_node)
-
-    # Ensure we keep the same number of AoE nodes (7)
-    target_len = len(base_aoe)
-    # Add extras if we lost any due to collisions
-    candidates = [
-        cand
-        for cand in NODE_COORDS
-        if cand != dest and cand not in aoe and _guardian_node_distance(cand, dest) <= 4
-    ]
-    rng.shuffle(candidates)
-    while len(aoe) < target_len and candidates:
-        aoe.add(candidates.pop())
-
-    # If we somehow ended up with too many, trim back down
-    if len(aoe) > target_len:
-        aoe = set(rng.sample(list(aoe), target_len))
-
-    return {"dest": dest, "aoe": sorted(aoe)}
-
-
-def _guardian_fiery_init_deck(state, mode):
-    """
-    (Re)build the Fiery Breath pattern deck according to current rules.
-
-    mode == "generated" -> generate patterns based on the four base ones
-    mode == "deck"      -> use the four base patterns as-is
-    """
-    rng = random.Random()
-    patterns = []
-    for base in GUARDIAN_STANDARD_PATTERNS:
-        if mode == "generated":
-            patterns.append(_guardian_fiery_generate_pattern(base, rng))
-        else:
-            # Copy so we don't mutate the constants
-            patterns.append(
-                {"dest": base["dest"], "aoe": list(base["aoe"])}
-            )
-
-    rng.shuffle(patterns)
-    state["guardian_fiery_deck"] = patterns
-    state["guardian_fiery_discard"] = []
-    state["guardian_fiery_deck_mode"] = mode
-
-
-def _guardian_fiery_draw_pattern(state, mode):
-    """
-    Get the next Fiery Breath pattern, honouring the chosen mode:
-
-    mode == "generated"  -> fresh-ish patterns per 4-card cycle
-    mode == "deck"       -> the four static standard patterns
-    """
-    rng = random.Random()
-    deck_mode = state.get("guardian_fiery_deck_mode")
-    deck = state.get("guardian_fiery_deck") or []
-    discard = state.get("guardian_fiery_discard") or []
-
-    # Mode changed or deck empty -> rebuild
-    if not deck or deck_mode != mode:
-        _guardian_fiery_init_deck(state, mode)
-        deck = state.get("guardian_fiery_deck") or []
-        discard = state.get("guardian_fiery_discard") or []
-
-    if not deck:
-        # Safety fallback: generate from the first base pattern
-        base = GUARDIAN_STANDARD_PATTERNS[0]
-        return _guardian_fiery_generate_pattern(base, rng)
-
-    pattern = deck.pop(0)
-    discard.append(pattern)
-    state["guardian_fiery_deck"] = deck
-    state["guardian_fiery_discard"] = discard
-    state["guardian_fiery_deck_mode"] = mode
-
-    return pattern
-
-
-def _guardian_node_to_xy(coord, icon_w, icon_h):
-    col, row = coord
-
-    # Centre of the node, from your measured values / derived step
-    x = round(-41 + 107.5 * col)
-    y = round(55 + 110.5 * row)
-
-    # Convert centre to top-left for the icon
-    # x = int(cx - icon_w / 2)
-    # y = int(cy - icon_h / 2)
-    return x, y
-
-
-def _guardian_render_fiery_breath(cfg, pattern):
-    """
-    Render the Fiery Breath card with destination + AoE node icons overlaid.
-
-    pattern is {"dest": (x, y), "aoe": [(x, y), ...]} using GUARDIAN_NODE_COORDS.
-    """
-    base = render_behavior_card_cached(
-        _behavior_image_path(cfg, GUARDIAN_FIERY_BREATH_NAME),
-        cfg.behaviors.get(GUARDIAN_FIERY_BREATH_NAME, {}),
-        is_boss=True,
-    )
-
-    # Convert cached output to a PIL Image we can edit.
-    if isinstance(base, Image.Image):
-        base_img = base.convert("RGBA")
-    elif isinstance(base, (bytes, bytearray)):
-        base_img = Image.open(io.BytesIO(base)).convert("RGBA")
-    elif isinstance(base, str):
-        base_img = Image.open(base).convert("RGBA")
-    else:
-        # Last-ditch fallback: try to treat it as a file-like object
-        base_img = Image.open(base).convert("RGBA")
-
-    # Figure out where the assets directory is (parent of behavior cards)
-    try:
-        assets_dir = BEHAVIOR_CARDS_PATH.parent
-    except Exception:
-        from pathlib import Path
-        assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
-
-    # Load icons
-    aoe_icon_path = assets_dir / "behavior icons" / "aoe_node.png"
-    dest_icon_path = assets_dir / "behavior icons" / "destination_node.png"
-
-    aoe_icon = Image.open(aoe_icon_path).convert("RGBA")
-    dest_icon = Image.open(dest_icon_path).convert("RGBA")
-
-    try:
-        resample = Image.Resampling.LANCZOS
-    except AttributeError:
-        resample = Image.LANCZOS
-
-    aoe_icon = aoe_icon.resize((250, 250), resample)
-    dest_icon = dest_icon.resize((122, 122), resample)
-
-    # Overlay destination node first
-    dest = pattern.get("dest")
-    if dest:
-        x, y = _guardian_node_to_xy(dest, dest_icon.width, dest_icon.height)
-        print((dest, x, y))
-        base_img.alpha_composite(dest_icon, dest=(x, y))
-
-    # Overlay AoE nodes
-    for coord in pattern.get("aoe", []):
-        x, y = _guardian_node_to_xy(coord, aoe_icon.width, aoe_icon.height)
-        print((coord, x, y))
-        base_img.alpha_composite(aoe_icon, dest=(x, y))
-
-    return base_img
 
 
 def _get_boss_mode_state_key(entry) -> str:
@@ -321,6 +81,103 @@ def _ensure_boss_state(entry):
 
 
 def render():
+    def _load_ec_mega_boss_setup_data():
+        """
+        Load the Executioner's Chariot Mega Boss Setup encounter JSON for the
+        current party size (1–4 characters).
+        """
+        # Try to use the same info app.py uses:
+        #   - settings["selected_characters"]
+        #   - st.session_state["player_count"]
+        settings = st.session_state.get("user_settings", {})
+        selected_chars = settings.get("selected_characters", [])
+        character_count = len(selected_chars) or st.session_state.get("player_count", 1)
+
+        try:
+            n = int(character_count)
+        except (TypeError, ValueError):
+            n = 1
+
+        # Mega boss setup only defines 1–4 character variants.
+        n = max(1, min(n, 4))
+
+        # NOTE: this matches what you described:
+        #   /data/encounters/Executioner's Chariot_4_Mega Boss Setup_1.json
+        # Drop the leading slash for a project-relative path.
+        json_path = f"data/encounters/Executioner's Chariot_4_Mega Boss Setup_{n}.json"
+
+        # Cache per party size so changing the party will reload the right file.
+        cache_key = f"ec_mega_setup_data::{n}"
+        if cache_key not in st.session_state:
+            with open(json_path, "r", encoding="utf-8") as f:
+                st.session_state[cache_key] = json.load(f)
+
+        return st.session_state[cache_key]
+
+
+    def _render_ec_mega_boss_setup_panel():
+        """
+        Show the Executioner's Chariot Mega Boss Setup encounter card
+        with Shuffle / Original buttons, matching Encounter Mode behavior.
+        """
+        encounter_data = _load_ec_mega_boss_setup_data()
+
+        # Session keys to remember which enemy combination we're showing
+        enemies_key = "ec_mega_setup_enemies"
+        mode_key = "ec_mega_setup_mode"
+
+        # Default to the printed/original setup
+        if enemies_key not in st.session_state:
+            st.session_state[enemies_key] = encounter_data["original"]
+            st.session_state[mode_key] = "original"
+
+        # Controls: Shuffle / Original
+        col_shuffle, col_original = st.columns(2)
+        with col_shuffle:
+            if st.button("Shuffle Setup", key="ec_mega_shuffle"):
+                # Pick a random alternative combo.
+                alts = encounter_data.get("alternatives") or {}
+                candidates = []
+
+                if isinstance(alts, dict):
+                    # Keys are comma-separated expansion names; values are lists of enemy ID lists.
+                    settings = st.session_state.get("user_settings", {})
+                    active = set(settings.get("active_expansions", []))
+
+                    for exp_combo, combos in alts.items():
+                        exp_set = {e.strip() for e in exp_combo.split(",")} if exp_combo else set()
+                        # Only use combos that are compatible with the currently active expansions.
+                        if not exp_set or exp_set.issubset(active):
+                            candidates.extend(combos)
+                elif isinstance(alts, list):
+                    # Fallback in case this file ever uses a simple list of combos
+                    candidates = alts
+
+                if candidates:
+                    st.session_state[enemies_key] = random.choice(candidates)
+                    st.session_state[mode_key] = "shuffled"
+        with col_original:
+            if st.button("Original Setup", key="ec_mega_original"):
+                st.session_state[enemies_key] = encounter_data["original"]
+                st.session_state[mode_key] = "original"
+
+        enemies = st.session_state[enemies_key]
+
+        # Generate the encounter card image just like Encounter Mode does
+        card_img = generate_encounter_image(
+            "Executioner's Chariot",
+            4,
+            "Mega Boss Setup",
+            encounter_data,
+            enemies,
+            use_edited=False,
+        )
+
+        # Convert to a buffer if you want consistency with Encounter tab;
+        # here we can just pass the PIL image directly to st.image.
+        st.image(card_img, width=CARD_DISPLAY_WIDTH)
+
+
     _ensure_state()
 
     # --- Build or reuse catalog
@@ -384,23 +241,82 @@ def render():
         # Guardian Dragon: option to control Fiery Breath node patterns
         if cfg.name == GUARDIAN_DRAGON_NAME:
             st.checkbox(
-                "Generate new Fiery Breath pattern each time",
+                "Use randomized Fiery Breath patterns",
                 key="guardian_fiery_generate",
                 help=(
-                    "If checked, Fiery Breath's node pattern is generated anew "
-                    "for every use. If unchecked, it uses a 4-card pattern deck "
-                    "that cycles without replacement."
+                    "If checked, Fiery Breath uses a randomized 4-pattern deck. "
+                    "If unchecked, he uses the printed patterns."
                 ),
+                value=True,
+            )
+
+        # Kalameet: option to control Fiery Ruin node patterns
+        if cfg.name == BLACK_DRAGON_KALAMEET_NAME:
+            st.checkbox(
+                "Use randomized Fiery Ruin patterns",
+                key="kalameet_aoe_generate",
+                help=(
+                    "If checked, Fiery Ruin uses a randomized 8-pattern deck. "
+                    "If unchecked, he uses the printed patterns."
+                ),
+                value=True,
+            )
+
+        # Old Iron King: option to control Blasted Nodes patterns
+        if cfg.name == OLD_IRON_KING_NAME:
+            st.checkbox(
+                "Use randomized Blasted Nodes patterns",
+                key="oik_blasted_generate",
+                help=(
+                    "If checked, Blasted Nodes uses a randomized 6-pattern deck. "
+                    "If unchecked, it uses the printed patterns."
+                ),
+                value=True,
+            )
+
+        # Executioner's Chariot: option to control Death Race AoE patterns
+        if cfg.name == EXECUTIONERS_CHARIOT_NAME:
+            st.checkbox(
+                "Use randomized Death Race patterns",
+                key="ec_death_race_generate",
+                help=(
+                    "If checked, Death Race uses randomized AoE patterns. "
+                    "If unchecked, it uses the printed Death Race patterns."
+                ),
+                value=True,
             )
 
         if st.button("🔄 Reset fight"):
             _reset_deck(state, cfg)
             if cfg.name == GUARDIAN_DRAGON_NAME:
                 # Clear Fiery Breath state when resetting the fight
-                state.pop("guardian_fiery_deck", None)
-                state.pop("guardian_fiery_discard", None)
-                state.pop("guardian_fiery_current_pattern", None)
-                state.pop("guardian_fiery_current_mode", None)
+                state.pop("guardian_fiery_sequence", None)
+                state.pop("guardian_fiery_index", None)
+                state.pop("guardian_fiery_patterns", None)
+                state.pop("guardian_fiery_mode", None)
+            if cfg.name == BLACK_DRAGON_KALAMEET_NAME:
+                # Clear Fiery Ruin state when resetting the fight
+                state.pop("kalameet_aoe_sequence", None)
+                state.pop("kalameet_aoe_index", None)
+                state.pop("kalameet_aoe_patterns", None)
+                state.pop("kalameet_aoe_mode", None)
+                state.pop("kalameet_aoe_current_pattern", None)
+            if cfg.name == OLD_IRON_KING_NAME:
+                # Clear Blasted Nodes state when resetting the fight
+                state.pop("oik_blasted_sequence", None)
+                state.pop("oik_blasted_index", None)
+                state.pop("oik_blasted_patterns", None)
+                state.pop("oik_blasted_mode", None)
+                state.pop("oik_blasted_current_pattern", None)
+                state.pop("oik_blasted_current_mode", None)
+            if cfg.name == EXECUTIONERS_CHARIOT_NAME:
+                # Clear Death Race AoE state when resetting the fight
+                state.pop("ec_death_race_patterns", None)
+                state.pop("ec_death_race_sequence", None)
+                state.pop("ec_death_race_index", None)
+                state.pop("ec_death_race_mode", None)
+                state.pop("ec_death_race_current_pattern", None)
+                state.pop("ec_death_race_current_mode", None)
             st.rerun()
             
     # Draw / Heat-up buttons
@@ -409,6 +325,12 @@ def render():
         cfg.entities = render_health_tracker(cfg, state)
     with c_hp_btns[1]:
         if st.button("Draw next card"):
+            # Increment a global draw token so AoE logic can tell
+            # when a *new* card has been drawn, even if the name
+            # is the same ("Death Race" every time).
+            st.session_state["boss_mode_draw_token"] = (
+                st.session_state.get("boss_mode_draw_token", 0) + 1
+            )
             _draw_card(state)
         if st.button("Manual Heat-Up"):
             _manual_heatup(state)
@@ -490,24 +412,33 @@ def render():
 
     # LEFT: Data Card
     with col_left:
-        if cfg.name == "Executioner's Chariot":
-            # Phase 1: show the Chariot card
-            # Phase 2 (after heat-up): show the Skeletal Horse card
-            if not st.session_state.get("chariot_heatup_done", False):
-                img = render_data_card_cached(
-                    BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner's Chariot.jpg",
-                    cfg.raw,
-                    is_boss=True,
-                    no_edits=True,  # matches Behavior Decks tab behavior
-                )
-            else:
-                img = render_data_card_cached(
-                    BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
-                    cfg.raw,
-                    is_boss=True,
-                )
+        if cfg.name == EXECUTIONERS_CHARIOT_NAME:
+            # Two columns: data card | Mega Boss Setup (pre-heatup only)
+            data_col, setup_col = st.columns([1, 1])
 
-            st.image(img, width=CARD_DISPLAY_WIDTH)
+            with data_col:
+                # Phase 1: show the Chariot card
+                # Phase 2 (after heat-up): show the Skeletal Horse card
+                if not st.session_state.get("chariot_heatup_done", False):
+                    img = render_data_card_cached(
+                        BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner's Chariot.jpg",
+                        cfg.raw,
+                        is_boss=True,
+                        no_edits=True,  # matches Behavior Decks tab behavior
+                    )
+                else:
+                    img = render_data_card_cached(
+                        BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
+                        cfg.raw,
+                        is_boss=True,
+                    )
+
+                st.image(img, width=CARD_DISPLAY_WIDTH)
+
+            # Before heat-up, show the Mega Boss Setup encounter + buttons
+            if not st.session_state.get("chariot_heatup_done", False):
+                with setup_col:
+                    _render_ec_mega_boss_setup_panel()
 
         elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
             o_img, s_img = render_dual_boss_data_cards(cfg.raw)
@@ -680,7 +611,7 @@ def render():
                 pattern_nodes = state.get("guardian_fiery_current_pattern")
                 prev_mode = state.get("guardian_fiery_current_mode")
                 if pattern_nodes is None or prev_mode != mode or is_new_draw:
-                    pattern_nodes = _guardian_fiery_draw_pattern(state, mode)
+                    pattern_nodes = _guardian_fiery_next_pattern(state, mode)
                     state["guardian_fiery_current_pattern"] = pattern_nodes
                     state["guardian_fiery_current_mode"] = mode
 
@@ -701,6 +632,128 @@ def render():
                     st.image(cage_img, width=CARD_DISPLAY_WIDTH)
                 with c2:
                     st.image(fiery_img, width=CARD_DISPLAY_WIDTH)
+
+            # --- Black Dragon Kalameet: Hellfire cards show Fiery Ruin alongside ---
+            elif cfg.name == BLACK_DRAGON_KALAMEET_NAME and isinstance(current, str) and current.startswith(KALAMEET_HELLFIRE_PREFIX):
+                # Track when a new card is drawn so we only change the pattern
+                # when the deck actually advances.
+                last_key = f"boss_mode_last_current::{cfg.name}"
+                last_current = st.session_state.get(last_key)
+                is_new_draw = last_current != current
+                st.session_state[last_key] = current
+
+                # Decide which Fiery Ruin pattern mode we're in
+                mode = "generated" if st.session_state.get("kalameet_aoe_generate", False) else "deck"
+
+                # Reuse the existing pattern for this card where possible,
+                # otherwise draw a new one according to the selected mode.
+                pattern_nodes = state.get("kalameet_aoe_current_pattern")
+                prev_mode = state.get("kalameet_aoe_current_mode")
+                if pattern_nodes is None or prev_mode != mode or is_new_draw:
+                    pattern_nodes = _kalameet_next_pattern(state, mode)
+                    state["kalameet_aoe_current_pattern"] = pattern_nodes
+                    state["kalameet_aoe_current_mode"] = mode
+
+                # Base Hellfire card image
+                hellfire_path = _behavior_image_path(cfg, current)
+                hellfire_img = render_behavior_card_cached(
+                    hellfire_path,
+                    cfg.behaviors.get(current, {}),
+                    is_boss=True,
+                )
+
+                # Fiery Ruin with AoE overlay
+                fiery_img = _kalameet_render_fiery_ruin(cfg, pattern_nodes)
+
+                # Show them side-by-side
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.image(hellfire_img, width=CARD_DISPLAY_WIDTH)
+                with c2:
+                    st.image(fiery_img, width=CARD_DISPLAY_WIDTH)
+
+            # --- Old Iron King: Fire Beam cards show Blasted Nodes alongside ---
+            elif cfg.name == OLD_IRON_KING_NAME and isinstance(current, str) and current.startswith(OIK_FIRE_BEAM_PREFIX):
+                # track when a new card is drawn so we only change the pattern
+                last_key = f"boss_mode_last_current::{cfg.name}"
+                last_current = st.session_state.get(last_key)
+                is_new_draw = last_current != current
+                st.session_state[last_key] = current
+
+                # Decide which Blasted Nodes pattern mode we're in
+                mode = "generated" if st.session_state.get("oik_blasted_generate", False) else "deck"
+
+                # Reuse the existing pattern for this card where possible,
+                # otherwise draw a new one according to the selected mode.
+                pattern_nodes = state.get("oik_blasted_current_pattern")
+                prev_mode = state.get("oik_blasted_current_mode")
+                if pattern_nodes is None or prev_mode != mode or is_new_draw:
+                    pattern_nodes = _oik_blasted_next_pattern(state, mode)
+                    state["oik_blasted_current_pattern"] = pattern_nodes
+                    state["oik_blasted_current_mode"] = mode
+
+                # Base Fire Beam card image
+                beam_path = _behavior_image_path(cfg, current)
+                beam_img = render_behavior_card_cached(
+                    beam_path,
+                    cfg.behaviors.get(current, {}),
+                    is_boss=True,
+                )
+
+                # Blasted Nodes with AoE overlay
+                blasted_img = _oik_render_blasted_nodes(cfg, pattern_nodes)
+
+                # Show them side-by-side
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.image(beam_img, width=CARD_DISPLAY_WIDTH)
+                with c2:
+                    st.image(blasted_img, width=CARD_DISPLAY_WIDTH)
+
+            # --- Executioner's Chariot: Death Race shows AoE track alongside ---
+            elif (
+                cfg.name == EXECUTIONERS_CHARIOT_NAME
+                and isinstance(current, str)
+                # Works for "Death Race" or "Death Race 1–4"
+                and current.startswith(DEATH_RACE_BEHAVIOR_NAME)
+            ):
+                # Track when the *draw button* was pressed so we only change
+                # the pattern when a new card is actually drawn.
+                draw_token = st.session_state.get("boss_mode_draw_token", 0)
+                last_key = f"boss_mode_last_draw::{cfg.name}"
+                last_draw = st.session_state.get(last_key)
+                is_new_draw = last_draw != draw_token
+                st.session_state[last_key] = draw_token
+
+                # Decide which Death Race pattern mode we're in
+                mode = "generated" if st.session_state.get("ec_death_race_generate", False) else "deck"
+
+                # Reuse the existing pattern where possible,
+                # otherwise draw a new one according to the selected mode.
+                pattern_nodes = state.get("ec_death_race_current_pattern")
+                prev_mode = state.get("ec_death_race_current_mode")
+                if pattern_nodes is None or prev_mode != mode or is_new_draw:
+                    pattern_nodes = _ec_death_race_next_pattern(state, mode=mode)
+                    state["ec_death_race_current_pattern"] = pattern_nodes
+                    state["ec_death_race_current_mode"] = mode
+
+                # Base Death Race behavior card (trigger)
+                death_race_path = _behavior_image_path(cfg, current)
+                death_race_img = render_behavior_card_cached(
+                    death_race_path,
+                    cfg.behaviors.get(current, {}),
+                    is_boss=True,
+                )
+
+                # Death Race AoE card with node overlay
+                aoe_img = _ec_render_death_race_aoe(cfg, pattern_nodes)
+
+                # Show them side-by-side
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.image(death_race_img, width=CARD_DISPLAY_WIDTH)
+                with c2:
+                    st.image(aoe_img, width=CARD_DISPLAY_WIDTH)
 
             # --- Normal single-card case ---
             else:

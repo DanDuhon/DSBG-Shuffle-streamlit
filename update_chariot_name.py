@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Directory containing your JSON files
-encounters_dir = Path(r"C:\Users\lenle\GitHub\DSBG-Shuffle-streamlit\data\encounters")
+encounters_dir = Path(r"D:\GitHub\DSBG-Shuffle-streamlit\data\encounters")
 
 old_text = "Executioner Chariot"
 new_text = "Executioner's Chariot"

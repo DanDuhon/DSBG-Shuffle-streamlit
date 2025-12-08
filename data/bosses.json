@@ -119,46 +119,46 @@
         "encounters": [4],
         "expansions": ["Gaping Dragon"]
         },
-        "Guardian Dragon": {
-            "name": "Guardian Dragon",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["Guardian Dragon"]
-        },
-        "Manus, Father of the Abyss": {
-            "name": "Manus, Father of the Abyss",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["Manus, Father of the Abyss"]
-        },
-        "Old Iron King": {
-            "name": "Old Iron King",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["Old Iron King"]
-        },
-        "Stray Demon": {
-            "name": "Stray Demon",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["Asylum Demon"]
-        },
-        "The Four Kings": {
-            "name": "The Four Kings",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["The Four Kings"]
-        },
-        "The Last Giant": {
-            "name": "The Last Giant",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["The Last Giant"]
-        },
-        "Vordt of the Boreal Valley": {
-            "name": "Vordt of the Boreal Valley",
-            "type": "mega boss",
-            "encounters": [4],
-            "expansions": ["Vordt of the Boreal Valley"]
-        }
-    }
+	"Guardian Dragon": {
+		"name": "Guardian Dragon",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["Guardian Dragon"]
+	},
+	"Manus, Father of the Abyss": {
+		"name": "Manus, Father of the Abyss",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["Manus, Father of the Abyss"]
+	},
+	"Old Iron King": {
+		"name": "Old Iron King",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["Old Iron King"]
+	},
+	"Stray Demon": {
+		"name": "Stray Demon",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["Asylum Demon"]
+	},
+	"The Four Kings": {
+		"name": "The Four Kings",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["The Four Kings"]
+	},
+	"The Last Giant": {
+		"name": "The Last Giant",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["The Last Giant"]
+	},
+	"Vordt of the Boreal Valley": {
+		"name": "Vordt of the Boreal Valley",
+		"type": "mega boss",
+		"encounters": [4],
+		"expansions": ["Vordt of the Boreal Valley"]
+	}
+}
