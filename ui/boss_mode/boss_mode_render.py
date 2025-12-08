@@ -2,7 +2,9 @@
 import random
 import pyautogui
 import streamlit as st
+import io
 
+from PIL import Image
 from ui.behavior_decks_tab.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,
@@ -32,6 +34,270 @@ from ui.behavior_decks_tab.render import render_health_tracker
 
 BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
 CARD_DISPLAY_WIDTH = int(380 * (pyautogui.size().height / 1400))
+NODE_COORDS = [
+    (0, 0),
+    (0, 2),
+    (0, 4),
+    (0, 6),
+    (1, 1),
+    (1, 3),
+    (1, 5),
+    (2, 0),
+    (2, 2),
+    (2, 4),
+    (2, 6),
+    (3, 1),
+    (3, 3),
+    (3, 5),
+    (4, 0),
+    (4, 2),
+    (4, 4),
+    (4, 6),
+    (5, 1),
+    (5, 3),
+    (5, 5),
+    (6, 0),
+    (6, 2),
+    (6, 4),
+    (6, 6),
+]
+GUARDIAN_DRAGON_NAME = "Guardian Dragon"
+GUARDIAN_FIERY_BREATH_NAME = "Fiery Breath"
+GUARDIAN_CAGE_PREFIX = "Cage Grasp Inferno"
+GUARDIAN_FIERY_DECK_SIZE = 4
+GUARDIAN_STANDARD_PATTERNS = [
+    {
+        "dest": (0, 0),
+        "aoe": [
+            (2, 0),
+            (1, 1),
+            (0, 2),
+            (1, 3),
+            (2, 2),
+            (3, 1),
+            (3, 3),
+        ],
+    },
+    {
+        "dest": (6, 0),
+        "aoe": [
+            (4, 0),
+            (3, 1),
+            (5, 1),
+            (4, 2),
+            (6, 2),
+            (3, 3),
+            (5, 3),
+        ],
+    },
+    {
+        "dest": (6, 6),
+        "aoe": [
+            (4, 6),
+            (3, 5),
+            (5, 5),
+            (4, 4),
+            (6, 4),
+            (3, 3),
+            (5, 3),
+        ],
+    },
+    {
+        "dest": (0, 6),
+        "aoe": [
+            (2, 6),
+            (1, 5),
+            (3, 5),
+            (0, 4),
+            (2, 4),
+            (1, 3),
+            (3, 3),
+        ],
+    },
+]
+
+
+def _guardian_node_distance(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+
+def _guardian_fiery_generate_pattern(base_pattern, rng=None):
+    """
+    Return a pattern similar to base_pattern, but with some AoE nodes
+    jittered to nearby nodes so each deck build feels a bit different.
+
+    base_pattern: {"dest": (x, y), "aoe": [(x, y), ...]}
+    """
+    if rng is None:
+        rng = random.Random()
+
+    dest = base_pattern["dest"]
+    base_aoe = list(base_pattern["aoe"])
+    aoe = set(base_aoe)
+
+    for node in base_aoe:
+        # With some probability, try to move this node to a nearby one.
+        if rng.random() < 0.4:
+            candidates = [
+                cand
+                for cand in NODE_COORDS
+                if cand != dest
+                and cand != node
+                and _guardian_node_distance(cand, dest) <= 4
+                and _guardian_node_distance(cand, node) <= 3
+            ]
+            if candidates:
+                new_node = rng.choice(candidates)
+                aoe.discard(node)
+                aoe.add(new_node)
+
+    # Ensure we keep the same number of AoE nodes (7)
+    target_len = len(base_aoe)
+    # Add extras if we lost any due to collisions
+    candidates = [
+        cand
+        for cand in NODE_COORDS
+        if cand != dest and cand not in aoe and _guardian_node_distance(cand, dest) <= 4
+    ]
+    rng.shuffle(candidates)
+    while len(aoe) < target_len and candidates:
+        aoe.add(candidates.pop())
+
+    # If we somehow ended up with too many, trim back down
+    if len(aoe) > target_len:
+        aoe = set(rng.sample(list(aoe), target_len))
+
+    return {"dest": dest, "aoe": sorted(aoe)}
+
+
+def _guardian_fiery_init_deck(state, mode):
+    """
+    (Re)build the Fiery Breath pattern deck according to current rules.
+
+    mode == "generated" -> generate patterns based on the four base ones
+    mode == "deck"      -> use the four base patterns as-is
+    """
+    rng = random.Random()
+    patterns = []
+    for base in GUARDIAN_STANDARD_PATTERNS:
+        if mode == "generated":
+            patterns.append(_guardian_fiery_generate_pattern(base, rng))
+        else:
+            # Copy so we don't mutate the constants
+            patterns.append(
+                {"dest": base["dest"], "aoe": list(base["aoe"])}
+            )
+
+    rng.shuffle(patterns)
+    state["guardian_fiery_deck"] = patterns
+    state["guardian_fiery_discard"] = []
+    state["guardian_fiery_deck_mode"] = mode
+
+
+def _guardian_fiery_draw_pattern(state, mode):
+    """
+    Get the next Fiery Breath pattern, honouring the chosen mode:
+
+    mode == "generated"  -> fresh-ish patterns per 4-card cycle
+    mode == "deck"       -> the four static standard patterns
+    """
+    rng = random.Random()
+    deck_mode = state.get("guardian_fiery_deck_mode")
+    deck = state.get("guardian_fiery_deck") or []
+    discard = state.get("guardian_fiery_discard") or []
+
+    # Mode changed or deck empty -> rebuild
+    if not deck or deck_mode != mode:
+        _guardian_fiery_init_deck(state, mode)
+        deck = state.get("guardian_fiery_deck") or []
+        discard = state.get("guardian_fiery_discard") or []
+
+    if not deck:
+        # Safety fallback: generate from the first base pattern
+        base = GUARDIAN_STANDARD_PATTERNS[0]
+        return _guardian_fiery_generate_pattern(base, rng)
+
+    pattern = deck.pop(0)
+    discard.append(pattern)
+    state["guardian_fiery_deck"] = deck
+    state["guardian_fiery_discard"] = discard
+    state["guardian_fiery_deck_mode"] = mode
+
+    return pattern
+
+
+def _guardian_node_to_xy(coord, icon_w, icon_h):
+    col, row = coord
+
+    # Centre of the node, from your measured values / derived step
+    x = round(-41 + 107.5 * col)
+    y = round(55 + 110.5 * row)
+
+    # Convert centre to top-left for the icon
+    # x = int(cx - icon_w / 2)
+    # y = int(cy - icon_h / 2)
+    return x, y
+
+
+def _guardian_render_fiery_breath(cfg, pattern):
+    """
+    Render the Fiery Breath card with destination + AoE node icons overlaid.
+
+    pattern is {"dest": (x, y), "aoe": [(x, y), ...]} using GUARDIAN_NODE_COORDS.
+    """
+    base = render_behavior_card_cached(
+        _behavior_image_path(cfg, GUARDIAN_FIERY_BREATH_NAME),
+        cfg.behaviors.get(GUARDIAN_FIERY_BREATH_NAME, {}),
+        is_boss=True,
+    )
+
+    # Convert cached output to a PIL Image we can edit.
+    if isinstance(base, Image.Image):
+        base_img = base.convert("RGBA")
+    elif isinstance(base, (bytes, bytearray)):
+        base_img = Image.open(io.BytesIO(base)).convert("RGBA")
+    elif isinstance(base, str):
+        base_img = Image.open(base).convert("RGBA")
+    else:
+        # Last-ditch fallback: try to treat it as a file-like object
+        base_img = Image.open(base).convert("RGBA")
+
+    # Figure out where the assets directory is (parent of behavior cards)
+    try:
+        assets_dir = BEHAVIOR_CARDS_PATH.parent
+    except Exception:
+        from pathlib import Path
+        assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
+
+    # Load icons
+    aoe_icon_path = assets_dir / "behavior icons" / "aoe_node.png"
+    dest_icon_path = assets_dir / "behavior icons" / "destination_node.png"
+
+    aoe_icon = Image.open(aoe_icon_path).convert("RGBA")
+    dest_icon = Image.open(dest_icon_path).convert("RGBA")
+
+    try:
+        resample = Image.Resampling.LANCZOS
+    except AttributeError:
+        resample = Image.LANCZOS
+
+    aoe_icon = aoe_icon.resize((250, 250), resample)
+    dest_icon = dest_icon.resize((122, 122), resample)
+
+    # Overlay destination node first
+    dest = pattern.get("dest")
+    if dest:
+        x, y = _guardian_node_to_xy(dest, dest_icon.width, dest_icon.height)
+        print((dest, x, y))
+        base_img.alpha_composite(dest_icon, dest=(x, y))
+
+    # Overlay AoE nodes
+    for coord in pattern.get("aoe", []):
+        x, y = _guardian_node_to_xy(coord, aoe_icon.width, aoe_icon.height)
+        print((coord, x, y))
+        base_img.alpha_composite(aoe_icon, dest=(x, y))
+
+    return base_img
 
 
 def _get_boss_mode_state_key(entry) -> str:
@@ -115,8 +381,26 @@ def render():
             with st.expander(f"**{cfg.name}**"):
                 st.caption(cfg.text)
 
+        # Guardian Dragon: option to control Fiery Breath node patterns
+        if cfg.name == GUARDIAN_DRAGON_NAME:
+            st.checkbox(
+                "Generate new Fiery Breath pattern each time",
+                key="guardian_fiery_generate",
+                help=(
+                    "If checked, Fiery Breath's node pattern is generated anew "
+                    "for every use. If unchecked, it uses a 4-card pattern deck "
+                    "that cycles without replacement."
+                ),
+            )
+
         if st.button("🔄 Reset fight"):
             _reset_deck(state, cfg)
+            if cfg.name == GUARDIAN_DRAGON_NAME:
+                # Clear Fiery Breath state when resetting the fight
+                state.pop("guardian_fiery_deck", None)
+                state.pop("guardian_fiery_discard", None)
+                state.pop("guardian_fiery_current_pattern", None)
+                state.pop("guardian_fiery_current_mode", None)
             st.rerun()
             
     # Draw / Heat-up buttons
@@ -378,6 +662,45 @@ def render():
                     # Fallback: if Crawling Charge isn't found for some reason,
                     # at least show Stomach Slam
                     st.image(stomach_img, width=CARD_DISPLAY_WIDTH)
+
+            # --- Guardian Dragon: Cage Grasp Inferno shows Fiery Breath alongside ---
+            elif cfg.name == GUARDIAN_DRAGON_NAME and isinstance(current, str) and current.startswith(GUARDIAN_CAGE_PREFIX):
+                # Track when a new card is drawn so we only change the pattern
+                # when the deck actually advances.
+                last_key = f"boss_mode_last_current::{cfg.name}"
+                last_current = st.session_state.get(last_key)
+                is_new_draw = last_current != current
+                st.session_state[last_key] = current
+
+                # Decide which Fiery Breath pattern mode we're in
+                mode = "generated" if st.session_state.get("guardian_fiery_generate", False) else "deck"
+
+                # Reuse the existing pattern for this card where possible,
+                # otherwise draw a new one according to the selected mode.
+                pattern_nodes = state.get("guardian_fiery_current_pattern")
+                prev_mode = state.get("guardian_fiery_current_mode")
+                if pattern_nodes is None or prev_mode != mode or is_new_draw:
+                    pattern_nodes = _guardian_fiery_draw_pattern(state, mode)
+                    state["guardian_fiery_current_pattern"] = pattern_nodes
+                    state["guardian_fiery_current_mode"] = mode
+
+                # Base Cage Grasp Inferno image
+                cage_path = _behavior_image_path(cfg, current)
+                cage_img = render_behavior_card_cached(
+                    cage_path,
+                    cfg.behaviors.get(current, {}),
+                    is_boss=True,
+                )
+
+                # Fiery Breath with AoE overlay
+                fiery_img = _guardian_render_fiery_breath(cfg, pattern_nodes)
+
+                # Show them side-by-side
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.image(cage_img, width=CARD_DISPLAY_WIDTH)
+                with c2:
+                    st.image(fiery_img, width=CARD_DISPLAY_WIDTH)
 
             # --- Normal single-card case ---
             else:
