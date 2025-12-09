@@ -1,0 +1,46 @@
+{
+  "Test": {
+    "rules_version": "V1",
+    "sidebar_settings": {
+      "active_expansions": [
+        "Painted World of Ariamis",
+        "The Sunless City",
+        "Tomb of Giants",
+        "Dark Souls The Board Game",
+        "Darkroot",
+        "Explorers",
+        "Iron Keep",
+        "Characters Expansion",
+        "Phantoms",
+        "Executioner's Chariot",
+        "Asylum Demon",
+        "Black Dragon Kalameet",
+        "Gaping Dragon",
+        "Guardian Dragon",
+        "Manus, Father of the Abyss",
+        "Old Iron King",
+        "The Four Kings",
+        "The Last Giant",
+        "Vordt of the Boreal Valley"
+      ],
+      "ngplus_level": 0,
+      "selected_characters": [
+        "Deprived",
+        "Assassin",
+        "Cleric",
+        "Herald"
+      ]
+    },
+    "state": {
+      "bosses": {
+        "main": "Random",
+        "mega": "None",
+        "mini": "Random"
+      },
+      "name": "Test",
+      "souls": 0,
+      "sparks": 2,
+      "sparks_max": 2
+    }
+  }
+}

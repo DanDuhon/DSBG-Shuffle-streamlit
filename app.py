@@ -5,6 +5,7 @@ import ui.encounters_tab as encounters_tab
 import ui.events_tab as events_tab
 from ui.encounter_mode import play_tab
 from ui.boss_mode.boss_mode_render import render as boss_mode_render
+from ui.campaign_mode.campaign_mode_render import render as campaign_mode_render
 from ui import sidebar
 from core.settings_manager import load_settings, save_settings
 
@@ -83,6 +84,60 @@ if "user_settings" not in st.session_state:
 
 settings = st.session_state.user_settings
 
+# --- Apply pending campaign snapshot (from Campaign Mode) *before* sidebar widgets ---
+pending = st.session_state.get("pending_campaign_snapshot")
+if pending:
+    snap_name = pending.get("name")
+    snapshot = pending.get("snapshot", {}) or {}
+
+    snap_version = snapshot.get("rules_version", "V1")
+    st.session_state["campaign_rules_version"] = snap_version
+
+    # Restore campaign state dict for correct version
+    state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
+    st.session_state[state_key] = snapshot.get("state", {}) or {}
+
+    # Restore sidebar-related settings (expansions, party, NG+)
+    snap_sidebar = snapshot.get("sidebar_settings", {}) or {}
+    changes = []
+
+    snap_exp = snap_sidebar.get("active_expansions")
+    if snap_exp is not None and snap_exp != settings.get("active_expansions"):
+        settings["active_expansions"] = snap_exp
+        # Safe now: widget with this key does not exist yet on this run
+        st.session_state["active_expansions"] = snap_exp
+        changes.append("expansions")
+
+    snap_chars = snap_sidebar.get("selected_characters")
+    if snap_chars is not None and snap_chars != settings.get("selected_characters"):
+        settings["selected_characters"] = snap_chars
+        st.session_state["selected_characters"] = snap_chars
+        changes.append("party")
+
+    snap_ng = snap_sidebar.get("ngplus_level")
+    if snap_ng is not None:
+        try:
+            snap_ng_int = int(snap_ng)
+        except Exception:
+            snap_ng_int = 0
+        current_ng = int(st.session_state.get("ngplus_level", 0))
+        if snap_ng_int != current_ng:
+            st.session_state["ngplus_level"] = snap_ng_int
+            changes.append("NG+ level")
+
+    # Persist updated settings
+    st.session_state["user_settings"] = settings
+    save_settings(settings)
+
+    # One-shot notice for Campaign Mode UI
+    st.session_state["campaign_load_notice"] = {
+        "name": snap_name,
+        "changes": changes,
+    }
+
+    # Clear the pending snapshot flag
+    del st.session_state["pending_campaign_snapshot"]
+
 # Sidebar: expansions + party + NG+
 sidebar.render_sidebar(settings)
 save_settings(settings)
@@ -95,7 +150,7 @@ st.session_state["player_count"] = character_count
 
 mode = st.sidebar.radio(
     "Mode",
-    ["Encounter Mode", "Boss Mode"],
+    ["Encounter Mode", "Boss Mode", "Campaign Mode"],
     key="mode",
 )
 
@@ -112,3 +167,5 @@ if mode == "Encounter Mode":
         play_tab.render(settings)
 elif mode == "Boss Mode":
     boss_mode_render()
+elif mode == "Campaign Mode":
+    campaign_mode_render()
