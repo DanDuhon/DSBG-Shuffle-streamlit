@@ -147,6 +147,15 @@ character_count = len(selected_characters)
 valid_party = 0 < character_count <= 4
 st.session_state["player_count"] = character_count
 
+# If Campaign Mode requested a boss fight, switch to Boss Mode and
+# tell Boss Mode which boss to preselect on this run.
+pending_boss = st.session_state.get("pending_boss_mode_from_campaign")
+if pending_boss:
+    boss_name = pending_boss.get("boss_name")
+    if boss_name:
+        st.session_state["mode"] = "Boss Mode"
+        st.session_state["boss_mode_pending_name"] = boss_name
+    del st.session_state["pending_boss_mode_from_campaign"]
 
 mode = st.sidebar.radio(
     "Mode",

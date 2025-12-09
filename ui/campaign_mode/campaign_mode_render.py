@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import json
+import base64
 import random
 import streamlit as st
 
@@ -15,7 +16,12 @@ from ui.encounters_tab.logic import (
     shuffle_encounter,
 )
 from ui.encounters_tab.generation import generate_encounter_image
+from ui.encounters_tab.render import render_original_encounter
 from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
+from ui.behavior_decks_tab.generation import (
+    render_data_card_cached,
+    render_dual_boss_data_cards,
+)
 
 
 DATA_DIR = Path("data")
@@ -26,6 +32,7 @@ CAMPAIGNS_PATH = DATA_DIR / "campaigns.json"
 ASSETS_DIR = Path("assets")
 PARTY_TOKEN_PATH = ASSETS_DIR / "party_token.png"
 BONFIRE_ICON_PATH = ASSETS_DIR / "bonfire.gif"
+CHARACTERS_DIR = ASSETS_DIR / "characters"
 
 
 def _load_json_object(path: Path) -> Dict[str, Any]:
@@ -78,6 +85,84 @@ def _get_player_count(settings: Dict[str, Any]) -> int:
 def _default_sparks_max(player_count: int) -> int:
     # Campaign rule: party starts with (6 - player_num) sparks, clamped to at least 1.
     return max(1, 6 - player_count)
+
+
+def _img_tag_from_path(
+    path: Path,
+    title: str = "",
+    height_px: int = 48,
+    extra_css: str = "",
+) -> Optional[str]:
+    if not path.is_file():
+        return None
+    try:
+        data = path.read_bytes()
+    except Exception:
+        return None
+    b64 = base64.b64encode(data).decode("ascii")
+    style = f"height:{height_px}px; {extra_css}".strip()
+    style_attr = f" style='{style}'" if style else ""
+    title_attr = f" title='{title}'" if title else ""
+    return f"<img src='data:image/png;base64,{b64}'{title_attr}{style_attr} />"
+
+
+def _render_party_icons(settings: Dict[str, Any]) -> None:
+    characters = settings.get("selected_characters") or []
+    if not characters:
+        return
+
+    chars_dir = CHARACTERS_DIR
+
+    html = """
+    <style>
+      .campaign-party-section h5 { margin: 0.75rem 0 0.25rem 0; }
+      .campaign-party-row {
+        display:flex;
+        gap:6px;
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        padding-bottom:2px;
+      }
+      .campaign-party-row::-webkit-scrollbar { height: 6px; }
+      .campaign-party-row::-webkit-scrollbar-thumb {
+        background: #bbb;
+        border-radius: 3px;
+      }
+      .campaign-party-fallback {
+        height:48px;
+        background:#ccc;
+        border-radius:6px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:10px;
+        text-align:center;
+        padding:2px;
+      }
+    </style>
+    <div class="campaign-party-section">
+    <h5>Party</h5>
+    <div class="campaign-party-row">
+    """
+
+    for char in characters:
+        fname = f"{char}.png"
+        tag = _img_tag_from_path(
+            chars_dir / fname,
+            title=str(char),
+            extra_css="border-radius:6px;",
+        )
+        if tag:
+            html += tag
+        else:
+            initial = (str(char) or "?")[0:1]
+            html += (
+                f"<div class='campaign-party-fallback' title='{char}'>"
+                f"{initial}</div>"
+            )
+
+    html += "</div></div>"
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def _filter_bosses(
@@ -161,6 +246,29 @@ def _resolve_v1_bosses_for_campaign(
     return result
 
 
+def _is_v1_campaign_eligible(encounter: Dict[str, Any]) -> bool:
+    """
+    V1 campaign rule:
+    - Only V1 encounters (by the 'version' field coming from _list_encounters_cached)
+    - Level 4 encounters are treated as both V1 and V2, so they are always allowed.
+    """
+    level = int(encounter["level"])
+    
+    # Level 4 is allowed for both V1 and V2 campaigns
+    if level == 4:
+        return True
+
+    version = str(encounter.get("version", "")).upper()
+    if version.startswith("V1"):
+        return True
+
+    # Be permissive if version is missing/blank
+    if version == "":
+        return True
+
+    return False
+
+
 def _pick_random_campaign_encounter(
     *,
     encounters_by_expansion: Dict[str, List[Dict[str, Any]]],
@@ -210,10 +318,19 @@ def _pick_random_campaign_encounter(
             # This expansion has no valid encounters at all under current settings.
             continue
 
-        level_candidates = [
-            e for e in filtered_encounters
-            if int(e.get("level", -1)) == level_int
-        ]
+        level_candidates: List[Dict[str, Any]] = []
+        for e in filtered_encounters:
+            try:
+                lvl = int(e.get("level", -1))
+            except Exception:
+                continue
+            if lvl != level_int:
+                continue
+            # V1 campaign: only V1 encounters, except level 4 which is allowed for both
+            if not _is_v1_campaign_eligible(e):
+                continue
+            level_candidates.append(e)
+
         if level_candidates:
             candidate_expansions.append((exp_choice, level_candidates))
 
@@ -246,6 +363,9 @@ def _pick_random_campaign_encounter(
         "encounter_name": res.get("encounter_name") or base_enc.get("name"),
         "enemies": res.get("enemies") or [],
         "expansions_used": res.get("expansions_used") or [],
+        # critical: keep the processed encounter_data so cards render correctly
+        "encounter_data": res.get("encounter_data"),
+        "edited": bool(res.get("edited", False)),
     }
     return frozen
 
@@ -403,27 +523,26 @@ def _describe_v1_node_label(campaign: Dict[str, Any], node: Dict[str, Any]) -> s
 
 def _render_v1_encounter_card(frozen: Dict[str, Any]) -> None:
     """
-    Render the encounter card image for a frozen campaign encounter, if possible.
-    Falls back to a warning if we can't resolve the original encounter.
+    Render the encounter card for a frozen campaign encounter, using
+    the shuffled enemies stored in the frozen payload.
     """
     expansion = frozen.get("expansion")
     level = frozen.get("encounter_level")
     name = frozen.get("encounter_name")
     enemies = frozen.get("enemies") or []
 
-    if not (expansion and level and name):
+    if not expansion or level is None or not name:
         st.caption("Encounter card data incomplete.")
         return
 
-    # Look up the original encounter definition from the cached list.
     encounters_by_expansion = _list_encounters_cached()
     base_list = encounters_by_expansion.get(expansion)
     if not base_list:
         st.warning(f"No encounter data found for expansion '{expansion}'.")
         return
 
-    base_enc = None
     level_int = int(level)
+    base_enc = None
     for e in base_list:
         try:
             if e.get("name") == name and int(e.get("level", -1)) == level_int:
@@ -439,103 +558,201 @@ def _render_v1_encounter_card(frozen: Dict[str, Any]) -> None:
         )
         return
 
-    try:
-        card_img = generate_encounter_image(
-            expansion,
-            level_int,
-            name,
-            base_enc,
-            enemies,
-            use_edited=False,
-        )
-    except Exception as exc:
-        st.warning(f"Failed to render encounter card: {exc}")
-        return
-
+    # Critical part: pass the frozen shuffled enemies into the generator.
+    card_img = generate_encounter_image(
+        expansion,
+        level_int,
+        name,
+        base_enc,
+        enemies,
+        False,  # use_edited
+    )
+    
     st.image(card_img, width="stretch")
 
 
-def _render_v1_current_panel(campaign: Dict[str, Any], current_node: Dict[str, Any]) -> None:
+def _render_v1_current_panel(
+    campaign: Dict[str, Any],
+    current_node: Dict[str, Any],
+) -> None:
     """
-    Right-hand panel: show bonfire / encounter card / boss data card
-    with appropriate action button.
+    Right-hand panel for V1:
+    - Bonfire: bonfire image
+    - Encounter: card + 'Start Encounter'
+    - Boss: fully rendered data card + 'Start Boss Fight' (jumps to Boss Mode)
     """
     kind = current_node.get("kind")
-
     st.markdown("#### Current space")
 
     # Bonfire
     if kind == "bonfire":
         st.caption("Resting at the bonfire.")
-        if BONFIRE_ICON_PATH.is_file():
-            st.image(str(BONFIRE_ICON_PATH), width="stretch")
-        else:
-            st.caption("bonfire.gif not found in assets.")
         return
 
-    # Encounter space
+    # Encounter
     if kind == "encounter":
         frozen = current_node.get("frozen") or {}
-        name = frozen.get("encounter_name") or "Unknown Encounter"
         level = frozen.get("encounter_level")
+        name = frozen.get("encounter_name") or "Unknown Encounter"
         expansion = frozen.get("expansion") or "Unknown Expansion"
+        encounter_data = frozen.get("encounter_data")
+        enemies = frozen.get("enemies") or []
+        use_edited = bool(frozen.get("edited", False))
 
         st.markdown(f"**Level {level} Encounter**")
         st.caption(f"{name} ({expansion})")
 
-        _render_v1_encounter_card(frozen)
+        if not encounter_data:
+            st.warning("Missing encounter data; regenerate this campaign.")
+        else:
+            res = render_original_encounter(
+                encounter_data,
+                expansion,
+                name,
+                level,
+                use_edited,
+                enemies=enemies,
+            )
+            if res and res.get("ok"):
+                st.image(res["card_img"], width="stretch")
+            else:
+                st.warning("Failed to render encounter card.")
 
-        if st.button("Start Encounter", key=f"campaign_v1_start_enc_{current_node.get('id')}"):
+        if st.button(
+            "Start Encounter",
+            key=f"campaign_v1_start_enc_{current_node.get('id')}",
+        ):
             st.info("Encounter play not wired yet; use Encounter Mode for now.")
         return
 
-    # Boss space
+    # Boss
     if kind == "boss":
         stage = current_node.get("stage")
-        boss_name = current_node.get("boss_name")
+        # Prefer the campaign's boss metadata, fall back to node field
+        bosses_info = (campaign.get("bosses") or {}).get(stage, {})  # type: ignore[index]
+        boss_name = bosses_info.get("name") or current_node.get("boss_name")
 
-        prefix_map = {
-            "mini": "Mini Boss",
-            "main": "Main Boss",
-            "mega": "Mega Boss",
-        }
+        prefix_map = {"mini": "Mini Boss", "main": "Main Boss", "mega": "Mega Boss"}
         prefix = prefix_map.get(stage, "Boss")
 
         if boss_name:
             st.markdown(f"**{prefix}: {boss_name}**")
+
+            # Load raw behavior JSON directly
+            json_path = Path("data") / "behaviors" / f"{boss_name}.json"
+            raw_data = None
+            if json_path.is_file():
+                try:
+                    with json_path.open("r", encoding="utf-8") as f:
+                        raw_data = json.load(f)
+                except Exception as exc:
+                    st.warning(f"Failed to load behavior JSON for '{boss_name}': {exc}")
+
+            if raw_data is None:
+                # Fallback: show static base data card
+                data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
+                st.image(data_path, width="stretch")
+            else:
+                # Special case: Ornstein & Smough dual-boss card
+                if "Ornstein" in boss_name and "Smough" in boss_name:
+                    try:
+                        o_img, s_img = render_dual_boss_data_cards(raw_data)
+                        o_col, s_col = st.columns(2)
+                        with o_col:
+                            st.image(o_img, width="stretch")
+                        with s_col:
+                            st.image(s_img, width="stretch")
+                    except Exception as exc:
+                        st.warning(f"Failed to render Ornstein & Smough data cards: {exc}")
+                else:
+                    if boss_name == "Executioner's Chariot":
+                        data_path = BEHAVIOR_CARDS_PATH + "Executioner's Chariot - Skeletal Horse.jpg"
+                    else:
+                        data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
+                    try:
+                        img = render_data_card_cached(
+                            data_path,
+                            raw_data,
+                            is_boss=True,
+                        )
+                        st.image(img, width="stretch")
+                    except Exception as exc:
+                        st.warning(f"Failed to render boss data card: {exc}")
         else:
             st.markdown(f"**{prefix}: Unknown**")
-
-        # Boss data card (same pattern as play_panels / invader_panel)
-        if boss_name:
-            data_path = Path(BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg")
-            if data_path.is_file():
-                st.image(str(data_path), width="stretch")
-            else:
-                st.warning(f"Data card not found for '{boss_name}'.")
-        else:
             st.caption("No boss selected for this space.")
 
-        if st.button("Start Boss Fight", key=f"campaign_v1_start_boss_{stage}"):
-            st.info("Boss play not wired yet; use Boss Mode for now.")
+        if st.button(
+            "Start Boss Fight",
+            key=f"campaign_v1_start_boss_{current_node.get('id')}",
+        ):
+            if not boss_name:
+                st.warning("No boss configured for this node.")
+            else:
+                st.session_state["pending_boss_mode_from_campaign"] = {
+                    "boss_name": boss_name
+                }
+                st.rerun()
         return
 
     st.caption("No details available for this space.")
+
+
+def _render_v1_path_row(
+    node: Dict[str, Any],
+    campaign: Dict[str, Any],
+    state: Dict[str, Any],
+) -> None:
+    label = _describe_v1_node_label(campaign, node)
+    row_cols = st.columns([3, 1])
+
+    with row_cols[0]:
+        st.markdown(f"- {label}")
+
+    with row_cols[1]:
+        node_id = node.get("id")
+        kind = node.get("kind")
+        is_current = node_id == campaign.get("current_node_id")
+
+        # Current location: show party token instead of any button
+        if is_current:
+            st.image(str(PARTY_TOKEN_PATH), width=48)
+            return
+
+        # Bonfire row: Return to Bonfire
+        if kind == "bonfire":
+            if st.button(
+                "Return to Bonfire",
+                key=f"campaign_v1_goto_{node_id}",
+            ):
+                campaign["current_node_id"] = node_id
+                state["campaign"] = campaign
+                st.session_state["campaign_v1_state"] = state
+                st.rerun()
+            return
+
+        # Encounter / boss: Travel / Confront
+        if kind in ("encounter", "boss"):
+            btn_label = "Travel" if kind == "encounter" else "Confront"
+            if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
+                campaign["current_node_id"] = node_id
+                node["revealed"] = True
+                state["campaign"] = campaign
+                st.session_state["campaign_v1_state"] = state
+                st.rerun()
+            return
 
 
 def _render_v1_play(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -> None:
     """
     V1 Play tab:
 
-    - Sparks tracker + Soul cache + party summary at the top.
-    - Shows current location (Bonfire / encounter / boss).
-    - Shows the full campaign path:
-        Bonfire
-        Unknown Level X Encounter
-        Unknown Mini/Main/Mega Boss (if boss was Random)
-    - Each encounter/boss has a button to move the party there.
-      The current location row shows the party token image instead of a button.
-    - Right-hand panel shows bonfire / encounter card / boss data card.
+    - Party icons at top
+    - Sparks (display only)
+    - Soul cache numeric input under Sparks
+    - Path with Return to Bonfire / Travel / Confront
+    - Party token on the current row
+    - Right-hand panel with bonfire / encounter card / boss card
     """
     settings = _get_settings()
 
@@ -554,127 +771,96 @@ def _render_v1_play(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -> No
     current_id = campaign.get("current_node_id", "bonfire")
     current_node = node_by_id.get(current_id) or nodes[0]
     campaign["current_node_id"] = current_node.get("id", "bonfire")
-    state["campaign"] = campaign  # keep state/campaign in sync
+    state["campaign"] = campaign
 
-    # Layout: left = overview/path, right = current card/panel
     col_overview, col_detail = st.columns([2, 1])
 
     with col_overview:
-        st.markdown("### Campaign overview")
+        col_bonfire, col_info = st.columns([1, 2])
 
-        # --- Sparks + Soul cache row ---
-        col_sparks, col_souls = st.columns(2)
+        with col_bonfire:
+            st.image(str(BONFIRE_ICON_PATH), width="stretch")
 
-        # Sparks tracker (editable numeric, but no +/-)
-        with col_sparks:
-            sparks_max = int(state.get("sparks_max", _default_sparks_max(_get_player_count(settings))))
+        with col_info:
+            # Party icons above everything
+            _render_party_icons(settings)
+
+            # Sparks: display only
+            player_count = _get_player_count(settings)
+            sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
             sparks_cur = int(state.get("sparks", sparks_max))
             st.metric("Sparks", f"{sparks_cur} / {sparks_max}")
 
-            new_sparks = st.number_input(
-                "Current sparks",
+            # Soul cache directly under Sparks; no extra +/- buttons
+            souls_value = st.number_input(
+                "Soul cache",
                 min_value=0,
-                max_value=sparks_max,
-                value=sparks_cur,
+                value=int(state.get("souls", 0)),
                 step=1,
-                key="campaign_v1_sparks_play",
+                key="campaign_v1_souls_play",
             )
-            state["sparks"] = int(new_sparks)
-
-        # Soul cache with +/- and manual entry
-        with col_souls:
-            souls_key = "campaign_v1_souls_play"
-
-            col_minus, col_input, col_plus = st.columns([1, 3, 1])
-            with col_minus:
-                minus_clicked = st.button("−", key="campaign_v1_souls_minus")
-            with col_plus:
-                plus_clicked = st.button("+", key="campaign_v1_souls_plus")
-
-            if minus_clicked or plus_clicked:
-                current_val = st.session_state.get(souls_key, int(state.get("souls", 0)))
-                delta = 1 if plus_clicked else -1
-                new_val = max(0, int(current_val) + delta)
-                st.session_state[souls_key] = new_val
-                state["souls"] = new_val
-
-            with col_input:
-                souls_value = st.number_input(
-                    "Soul cache",
-                    min_value=0,
-                    value=int(state.get("souls", 0)),
-                    step=1,
-                    key=souls_key,
-                )
-                state["souls"] = int(souls_value)
-
-        # --- Party row (simple summary, analogous to Encounter Mode) ---
-        party = settings.get("selected_characters") or []
-        if party:
-            party_str = ", ".join(str(c) for c in party)
-            st.markdown(f"**Party:** {party_str}")
-        else:
-            st.caption("Party not configured; select characters in the sidebar.")
+            state["souls"] = int(souls_value)
 
         st.markdown("---")
-
-        # Current location label
         st.markdown(
-            f"**Current location:** {_describe_v1_node_label(campaign, current_node)}"
+            f"**Current location:** "
+            f"{_describe_v1_node_label(campaign, current_node)}"
         )
 
         st.markdown("#### Path")
 
-        # Path list with Travel/Confront/Return and party token on current node
+        # Group nodes: bonfire, then chapters by stage, then any leftovers
+        bonfire_nodes: List[Dict[str, Any]] = []
+        stage_nodes: Dict[str, List[Dict[str, Any]]] = {
+            "mini": [],
+            "main": [],
+            "mega": [],
+        }
+        other_nodes: List[Dict[str, Any]] = []
+
         for node in nodes:
-            label = _describe_v1_node_label(campaign, node)
-            row_cols = st.columns([3, 1])
+            kind = node.get("kind")
+            stage = node.get("stage")
+            if kind == "bonfire":
+                bonfire_nodes.append(node)
+            elif stage in stage_nodes:
+                stage_nodes[stage].append(node)
+            else:
+                other_nodes.append(node)
 
-            with row_cols[0]:
-                st.markdown(f"- {label}")
+        # Bonfire stays at the top, outside any chapter
+        for n in bonfire_nodes:
+            _render_v1_path_row(n, campaign, state)
 
-            with row_cols[1]:
-                node_id = node.get("id")
-                kind = node.get("kind")
-                is_current = node_id == campaign.get("current_node_id")
+        mini_boss = stage_nodes["mini"][-1]
+        main_boss = stage_nodes["main"][-1]
+        mega_boss = [] if not stage_nodes["mega"] else stage_nodes["mega"][-1]
 
-                # If this is the current location, show the party token instead of a button
-                if is_current:
-                    if PARTY_TOKEN_PATH.is_file():
-                        st.image(str(PARTY_TOKEN_PATH), width=48)
-                    else:
-                        st.caption("Party")
-                    continue
+        chapter_labels = {
+            "mini": "Unknown Mini Boss Chapter" if mini_boss["was_random"] and not mini_boss["revealed"] else f"{mini_boss['boss_name']} Chapter",
+            "main": "Unknown Main Boss Chapter" if main_boss["was_random"] and not main_boss["revealed"] else f"{main_boss['boss_name']} Chapter",
+        }
 
-                # Bonfire row gets a "Return to Bonfire" action
-                if kind == "bonfire":
-                    if st.button(
-                        "Return to Bonfire",
-                        key="campaign_v1_goto_bonfire",
-                    ):
-                        campaign["current_node_id"] = node_id
-                        state["campaign"] = campaign
-                        st.session_state["campaign_v1_state"] = state
-                        st.rerun()
-                    continue
+        if mega_boss:
+            chapter_labels["mega"] = "Unknown Mega Boss Chapter" if mega_boss["was_random"] and not mega_boss["revealed"] else f"{mega_boss['boss_name']} Chapter"
 
-                # Encounter/boss rows: Travel / Confront
-                if kind in ("encounter", "boss"):
-                    btn_label = "Travel" if kind == "encounter" else "Confront"
-                    if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
-                        # Move party and reveal node
-                        campaign["current_node_id"] = node_id
-                        node["revealed"] = True
+        # Wrap mini/main/mega tracks in expanders
+        for stage in ("mini", "main", "mega"):
+            nodes_for_stage = stage_nodes.get(stage) or []
+            if not nodes_for_stage:
+                continue
+            with st.expander(chapter_labels[stage], expanded=True):
+                for n in nodes_for_stage:
+                    _render_v1_path_row(n, campaign, state)
 
-                        state["campaign"] = campaign
-                        st.session_state["campaign_v1_state"] = state
-                        st.rerun()
+        # Any nodes that don't belong to the known stages
+        for n in other_nodes:
+            _render_v1_path_row(n, campaign, state)
 
-    # Right-hand: bonfire / encounter card / boss data card
     with col_detail:
         _render_v1_current_panel(campaign, current_node)
 
-    # Persist updated state (sparks / souls / campaign position)
+    # Persist updated state
     st.session_state["campaign_v1_state"] = state
 
 
@@ -819,9 +1005,10 @@ def _render_v1_setup(
             )
             state["bosses"]["mega"] = mega_choice
 
-    # --- New: generate full campaign encounters (frozen) ---
+    # --- Generate full campaign encounters (frozen) ---
     if st.button("Generate campaign", key="campaign_v1_generate"):
-        campaign = _generate_v1_campaign(bosses_by_name, settings, state)
+        with st.spinner("Generating campaign..."):
+            campaign = _generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
         st.session_state["campaign_v1_state"] = state
         st.success("Campaign generated.")
@@ -865,6 +1052,7 @@ def _render_save_load_section(
 
     col_save, col_load = st.columns([1, 1])
 
+    # ----- SAVE -----
     with col_save:
         default_name = str(current_state.get("name", "")).strip()
         name_input = st.text_input(
@@ -878,20 +1066,32 @@ def _render_save_load_section(
             if not name:
                 st.error("Campaign name is required to save.")
             else:
-                current_state["name"] = name
-                snapshot = {
-                    "rules_version": version,
-                    "state": current_state,
-                    "sidebar_settings": {
-                        "active_expansions": settings.get("active_expansions"),
-                        "selected_characters": settings.get("selected_characters"),
-                        "ngplus_level": int(st.session_state.get("ngplus_level", 0)),
-                    },
-                }
-                campaigns[name] = snapshot
-                _save_campaigns(campaigns)
-                st.success(f"Saved campaign '{name}'.")
+                # For V1, require a generated campaign so Play can resume correctly.
+                if version == "V1" and not isinstance(
+                    current_state.get("campaign"), dict
+                ):
+                    st.error(
+                        "Generate the V1 campaign before saving; "
+                        "this save currently has no encounters."
+                    )
+                else:
+                    current_state["name"] = name
+                    snapshot = {
+                        "rules_version": version,
+                        "state": current_state,
+                        "sidebar_settings": {
+                            "active_expansions": settings.get("active_expansions"),
+                            "selected_characters": settings.get("selected_characters"),
+                            "ngplus_level": int(
+                                st.session_state.get("ngplus_level", 0)
+                            ),
+                        },
+                    }
+                    campaigns[name] = snapshot
+                    _save_campaigns(campaigns)
+                    st.success(f"Saved campaign '{name}'.")
 
+    # ----- LOAD / DELETE -----
     with col_load:
         if campaigns:
             names = sorted(campaigns.keys())
@@ -901,15 +1101,34 @@ def _render_save_load_section(
                 index=0,
                 key=f"campaign_load_select_{version}",
             )
-            if st.button("Load selected campaign", key=f"campaign_load_btn_{version}"):
-                if selected_name != "<none>":
-                    snapshot = campaigns[selected_name]
 
-                    st.session_state["pending_campaign_snapshot"] = {
-                        "name": selected_name,
-                        "snapshot": snapshot,
-                    }
-                    st.rerun()
+            load_col, delete_col = st.columns([1, 1])
+
+            with load_col:
+                if st.button(
+                    "Load selected campaign",
+                    key=f"campaign_load_btn_{version}",
+                ):
+                    if selected_name != "<none>":
+                        snapshot = campaigns[selected_name]
+                        st.session_state["pending_campaign_snapshot"] = {
+                            "name": selected_name,
+                            "snapshot": snapshot,
+                        }
+                        st.rerun()
+
+            with delete_col:
+                if st.button(
+                    "Delete selected",
+                    key=f"campaign_delete_btn_{version}",
+                ):
+                    if selected_name == "<none>":
+                        st.error("Select a campaign to delete.")
+                    else:
+                        campaigns.pop(selected_name, None)
+                        _save_campaigns(campaigns)
+                        st.success(f"Deleted campaign '{selected_name}'.")
+                        st.rerun()
         else:
             st.caption("No saved campaigns yet.")
 
@@ -920,7 +1139,9 @@ def _render_save_load_section(
             changes = notice.get("changes") or []
             if changes:
                 st.success(
-                    f"Loaded campaign '{name}' and updated: " + ", ".join(changes) + "."
+                    f"Loaded campaign '{name}' and updated: "
+                    + ", ".join(changes)
+                    + "."
                 )
             else:
                 st.success(f"Loaded campaign '{name}' (no sidebar changes).")

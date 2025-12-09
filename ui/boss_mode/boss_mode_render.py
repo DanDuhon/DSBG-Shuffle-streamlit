@@ -185,6 +185,21 @@ def render():
         st.session_state["behavior_catalog"] = build_behavior_catalog()
     catalog = st.session_state["behavior_catalog"]
 
+    # If Campaign Mode requested a specific boss, preselect it once.
+    pending_name = st.session_state.pop("boss_mode_pending_name", None)
+    if pending_name:
+        target_cat = None
+        for cat, entries in catalog.items():
+            for e in entries:
+                if getattr(e, "name", None) == pending_name:
+                    target_cat = cat
+                    break
+            if target_cat:
+                break
+        if target_cat:
+            st.session_state["boss_mode_category"] = target_cat
+            st.session_state["boss_mode_choice_name"] = pending_name
+
     # Only categories we care about
     available_cats = [
         c for c in BOSS_MODE_CATEGORIES if catalog.get(c)
