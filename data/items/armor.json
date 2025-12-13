@@ -1405,5 +1405,180 @@
         },
         "dodge_dice": 1,
         "upgrade_slots": 1
+    }, {
+        "id": "winged_knight_armour",
+        "name": "Winged Knight Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Dark Souls The Board Game"],
+            "entity": "Winged Knight",
+            "type": "boss"
+        },
+        "requirements": {
+            "str": 24,
+            "fth": 24
+        },
+        "block_dice": {
+            "orange": 1
+        },
+        "resist_dice": {
+            "orange": 1
+        },
+        "dodge_dice": 0,
+        "upgrade_slots": 2
+    }, {
+        "id": "outrider_armour",
+        "name": "Outrider Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Dark Souls The Board Game"],
+            "entity": "Boreal Outrider Knight",
+            "type": "boss"
+        },
+        "requirements": {
+            "dex": 24,
+            "fth": 24
+        },
+        "block_dice": {
+            "black": 2
+        },
+        "resist_dice": {
+            "black": 1
+        },
+        "dodge_dice": 1,
+        "upgrade_slots": 2,
+		"text": "You are immune to Frostbite."
+    }, {
+        "id": "steel_armour",
+        "name": "Steel Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Painted World of Ariamis"],
+            "entity": "Heavy Knight",
+            "type": "boss"
+        },
+        "requirements": {
+			"str": 21,
+            "dex": 21,
+			"itl": 20,
+            "fth": 20
+        },
+        "block_dice": {
+            "blue": 1
+        },
+        "resist_dice": {
+            "blue": 1
+        },
+        "dodge_dice": 0,
+        "upgrade_slots": 1,
+		"text": "This armour gains 1 black die for block and 1 black die for resist if it has an equipped upgrade."
+    }, {
+        "id": "dancer_armour",
+        "name": "Dancer Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Dark Souls The Board Game"],
+            "entity": "Dancer of the Boreal Valley",
+            "type": "boss"
+        },
+        "requirements": {
+            "dex": 35,
+			"itl": 25,
+            "fth": 25
+        },
+        "block_dice": {
+            "black": 1
+        },
+        "resist_dice": {
+            "black": 1
+        },
+        "dodge_dice": 2,
+        "upgrade_slots": 1,
+		"text": "When you walk, you may move 2 nodes (instead of 1)."
+    }, {
+        "id": "smelter_demon_armour",
+        "name": "Smelter Demon Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Iron Keep"],
+            "entity": "Smelter Demon",
+            "type": "boss"
+        },
+        "requirements": {
+			"str": 35,
+            "fth": 21
+        },
+        "block_dice": {
+            "blue": 2
+        },
+        "resist_dice": {
+            "orange": 1
+        },
+        "dodge_dice": 0,
+        "upgrade_slots": 2
+    }, {
+        "id": "dragonslayer_armour",
+        "name": "Dragonslayer Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
+            "entity": "Ornstein & Smough",
+            "type": "boss"
+        },
+        "requirements": {
+			"str": 21,
+            "fth": 31
+        },
+        "block_dice": {
+            "blue": 1,"black":1
+        },
+        "resist_dice": {
+            "blue": 1,"black":1
+        },
+        "dodge_dice": 0,
+        "upgrade_slots": 1,
+		"text": "You are immune to Bleed."
+    }, {
+        "id": "smoughs_armour",
+        "name": "Smough's Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
+            "entity": "Ornstein & Smough",
+            "type": "boss"
+        },
+        "requirements": {
+			"str": 37
+        },
+        "block_dice": {
+            "blue": 2
+        },
+        "resist_dice": {
+            "blue": 2
+        },
+        "dodge_dice": 0,
+        "upgrade_slots": 1,
+		"no_dodge":true,
+		"no_run":true,
+		"text": "You cannot dodge or run."
+    }, {
+        "id": "alonne_armour",
+        "name": "Alonne Armour",
+        "item_type": "armor",
+        "source": {
+            "expansion": ["Iron Keep"],
+            "entity": "Sir Alonne",
+            "type": "boss"
+        },
+        "requirements": {
+			"dex": 21,
+			"itl": 35
+        },
+        "block_dice": {},
+        "resist_dice": {
+            "black": 1
+        },
+        "dodge_dice": 2,
+        "upgrade_slots": 2
     }
 ]

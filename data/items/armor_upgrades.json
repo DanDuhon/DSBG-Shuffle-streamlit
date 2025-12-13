@@ -372,5 +372,123 @@
         },
         "slot_cost": 1,
         "text": "When you use the Spell Fury heroic ability, your attack deals +1 damage."
+    }, {
+        "id": "big_pilgrims_key",
+        "name": "Big Pilgrim's Key",
+        "source": {
+            "expansion": ["Asylum Demon"],
+            "entity": "Asylum Demon",
+            "type": "boss"
+        },
+        "requirements": {
+            "dex": 17,
+            "itl": 17
+        },
+        "slot_cost": 1,
+        "text": "(V1 only) You may place this character on any entry node (not just entry nodes aligned with the tile you moved from)."
+    }, {
+        "id": "homeward_bone",
+        "name": "Homeward Bone",
+        "source": {
+            "expansion": ["Asylum Demon"],
+            "entity": "Stray Demon",
+            "type": "boss"
+        },
+        "requirements": {
+            "itl": 20,
+            "fai": 20
+        },
+        "slot_cost": 1,
+        "text": "During your activation, you may discard this card to end an encounter and return to the Bonfire."
+    }, {
+        "id": "old_leo_ring",
+        "name": "Old Leo Ring",
+        "source": {
+            "expansion": ["Explorers"],
+            "entity": "Old Dragonslayer",
+            "type": "boss"
+        },
+        "requirements": {
+			"dex": 18,
+            "itl": 18
+        },
+        "slot_cost": 1,
+        "text": "Your attacks gain +1 damage against enemies that damaged you during the last enemy activation."
+    }, {
+        "id": "ring_of_blades",
+        "name": "Ring of Blades",
+        "source": {
+            "expansion": ["Explorers"],
+            "entity": "The Pursuer",
+            "type": "boss"
+        },
+        "requirements": {
+			"dex": 22,
+            "itl": 22
+        },
+        "slot_cost": 1,
+        "text": "At the start of your activation, you may suffer 1 damage to flip your Luck token to the ready side."
+    }, {
+        "id": "calamity_ring",
+        "name": "Calamity Ring",
+        "source": {
+            "expansion": ["Black Dragon Kalameet"],
+            "entity": "Black Dragon Kalameet",
+            "type": "boss"
+        },
+        "requirements": {},
+        "slot_cost": 1,
+        "effects": {
+            "attack_mods": [{
+                    "target": "all",
+                    "flat_mod": 1
+                }
+            ],"block":{"flat_mod":-1},"resist":{"flat_mod":-1},"dodge":{"flat_mod":-1}
+        },
+        "text": "You suffer -1 success on each Block, Resist, and Dodge roll but gain +1 success on each Attack roll."
+    }, {
+        "id": "blighttown_key",
+        "name": "Blighttown Key",
+        "source": {
+            "expansion": ["Gaping Dragon"],
+            "entity": "Gaping Dragon",
+            "type": "boss"
+        },
+        "requirements": {},
+        "slot_cost": 1,
+        "text": "(V1 only) You may look at face-down encounter cards."
+    }, {
+        "id": "pontiffs_left_eye",
+        "name": "Pontiff's Left Eye",
+        "source": {
+            "expansion": ["Vordt of the Boreal Valley"],
+            "entity": "Vordt of the Boreal Valley",
+            "type": "boss"
+        },
+        "requirements": {"itl":21,"fai":21},
+        "slot_cost": 1,
+        "text": "At the end of your activation, if you made two or more attack rolls, gain 1 health."
+    }, {
+        "id": "soldier_key",
+        "name": "Soldier Key",
+        "source": {
+            "expansion": ["The Last Giant"],
+            "entity": "The Last Giant",
+            "type": "boss"
+        },
+        "requirements": {},
+        "slot_cost": 1,
+        "text": "You may discard this card to replace an encounter card with a random encounter of the same level."
+    }, {
+        "id": "bequeathed_lord_soul",
+        "name": "Bequeathed Lord Soul",
+        "source": {
+            "expansion": ["The Four Kings"],
+            "entity": "The Four Kings",
+            "type": "boss"
+        },
+        "requirements": {"str": 20, "dex": 20,"itl":20,"fai":20},
+        "slot_cost": 1,
+        "text": "Tier 3 for each of your stats is 40 while you have this equipped."
     }
 ]
