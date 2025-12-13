@@ -1,3 +1,4 @@
+#ui/encounter_mode/play_panels.py
 from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
@@ -5,9 +6,8 @@ from copy import deepcopy
 import base64
 import streamlit as st
 
-from ui.events_tab.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS
-from ui.encounters_tab.assets import enemyNames
-from ui.encounter_mode import invader_panel
+from core.encounter import templates, objectives as obj_mod
+from core.encounter_rewards import get_v1_reward_config_for_encounter
 from core.encounter_rules import (
     make_encounter_key,
     get_rules_for_encounter,
@@ -21,16 +21,16 @@ from core.encounter_triggers import (
     get_triggers_for_event,
 )
 
-from core.encounter import templates, objectives as obj_mod
-from core.encounter_rewards import get_v1_reward_config_for_encounter
-from ui.encounter_mode.play_state import get_player_count, log_entry
-
+from ui.behavior_decks_tab import render as behavior_decks_render
 from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
 from ui.behavior_decks_tab.generation import render_data_card_cached, build_behavior_catalog
 from ui.behavior_decks_tab.logic import load_behavior
 from ui.behavior_decks_tab.models import BehaviorEntry
-from ui.behavior_decks_tab import render as behavior_decks_render
-from ui.encounters_tab.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
+from ui.encounter_mode import invader_panel
+from ui.encounter_mode.assets import enemyNames
+from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
+from ui.encounter_mode.play_state import get_player_count, log_entry
+from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS
 
 
 # ---------------------------------------------------------------------
@@ -267,11 +267,6 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
     # V1 encounter cards cannot have attached events mechanically in Encounter Mode.
     if not is_v1:
         events = st.session_state.get("encounter_events", [])
-        try:
-            # You already added EVENT_REWARDS next to EVENT_BEHAVIOR_MODIFIERS
-            from ui.events_tab.logic import EVENT_REWARDS  # type: ignore
-        except ImportError:
-            EVENT_REWARDS = {}  # type: ignore[assignment]
 
         for ev in events:
             ev_name = ev.get("name") or ev.get("title") or ev.get("id")
@@ -302,6 +297,16 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
                 mult *= m
         if mult != 1:
             totals["souls"] *= mult
+
+    # Make the final totals available to other tabs (e.g. Campaign Play)
+    st.session_state["last_encounter_reward_totals"] = totals.copy()
+
+    # Remember which encounter produced these totals so Campaign Mode can
+    # ignore stale rewards from other encounters.
+    last_enc = st.session_state.get("last_encounter") or {}
+    slug = last_enc.get("slug") or encounter.get("slug")
+    if slug:
+        st.session_state["last_encounter_rewards_for_slug"] = slug
 
     # If nothing to show, bail out
     if not any(totals.values()) and not special_lines:

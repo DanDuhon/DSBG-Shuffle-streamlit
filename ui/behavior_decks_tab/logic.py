@@ -8,8 +8,6 @@ from typing import List, Dict, Any
 
 from ui.behavior_decks_tab.models import BehaviorConfig, Entity, Heatup
 from ui.behavior_decks_tab.assets import _path, _strip_behavior_suffix
-from ui.encounters_tab.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
-from ui.events_tab.logic import EVENT_BEHAVIOR_MODIFIERS
 from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
 
 

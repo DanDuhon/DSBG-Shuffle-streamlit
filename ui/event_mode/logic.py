@@ -1,11 +1,15 @@
-#ui/events_tab/logic.py
+#ui/event_mode/logic.py
 import json
 import random
 import os
 import streamlit as st
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from collections import defaultdict
+from datetime import datetime, timezone
+from ui.event_mode.event_card_text import EVENT_CARD_TEXT
+from ui.event_mode.event_card_type import EVENT_CARD_TYPE
+
 
 DATA_DIR = Path("data/events")
 ASSETS_DIR = Path("assets/events")
@@ -15,6 +19,10 @@ V2_EXPANSIONS = [
     "Tomb of Giants",
     "The Sunless City",
 ]
+
+# --- Custom decks (user-authored) ---
+CUSTOM_DECKS_PATH = Path("data/custom_event_decks.json")
+CUSTOM_PREFIX = "Custom: "
 
 RENDEZVOUS_EVENTS = {
     "Big Pilgrim's Key",
@@ -230,7 +238,7 @@ EVENT_DRAW_REWARDS: Dict[str, List[dict]] = {
             "text": "Choose a character. That character can upgrade a stat without spending souls."
         }
     ],
-    "Lost To Time": [
+    "Lost to Time": [
         {
             "type": "text",
             "text": "One at a time, roll 1 black die for each card in the inventory. The first time a blank result is rolled, discard the treasure card."
@@ -279,6 +287,117 @@ EVENT_DRAW_REWARDS: Dict[str, List[dict]] = {
         }
     ],
 }
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def load_custom_event_decks() -> Dict[str, dict]:
+    """
+    Returns mapping: deck_name -> {"cards": {image_path: copies}, ...}
+    File schema:
+      { "decks": { "<name>": {"cards": {...}} }, "updated": "..." }
+    Legacy support: if file is { "<name>": {...} } treat that as decks mapping.
+    """
+    if not CUSTOM_DECKS_PATH.exists():
+        return {}
+    try:
+        data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    if isinstance(data, dict) and "decks" in data and isinstance(data["decks"], dict):
+        return data["decks"]
+    if isinstance(data, dict):
+        # legacy: the whole object is the decks mapping
+        return data
+    return {}
+
+
+def save_custom_event_decks(decks: Dict[str, dict]) -> None:
+    CUSTOM_DECKS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"decks": decks, "updated": _utc_now_iso()}
+    CUSTOM_DECKS_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    st.rerun()
+
+
+def list_event_deck_options(configs: Optional[Dict[str, dict]] = None) -> List[str]:
+    """
+    Built-ins come from available event config JSONs + the synthetic 'Mixed V2'.
+    Customs are appended as 'Custom: <name>'.
+    """
+    if configs is None:
+        configs = load_event_configs()
+
+    builtins = sorted(configs.keys())
+    if "Mixed V2" not in builtins:
+        builtins.append("Mixed V2")
+
+    customs = sorted(load_custom_event_decks().keys())
+    custom_opts = [f"{CUSTOM_PREFIX}{name}" for name in customs]
+    return builtins + custom_opts
+
+
+def _parse_custom_preset(preset: str) -> Optional[str]:
+    if isinstance(preset, str) and preset.startswith(CUSTOM_PREFIX):
+        name = preset[len(CUSTOM_PREFIX):].strip()
+        return name or None
+    return None
+
+
+def list_all_event_cards(
+    configs: Optional[Dict[str, dict]] = None,
+    *,
+    expansions: Optional[List[str]] = None,
+) -> List[Dict[str, Any]]:
+    """
+    One entry per card image in configs.
+    Returns: [{"expansion","id","image_path","default_copies"}...]
+    """
+    if configs is None:
+        configs = load_event_configs()
+    wanted = set(expansions) if expansions else None
+
+    # Dedupe by image_path; collect expansions for the same card image.
+    by_img: Dict[str, Dict[str, Any]] = {}
+    for exp, conf in (configs or {}).items():
+        if wanted is not None and exp not in wanted:
+            continue
+        for ev in conf.get("events", []) or []:
+            img_rel = ev.get("image")
+            if not img_rel:
+                continue
+            img_path = (ASSETS_DIR / img_rel).as_posix()
+            card_id = Path(str(img_rel)).stem
+
+            card_text = EVENT_CARD_TEXT.get(card_id)
+            card_type = EVENT_CARD_TYPE.get(card_id)
+
+            entry = by_img.get(img_path)
+            if entry is None:
+                by_img[img_path] = {
+                    "_expansions": {exp},
+                    "id": card_id,
+                    "image_path": img_path,
+                    "default_copies": int(ev.get("copies", 1) or 1),
+                    "text": card_text,
+                    "type": card_type,
+                }
+            else:
+                entry["_expansions"].add(exp)
+                entry["default_copies"] = max(int(entry.get("default_copies") or 1), int(ev.get("copies", 1) or 1))
+                if not entry.get("text") and card_text:
+                    entry["text"] = card_text
+
+    out: List[Dict[str, Any]] = []
+    for entry in by_img.values():
+        exps = sorted(list(entry.pop("_expansions", set())))
+        entry["expansion"] = ", ".join(exps)
+        out.append(entry)
+
+    out.sort(key=lambda d: (str(d.get("id","")), str(d.get("expansion",""))))
+    return out
 
 
 def compute_draw_rewards_for_card(card_path: str, *, player_count: int = 1) -> Dict[str, int]:
@@ -364,10 +483,33 @@ def build_mixed_v2_deck(configs: Dict[str, dict]) -> List[str]:
 
 def build_deck_for_preset(preset: str, configs: Dict[str, dict]) -> List[str]:
     """Build a draw pile based on selected preset."""
+    if not preset:
+        return []
+
     if preset == "Mixed V2":
         return build_mixed_v2_deck(configs)
-    else:
-        return build_deck({preset: configs[preset]})
+
+    custom_name = _parse_custom_preset(preset)
+    if custom_name:
+        decks = load_custom_event_decks()
+        deck_def = decks.get(custom_name) or {}
+        cards = (deck_def.get("cards") or {}) if isinstance(deck_def, dict) else {}
+        draw: List[str] = []
+        for img_path, copies in (cards.items() if isinstance(cards, dict) else []):
+            try:
+                n = int(copies)
+            except Exception:
+                n = 0
+            if n > 0 and img_path:
+                draw.extend([str(img_path)] * n)
+        random.shuffle(draw)
+        return draw
+
+    # built-in expansion
+    conf = configs.get(preset)
+    if not conf:
+        return []
+    return build_deck({preset: conf})
 
 
 def initialize_event_deck(preset: str, configs: Optional[Dict[str, dict]] = None):
@@ -440,11 +582,106 @@ def put_current_on_top():
 
 
 def put_current_on_bottom():
-    """Put the current card on bottom of the draw pile."""
-    state = st.session_state[DECK_STATE_KEY]
-    if state["current_card"]:
-        state["draw_pile"].append(state["current_card"])
+     """Put the current card on bottom of the draw pile."""
+     state = st.session_state[DECK_STATE_KEY]
+     if state["current_card"]:
+         state["draw_pile"].append(state["current_card"])
+         state["current_card"] = None
+ 
+ 
+def reset_event_deck(configs: Optional[Dict[str, dict]] = None, *, preset: Optional[str] = None) -> bool:
+    """
+    Rebuild the deck from its preset definition and shuffle it.
+    This restores any temporarily-removed cards because it rebuilds from source.
+    """
+    state = st.session_state.get(DECK_STATE_KEY)
+    if not isinstance(state, dict):
+        return False
+    use_preset = preset or state.get("preset")
+    if not use_preset:
+        return False
+    initialize_event_deck(use_preset, configs=configs)
+    return True
+
+
+def shuffle_current_into_deck() -> bool:
+    """
+    Move the current card into the draw pile and shuffle.
+    If the draw pile is empty, recycle discard -> draw first (then shuffle).
+    """
+    state = st.session_state.get(DECK_STATE_KEY)
+    if not isinstance(state, dict):
+        return False
+
+    cur = state.get("current_card")
+    if not cur:
+        return False
+
+    draw = list(state.get("draw_pile") or [])
+    discard = list(state.get("discard_pile") or [])
+
+    if not draw and discard:
+        draw = discard
+        discard = []
+
+    draw.append(cur)
+    random.shuffle(draw)
+
+    state["draw_pile"] = draw
+    state["discard_pile"] = discard
+    state["current_card"] = None
+    return True
+
+
+def remove_card_from_deck(card_path: Optional[str] = None) -> int:
+    """
+    Remove all copies of a card from draw+discard and clear it if it's current.
+    Non-permanent: reset_event_deck/initialize_event_deck restores it.
+    Returns number of removed copies (including current, if applicable).
+    """
+    state = st.session_state.get(DECK_STATE_KEY)
+    if not isinstance(state, dict):
+        return 0
+
+    target = card_path or state.get("current_card")
+    if not target:
+        return 0
+
+    target_str = str(target)
+    target_base = os.path.splitext(os.path.basename(target_str))[0]
+
+    def _matches(x: Any) -> bool:
+        xs = str(x)
+        if xs == target_str:
+            return True
+        return os.path.splitext(os.path.basename(xs))[0] == target_base
+
+    removed = 0
+
+    cur = state.get("current_card")
+    if cur and _matches(cur):
         state["current_card"] = None
+        removed += 1
+
+    draw = list(state.get("draw_pile") or [])
+    new_draw = []
+    for x in draw:
+        if _matches(x):
+            removed += 1
+        else:
+            new_draw.append(x)
+    state["draw_pile"] = new_draw
+
+    discard = list(state.get("discard_pile") or [])
+    new_discard = []
+    for x in discard:
+        if _matches(x):
+            removed += 1
+        else:
+            new_discard.append(x)
+    state["discard_pile"] = new_discard
+
+    return removed
 
 
 def get_card_width(layout_width=700, col_ratio=2, total_ratio=4, max_width=350) -> int:

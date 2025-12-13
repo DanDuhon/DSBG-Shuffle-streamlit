@@ -1,14 +1,10 @@
 # ui/encounter_mode/invader_panel.py
-
 from __future__ import annotations
-
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-
 import random
 import streamlit as st
 
-from ui.behavior_decks_tab.models import BehaviorEntry, BehaviorConfig
+from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
 from ui.behavior_decks_tab.generation import (
     build_behavior_catalog,
     render_data_card_cached,
@@ -18,57 +14,13 @@ from ui.behavior_decks_tab.logic import (
     _ensure_state,
     _new_state_from_file,
     _load_cfg_for_state,
-    _reset_deck,
     _draw_card,
     _manual_heatup,
-    _clear_heatup_prompt,
     check_and_trigger_heatup,
 )
-from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
-from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
-
+from ui.behavior_decks_tab.models import BehaviorEntry, BehaviorConfig
 from ui.encounter_mode import play_state
-from ui.encounters_tab.assets import enemyNames
-
-
-"""
-Skeleton for the Invader panel used in the Play tab.
-
-High-level goals:
-
-- One tab in the right column: "Invaders".
-- No enemy selector dropdown from Behavior Decks tab.
-- If there is exactly one invader in the encounter, show it directly.
-- If there are multiple invaders, show a radio button to pick which
-    invader's deck/HP to operate on.
-- No reset button in this panel; deck/HP reset should happen from the
-  main encounter reset button (Play tab controls).
-- No save/load slots UI.
-- UI is focused and minimal: invader name, data card, HP, simple deck controls.
-
-Behavior Decks functions we intend to reuse / adapt:
-
-From ui.behavior_decks_tab.logic:
-    - _ensure_state()                # initialize hp_tracker, heatup flags, etc.
-    - _new_state_from_file()
-    - _load_cfg_for_state()
-    - _reset_deck()                  # called from a higher-level reset hook, not via a button here
-    - _draw_card()
-    - _manual_heatup()               # maybe optional depending on how fancy invaders get
-    - _clear_heatup_prompt()
-
-From ui.behavior_decks_tab.generation:
-    - build_behavior_catalog()
-    - render_data_card_cached()
-    - render_behavior_card_cached()
-
-From ui.behavior_decks_tab.render:
-    - The health tracker logic (render_health_tracker) will be used as a
-      *reference* to create a slimmer, vertical version for invaders.
-
-This module is intentionally UI-only: it assumes behavior JSONs, BehaviorEntry,
-and NG+ logic are already working as per the Behavior Decks tab.
-"""
+from ui.encounter_mode.assets import enemyNames
 
 
 # ---------------------------------------------------------------------------

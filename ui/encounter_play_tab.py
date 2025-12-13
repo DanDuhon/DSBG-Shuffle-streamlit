@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import List, Optional
 from copy import deepcopy
 
-from ui.events_tab.events_logic import EVENT_BEHAVIOR_MODIFIERS
-from ui.encounters_tab.encounters_logic import ENCOUNTER_BEHAVIOR_MODIFIERS
-from ui.encounters_tab.encounters_assets import enemyNames
+from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS
+from ui.encounters_tab.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
+from ui.encounters_tab.assets import enemyNames
 from core.encounter_rules import (
     make_encounter_key,
     get_rules_for_encounter,
@@ -18,13 +18,13 @@ from core.encounter_triggers import (
     EncounterTrigger,
     get_triggers_for_encounter,
 )
-from ui.behavior_decks_tab.behavior_decks_generation import (
+from ui.behavior_decks_tab.generation import (
     render_data_card_cached,
     build_behavior_catalog,
 )
-from ui.behavior_decks_tab.behavior_decks_logic import load_behavior
-from ui.behavior_decks_tab.behavior_decks_models import BehaviorEntry
-from ui.behavior_decks_tab.behavior_decks_assets import BEHAVIOR_CARDS_PATH
+from ui.behavior_decks_tab.logic import load_behavior
+from ui.behavior_decks_tab.models import BehaviorEntry
+from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
 
 # ---------------------------------------------------------------------
 # Text + template helpers

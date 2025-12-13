@@ -1,30 +1,9 @@
 {
   "active_expansions": [
-    "Painted World of Ariamis",
-    "The Sunless City",
-    "Tomb of Giants",
-    "Dark Souls The Board Game",
-    "Darkroot",
-    "Explorers",
-    "Iron Keep",
-    "Characters Expansion",
-    "Phantoms",
-    "Executioner's Chariot",
-    "Asylum Demon",
-    "Black Dragon Kalameet",
-    "Gaping Dragon",
-    "Guardian Dragon",
-    "Manus, Father of the Abyss",
-    "Old Iron King",
-    "The Four Kings",
-    "The Last Giant",
-    "Vordt of the Boreal Valley"
+    "Painted World of Ariamis"
   ],
   "selected_characters": [
-    "Deprived",
-    "Assassin",
-    "Cleric",
-    "Herald"
+    "Deprived"
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,
@@ -89,10 +68,49 @@
     "Courtyard of Lothric|Vordt of the Boreal Valley": false
   },
   "event_deck": {
-    "draw_pile": [],
+    "draw_pile": [
+      "assets\\events\\Undead Merchant.jpg",
+      "assets\\events\\Stolen Artifact.jpg",
+      "assets\\events\\Blacksmith's Trial.jpg",
+      "assets\\events\\Virulent Bonfire Ascetic.jpg",
+      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Fleeting Glory.jpg",
+      "assets\\events\\Fleeting Glory.jpg",
+      "assets\\events\\Undead Merchant.jpg",
+      "assets\\events\\Pine Resin.jpg",
+      "assets\\events\\Lost to Time.jpg",
+      "assets\\events\\Stolen Artifact.jpg",
+      "assets\\events\\Firekeeper's Boon.jpg",
+      "assets\\events\\Repair Powder.jpg",
+      "assets\\events\\Trustworthy Promise.jpg",
+      "assets\\events\\Martial Bonfire Ascetic.jpg",
+      "assets\\events\\Hearty Bonfire Ascetic.jpg",
+      "assets\\events\\Cracked Bonfire Ascetic.jpg",
+      "assets\\events\\Lifegem.jpg",
+      "assets\\events\\Scout Ahead.jpg",
+      "assets\\events\\Rare Vagrant.jpg",
+      "assets\\events\\Alluring Skull.jpg",
+      "assets\\events\\Scout Ahead.jpg",
+      "assets\\events\\Green Blossom.jpg",
+      "assets\\events\\Obscured Knowledge.jpg",
+      "assets\\events\\Skeletal Reforging.jpg",
+      "assets\\events\\Trustworthy Promise.jpg",
+      "assets\\events\\Princess Guard.jpg",
+      "assets\\events\\Skeletal Reforging.jpg",
+      "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
+      "assets\\events\\Frozen Bonfire Ascetic.jpg",
+      "assets\\events\\Bleak Bonfire Ascetic.jpg",
+      "assets\\events\\Rite of Rekindling.jpg",
+      "assets\\events\\Firekeeper's Boon.jpg",
+      "assets\\events\\Unhallowed Offering.jpg",
+      "assets\\events\\Scrying Stone.jpg",
+      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Big Pilgrim's Key.jpg",
+      "assets\\events\\Lost Envoy.jpg"
+    ],
     "discard_pile": [],
     "current_card": null,
-    "preset": null
+    "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",
   "behavior_deck_saves": []

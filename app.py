@@ -1,12 +1,11 @@
 # app.py
 import streamlit as st
 
-import ui.encounters_tab as encounters_tab
-import ui.events_tab as events_tab
-from ui.encounter_mode import play_tab
-from ui.boss_mode.boss_mode_render import render as boss_mode_render
-from ui.campaign_mode.campaign_mode_render import render as campaign_mode_render
 from ui import sidebar
+from ui.encounter_mode.render import render as encounter_mode_render
+from ui.boss_mode.boss_mode_render import render as boss_mode_render
+from ui.campaign_mode.render import render as campaign_mode_render
+from ui.event_mode.render import render as event_mode_render
 from core.settings_manager import load_settings, save_settings
 
 st.set_page_config(
@@ -53,10 +52,14 @@ st.markdown("""
         border-right: 1px solid #333 !important;
     }
 
-    /* Cards (images) subtle frame */
+    /* Card-style images: subtle 3D drop shadow */
     img {
-        border-radius: 4px;
-        box-shadow: 0 0 12px rgba(0,0,0,0.7);
+        border-radius: 6px;
+        background: radial-gradient(circle at top, #444 0, #111 65%);
+        box-shadow:
+            0 10px 22px rgba(0, 0, 0, 0.9),
+            0 0 0 1px rgba(255, 255, 255, 0.06);
+        transition: box-shadow 120ms ease-out, transform 120ms ease-out;
     }
 
     /* Tighter spacing between party/expansion icons */
@@ -159,21 +162,14 @@ if pending_boss:
 
 mode = st.sidebar.radio(
     "Mode",
-    ["Encounter Mode", "Boss Mode", "Campaign Mode"],
+    ["Encounter Mode", "Event Mode", "Boss Mode", "Campaign Mode"],
     key="mode",
 )
 
 if mode == "Encounter Mode":
-    setup, events, play = st.tabs(["Setup", "Events", "Play"])
-
-    with setup:
-        encounters_tab.render(settings, valid_party, character_count)
-
-    with events:
-        events_tab.render(settings, attach_to_encounter=True)
-
-    with play:
-        play_tab.render(settings)
+    encounter_mode_render(settings, valid_party, character_count)
+elif mode == "Event Mode":
+    event_mode_render(settings)
 elif mode == "Boss Mode":
     boss_mode_render()
 elif mode == "Campaign Mode":
