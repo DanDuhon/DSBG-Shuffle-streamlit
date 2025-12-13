@@ -276,5 +276,37 @@
             ]
         },
         "text": "This weapon's attacks gain +1 damage and Magic."
+    }, {
+        "id": "titanite_shard",
+        "name": "Titanite Shard",
+        "source": {
+            "expansion": ["Painted World of Ariamis", "Tomb of Giants", "The Sunless City", "Dark Souls The Board Game"]
+        },
+        "requirements": {},
+        "slot_cost": 1,
+        "effects": {
+            "attack_mods": [{
+                    "target": "all",
+                    "add_flat_mod": 1
+                }
+            ]
+        },
+        "text": "This weapon's attacks gain +1 damage."
+    }, {
+        "id": "titanite_scale",
+        "name": "Titanite Scale",
+        "source": {
+            "expansion": ["Iron Keep"]
+        },
+        "requirements": {},
+        "slot_cost": 1,
+        "effects": {
+            "attack_mods": [{
+                    "target": "all",
+                    "add_flat_mod": 1
+                }
+            ]
+        },
+        "text": "This weapon's attacks gain +1 damage."
     }
 ]
