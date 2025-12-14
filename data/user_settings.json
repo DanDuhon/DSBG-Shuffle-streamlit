@@ -69,11 +69,6 @@
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Undead Merchant.jpg",
-      "assets\\events\\Stolen Artifact.jpg",
-      "assets\\events\\Blacksmith's Trial.jpg",
-      "assets\\events\\Virulent Bonfire Ascetic.jpg",
-      "assets\\events\\Forgotten Supplies.jpg",
       "assets\\events\\Fleeting Glory.jpg",
       "assets\\events\\Fleeting Glory.jpg",
       "assets\\events\\Undead Merchant.jpg",
@@ -108,8 +103,13 @@
       "assets\\events\\Big Pilgrim's Key.jpg",
       "assets\\events\\Lost Envoy.jpg"
     ],
-    "discard_pile": [],
-    "current_card": null,
+    "discard_pile": [
+      "assets\\events\\Undead Merchant.jpg",
+      "assets\\events\\Stolen Artifact.jpg",
+      "assets\\events\\Blacksmith's Trial.jpg",
+      "assets\\events\\Virulent Bonfire Ascetic.jpg"
+    ],
+    "current_card": "assets\\events\\Forgotten Supplies.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",

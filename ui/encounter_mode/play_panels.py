@@ -30,7 +30,7 @@ from ui.encounter_mode import invader_panel
 from ui.encounter_mode.assets import enemyNames
 from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
 from ui.encounter_mode.play_state import get_player_count, log_entry
-from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS
+from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
 
 
 # ---------------------------------------------------------------------

@@ -334,16 +334,33 @@ def _render_campaign_play_tab(
 
     current_souls = int(state.get("souls", 0))
 
+    # Dropped souls associated with this encounter (from a previous failure)
+    dropped_souls = 0
+    souls_token_node_id = state.get("souls_token_node_id")
+    if (
+        souls_token_node_id
+        and current_node is not None
+        and current_node.get("id") == souls_token_node_id
+    ):
+        try:
+            dropped_souls = int(state.get("souls_token_amount") or 0)
+        except Exception:
+            dropped_souls = 0
+
     # Event rewards only make sense for V2 campaigns
     reward_events = 0
     if active_version == "V2":
         reward_events = int(reward_totals.get("event", 0)) + 1
 
-    if reward_souls <= 0 and reward_events <= 0:
+    has_any_rewards = (reward_souls > 0) or (reward_events > 0) or (dropped_souls > 0)
+
+    if not has_any_rewards:
         st.caption("No soul or event rewards are configured for this encounter.")
     else:
         if reward_souls > 0:
             st.markdown(f"- Souls reward for this encounter: **+{reward_souls}**")
+        if dropped_souls > 0:
+            st.markdown(f"- Dropped souls on this space: **+{dropped_souls}**")
         if reward_events > 0:
             st.markdown(
                 f"- Event reward for this encounter: **{reward_events}** event card(s) "
@@ -354,17 +371,20 @@ def _render_campaign_play_tab(
     if active_version == "V2":
         pending_events = int(state.get("pending_events") or 0)
         if pending_events > 0:
-            st.markdown(f"- Pending events: **{pending_events}** event card(s) waiting for the next encounter space.")
+            st.markdown(
+                f"- Pending events: **{pending_events}** event card(s) waiting for the next encounter space."
+            )
 
     # Button to commit the last encounter's rewards into the campaign state
-    if reward_souls > 0 or reward_events > 0:
+    if has_any_rewards:
         if st.button(
             "Mark encounter as completed (apply rewards to campaign)",
             key="campaign_play_mark_completed",
         ):
-            # Souls go straight into the soul cache
-            if reward_souls > 0:
-                new_souls = current_souls + max(reward_souls, 0)
+            # Souls (normal reward + any dropped souls) go straight into the soul cache
+            total_souls_gain = max(reward_souls, 0) + max(dropped_souls, 0)
+            if total_souls_gain > 0:
+                new_souls = current_souls + total_souls_gain
                 state["souls"] = new_souls
 
                 # Keep the Campaign Management soul-cache widget in sync so the
@@ -387,6 +407,16 @@ def _render_campaign_play_tab(
                 current_node["status"] = "complete"
                 state["campaign"] = campaign
 
+            # If this encounter had dropped souls, consume them now
+            if (
+                dropped_souls > 0
+                and souls_token_node_id
+                and current_node is not None
+                and current_node.get("id") == souls_token_node_id
+            ):
+                state["souls_token_node_id"] = None
+                state["souls_token_amount"] = 0
+
             st.session_state[state_key] = state
 
             # Events attached to this encounter do not persist to the next one.
@@ -403,17 +433,60 @@ def _render_campaign_play_tab(
             "\"Mark encounter as completed\" to apply these rewards to the campaign."
         )
 
-    # Button to mark the encounter as failed: lose 1 Spark and return to the bonfire
+    # Button to mark the encounter as failed: lose 1 Spark, drop souls on this space, and return to the bonfire
     sparks_cur = int(state.get("sparks") or 0)
+
+    souls_key = (
+        "campaign_v1_souls_campaign"
+        if active_version == "V1"
+        else "campaign_v2_souls_campaign"
+    )
+    sparks_key = (
+        "campaign_v1_sparks_campaign"
+        if active_version == "V1"
+        else "campaign_v2_sparks_campaign"
+    )
+
     if st.button(
         "Mark encounter as failed (return to bonfire, lose 1 Spark)",
         key="campaign_play_mark_failed",
     ):
+        # Identify which node just failed (for the souls token in the management tab)
+        failed_node_id = None
+        if current_node is not None:
+            failed_node_id = current_node.get("id") or campaign.get("current_node_id")
+        else:
+            failed_node_id = campaign.get("current_node_id")
+
+        # Souls in the cache at the moment of failure
+        current_souls = int(state.get("souls") or 0)
+
+        if failed_node_id and current_souls > 0:
+            # Record dropped souls for this encounter; overwrite any previous data.
+            state["souls_token_node_id"] = failed_node_id
+            state["souls_token_amount"] = current_souls
+        else:
+            # No souls to drop (or no valid node); clear any previous drop.
+            state["souls_token_node_id"] = None
+            state["souls_token_amount"] = 0
+
+        # Reset soul cache to 0 on failure (dropped souls stay on the map instead)
+        state["souls"] = 0
+        st.session_state[souls_key] = 0
+
         # Decrement Sparks, but never below 0
         if sparks_cur > 0:
             state["sparks"] = sparks_cur - 1
         else:
             state["sparks"] = 0
+
+        # After updating state["sparks"], keep the Campaign tab widget in sync.
+        sparks_key = (
+            "campaign_v1_sparks_campaign"
+            if active_version == "V1"
+            else "campaign_v2_sparks_campaign"
+        )
+        st.session_state[sparks_key] = int(state.get("sparks") or 0)
 
         # Move the party back to the bonfire
         campaign["current_node_id"] = "bonfire"

@@ -20,6 +20,7 @@ INVADERS_PATH = DATA_DIR / "invaders.json"
 CAMPAIGNS_PATH = DATA_DIR / "campaigns.json"
 ASSETS_DIR = Path("assets")
 PARTY_TOKEN_PATH = ASSETS_DIR / "party_token.png"
+SOULS_TOKEN_PATH = ASSETS_DIR / "souls_token.png"
 BONFIRE_ICON_PATH = ASSETS_DIR / "bonfire.gif"
 CHARACTERS_DIR = ASSETS_DIR / "characters"
 V2_EXPANSIONS_SET = set(V2_EXPANSIONS)

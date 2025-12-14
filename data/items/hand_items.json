@@ -2175,7 +2175,8 @@
     "upgrade_slots": 0,
     "range": 0,
     "hands_required": 1,
-    "attacks": []
+    "attacks": [],
+	"text":"You can equip this in one hand while you have a two-handed weapon in your other hand."
 },
 {
     "id": "umbral_dagger",
@@ -2256,762 +2257,551 @@
     ]
 },
 {
-    "id": "",
-    "name": "",
+    "id": "mace",
+    "name": "Mace",
     "hand_category": "weapon",
     "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "starter"
     },
     "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
+        "str": 12,
+        "fth": 16
+    },
+    "block_dice": {},
+    "resist_dice": {"black":1},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {
+                "blue":		1
+            }
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {
+                "black":2
+            }
+			"text": "You may move the Aggro token to another character after this attack."
+        }
+    ]
+},
+{
+    "id": "sacred_chime",
+    "name": "Sacred Chime",
+    "hand_category": "miracle",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "starter"
+    },
+    "requirements": {
+        "fth": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {},"heal":1,"text": "One character within range gains 1 health."
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {},"heal":3,"text": "One character within range gains 3 health."
+        }
+    ]
+},
+{
+    "id": "blue_wooden_shield",
+    "name": "Blue Wooden Shield",
+    "hand_category": "shield",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {"black":1},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+},
+{
+    "id": "sunset_shield",
+    "name": "Sunset Shield",
+    "hand_category": "shield",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "class"
+    },
+    "requirements": {
+        "str": 15,
+        "fth": 20
+    },
+    "block_dice": {"black":1},
+    "resist_dice": {"blue":1},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],"text": "After a Hollow on your node attacks you, you may push that Hollow."
+},
+{
+    "id": "clerics_candlestick",
+    "name": "Cleric's Candlestick",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "class"
+    },
+    "requirements": {
+        "dex": 21,
+        "fth": 29
     },
     "block_dice": {},
     "resist_dice": {},
     "dodge_dice": 0,
     "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
+    "range": 0,
+    "hands_required": 1,
     "attacks": [{
             "id": "line0",
             "stamina": 1,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
+                "black":1	,
+                "blue":	1	
+            },"magic":true
+        }, {
+            "id": "line1",
+            "stamina": 4,
+            "dice": {
+                "black":2	,
+                "blue":	1	
+            },"magic":true
+        }
+    ]
+},
+{
+    "id": "magic_barrier",
+    "name": "Magic Barrier",
+    "hand_category": "miracle",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "class"
+    },
+    "requirements": {
+        "itl": 12,
+        "fth": 24
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {},"text": "Until the next character activation, all characters within range gain 1 blue die for resist."
+        }]
+},
+{
+    "id": "med_heal",
+    "name": "Med Heal",
+    "hand_category": "miracle",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "class"
+    },
+    "requirements": {
+        "fth": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {},"heal":2,"text": "All characters within range gain 2 health."
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {},"heal":2,"range":1,"text":"All characters within range gain 2 health."
+        }
+    ]
+},
+{
+    "id": "sacred_oath",
+    "name": "Sacred Oath",
+    "hand_category": "miracle",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "class"
+    },
+    "requirements": {
+        "itl": 14,
+        "fth": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {},"text":"Until the next character activation, all characters within range gain 1 blue die for block."
+        }
+    ]
+},
+{
+    "id": "mornes_great_hammer",
+    "name": "Morne's Great Hammer",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "transposed"
+    },
+    "requirements": {
+        "str": 35,
+        "fth": 35
+    },
+    "block_dice": {"black":2},
+    "resist_dice": {"black":2},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 2,
+            "dice": {
+                "blue":2
             }
         }, {
             "id": "line1",
             "stamina": 4,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
+                "blue":1		,
+                "orange":1
+            }
+        }, {
+            "id": "line2",
+            "stamina": 6,
+            "dice": {
+                "orange":2
             }
         }
     ]
 },
 {
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
+    "id": "attonement",
+    "name": "Attonement",
+    "hand_category": "miracle",
     "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "transposed"
     },
     "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
+        "str": 25,
+        "fth": 25
     },
     "block_dice": {},
     "resist_dice": {},
     "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
     "attacks": [{
             "id": "line0",
             "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
+            "dice": {},"push":1
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {},"push":1,"node_attack":true
+        }
+    ]
+},
+{
+    "id": "great_heal",
+    "name": "Great Heal",
+    "hand_category": "miracle",
+    "source": {
+        "expansion": ["Characters Expansion", "Tomb of Giants"],
+        "entity": "Cleric",
+        "type": "transposed"
+    },
+    "requirements": {
+        "fth": 40
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 2,
+            "dice": {},"heal":6,"text":"One character on one node within range gain 6 health."
         }, {
             "id": "line1",
             "stamina": 4,
+            "dice": {},"heal":6,"text":"All characters on one node within range gain 6 health."
+        }
+    ]
+},
+{
+    "id": "club",
+    "name": "Club",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
+                "black":	1
+            }
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {
+                "black":2
             }
         }
     ]
 },
 {
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
+    "id": "plank_shield",
+    "name": "Plank Shield",
+    "hand_category": "shield",
     "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {"black":1},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+},
+{
+    "id": "buckler",
+    "name": "Buckler",
+    "hand_category": "shield",
+    "source": {
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "class"
     },
     "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
+        "dex": 20,
+        "itl": 10
+    },
+    "block_dice": {"black":1},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+	"usable_with_two_hander": true,
+	"text":"You can equip this in one hand while you have a two-handed weapon in your other hand."
+},
+{
+    "id": "broken_straight_sword",
+    "name": "Broken Straight Sword",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "class"
+    },
+    "requirements": {
+        "str": 20,
+        "dex": 20
     },
     "block_dice": {},
     "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {
+                "black":3
+            },"flat_mod": -2
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {
+                "blue":3
+            },"flat_mod":-2
+        }
+    ]
+},
+{
+    "id": "dung_pie",
+    "name": "Dung Pie",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "class"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {},"condition":"poison"
+        }
+    ]
+},
+{
+    "id": "painting_guardians_curved_sword",
+    "name": "Painting Guardian's Curved Sword",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "transposed"
+    },
+    "requirements": {
+        "dex": 26,
+        "itl": 26,
+        "fth": 26
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [{
+            "id": "line0",
+            "stamina": 0,
+            "dice": {
+                "black":2
+            },"shift_before":1, "shift_after":1,"condition":"bleed"
+        }, {
+            "id": "line1",
+            "stamina": 3,
+            "dice": {
+                "black":3
+            },"shift_before":1, "shift_after":1,"condition":"bleed"
+        }
+    ]
+},
+{
+    "id": "great_club",
+    "name": "Great Club",
+    "hand_category": "weapon",
+    "source": {
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "transposed"
+    },
+    "requirements": {
+        "str": 35
+    },
+    "block_dice": {"black":1},
+    "resist_dice": {"black":1},
     "dodge_dice": 0,
     "upgrade_slots": 1,
     "range": 1,
     "hands_required": 2,
     "attacks": [{
             "id": "line0",
-            "stamina": 1,
+            "stamina": 0,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
+                "orange":1
             }
         }, {
             "id": "line1",
-            "stamina": 4,
+            "stamina": 3,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
+                "orange":2
             }
         }
     ]
 },
 {
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
+    "id": "black_knight_shield",
+    "name": "Black Knight Shield (Deprived)",
+    "hand_category": "shield",
     "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
+        "expansion": ["Characters Expansion", "Painted World of Ariamis"],
+        "entity": "Deprived",
+        "type": "transposed"
     },
     "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
+        "str": 33,
+        "fth": 20
     },
-    "block_dice": {},
+    "block_dice": {"black":1},
     "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
     "attacks": [{
             "id": "line0",
-            "stamina": 1,
+            "stamina": 2,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
+                "blue":1
+            },"push":1
         }, {
             "id": "line1",
             "stamina": 4,
             "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }
-    ]
-},
-{
-    "id": "",
-    "name": "",
-    "hand_category": "weapon",
-    "source": {
-        "expansion": [""],
-        "entity": "",
-        "type": ""
-    },
-    "requirements": {
-        "str": 0,
-        "dex": 0,
-        "itl": 0,
-        "fth": 0
-    },
-    "block_dice": {},
-    "resist_dice": {},
-    "dodge_dice": 0,
-    "upgrade_slots": 1,
-    "range": 1,
-    "hands_required": 2,
-    "attacks": [{
-            "id": "line0",
-            "stamina": 1,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
-        }, {
-            "id": "line1",
-            "stamina": 4,
-            "dice": {
-                "black":	,
-                "blue":		,
-                "orange":	,
-            }
+                "orange":1
+            },"push":1
         }
     ]
 },

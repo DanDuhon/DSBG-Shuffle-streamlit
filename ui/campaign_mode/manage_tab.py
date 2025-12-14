@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
 from ui.behavior_decks_tab.generation import render_data_card_cached, render_dual_boss_data_cards
-from ui.campaign_mode.core import BONFIRE_ICON_PATH, PARTY_TOKEN_PATH, _default_sparks_max, _describe_v1_node_label, _describe_v2_node_label, _v2_compute_allowed_destinations
+from ui.campaign_mode.core import BONFIRE_ICON_PATH, PARTY_TOKEN_PATH, SOULS_TOKEN_PATH, _default_sparks_max, _describe_v1_node_label, _describe_v2_node_label, _v2_compute_allowed_destinations
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.encounters_tab.render import render_original_encounter
@@ -60,6 +60,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     current_node = node_by_id.get(current_id) or nodes[0]
     campaign["current_node_id"] = current_node.get("id", "bonfire")
     state["campaign"] = campaign
+    souls_token_node_id = state.get("souls_token_node_id")
 
     col_overview, col_detail = st.columns([2, 1])
 
@@ -73,11 +74,21 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             # Party icons above everything
             _render_party_icons(settings)
 
-            # Sparks: display only
+            # Sparks: editable numeric input
             player_count = _get_player_count(settings)
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
-            sparks_cur = int(state.get("sparks", sparks_max))
-            st.metric("Sparks", f"{sparks_cur} / {sparks_max}")
+            sparks_key = "campaign_v1_sparks_campaign"
+            if sparks_key not in st.session_state:
+                st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
+
+            sparks_value = st.number_input(
+                "Sparks",
+                min_value=0,
+                max_value=sparks_max,
+                step=1,
+                key=sparks_key,
+            )
+            state["sparks"] = int(sparks_value)
 
             # Soul cache directly under Sparks
             souls_key = "campaign_v1_souls_campaign"
@@ -181,6 +192,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     current_node = node_by_id.get(current_id) or nodes[0]
     campaign["current_node_id"] = current_node.get("id", "bonfire")
     state["campaign"] = campaign
+    souls_token_node_id = state.get("souls_token_node_id")
 
     col_overview, col_detail = st.columns([2, 1])
 
@@ -195,8 +207,18 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
             player_count = _get_player_count(settings)
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
-            sparks_cur = int(state.get("sparks", sparks_max))
-            st.metric("Sparks", f"{sparks_cur} / {sparks_max}")
+            sparks_key = "campaign_v2_sparks_campaign"
+            if sparks_key not in st.session_state:
+                st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
+
+            sparks_value = st.number_input(
+                "Sparks",
+                min_value=0,
+                max_value=sparks_max,
+                step=1,
+                key=sparks_key,
+            )
+            state["sparks"] = int(sparks_value)
 
             souls_key = "campaign_v2_souls_campaign"
             if souls_key not in st.session_state:
@@ -305,6 +327,14 @@ def _render_v1_path_row(
         kind = node.get("kind")
         is_current = node_id == campaign.get("current_node_id")
 
+        # Where to show the Souls token: last failed encounter node
+        souls_token_node_id = state.get("souls_token_node_id")
+        show_souls_token = (
+            souls_token_node_id is not None
+            and node_id == souls_token_node_id
+            and kind == "encounter"
+        )
+
         # Current location: show party token instead of any button
         if is_current:
             st.image(str(PARTY_TOKEN_PATH), width=48)
@@ -324,6 +354,8 @@ def _render_v1_path_row(
 
         # Encounter / boss: Travel / Confront
         if kind in ("encounter", "boss"):
+            if show_souls_token:
+                st.image(str(SOULS_TOKEN_PATH), width=32)
             btn_label = "Travel" if kind == "encounter" else "Confront"
             if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
                 campaign["current_node_id"] = node_id
@@ -350,16 +382,25 @@ def _render_v2_path_row(
         node_id = node.get("id")
         kind = node.get("kind")
         is_current = node_id == campaign.get("current_node_id")
-        status = node.get("status")
+
+        # Where to show the Souls token: last failed encounter node
+        souls_token_node_id = state.get("souls_token_node_id")
+        show_souls_token = (
+            souls_token_node_id is not None
+            and node_id == souls_token_node_id
+            and kind == "encounter"
+        )
 
         # Current location: party token instead of a button
         if is_current:
-            st.image(str(PARTY_TOKEN_PATH), width=48)
-            return
-
-        # Completed encounters/bosses are not travel destinations
-        if kind in ("encounter", "boss") and status == "complete":
-            # Keep the row label visible but expose no button
+            if show_souls_token:
+                party_col, souls_col = st.columns([1, 1])
+                with souls_col:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+                with party_col:
+                    st.image(str(PARTY_TOKEN_PATH), width=48)
+            else:
+                st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
         # When the party is currently on an encounter space, restrict where
@@ -384,15 +425,30 @@ def _render_v2_path_row(
             return
 
         # Encounter / boss: Travel / Confront
-        if kind in ("encounter", "boss") and can_travel_here:
-            btn_label = "Travel" if kind == "encounter" else "Confront"
-            if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
-                campaign["current_node_id"] = node_id
-                node["revealed"] = True
-                state["campaign"] = campaign
-                st.session_state["campaign_v2_state"] = state
-                st.rerun()
-            return
+        if kind in ("encounter", "boss"):
+            if show_souls_token:
+                button_col, souls_col = st.columns([1, 1])
+                with souls_col:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+                with button_col:
+                    btn_label = "Travel" if kind == "encounter" else "Confront"
+                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                        campaign["current_node_id"] = node_id
+                        node["revealed"] = True
+                        state["campaign"] = campaign
+                        st.session_state["campaign_v2_state"] = state
+                        st.rerun()
+            else:
+                if not can_travel_here:
+                    return
+                btn_label = "Travel" if kind == "encounter" else "Confront"
+                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                    campaign["current_node_id"] = node_id
+                    node["revealed"] = True
+                    state["campaign"] = campaign
+                    st.session_state["campaign_v2_state"] = state
+                    st.rerun()
+                return
         
 
 def _render_v1_current_panel(

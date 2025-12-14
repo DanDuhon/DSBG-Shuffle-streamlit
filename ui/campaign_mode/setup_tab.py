@@ -1,7 +1,7 @@
 #ui/campaign_mode/setup_tab.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.core import _filter_bosses, _generate_v1_campaign, _generate_v2_campaign, _load_campaigns, _save_campaigns
+from ui.campaign_mode.core import _filter_bosses, _generate_v1_campaign, _generate_v2_campaign, _load_campaigns, _save_campaigns, _default_sparks_max
 from ui.campaign_mode.state import _get_player_count, _ensure_v1_state, _ensure_v2_state
 
 
@@ -120,6 +120,13 @@ def _render_v1_setup(
         with st.spinner("Generating campaign..."):
             campaign = _generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
+        player_count = _get_player_count(settings)
+        sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+        state["sparks_max"] = sparks_max
+        state["sparks"] = sparks_max
+        sparks_key = "campaign_v1_sparks_campaign"
+        st.session_state[sparks_key] = sparks_max
+        state["souls_token_node_id"] = None
         st.session_state["campaign_v1_state"] = state
         st.success("Campaign generated.")
 
@@ -235,6 +242,13 @@ def _render_v2_setup(
         with st.spinner("Generating V2 campaign..."):
             campaign = _generate_v2_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
+        player_count = _get_player_count(settings)
+        sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+        state["sparks_max"] = sparks_max
+        state["sparks"] = sparks_max
+        sparks_key = "campaign_v2_sparks_campaign"
+        st.session_state[sparks_key] = sparks_max
+        state["souls_token_node_id"] = None
         st.session_state["campaign_v2_state"] = state
         st.success("Campaign generated.")
 
