@@ -383,7 +383,16 @@ def _render_v2_path_row(
         kind = node.get("kind")
         is_current = node_id == campaign.get("current_node_id")
 
-        # Where to show the Souls token: last failed encounter node
+        # What node are we currently on?
+        current_node_id = campaign.get("current_node_id")
+        current_node = None
+        for n in campaign.get("nodes") or []:
+            if n.get("id") == current_node_id:
+                current_node = n
+                break
+        current_is_bonfire = current_node is not None and current_node.get("kind") == "bonfire"
+
+        # Souls token: last failed encounter node
         souls_token_node_id = state.get("souls_token_node_id")
         show_souls_token = (
             souls_token_node_id is not None
@@ -395,17 +404,15 @@ def _render_v2_path_row(
         if is_current:
             if show_souls_token:
                 party_col, souls_col = st.columns([1, 1])
-                with souls_col:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
                 with party_col:
                     st.image(str(PARTY_TOKEN_PATH), width=48)
+                with souls_col:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
                 st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
-        # When the party is currently on an encounter space, restrict where
-        # they can travel next. If allowed_destinations is not None, only
-        # nodes whose id is in that set are legal moves.
+        # Restrict travel using allowed_destinations if provided
         can_travel_here = True
         if allowed_destinations is not None and node_id not in allowed_destinations:
             can_travel_here = False
@@ -424,31 +431,49 @@ def _render_v2_path_row(
                 st.rerun()
             return
 
-        # Encounter / boss: Travel / Confront
+        # Is this destination being taken as a shortcut from the bonfire?
+        is_shortcut_destination = (
+            current_is_bonfire
+            and kind == "encounter"
+            and bool(node.get("shortcut_unlocked"))
+        )
+
+        # Encounter / boss: Travel / Confront / Take Shortcut
         if kind in ("encounter", "boss"):
+            # If this node is not in allowed_destinations, do not expose a button.
+            if not can_travel_here:
+                if show_souls_token:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+                return
+
+            # Layout: optional souls token + button
             if show_souls_token:
                 button_col, souls_col = st.columns([1, 1])
                 with souls_col:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
-                with button_col:
-                    btn_label = "Travel" if kind == "encounter" else "Confront"
-                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
-                        campaign["current_node_id"] = node_id
-                        node["revealed"] = True
-                        state["campaign"] = campaign
-                        st.session_state["campaign_v2_state"] = state
-                        st.rerun()
+                button_ctx = button_col
             else:
-                if not can_travel_here:
-                    return
-                btn_label = "Travel" if kind == "encounter" else "Confront"
+                button_ctx = st
+
+            with button_ctx:
+                if kind == "encounter":
+                    btn_label = "Take Shortcut" if is_shortcut_destination else "Travel"
+                else:
+                    btn_label = "Confront"
+
                 if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                    # If we are leaving the bonfire via a shortcut, this encounter
+                    # must be treated as *incomplete* for the new run so you
+                    # cannot immediately advance past it.
+                    if kind == "encounter" and is_shortcut_destination:
+                        node["status"] = "incomplete"
+
                     campaign["current_node_id"] = node_id
                     node["revealed"] = True
                     state["campaign"] = campaign
                     st.session_state["campaign_v2_state"] = state
                     st.rerun()
-                return
+            return
         
 
 def _render_v1_current_panel(

@@ -83,7 +83,7 @@
         "id": "red_tearstone_ring",
         "name": "Red Tearstone Ring",
         "source": {
-            "expansion": ["Paitled World of Ariamis"]
+            "expansion": ["Painted World of Ariamis"]
         },
         "requirements": {
             "fth": 20
@@ -396,7 +396,7 @@
         },
         "requirements": {
             "itl": 20,
-            "fai": 20
+            "fth": 20
         },
         "slot_cost": 1,
         "text": "During your activation, you may discard this card to end an encounter and return to the Bonfire."
@@ -409,7 +409,7 @@
             "type": "boss"
         },
         "requirements": {
-			"dex": 18,
+            "dex": 18,
             "itl": 18
         },
         "slot_cost": 1,
@@ -423,7 +423,7 @@
             "type": "boss"
         },
         "requirements": {
-			"dex": 22,
+            "dex": 22,
             "itl": 22
         },
         "slot_cost": 1,
@@ -443,7 +443,16 @@
                     "target": "all",
                     "flat_mod": 1
                 }
-            ],"block":{"flat_mod":-1},"resist":{"flat_mod":-1},"dodge":{"flat_mod":-1}
+            ],
+            "block": {
+                "flat_mod": -1
+            },
+            "resist": {
+                "flat_mod": -1
+            },
+            "dodge": {
+                "flat_mod": -1
+            }
         },
         "text": "You suffer -1 success on each Block, Resist, and Dodge roll but gain +1 success on each Attack roll."
     }, {
@@ -465,7 +474,10 @@
             "entity": "Vordt of the Boreal Valley",
             "type": "boss"
         },
-        "requirements": {"itl":21,"fai":21},
+        "requirements": {
+            "itl": 21,
+            "fth": 21
+        },
         "slot_cost": 1,
         "text": "At the end of your activation, if you made two or more attack rolls, gain 1 health."
     }, {
@@ -487,7 +499,12 @@
             "entity": "The Four Kings",
             "type": "boss"
         },
-        "requirements": {"str": 20, "dex": 20,"itl":20,"fai":20},
+        "requirements": {
+            "str": 20,
+            "dex": 20,
+            "itl": 20,
+            "fth": 20
+        },
         "slot_cost": 1,
         "text": "Tier 3 for each of your stats is 40 while you have this equipped."
     }

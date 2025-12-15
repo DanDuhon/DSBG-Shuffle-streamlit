@@ -332,6 +332,12 @@ def _render_campaign_play_tab(
     except Exception:
         reward_souls = 0
 
+    # Shortcut rewards can come from the encounter or attached events
+    try:
+        reward_shortcuts = int(reward_totals.get("shortcut") or 0)
+    except Exception:
+        reward_shortcuts = 0
+
     current_souls = int(state.get("souls", 0))
 
     # Dropped souls associated with this encounter (from a previous failure)
@@ -352,10 +358,15 @@ def _render_campaign_play_tab(
     if active_version == "V2":
         reward_events = int(reward_totals.get("event", 0)) + 1
 
-    has_any_rewards = (reward_souls > 0) or (reward_events > 0) or (dropped_souls > 0)
+    has_any_rewards = (
+        (reward_souls > 0)
+        or (dropped_souls > 0)
+        or (reward_events > 0)
+        or (reward_shortcuts > 0)
+    )
 
     if not has_any_rewards:
-        st.caption("No soul or event rewards are configured for this encounter.")
+        st.caption("No soul, shortcut, or event rewards are configured for this encounter.")
     else:
         if reward_souls > 0:
             st.markdown(f"- Souls reward for this encounter: **+{reward_souls}**")
@@ -365,6 +376,11 @@ def _render_campaign_play_tab(
             st.markdown(
                 f"- Event reward for this encounter: **{reward_events}** event card(s) "
                 "will be queued for the next encounter space (not bosses)."
+            )
+        if reward_shortcuts > 0 and active_version == "V2" and current_node is not None:
+            st.markdown(
+                "- **Shortcut unlocked:** this encounter space now provides a shortcut "
+                "from the bonfire."
             )
 
     # Show any still-pending events (after the auto-attach above)
@@ -402,9 +418,13 @@ def _render_campaign_play_tab(
                 state["pending_events"] = pending_events + reward_events
 
             # For V2, mark this encounter node as completed so movement to the
-            # next encounter/boss becomes legal.
-            if active_version == "V2" and current_node.get("kind") == "encounter":
-                current_node["status"] = "complete"
+            # next encounter/boss becomes legal, and record shortcut unlocks
+            if active_version == "V2" and current_node is not None:
+                if current_node.get("kind") == "encounter":
+                    current_node["status"] = "complete"
+                    if reward_shortcuts > 0:
+                        # Persistent shortcut unlocked for this encounter node
+                        current_node["shortcut_unlocked"] = True
                 state["campaign"] = campaign
 
             # If this encounter had dropped souls, consume them now
@@ -429,8 +449,8 @@ def _render_campaign_play_tab(
             st.success("Encounter completed; campaign state updated.")
     else:
         st.caption(
-            "Play the encounter above, then click "
-            "\"Mark encounter as completed\" to apply these rewards to the campaign."
+            'Play the encounter above, then click '
+            '"Mark encounter as completed" to apply these rewards to the campaign.'
         )
 
     # Button to mark the encounter as failed: lose 1 Spark, drop souls on this space, and return to the bonfire

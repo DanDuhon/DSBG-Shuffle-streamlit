@@ -690,17 +690,166 @@ def _describe_v2_node_label(campaign: Dict[str, Any], node: Dict[str, Any]) -> s
     return "Unknown node"
 
 
+def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:
+    """
+    Determine the 'current chapter' (stage) for a V2 campaign.
+
+    Priority:
+      1. If the current node has a stage, use that.
+      2. Otherwise, pick the first stage in (mini, main, mega) whose boss
+         is not complete.
+      3. If all bosses are complete, fall back to the last stage that exists.
+    """
+    nodes = campaign.get("nodes") or []
+    if not nodes:
+        return None
+
+    stage_order = ("mini", "main", "mega")
+
+    node_by_id = {n.get("id"): n for n in nodes}
+    current_id = campaign.get("current_node_id")
+    current_node = node_by_id.get(current_id)
+
+    if current_node is not None:
+        stage = current_node.get("stage")
+        if stage in stage_order:
+            return stage
+
+    # First stage whose boss is not complete
+    for stage in stage_order:
+        boss = next(
+            (
+                n
+                for n in nodes
+                if n.get("stage") == stage and n.get("kind") == "boss"
+            ),
+            None,
+        )
+        if boss is None:
+            continue
+        if boss.get("status") != "complete":
+            return stage
+
+    # All bosses complete; fall back to the last stage that exists
+    for stage in reversed(stage_order):
+        if any(n.get("stage") == stage for n in nodes):
+            return stage
+
+    return None
+
+
+def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:
+    """
+    Determine the 'current chapter' (stage) for a V2 campaign.
+
+    Priority:
+      1. If the current node has a stage, use that.
+      2. Otherwise, pick the first stage in (mini, main, mega) whose boss
+         is not complete.
+      3. If all bosses are complete, fall back to the last stage that exists.
+    """
+    nodes = campaign.get("nodes") or []
+    if not nodes:
+        return None
+
+    stage_order = ("mini", "main", "mega")
+
+    node_by_id = {n.get("id"): n for n in nodes}
+    current_id = campaign.get("current_node_id")
+    current_node = node_by_id.get(current_id)
+
+    # If we're currently on an encounter or boss, use its stage directly
+    if current_node is not None:
+        stage = current_node.get("stage")
+        if stage in stage_order:
+            return stage
+
+    # Otherwise, choose the first stage whose boss is not complete
+    for stage in stage_order:
+        boss = next(
+            (
+                n
+                for n in nodes
+                if n.get("stage") == stage and n.get("kind") == "boss"
+            ),
+            None,
+        )
+        if boss is None:
+            continue
+        if boss.get("status") != "complete":
+            return stage
+
+    # All bosses complete; fall back to the last stage that exists
+    for stage in reversed(stage_order):
+        if any(n.get("stage") == stage for n in nodes):
+            return stage
+
+    return None
+
+
+def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:
+    """
+    Determine the 'current chapter' (stage) for a V2 campaign.
+
+    Priority:
+      1. If the current node has a stage, use that.
+      2. Otherwise, pick the first stage in (mini, main, mega) whose boss
+         is not complete.
+      3. If all bosses are complete, fall back to the last stage that exists.
+    """
+    nodes = campaign.get("nodes") or []
+    if not nodes:
+        return None
+
+    stage_order = ("mini", "main", "mega")
+
+    node_by_id = {n.get("id"): n for n in nodes}
+    current_id = campaign.get("current_node_id")
+    current_node = node_by_id.get(current_id)
+
+    # If we're currently on an encounter or boss, use its stage directly
+    if current_node is not None:
+        stage = current_node.get("stage")
+        if stage in stage_order:
+            return stage
+
+    # Otherwise, choose the first stage whose boss is not complete
+    for stage in stage_order:
+        boss = next(
+            (
+                n
+                for n in nodes
+                if n.get("stage") == stage and n.get("kind") == "boss"
+            ),
+            None,
+        )
+        if boss is None:
+            continue
+        if boss.get("status") != "complete":
+            return stage
+
+    # All bosses complete; fall back to the last stage that exists
+    for stage in reversed(stage_order):
+        if any(n.get("stage") == stage for n in nodes):
+            return stage
+
+    return None
+
+
 def _v2_compute_allowed_destinations(campaign: Dict[str, Any]) -> Optional[set[str]]:
     """
-    For V2 campaigns, if the party is currently on an encounter node,
-    return the set of node ids that are legal destinations under the
-    movement rule:
+    For V2 campaigns, compute the set of legal destinations under the movement rules.
 
+    When standing on an encounter node:
       - you may always return to the bonfire
       - you may move to the next encounter/boss in the same stage,
         but only if the current encounter has been marked as complete
 
-    Otherwise, return None to indicate no extra restrictions.
+    When standing on the bonfire:
+      - you may move only to the first encounter in the current chapter
+      - or to any encounter in that chapter that has a shortcut unlocked
+
+    For any other current node, return None to indicate no extra restrictions.
     """
     nodes = campaign.get("nodes") or []
     if not nodes:
@@ -710,48 +859,92 @@ def _v2_compute_allowed_destinations(campaign: Dict[str, Any]) -> Optional[set[s
     current_id = campaign.get("current_node_id")
     current_node = node_by_id.get(current_id)
 
-    # Only restrict movement when standing on an encounter space
-    if not current_node or current_node.get("kind") != "encounter":
+    if not current_node:
         return None
 
-    # Always allow returning to the bonfire
-    allowed: set[str] = {"bonfire"}
+    kind = current_node.get("kind")
 
-    # If the encounter hasn't been marked complete yet, stop here
-    if current_node.get("status") != "complete":
+    # Case 1: standing on an encounter space
+    if kind == "encounter":
+        # Always allow returning to the bonfire
+        allowed: set[str] = {"bonfire"}
+
+        # If the encounter hasn't been marked complete yet, stop here
+        if current_node.get("status") != "complete":
+            return allowed
+
+        # Otherwise, we can also go to the next encounter/boss in the same stage
+        stage = current_node.get("stage")
+        try:
+            current_index = int(current_node.get("index"))
+        except Exception:
+            return allowed
+
+        next_node_id: Optional[str] = None
+        next_index: Optional[int] = None
+
+        for node in nodes:
+            if node.get("stage") != stage:
+                continue
+
+            # Boss nodes have no "index"; treat them as coming after all encounters
+            if node.get("kind") == "boss":
+                idx = current_index + 1_000_000
+            else:
+                try:
+                    idx = int(node.get("index"))
+                except Exception:
+                    continue
+
+            if idx <= current_index:
+                continue
+
+            if next_index is None or idx < next_index:
+                next_index = idx
+                next_node_id = node.get("id")
+
+        if next_node_id:
+            allowed.add(next_node_id)
+
         return allowed
 
-    # Otherwise, we can also go to the next encounter/boss in the same stage
-    stage = current_node.get("stage")
-    try:
-        current_index = int(current_node.get("index"))
-    except Exception:
-        return allowed
+    # Case 2: standing on the bonfire
+    if kind == "bonfire":
+        stage = _v2_get_current_stage(campaign)
+        if stage is None:
+            return None
 
-    next_node_id: Optional[str] = None
-    next_index: Optional[int] = None
-
-    for node in nodes:
-        if node.get("stage") != stage:
-            continue
-
-        # Boss nodes have no "index"; treat them as coming after all encounters
-        if node.get("kind") == "boss":
-            idx = current_index + 1_000_000
-        else:
+        # Collect encounters in this stage with their index
+        encounters: list[tuple[int, Dict[str, Any]]] = []
+        for node in nodes:
+            if node.get("kind") != "encounter" or node.get("stage") != stage:
+                continue
             try:
                 idx = int(node.get("index"))
             except Exception:
                 continue
+            encounters.append((idx, node))
 
-        if idx <= current_index:
-            continue
+        if not encounters:
+            return None
 
-        if next_index is None or idx < next_index:
-            next_index = idx
-            next_node_id = node.get("id")
+        # First encounter in the chapter
+        encounters.sort(key=lambda t: t[0])
+        first_encounter_node = encounters[0][1]
+        allowed: set[str] = set()
+        first_id = first_encounter_node.get("id")
+        if first_id:
+            allowed.add(first_id)
 
-    if next_node_id:
-        allowed.add(next_node_id)
+        # Any encounter in the current chapter that has an unlocked shortcut
+        for idx, node in encounters[1:]:
+            if not node.get("shortcut_unlocked"):
+                continue
+            node_id = node.get("id")
+            if node_id:
+                allowed.add(node_id)
 
-    return allowed
+        return allowed or None
+
+    # Any other current node (e.g., boss): do not add extra restrictions
+    return None

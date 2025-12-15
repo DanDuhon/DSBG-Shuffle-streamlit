@@ -41,6 +41,7 @@
     }, {
         "id": "adventurers_armour_legendary",
         "name": "Adventurer's Armour (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -122,6 +123,7 @@
         "id": "black_knight_armour_legendary",
         "name": "Black Knight Armour (Legendary)",
         "item_type": "armor",
+        "legendary": true,
         "source": {
             "expansion": ["Characters Expansion"]
         },
@@ -312,6 +314,7 @@
     }, {
         "id": "havels_armour_legendary",
         "name": "Havel's Armour (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -431,6 +434,7 @@
     }, {
         "id": "gold_hemmed_black_robes_legendary",
         "name": "Gold Hemmed Black Robes (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -509,6 +513,7 @@
     }, {
         "id": "black_iron_armour_legendary",
         "name": "Black Iron Armour (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -567,6 +572,7 @@
     }, {
         "id": "embraced_armour_of_favor_legendary",
         "name": "Embraced Armour of Favour (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -623,6 +629,7 @@
     }, {
         "id": "catarina_armour_legendary",
         "name": "Catarina Armour (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -700,7 +707,8 @@
         },
         "dodge_dice": 1,
         "upgrade_slots": 2,
-        "text": "You are immune to Bleed."
+        "text": "You are immune to Bleed.",
+        "immunities": ["bleed"]
     }, {
         "id": "dark_armour",
         "name": "Dark Armour",
@@ -725,6 +733,7 @@
         "id": "dark_armour_legendary",
         "name": "Dark Armour (Legendary)",
         "item_type": "armor",
+        "legendary": true,
         "source": {
             "expansion": ["Characters Expansion"]
         },
@@ -765,6 +774,7 @@
     }, {
         "id": "crimson_robes_legendary",
         "name": "Crimson Robes (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -802,10 +812,12 @@
             "black": 2
         },
         "upgrade_slots": 1,
-        "text": "You are immune to Bleed."
+        "text": "You are immune to Bleed.",
+        "immunities": ["bleed"]
     }, {
         "id": "guardian_armour_legendary",
         "name": "Guardian Armour (Legendary)",
+        "legendary": true,
         "item_type": "armor",
         "source": {
             "expansion": ["Characters Expansion"]
@@ -823,7 +835,8 @@
             "flat_mod": 1
         },
         "upgrade_slots": 1,
-        "text": "You are immune to Bleed."
+        "text": "You are immune to Bleed.",
+        "immunities": ["bleed"]
     }, {
         "id": "cornyxs_robes",
         "name": "Cornyx's Robes",
@@ -1361,6 +1374,8 @@
             "entity": "Deprived",
             "type": "starter"
         },
+		"requirements": {},
+		"block_dice":{},
         "resist_dice": {
             "black": 1
         }
@@ -1447,7 +1462,8 @@
         },
         "dodge_dice": 1,
         "upgrade_slots": 2,
-		"text": "You are immune to Frostbite."
+        "text": "You are immune to Frostbite.",
+        "immunities": ["frostbite"]
     }, {
         "id": "steel_armour",
         "name": "Steel Armour",
@@ -1458,9 +1474,9 @@
             "type": "boss"
         },
         "requirements": {
-			"str": 21,
+            "str": 21,
             "dex": 21,
-			"itl": 20,
+            "itl": 20,
             "fth": 20
         },
         "block_dice": {
@@ -1471,7 +1487,7 @@
         },
         "dodge_dice": 0,
         "upgrade_slots": 1,
-		"text": "This armour gains 1 black die for block and 1 black die for resist if it has an equipped upgrade."
+        "text": "This armour gains 1 black die for block and 1 black die for resist if it has an equipped upgrade."
     }, {
         "id": "dancer_armour",
         "name": "Dancer Armour",
@@ -1483,7 +1499,7 @@
         },
         "requirements": {
             "dex": 35,
-			"itl": 25,
+            "itl": 25,
             "fth": 25
         },
         "block_dice": {
@@ -1494,7 +1510,7 @@
         },
         "dodge_dice": 2,
         "upgrade_slots": 1,
-		"text": "When you walk, you may move 2 nodes (instead of 1)."
+        "text": "When you walk, you may move 2 nodes (instead of 1)."
     }, {
         "id": "smelter_demon_armour",
         "name": "Smelter Demon Armour",
@@ -1505,7 +1521,7 @@
             "type": "boss"
         },
         "requirements": {
-			"str": 35,
+            "str": 35,
             "fth": 21
         },
         "block_dice": {
@@ -1526,18 +1542,21 @@
             "type": "boss"
         },
         "requirements": {
-			"str": 21,
+            "str": 21,
             "fth": 31
         },
         "block_dice": {
-            "blue": 1,"black":1
+            "blue": 1,
+            "black": 1
         },
         "resist_dice": {
-            "blue": 1,"black":1
+            "blue": 1,
+            "black": 1
         },
         "dodge_dice": 0,
         "upgrade_slots": 1,
-		"text": "You are immune to Bleed."
+        "text": "You are immune to Bleed.",
+        "immunities": ["bleed"]
     }, {
         "id": "smoughs_armour",
         "name": "Smough's Armour",
@@ -1548,7 +1567,7 @@
             "type": "boss"
         },
         "requirements": {
-			"str": 37
+            "str": 37
         },
         "block_dice": {
             "blue": 2
@@ -1558,9 +1577,9 @@
         },
         "dodge_dice": 0,
         "upgrade_slots": 1,
-		"no_dodge":true,
-		"no_run":true,
-		"text": "You cannot dodge or run."
+        "no_dodge": true,
+        "no_run": true,
+        "text": "You cannot dodge or run."
     }, {
         "id": "alonne_armour",
         "name": "Alonne Armour",
@@ -1571,8 +1590,8 @@
             "type": "boss"
         },
         "requirements": {
-			"dex": 21,
-			"itl": 35
+            "dex": 21,
+            "itl": 35
         },
         "block_dice": {},
         "resist_dice": {

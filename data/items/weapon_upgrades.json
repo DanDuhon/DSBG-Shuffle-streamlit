@@ -217,15 +217,14 @@
         "name": "Blue Titanite",
         "source": {
             "expansion": ["Tomb of Giants"],
-			"entity": "Black Knight",
-			"type": "boss"
+            "entity": "Black Knight",
+            "type": "boss"
         },
         "requirements": {
             "itl": 20
         },
         "slot_cost": 1,
         "effects": {
-			"upgrade_slots": 1,
             "attack_mods": [{
                     "target": "all",
                     "change_to_magic": true
@@ -334,8 +333,8 @@
         "name": "Titanite",
         "source": {
             "expansion": ["Asylum Demon"],
-			"entity": "Stray Demon",
-			"type": "boss"
+            "entity": "Stray Demon",
+            "type": "boss"
         },
         "requirements": {},
         "slot_cost": 1,
@@ -352,8 +351,8 @@
         "name": "Titanite",
         "source": {
             "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-			"entity": "Titanite Demon",
-			"type": "boss"
+            "entity": "Titanite Demon",
+            "type": "boss"
         },
         "requirements": {},
         "slot_cost": 1,
