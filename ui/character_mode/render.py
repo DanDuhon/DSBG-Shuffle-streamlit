@@ -16,7 +16,8 @@ HAND_FEATURE_OPTIONS = [
     "node_attack",
     "push",
     "shaft",
-    "shift",
+    "shift_before",
+    "shift_after",
     "repeat",
     "stamina_recovery",
     "heal",
@@ -123,6 +124,97 @@ DICE_ICON = {
     "orange": "🟧",
     "dodge": "🟩",
 }
+
+
+def _attack_int(atk: Dict[str, Any], k: str, default: int = 0) -> int:
+    try:
+        return int((atk or {}).get(k) or default)
+    except Exception:
+        return default
+
+def _attack_bool(atk: Dict[str, Any], k: str) -> bool:
+    return bool((atk or {}).get(k))
+
+def _attack_str(atk: Dict[str, Any], k: str) -> str:
+    v = (atk or {}).get(k)
+    s = "" if v is None else str(v).strip()
+    return s
+
+def _attack_dice_counts(atk: Dict[str, Any]) -> Dict[str, int]:
+    d = (atk or {}).get("dice") or {}
+    if not isinstance(d, dict):
+        return {"black": 0, "blue": 0, "orange": 0}
+    return {
+        "black": _dice_count(d, "black"),
+        "blue": _dice_count(d, "blue"),
+        "orange": _dice_count(d, "orange"),
+    }
+
+def _attack_flat_mod(atk: Dict[str, Any]) -> int:
+    return _attack_int(atk, "flat_mod", 0)
+
+def _attack_dice_string(atk: Dict[str, Any]) -> str:
+    c = _attack_dice_counts(atk)
+    s = (DICE_ICON["black"] * c["black"]) + (DICE_ICON["blue"] * c["blue"]) + (DICE_ICON["orange"] * c["orange"])
+    flat = _attack_flat_mod(atk)
+    if flat:
+        s = f"{s} {'+' if flat > 0 else ''}{flat}"
+    return s
+
+def _attack_min_max_avg(atk: Dict[str, Any]) -> tuple[int, int, float]:
+    c = _attack_dice_counts(atk)
+    parts = [
+        _roll_min_max_avg("black", c["black"]),
+        _roll_min_max_avg("blue", c["blue"]),
+        _roll_min_max_avg("orange", c["orange"]),
+    ]
+    mn, mx, avg = _sum_rolls(parts)
+    flat = _attack_flat_mod(atk)
+    return (mn + flat, mx + flat, avg + float(flat))
+
+def _attack_range(it: Dict[str, Any], atk: Dict[str, Any]) -> str:
+    r = (atk or {}).get("range")
+    if r is None or str(r).strip() == "":
+        r = it.get("range")
+    return str(r) if r is not None else ""
+
+def _rows_for_attacks_table(items: List[Dict[str, Any]], selected_item_ids: Set[str]) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for it in items:
+        iid = _id(it)
+        name = _name(it)
+        atks = it.get("attacks") or []
+        if not isinstance(atks, list):
+            continue
+        for idx, atk in enumerate(atks):
+            atk = atk or {}
+            mn, mx, avg = _attack_min_max_avg(atk)
+            rows.append(
+                {
+                    "RowId": f"{iid}::atk::{idx}",
+                    "Select": iid in selected_item_ids,
+                    "Item": name,
+                    "Atk#": idx + 1,
+                    "Stam": _attack_int(atk, "stamina", 0),
+                    "Dice": _attack_dice_string(atk),
+                    "Heal": _attack_int(atk, "heal", 0),
+                    "StamRec": _attack_int(atk, "stamina_recovery", 0),
+                    "Cond": _attack_str(atk, "condition"),
+                    "Text": _attack_str(atk, "text"),
+                    "Magic": _attack_bool(atk, "magic") or _attack_bool(it, "magic"),
+                    "Shift Before": _attack_int(atk, "shift_before", 0),
+                    "Shift After": _attack_int(atk, "shift_after", 0),
+                    "Node": _attack_bool(atk, "node_attack") or _attack_bool(it, "node_attack"),
+                    "Push": _attack_int(atk, "push", 0),
+                    "Range": _attack_range(it, atk),
+                    "Shaft": _attack_bool(atk, "shaft") or _attack_bool(it, "shaft"),
+                    "Repeat": "" if _attack_int(atk, "repeat", 0) == 0 else _attack_int(atk, "repeat", 0),
+                    "Min": mn,
+                    "Max": mx,
+                    "Avg": round(avg, 2),
+                }
+            )
+    return rows
 
 
 def _dice_count(d: Dict[str, Any], key: str) -> int:
@@ -297,10 +389,17 @@ def _hand_has_shaft(item: Dict[str, Any]) -> bool:
     return _hand_any_attack_pred(item, lambda a: bool(a.get("shaft")))
 
 
-def _hand_has_shift(item: Dict[str, Any]) -> bool:
+def _hand_has_shift_before(item: Dict[str, Any]) -> bool:
     return _hand_any_attack_pred(
         item,
-        lambda a: int(a.get("shift_before") or 0) != 0 or int(a.get("shift_after") or 0) != 0,
+        lambda a: int(a.get("shift_before") or 0) != 0,
+    )
+
+
+def _hand_has_shift_after(item: Dict[str, Any]) -> bool:
+    return _hand_any_attack_pred(
+        item,
+        lambda a: int(a.get("shift_after") or 0) != 0,
     )
 
 
@@ -327,7 +426,8 @@ _HAND_FEATURE_PRED = {
     "node_attack": _hand_has_node_attack,
     "push": _hand_has_push,
     "shaft": _hand_has_shaft,
-    "shift": _hand_has_shift,
+    "shift_before": _hand_has_shift_before,
+    "shift_after": _hand_has_shift_after,
     "repeat": _hand_has_repeat,
     "stamina_recovery": _hand_has_stamina_recovery,
     "heal": _hand_has_heal,
@@ -1323,8 +1423,8 @@ def render(settings: Dict[str, Any]) -> None:
 
     ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
 
-    tab_hand, tab_armor, tab_wu, tab_au = st.tabs(
-        ["Hand Items", "Armor", "Weapon Upgrades", "Armor Upgrades"]
+    tab_hand, tab_attacks, tab_armor, tab_wu, tab_au = st.tabs(
+        ["Hand Items", "Attacks", "Armor", "Weapon Upgrades", "Armor Upgrades"]
     )
 
     with tab_hand:
@@ -1346,6 +1446,69 @@ def render(settings: Dict[str, Any]) -> None:
             items_by_id=hand_by_id,
             stable_order=hand_order,
         )
+
+    with tab_attacks:
+        prev_ids = list(ss.get("cm_selected_hand_ids") or [])
+        prev_set = set(prev_ids)
+
+        attack_rows = _rows_for_attacks_table(filtered_hand, prev_set)
+        if not attack_rows:
+            st.caption("0 attack lines (current Hand Items filters hide all attack lines).")
+        else:
+            df = pd.DataFrame(attack_rows)
+
+            # Stable row identity (prevents odd state behavior)
+            df = df.set_index("RowId", drop=True)
+
+            # Read-only columns
+            disabled_cols = [c for c in df.columns if c != "Select"]
+
+            cfg = None
+            if getattr(st, "column_config", None) is not None:
+                cfg = {
+                    "Select": st.column_config.CheckboxColumn("Select"),
+                    "Magic": st.column_config.CheckboxColumn("Magic", disabled=True),
+                    "Node": st.column_config.CheckboxColumn("Node", disabled=True),
+                    "Shaft": st.column_config.CheckboxColumn("Shaft", disabled=True),
+                }
+
+            edited = st.data_editor(
+                df,
+                key="cm_table_attacks",
+                hide_index=True,
+                width="stretch",
+                disabled=disabled_cols,
+                column_config=cfg,
+                num_rows="fixed",
+            )
+
+            # Item-level toggles: clicking any attack row toggles the whole item.
+            attack_item_ids = sorted(set(edited["ItemId"].tolist()))
+            attack_visible_order = [iid for iid in hand_order if iid in set(attack_item_ids)]
+
+            selected_after = set(prev_set)
+            for iid in attack_item_ids:
+                mask = (edited["ItemId"] == iid)
+                vals = list(edited.loc[mask, "Select"])
+                was = iid in prev_set
+                if was:
+                    if any(v is False for v in vals):
+                        selected_after.discard(iid)
+                else:
+                    if any(v is True for v in vals):
+                        selected_after.add(iid)
+
+            chosen_visible = [iid for iid in attack_visible_order if iid in selected_after]
+            ss["cm_selected_hand_ids"] = _merge_visible_selection(
+                prev_ids=prev_ids,
+                chosen_visible_ids=chosen_visible,
+                visible_order=attack_visible_order,
+            )
+            ss["cm_selected_hand_ids"] = _normalize_hand_selection(
+                ss["cm_selected_hand_ids"],
+                items_by_id=hand_by_id,
+                stable_order=hand_order,
+            )
 
     with tab_armor:
         st.caption(f"{len(filtered_armor)} item(s)")
