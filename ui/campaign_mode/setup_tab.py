@@ -127,6 +127,7 @@ def _render_v1_setup(
         sparks_key = "campaign_v1_sparks_campaign"
         st.session_state[sparks_key] = sparks_max
         state["souls_token_node_id"] = None
+        state["souls_token_amount"] = 0
         st.session_state["campaign_v1_state"] = state
         st.success("Campaign generated.")
 
@@ -246,10 +247,11 @@ def _render_v2_setup(
         sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
-        sparks_key = "campaign_v2_sparks_campaign"
+        sparks_key = "campaign_v1_sparks_campaign"
         st.session_state[sparks_key] = sparks_max
         state["souls_token_node_id"] = None
-        st.session_state["campaign_v2_state"] = state
+        state["souls_token_amount"] = 0
+        st.session_state["campaign_v1_state"] = state
         st.success("Campaign generated.")
 
     st.markdown("### Campaign overview")

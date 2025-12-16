@@ -80,7 +80,7 @@ def _ensure_v2_state(player_count: int) -> Dict[str, Any]:
     if prev_current is None or prev_max is None:
         state["sparks"] = sparks_max
     else:
-        state["sparks"] = min(int(prev_current), sparks_max)
+        state["sparks"] = int(prev_current)
 
     st.session_state[key] = state
     return state

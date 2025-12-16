@@ -651,7 +651,8 @@
         "item_type": "armor",
         "source": {
             "expansion": ["Phantoms", "The Sunless City"],
-            "entity": "Maldron the Assassin"
+            "entity": "Maldron the Assassin",
+            "type": "invader"
         },
         "requirements": {
             "str": 24,
@@ -672,7 +673,8 @@
         "item_type": "armor",
         "source": {
             "expansion": ["Phantoms"],
-            "entity": "Longfinger Kirk"
+            "entity": "Longfinger Kirk",
+            "type": "invader"
         },
         "requirements": {
             "str": 32,
@@ -693,7 +695,8 @@
         "item_type": "armor",
         "source": {
             "expansion": ["Phantoms"],
-            "entity": "Marvelous Chester"
+            "entity": "Marvelous Chester",
+            "type": "invader"
         },
         "requirements": {
             "dex": 20,

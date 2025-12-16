@@ -3,7 +3,8 @@
         "name": "Minotaur Helmet",
         "source": {
             "expansion": ["Phantoms"],
-            "entity": "Oliver the Collector"
+            "entity": "Oliver the Collector",
+            "type": "invader"
         },
         "requirements": {
             "str": 26
@@ -18,7 +19,8 @@
         "name": "Mon Ring",
         "source": {
             "expansion": ["Phantoms"],
-            "entity": "Invader Brylex"
+            "entity": "Invader Brylex",
+            "type": "invader"
         },
         "requirements": {
             "dex": 20,
@@ -31,7 +33,8 @@
         "name": "Clear Bluestone Ring",
         "source": {
             "expansion": ["Phantoms"],
-            "entity": "Armorer Dennis"
+            "entity": "Armorer Dennis",
+            "type": "invader"
         },
         "requirements": {
             "itl": 30,
@@ -47,7 +50,8 @@
         "name": "Sanctum Priestess Tiara",
         "source": {
             "expansion": ["Phantoms"],
-            "entity": "Fencer Sharron"
+            "entity": "Fencer Sharron",
+            "type": "invader"
         },
         "requirements": {
             "itl": 27,

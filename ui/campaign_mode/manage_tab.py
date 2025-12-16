@@ -5,7 +5,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
 from ui.behavior_decks_tab.generation import render_data_card_cached, render_dual_boss_data_cards
-from ui.campaign_mode.core import BONFIRE_ICON_PATH, PARTY_TOKEN_PATH, SOULS_TOKEN_PATH, _default_sparks_max, _describe_v1_node_label, _describe_v2_node_label, _v2_compute_allowed_destinations
+from ui.campaign_mode.core import (
+    BONFIRE_ICON_PATH,
+    PARTY_TOKEN_PATH,
+    SOULS_TOKEN_PATH,
+    _default_sparks_max,
+    _describe_v1_node_label,
+    _describe_v2_node_label,
+    _v2_compute_allowed_destinations,
+    _reset_all_encounters_on_bonfire_return,
+    _record_dropped_souls,
+)
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.encounters_tab.render import render_original_encounter
@@ -94,14 +104,9 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
 
             sparks_key = "campaign_v1_sparks_campaign"
-            desired_sparks = int(state.get("sparks", sparks_max))
-
-            # Keep widget in sync with state before creating the widget
-            if (
-                sparks_key not in st.session_state
-                or int(st.session_state.get(sparks_key) or 0) != desired_sparks
-            ):
-                st.session_state[sparks_key] = desired_sparks
+            # Seed the widget from state only once, when the key does not exist yet.
+            if sparks_key not in st.session_state:
+                st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
 
             sparks_value = st.number_input(
                 "Sparks",
@@ -114,14 +119,8 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
             # Soul cache directly under Sparks
             souls_key = "campaign_v1_souls_campaign"
-            desired_souls = int(state.get("souls", 0) or 0)
-
-            # Keep widget in sync with state before creating the widget
-            if (
-                souls_key not in st.session_state
-                or int(st.session_state.get(souls_key) or 0) != desired_souls
-            ):
-                st.session_state[souls_key] = desired_souls
+            if souls_key not in st.session_state:
+                st.session_state[souls_key] = int(state.get("souls", 0) or 0)
 
             souls_value = st.number_input(
                 "Soul cache",
@@ -238,13 +237,8 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
 
             sparks_key = "campaign_v2_sparks_campaign"
-            desired_sparks = int(state.get("sparks", sparks_max))
-
-            if (
-                sparks_key not in st.session_state
-                or int(st.session_state.get(sparks_key) or 0) != desired_sparks
-            ):
-                st.session_state[sparks_key] = desired_sparks
+            if sparks_key not in st.session_state:
+                st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
 
             sparks_value = st.number_input(
                 "Sparks",
@@ -255,13 +249,8 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             state["sparks"] = int(sparks_value)
 
             souls_key = "campaign_v2_souls_campaign"
-            desired_souls = int(state.get("souls", 0) or 0)
-
-            if (
-                souls_key not in st.session_state
-                or int(st.session_state.get(souls_key) or 0) != desired_souls
-            ):
-                st.session_state[souls_key] = desired_souls
+            if souls_key not in st.session_state:
+                st.session_state[souls_key] = int(state.get("souls", 0) or 0)
 
             souls_value = st.number_input(
                 "Soul cache",
@@ -375,8 +364,10 @@ def _render_v1_path_row(
             and kind in ("encounter", "boss")
         )
 
-        # Current location: just show the party token
+        # Current location: party token (and optional souls token)
         if is_current:
+            if show_souls_token:
+                st.image(str(SOULS_TOKEN_PATH), width=32)
             st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
@@ -386,6 +377,10 @@ def _render_v1_path_row(
                 "Return to Bonfire",
                 key=f"campaign_v1_goto_{node_id}",
             ):
+                # Returning to the bonfire clears completion for all encounters
+                # in this campaign. Shortcuts remain.
+                _reset_all_encounters_on_bonfire_return(campaign)
+
                 campaign["current_node_id"] = node_id
                 state["campaign"] = campaign
                 st.session_state["campaign_v1_state"] = state
@@ -464,6 +459,10 @@ def _render_v2_path_row(
                 "Return to Bonfire",
                 key=f"campaign_v2_goto_{node_id}",
             ):
+                # Returning to the bonfire clears completion for all encounters
+                # in this campaign. Shortcuts remain valid.
+                _reset_all_encounters_on_bonfire_return(campaign)
+
                 campaign["current_node_id"] = node_id
                 state["campaign"] = campaign
                 st.session_state["campaign_v2_state"] = state
@@ -724,7 +723,11 @@ def _apply_boss_defeated(
     boss_node["status"] = "complete"
     boss_node["revealed"] = True
 
-    # 4) Party returns to the bonfire, without spending a Spark here
+    # 4) When the party returns to the bonfire, clear completion on all encounters.
+    # This applies to both V1 and V2; shortcuts remain valid.
+    _reset_all_encounters_on_bonfire_return(campaign)
+
+    # 5) Party returns to the bonfire, without spending a Spark here
     campaign["current_node_id"] = "bonfire"
     state["campaign"] = campaign
 
@@ -760,17 +763,11 @@ def _apply_boss_failure(
 
     # Drop souls on the boss, if any
     current_souls = int(state.get("souls") or 0)
-    if current_souls > 0 and failed_node_id:
-        state["souls_token_node_id"] = failed_node_id
-        state["souls_token_amount"] = current_souls
-        state["dropped_souls"] = current_souls
-    else:
-        state["souls_token_node_id"] = None
-        state["souls_token_amount"] = 0
-        state["dropped_souls"] = 0
+    _record_dropped_souls(state, failed_node_id, current_souls)
 
     # Soul cache goes to 0
     state["souls"] = 0
+    state["dropped_souls"] = current_souls if current_souls > 0 else 0
 
     # Spend a Spark, but not below zero
     sparks_cur = int(state.get("sparks") or 0)
@@ -779,12 +776,9 @@ def _apply_boss_failure(
     else:
         state["sparks"] = 0
 
-    # Reset all encounters in this boss' stage to incomplete
-    stage = boss_node.get("stage")
-    if stage:
-        for n in campaign.get("nodes") or []:
-            if n.get("kind") == "encounter" and n.get("stage") == stage:
-                n["status"] = "incomplete"
+    # When the party returns to the bonfire, all completed encounters
+    # are reset to incomplete across the whole campaign. Shortcuts stay valid.
+    _reset_all_encounters_on_bonfire_return(campaign)
 
     # Party returns to the bonfire
     campaign["current_node_id"] = "bonfire"

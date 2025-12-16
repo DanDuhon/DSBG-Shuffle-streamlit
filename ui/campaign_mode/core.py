@@ -958,6 +958,40 @@ def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _record_dropped_souls(
+    state: Dict[str, Any],
+    failed_node_id: Optional[str],
+    current_souls: int,
+) -> None:
+    """
+    Record or clear a dropped-souls token in the campaign state.
+
+    Only one node can have dropped souls at a time:
+      - If failed_node_id is truthy and current_souls > 0, store the token there.
+      - Otherwise clear any existing token.
+    """
+    if failed_node_id and current_souls > 0:
+        state["souls_token_node_id"] = failed_node_id
+        state["souls_token_amount"] = current_souls
+    else:
+        state["souls_token_node_id"] = None
+        state["souls_token_amount"] = 0
+
+
+def _reset_all_encounters_on_bonfire_return(campaign: Dict[str, Any]) -> None:
+    """
+    Clear completion state from all encounter nodes when the party returns
+    to the Bonfire.
+
+    This does NOT touch shortcuts; flags such as 'shortcut_unlocked' stay
+    in place so shortcuts remain valid on future runs.
+    """
+    nodes = campaign.get("nodes") or []
+    for node in nodes:
+        if node.get("kind") == "encounter" and node.get("status") == "complete":
+            node["status"] = "incomplete"
+
+
 def _v2_compute_allowed_destinations(campaign: Dict[str, Any]) -> Optional[set[str]]:
     """
     For V2 campaigns, compute the set of legal destinations under the movement rules.
