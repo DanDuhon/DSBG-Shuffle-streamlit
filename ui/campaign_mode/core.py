@@ -334,6 +334,26 @@ def _pick_random_campaign_encounter(
     raise RuntimeError(msg)
 
 
+def _campaign_encounter_signature(
+    frozen: Dict[str, Any],
+    default_level: int,
+) -> Optional[tuple[str, int, str]]:
+    """
+    Compact identity for a frozen campaign encounter so we can avoid
+    repeating the same card across the campaign where possible.
+
+    Identity is based on (expansion, level, encounter_name).
+    """
+    try:
+        return (
+            frozen.get("expansion"),
+            int(frozen.get("encounter_level", default_level)),
+            frozen.get("encounter_name"),
+        )
+    except Exception:
+        return None
+
+
 def _generate_v1_campaign(
     bosses_by_name: Dict[str, Any],
     settings: Dict[str, Any],
@@ -349,6 +369,10 @@ def _generate_v1_campaign(
 
     All encounters are fully frozen (enemy lists chosen once).
     The structure is JSON-serializable so it can be saved to disk.
+
+    Additional rule:
+    - Avoid repeating the same encounter card unless there are no other
+      eligible options at that level left.
     """
     player_count = _get_player_count_from_settings(settings)
     active_expansions = settings.get("active_expansions") or []
@@ -370,6 +394,61 @@ def _generate_v1_campaign(
     nodes: List[Dict[str, Any]] = campaign["nodes"]
     nodes.append({"id": "bonfire", "kind": "bonfire"})
 
+    # Track which encounters have already appeared in this campaign so we
+    # only repeat them when there are no unused options left.
+    used_signatures: set[tuple[str, int, str]] = set()
+
+    def _pick_v1_prefer_unused(lvl_int: int) -> Dict[str, Any]:
+        """
+        Pick a frozen encounter at lvl_int, preferring encounters whose
+        (expansion, level, name) signature has not been used yet.
+
+        If every eligible encounter at this level has already been used,
+        we fall back to whatever _pick_random_campaign_encounter returns.
+        """
+        frozen: Optional[Dict[str, Any]] = None
+        last_candidate: Optional[Dict[str, Any]] = None
+        last_sig: Optional[tuple[str, int, str]] = None
+
+        for _ in range(12):
+            candidate = _pick_random_campaign_encounter(
+                encounters_by_expansion=encounters_by_expansion,
+                valid_sets=valid_sets,
+                character_count=player_count,
+                active_expansions=active_expansions,
+                level=lvl_int,
+            )
+            last_candidate = candidate
+            sig = _campaign_encounter_signature(candidate, lvl_int)
+            last_sig = sig
+
+            # Prefer encounters that have not appeared yet
+            if sig is None or sig not in used_signatures:
+                frozen = candidate
+                break
+
+        if frozen is None:
+            # Every candidate we tried has already appeared; accept a repeat.
+            if last_candidate is None:
+                frozen = _pick_random_campaign_encounter(
+                    encounters_by_expansion=encounters_by_expansion,
+                    valid_sets=valid_sets,
+                    character_count=player_count,
+                    active_expansions=active_expansions,
+                    level=lvl_int,
+                )
+                sig = _campaign_encounter_signature(frozen, lvl_int)
+            else:
+                frozen = last_candidate
+                sig = last_sig
+        else:
+            sig = _campaign_encounter_signature(frozen, lvl_int)
+
+        if sig is not None:
+            used_signatures.add(sig)
+
+        return frozen
+
     def _add_stage(stage_key: str, boss_name: Optional[str]) -> None:
         if not boss_name:
             return
@@ -390,13 +469,7 @@ def _generate_v1_campaign(
                     f"Invalid encounter level '{lvl}' for boss '{boss_name}'."
                 ) from exc
 
-            frozen = _pick_random_campaign_encounter(
-                encounters_by_expansion=encounters_by_expansion,
-                valid_sets=valid_sets,
-                character_count=player_count,
-                active_expansions=active_expansions,
-                level=lvl_int,
-            )
+            frozen = _pick_v1_prefer_unused(lvl_int)
 
             nodes.append(
                 {
@@ -472,36 +545,72 @@ def _generate_v2_campaign(
     nodes: List[Dict[str, Any]] = campaign["nodes"]
     nodes.append({"id": "bonfire", "kind": "bonfire"})
 
+    # Track which encounters have already appeared anywhere in this V2 campaign,
+    # so we avoid repeating the same card unless we run out of options.
+    used_signatures: set[tuple[str, int, str]] = set()
+
     def _build_options_for_level(lvl_int: int) -> List[Dict[str, Any]]:
         """
         Return up to two distinct frozen encounters at this level, using the
         V2 eligibility rules.
+
+        Additional rule:
+        - Avoid repeating the same encounter card across the campaign unless
+          there are no other eligible options left at this level.
         """
         options: List[Dict[str, Any]] = []
 
-        first = _pick_random_campaign_encounter(
-            encounters_by_expansion=encounters_by_expansion,
-            valid_sets=valid_sets,
-            character_count=player_count,
-            active_expansions=active_expansions,
-            level=lvl_int,
-            eligibility_fn=_is_v2_campaign_eligible,
-        )
+        # --- First option: prefer encounters that haven't been used yet ---
+        first: Optional[Dict[str, Any]] = None
+        first_sig: Optional[tuple[str, int, str]] = None
+        last_candidate: Optional[Dict[str, Any]] = None
+        last_sig: Optional[tuple[str, int, str]] = None
+
+        for _ in range(12):
+            candidate = _pick_random_campaign_encounter(
+                encounters_by_expansion=encounters_by_expansion,
+                valid_sets=valid_sets,
+                character_count=player_count,
+                active_expansions=active_expansions,
+                level=lvl_int,
+                eligibility_fn=_is_v2_campaign_eligible,
+            )
+            last_candidate = candidate
+            sig = _campaign_encounter_signature(candidate, lvl_int)
+            last_sig = sig
+
+            # Prefer encounters that haven't appeared in the campaign yet
+            if sig is None or sig not in used_signatures:
+                first = candidate
+                first_sig = sig
+                break
+
+        if first is None:
+            # Every candidate we tried has already appeared; accept a repeat.
+            if last_candidate is None:
+                first = _pick_random_campaign_encounter(
+                    encounters_by_expansion=encounters_by_expansion,
+                    valid_sets=valid_sets,
+                    character_count=player_count,
+                    active_expansions=active_expansions,
+                    level=lvl_int,
+                    eligibility_fn=_is_v2_campaign_eligible,
+                )
+                first_sig = _campaign_encounter_signature(first, lvl_int)
+            else:
+                first = last_candidate
+                first_sig = last_sig
+
+        if first_sig is not None:
+            used_signatures.add(first_sig)
+
         options.append(first)
 
-        # Try to find a second *different* encounter; fall back to a single
-        # option if no variety is available.
-        try:
-            sig = (
-                first.get("expansion"),
-                int(first.get("encounter_level", lvl_int)),
-                first.get("encounter_name"),
-            )
-        except Exception:
-            sig = None
-
+        # --- Second option: a different, preferably-unused encounter ---
         second: Optional[Dict[str, Any]] = None
-        for _ in range(6):
+        second_sig: Optional[tuple[str, int, str]] = None
+
+        for _ in range(12):
             candidate = _pick_random_campaign_encounter(
                 encounters_by_expansion=encounters_by_expansion,
                 valid_sets=valid_sets,
@@ -511,24 +620,27 @@ def _generate_v2_campaign(
                 eligibility_fn=_is_v2_campaign_eligible,
             )
 
-            if sig is None:
-                second = candidate
-                break
+            # Don't show the exact same frozen encounter twice in one space
+            if first is not None and candidate == first:
+                continue
 
-            try:
-                c_sig = (
-                    candidate.get("expansion"),
-                    int(candidate.get("encounter_level", lvl_int)),
-                    candidate.get("encounter_name"),
-                )
-            except Exception:
-                c_sig = None
+            sig = _campaign_encounter_signature(candidate, lvl_int)
 
-            if c_sig != sig:
-                second = candidate
-                break
+            # Avoid the same card as the first option if we can
+            if first_sig is not None and sig == first_sig:
+                continue
+
+            # Prefer encounters that have not appeared anywhere else yet
+            if sig is not None and sig in used_signatures:
+                continue
+
+            second = candidate
+            second_sig = sig
+            break
 
         if second is not None:
+            if second_sig is not None:
+                used_signatures.add(second_sig)
             options.append(second)
 
         return options
@@ -541,7 +653,17 @@ def _generate_v2_campaign(
         if not cfg:
             raise ValueError(f"Unknown boss '{boss_name}' in bosses.json.")
 
-        levels = cfg.get("encounters") or []
+        # For V2, encounter levels are fixed by stage:
+        #   mini: 1, 1, 1, 2
+        #   main: 2, 2, 3, 3
+        #   mega: 4
+        if stage_key == "mini":
+            levels = [1, 1, 1, 2]
+        elif stage_key == "main":
+            levels = [2, 2, 3, 3]
+        else:
+            levels = [4]
+
         if not isinstance(levels, list) or not levels:
             return
 

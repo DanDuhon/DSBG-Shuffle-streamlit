@@ -1235,8 +1235,9 @@
                 "flat_mod": -1,
                 "condition": "bleed",
                 "shaft": true
-            }, "text": "After you attack with this weapon, you suffer Bleed."
-        ]
+            }
+        ],
+        "text": "After you attack with this weapon, you suffer Bleed."
     }, {
         "id": "iron_king_hammer",
         "name": "Iron King Hammer",
@@ -1306,8 +1307,9 @@
                 },
                 "magic": true,
                 "repeat": 5
-            }, "text": "All 5 attacks must target enemies in the same node."
-        ]
+            }
+        ],
+        "text": "All 5 attacks must target enemies in the same node."
     }, {
         "id": "chariot_lance",
         "name": "Chariot Lance",
@@ -1616,7 +1618,7 @@
                 "stamina": 4,
                 "dice": {
                     "orange": 2
-                }
+                },
                 "effects": {
                     "attack_mods": [{
                             "target": "magic",
@@ -1626,9 +1628,10 @@
                             "stamina_cost": 1
                         }
                     ]
-                },
-            }, "text": "Your magic attacks cost +1 stamina but gain 1 black die."
-        ]
+                }
+            }
+        ],
+        "text": "Your magic attacks cost +1 stamina but gain 1 black die."
     }, {
         "id": "pursuers",
         "name": "Pursuers",
@@ -2560,7 +2563,7 @@
                 "stamina": 3,
                 "dice": {
                     "black": 2
-                }
+                },
                 "text": "You may move the Aggro token to another character after this attack."
             }
         ]
@@ -4938,14 +4941,14 @@
                 "stamina": 4,
                 "dice": {
                     "blue": 1,
-                    "orange": 2,
+                    "orange": 2
                 }
             }, {
                 "id": "line1",
                 "stamina": 6,
                 "dice": {
                     "blue": 1,
-                    "orange": 2,
+                    "orange": 2
                 },
                 "node_attack": true
             }, {
@@ -5560,8 +5563,7 @@
                 "heal": 4,
                 "text": "One character within range gains 4 health."
             }
-        }
-    ]
+        ]
     }, {
         "id": "thorolund_talisman",
         "name": "Thorolund Talisman",
@@ -5630,7 +5632,7 @@
             "expansion": ["Tomb of Giants"]
         },
         "requirements": {
-            "str": 16
+            "str": 16,
             "fth": 19
         },
         "block_dice": {
@@ -5649,8 +5651,9 @@
                 "dice": {
                     "black": 2
                 }
-            }, "text": "This weapon gains +1 damage against Hollows."
-        ]
+            }
+        ],
+        "text": "This weapon gains +1 damage against Hollows."
     }, {
         "id": "golden_wing_crest_shield",
         "name": "Golden Wing Crest Shield",
@@ -6614,7 +6617,7 @@
         },
         "block_dice": {},
         "resist_dice": {
-            "resist": 1
+            "black": 1
         },
         "dodge_dice": 0,
         "upgrade_slots": 1,
@@ -7052,4 +7055,4 @@
             }
         ]
     }
-    ]
+]

@@ -224,6 +224,7 @@
             "itl": 20
         },
         "slot_cost": 1,
+		"upgrade_slot_mod":1,
         "effects": {
             "attack_mods": [{
                     "target": "all",

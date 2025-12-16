@@ -223,7 +223,7 @@
         "id": "ring_of_favour",
         "name": "Ring of Favour",
         "source": {
-            "expansion": ["Characters Expansion", "Paitled World of Ariamis"],
+            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
             "entity": "Mercenary",
             "type": "class"
         },
@@ -240,7 +240,7 @@
         "id": "wolf_ring",
         "name": "Wolf Ring",
         "source": {
-            "expansion": ["Characters Expansion", "Paitled World of Ariamis"],
+            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
             "entity": "Mercenary",
             "type": "transposed"
         },
@@ -258,7 +258,7 @@
         "id": "binoculars",
         "name": "Binoculars",
         "source": {
-            "expansion": ["Characters Expansion", "Paitled World of Ariamis"],
+            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
             "entity": "Deprived",
             "type": "class"
         },
@@ -272,7 +272,7 @@
         "id": "carthus_milkring",
         "name": "Carthus Milkring",
         "source": {
-            "expansion": ["Characters Expansion", "Paitled World of Ariamis"],
+            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
             "entity": "Deprived",
             "type": "transposed"
         },
@@ -362,7 +362,7 @@
         "id": "bellowing_dragoncrest_ring",
         "name": "Bellowing Dragoncrest Ring",
         "source": {
-            "expansion": ["Characters Expansion", "Paitled World of Ariamis"],
+            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
             "entity": "Sorcerer",
             "type": "transposed"
         },

@@ -199,6 +199,9 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
                 },
                 {
                     "type": "search",
+                },
+                {
+                    "type": "shortcut",
                 }
             ],
         },

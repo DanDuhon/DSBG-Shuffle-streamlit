@@ -2,13 +2,28 @@
 import streamlit as st
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
 from ui.behavior_decks_tab.generation import render_data_card_cached, render_dual_boss_data_cards
 from ui.campaign_mode.core import BONFIRE_ICON_PATH, PARTY_TOKEN_PATH, SOULS_TOKEN_PATH, _default_sparks_max, _describe_v1_node_label, _describe_v2_node_label, _v2_compute_allowed_destinations
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.encounters_tab.render import render_original_encounter
+
+
+def _is_stage_closed_for_node(campaign: Dict[str, Any], node: Dict[str, Any]) -> bool:
+    """
+    Return True if the chapter (stage) that this node belongs to is closed because
+    its boss has been marked as complete.
+    """
+    stage = node.get("stage")
+    if not stage:
+        return False
+
+    for n in campaign.get("nodes") or []:
+        if n.get("kind") == "boss" and n.get("stage") == stage:
+            return n.get("status") == "complete"
+    return False
 
 
 def _render_campaign_tab(
@@ -77,9 +92,16 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             # Sparks: editable numeric input
             player_count = _get_player_count(settings)
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+
             sparks_key = "campaign_v1_sparks_campaign"
-            if sparks_key not in st.session_state:
-                st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
+            desired_sparks = int(state.get("sparks", sparks_max))
+
+            # Keep widget in sync with state before creating the widget
+            if (
+                sparks_key not in st.session_state
+                or int(st.session_state.get(sparks_key) or 0) != desired_sparks
+            ):
+                st.session_state[sparks_key] = desired_sparks
 
             sparks_value = st.number_input(
                 "Sparks",
@@ -92,8 +114,14 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
             # Soul cache directly under Sparks
             souls_key = "campaign_v1_souls_campaign"
-            if souls_key not in st.session_state:
-                st.session_state[souls_key] = int(state.get("souls", 0) or 0)
+            desired_souls = int(state.get("souls", 0) or 0)
+
+            # Keep widget in sync with state before creating the widget
+            if (
+                souls_key not in st.session_state
+                or int(st.session_state.get(souls_key) or 0) != desired_souls
+            ):
+                st.session_state[souls_key] = desired_souls
 
             souls_value = st.number_input(
                 "Soul cache",
@@ -161,6 +189,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
     with col_detail:
         _render_v1_current_panel(campaign, current_node)
+        _render_boss_outcome_controls(state, campaign, current_node)
 
     # Persist updated state
     st.session_state["campaign_v1_state"] = state
@@ -207,22 +236,32 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
             player_count = _get_player_count(settings)
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+
             sparks_key = "campaign_v2_sparks_campaign"
-            if sparks_key not in st.session_state:
-                st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
+            desired_sparks = int(state.get("sparks", sparks_max))
+
+            if (
+                sparks_key not in st.session_state
+                or int(st.session_state.get(sparks_key) or 0) != desired_sparks
+            ):
+                st.session_state[sparks_key] = desired_sparks
 
             sparks_value = st.number_input(
                 "Sparks",
                 min_value=0,
-                max_value=sparks_max,
                 step=1,
                 key=sparks_key,
             )
             state["sparks"] = int(sparks_value)
 
             souls_key = "campaign_v2_souls_campaign"
-            if souls_key not in st.session_state:
-                st.session_state[souls_key] = int(state.get("souls", 0) or 0)
+            desired_souls = int(state.get("souls", 0) or 0)
+
+            if (
+                souls_key not in st.session_state
+                or int(st.session_state.get(souls_key) or 0) != desired_souls
+            ):
+                st.session_state[souls_key] = desired_souls
 
             souls_value = st.number_input(
                 "Soul cache",
@@ -307,6 +346,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
     with col_detail:
         _render_v2_current_panel(campaign, current_node, state)
+        _render_boss_outcome_controls(state, campaign, current_node)
 
     st.session_state["campaign_v2_state"] = state
 
@@ -326,21 +366,21 @@ def _render_v1_path_row(
         node_id = node.get("id")
         kind = node.get("kind")
         is_current = node_id == campaign.get("current_node_id")
+        stage_closed = _is_stage_closed_for_node(campaign, node)
 
-        # Where to show the Souls token: last failed encounter node
         souls_token_node_id = state.get("souls_token_node_id")
         show_souls_token = (
             souls_token_node_id is not None
             and node_id == souls_token_node_id
-            and kind == "encounter"
+            and kind in ("encounter", "boss")
         )
 
-        # Current location: show party token instead of any button
+        # Current location: just show the party token
         if is_current:
             st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
-        # Bonfire row: Return to Bonfire
+        # Bonfire row
         if kind == "bonfire":
             if st.button(
                 "Return to Bonfire",
@@ -352,10 +392,14 @@ def _render_v1_path_row(
                 st.rerun()
             return
 
-        # Encounter / boss: Travel / Confront
+        # Encounters / bosses
         if kind in ("encounter", "boss"):
-            if show_souls_token:
-                st.image(str(SOULS_TOKEN_PATH), width=32)
+            # Chapter closed: no more travel into this stage
+            if stage_closed:
+                if show_souls_token:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+                return
+
             btn_label = "Travel" if kind == "encounter" else "Confront"
             if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
                 campaign["current_node_id"] = node_id
@@ -363,6 +407,9 @@ def _render_v1_path_row(
                 state["campaign"] = campaign
                 st.session_state["campaign_v1_state"] = state
                 st.rerun()
+
+            if show_souls_token:
+                st.image(str(SOULS_TOKEN_PATH), width=32)
             return
 
 
@@ -370,7 +417,7 @@ def _render_v2_path_row(
     node: Dict[str, Any],
     campaign: Dict[str, Any],
     state: Dict[str, Any],
-    allowed_destinations: Optional[set[str]] = None,
+    allowed_destinations: Optional[Set[str]] = None,
 ) -> None:
     label = _describe_v2_node_label(campaign, node)
     row_cols = st.columns([3, 1])
@@ -382,42 +429,34 @@ def _render_v2_path_row(
         node_id = node.get("id")
         kind = node.get("kind")
         is_current = node_id == campaign.get("current_node_id")
+        current_is_bonfire = campaign.get("current_node_id") == "bonfire"
+        stage_closed = _is_stage_closed_for_node(campaign, node)
 
-        # What node are we currently on?
-        current_node_id = campaign.get("current_node_id")
-        current_node = None
-        for n in campaign.get("nodes") or []:
-            if n.get("id") == current_node_id:
-                current_node = n
-                break
-        current_is_bonfire = current_node is not None and current_node.get("kind") == "bonfire"
-
-        # Souls token: last failed encounter node
         souls_token_node_id = state.get("souls_token_node_id")
         show_souls_token = (
             souls_token_node_id is not None
             and node_id == souls_token_node_id
-            and kind == "encounter"
+            and kind in ("encounter", "boss")
         )
 
-        # Current location: party token instead of a button
+        # Current location: party token (and optional souls token)
         if is_current:
             if show_souls_token:
-                party_col, souls_col = st.columns([1, 1])
-                with party_col:
-                    st.image(str(PARTY_TOKEN_PATH), width=48)
-                with souls_col:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
-            else:
-                st.image(str(PARTY_TOKEN_PATH), width=48)
+                st.image(str(SOULS_TOKEN_PATH), width=32)
+            st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
-        # Restrict travel using allowed_destinations if provided
+        # If chapter is closed, encounters/bosses in this stage are no longer legal destinations
+        if stage_closed and kind in ("encounter", "boss"):
+            if show_souls_token:
+                st.image(str(SOULS_TOKEN_PATH), width=32)
+            return
+
         can_travel_here = True
         if allowed_destinations is not None and node_id not in allowed_destinations:
             can_travel_here = False
 
-        # Bonfire row: Return to Bonfire
+        # Bonfire row
         if kind == "bonfire":
             if not can_travel_here:
                 return
@@ -431,48 +470,30 @@ def _render_v2_path_row(
                 st.rerun()
             return
 
-        # Is this destination being taken as a shortcut from the bonfire?
-        is_shortcut_destination = (
-            current_is_bonfire
-            and kind == "encounter"
-            and bool(node.get("shortcut_unlocked"))
+        # Shortcut marker (from bonfire)
+        is_shortcut_destination = bool(
+            current_is_bonfire and node.get("shortcut_unlocked")
         )
 
-        # Encounter / boss: Travel / Confront / Take Shortcut
         if kind in ("encounter", "boss"):
-            # If this node is not in allowed_destinations, do not expose a button.
             if not can_travel_here:
                 if show_souls_token:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
                 return
 
-            # Layout: optional souls token + button
+            btn_label = "Travel" if kind == "encounter" else "Confront"
+            if is_shortcut_destination:
+                btn_label = "Take Shortcut"
+
+            if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                campaign["current_node_id"] = node_id
+                node["revealed"] = True
+                state["campaign"] = campaign
+                st.session_state["campaign_v2_state"] = state
+                st.rerun()
+
             if show_souls_token:
-                button_col, souls_col = st.columns([1, 1])
-                with souls_col:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
-                button_ctx = button_col
-            else:
-                button_ctx = st
-
-            with button_ctx:
-                if kind == "encounter":
-                    btn_label = "Take Shortcut" if is_shortcut_destination else "Travel"
-                else:
-                    btn_label = "Confront"
-
-                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
-                    # If we are leaving the bonfire via a shortcut, this encounter
-                    # must be treated as *incomplete* for the new run so you
-                    # cannot immediately advance past it.
-                    if kind == "encounter" and is_shortcut_destination:
-                        node["status"] = "incomplete"
-
-                    campaign["current_node_id"] = node_id
-                    node["revealed"] = True
-                    state["campaign"] = campaign
-                    st.session_state["campaign_v2_state"] = state
-                    st.rerun()
+                st.image(str(SOULS_TOKEN_PATH), width=32)
             return
         
 
@@ -633,6 +654,190 @@ def _render_v2_current_panel(
 
     # Boss: identical to V1 logic
     _render_v1_current_panel(campaign, current_node)
+
+
+def _apply_boss_defeated(
+    state: Dict[str, Any],
+    campaign: Dict[str, Any],
+    boss_node: Dict[str, Any],
+    version: str,
+) -> None:
+    """
+    Boss victory rewards and state updates.
+
+    V2:
+      - If this is the mini-boss: gain [player_count] + 6 souls.
+      - Any boss: gain +1 Spark (can exceed the original max).
+      - Pick up any dropped-souls token on this boss.
+      - Mark boss complete, return to bonfire, do NOT spend a Spark.
+
+    V1:
+      - Gain souls equal to (player_count * sparks_left).
+      - Pick up any dropped-souls token on this boss.
+      - Mark boss complete, return to bonfire.
+      - Set Sparks back to the max value.
+    """
+    import streamlit as st  # ensure st is in scope if not already
+
+    version = (version or "").upper()
+    state_key = "campaign_v2_state" if version == "V2" else "campaign_v1_state"
+
+    node_id = boss_node.get("id")
+    stage = boss_node.get("stage")
+
+    # Base values
+    player_count = int(campaign.get("player_count") or 0)
+    sparks_cur = int(state.get("sparks") or 0)
+    sparks_max = int(state.get("sparks_max") or sparks_cur)
+    current_souls = int(state.get("souls") or 0)
+
+    # 1) Pick up any dropped souls token that is sitting on this boss
+    token_node_id = state.get("souls_token_node_id")
+    token_amount = int(state.get("souls_token_amount") or 0)
+    if token_node_id == node_id and token_amount > 0:
+        current_souls += token_amount
+        state["souls_token_node_id"] = None
+        state["souls_token_amount"] = 0
+
+    # 2) Apply version-specific boss soul rewards
+    if version == "V2":
+        # Mini-boss: fixed bonus of player_count + 6 souls
+        if stage == "mini":
+            current_souls += player_count + 6
+
+        # Any boss: +1 spark, even if it exceeds starting/max value
+        state["sparks"] = sparks_cur + 1
+
+    else:  # V1
+        # 1 soul per character per Spark left at the time of the kill
+        # before we reset Sparks back to max
+        if player_count > 0 and sparks_cur > 0:
+            current_souls += player_count * sparks_cur
+
+        # Reset Sparks to max for the next track
+        state["sparks"] = sparks_max
+
+    # Commit final souls and sparks into state
+    state["souls"] = current_souls
+
+    # 3) Mark boss as defeated, close the chapter
+    boss_node["status"] = "complete"
+    boss_node["revealed"] = True
+
+    # 4) Party returns to the bonfire, without spending a Spark here
+    campaign["current_node_id"] = "bonfire"
+    state["campaign"] = campaign
+
+    # Clear any stale "dropped_souls" trackers if you use them elsewhere
+    state.pop("dropped_souls", None)
+
+    st.session_state[state_key] = state
+
+    st.success("Boss defeated; rewards applied and the party has returned to the bonfire.")
+    st.rerun()
+
+
+def _apply_boss_failure(
+    state: Dict[str, Any],
+    campaign: Dict[str, Any],
+    boss_node: Dict[str, Any],
+    version: str,
+) -> None:
+    """
+    Boss loss behaves exactly like a failed encounter:
+    - Souls cache goes to 0, with a souls token dropped on the boss (if >0)
+    - Lose 1 Spark (if any are left)
+    - All encounters in this boss' stage are reset to incomplete
+    - Party returns to the bonfire
+    - Encounter reward/event state is cleared
+    """
+    import streamlit as st
+
+    version = version.upper()
+    state_key = "campaign_v2_state" if version == "V2" else "campaign_v1_state"
+
+    failed_node_id = boss_node.get("id")
+
+    # Drop souls on the boss, if any
+    current_souls = int(state.get("souls") or 0)
+    if current_souls > 0 and failed_node_id:
+        state["souls_token_node_id"] = failed_node_id
+        state["souls_token_amount"] = current_souls
+        state["dropped_souls"] = current_souls
+    else:
+        state["souls_token_node_id"] = None
+        state["souls_token_amount"] = 0
+        state["dropped_souls"] = 0
+
+    # Soul cache goes to 0
+    state["souls"] = 0
+
+    # Spend a Spark, but not below zero
+    sparks_cur = int(state.get("sparks") or 0)
+    if sparks_cur > 0:
+        state["sparks"] = sparks_cur - 1
+    else:
+        state["sparks"] = 0
+
+    # Reset all encounters in this boss' stage to incomplete
+    stage = boss_node.get("stage")
+    if stage:
+        for n in campaign.get("nodes") or []:
+            if n.get("kind") == "encounter" and n.get("stage") == stage:
+                n["status"] = "incomplete"
+
+    # Party returns to the bonfire
+    campaign["current_node_id"] = "bonfire"
+    state["campaign"] = campaign
+    st.session_state[state_key] = state
+
+    # Clear encounter-specific session data
+    st.session_state["encounter_events"] = []
+    st.session_state["last_encounter_reward_totals"] = {}
+    st.session_state.pop("last_encounter_rewards_for_slug", None)
+
+    if sparks_cur > 0:
+        st.warning(
+            "Boss failed; party returned to the bonfire and lost 1 Spark."
+        )
+    else:
+        st.warning(
+            "Boss failed; party returned to the bonfire but has no Sparks left."
+        )
+    st.rerun()
+
+
+def _render_boss_outcome_controls(
+    state: Dict[str, Any],
+    campaign: Dict[str, Any],
+    current_node: Dict[str, Any],
+) -> None:
+    """
+    Show boss outcome buttons when the current node is a boss:
+    - Boss defeated (close chapter)
+    - Boss failed (return to bonfire, lose 1 Spark)
+    """
+    if not current_node or current_node.get("kind") != "boss":
+        return
+
+    version = str(campaign.get("version") or "V1").upper()
+
+    st.markdown("#### Boss outcome")
+    col_win, col_fail = st.columns(2)
+
+    with col_win:
+        if st.button(
+            "Boss defeated (close chapter)",
+            key=f"campaign_{version.lower()}_boss_defeated",
+        ):
+            _apply_boss_defeated(state, campaign, current_node, version)
+
+    with col_fail:
+        if st.button(
+            "Boss failed (return to bonfire, lose 1 Spark)",
+            key=f"campaign_{version.lower()}_boss_failed",
+        ):
+            _apply_boss_failure(state, campaign, current_node, version)
 
 
 def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
