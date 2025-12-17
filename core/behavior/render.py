@@ -4,18 +4,18 @@ import random
 from pathlib import Path
 
 from core.settings_manager import load_settings
-from ui.behavior_decks_tab.logic import (_ensure_state, load_behavior
+from core.behavior.logic import (_ensure_state, load_behavior
     , _new_state_from_file, _reset_deck, _load_cfg_for_state
     , _draw_card, _manual_heatup, apply_heatup, _clear_heatup_prompt
     , _ornstein_smough_heatup_ui, _apply_sif_limping_mode
     , _revert_sif_limping_mode)
-from ui.behavior_decks_tab.assets import (BEHAVIOR_CARDS_PATH, CARD_BACK
+from core.behavior.assets import (BEHAVIOR_CARDS_PATH, CARD_BACK
     , _dim_greyscale, _behavior_image_path, CATEGORY_ORDER, CATEGORY_EMOJI)
-from ui.behavior_decks_tab.persistance import _save_slot_ui
-from ui.behavior_decks_tab.generation import (render_dual_boss_data_cards
+from core.behavior.persistance import _save_slot_ui
+from core.behavior.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
     , render_behavior_card_cached, build_behavior_catalog)
-from ui.behavior_decks_tab.models import BehaviorEntry
+from core.behavior.models import BehaviorEntry
 from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
 
 

@@ -1,7 +1,6 @@
 # ui/event_mode/render.py
 import os
 import base64
-import pyautogui
 from pathlib import Path
 from typing import Any, Dict
 
@@ -89,26 +88,14 @@ def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_heig
     st.components.v1.html(container_html, height=max_iframe_height)
 
 
-def _scroll_container_height(default: int = 650) -> int:
-    """
-    Match the old Events tab "discard container" feel: a tall, scrollable panel.
-    Use pyautogui height when available; fall back cleanly for headless runs.
-    """
-    try:
-        h = int(pyautogui.size().height * 0.40)
-        return max(420, min(h, 1100))
-    except Exception:
-        return default
-
-
 def _render_discard_container(deck_state: Dict[str, Any]) -> None:
     discard = list(deck_state.get("discard_pile") or [])
     if not discard:
-        with st.container(height=_scroll_container_height(), border=True):
+        with st.container(border=True):
             st.caption("Empty.")
         return
 
-    with st.container(height=_scroll_container_height(), border=True):
+    with st.container(border=True):
         i_col, t_col = st.columns([1, 1])
         with i_col:
             render_discard_pile(discard)

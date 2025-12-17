@@ -5,8 +5,8 @@ from typing import Sequence, Tuple
 
 from PIL import Image
 
-from ui.behavior_decks_tab.generation import render_behavior_card_cached
-from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
+from core.behavior.generation import render_behavior_card_cached
+from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
 from ui.boss_mode.aoe_pattern_utils import (
     NODE_COORDS,
     is_adjacent,

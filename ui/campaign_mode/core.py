@@ -4,7 +4,7 @@ import json
 import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from ui.encounters_tab.logic import (
+from ui.encounter_mode.logic import (
     _list_encounters_cached,
     _load_valid_sets_cached,
     filter_expansions,

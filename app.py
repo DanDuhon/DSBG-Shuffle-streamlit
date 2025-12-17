@@ -12,7 +12,7 @@ from core.settings_manager import load_settings, save_settings
 st.set_page_config(
     page_title="DSBG-Shuffle",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 st.markdown("""

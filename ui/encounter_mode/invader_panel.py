@@ -4,13 +4,13 @@ from typing import Dict, List, Optional, Tuple
 import random
 import streamlit as st
 
-from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
-from ui.behavior_decks_tab.generation import (
+from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
+from core.behavior.generation import (
     build_behavior_catalog,
     render_data_card_cached,
     render_behavior_card_cached,
 )
-from ui.behavior_decks_tab.logic import (
+from core.behavior.logic import (
     _ensure_state,
     _new_state_from_file,
     _load_cfg_for_state,
@@ -18,7 +18,7 @@ from ui.behavior_decks_tab.logic import (
     _manual_heatup,
     check_and_trigger_heatup,
 )
-from ui.behavior_decks_tab.models import BehaviorEntry, BehaviorConfig
+from core.behavior.models import BehaviorEntry, BehaviorConfig
 from ui.encounter_mode import play_state
 from ui.encounter_mode.assets import enemyNames
 

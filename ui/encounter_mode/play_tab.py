@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import streamlit as st
-import pyautogui
 from core.encounter_rules import make_encounter_key
 from core.encounter import timer as timer_mod
-from ui.encounter_mode import play_state
-from ui.encounter_mode import play_panels
-from ui.encounter_mode import invader_panel
+from ui.encounter_mode import play_state, play_panels, invader_panel
 
 
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
@@ -121,7 +118,7 @@ def render(settings: dict) -> None:
             play_panels._render_rewards(encounter, settings)
 
     # RIGHT COLUMN
-    with col_right.container(height=int(pyautogui.size().height * 0.65)):
+    with col_right.container():
         tab_enemies, tab_invaders = st.tabs(["Encounter Enemies", "Invaders"])
 
         # Standard encounter enemies

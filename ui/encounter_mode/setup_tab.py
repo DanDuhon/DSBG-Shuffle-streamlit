@@ -1,12 +1,11 @@
 #ui/encounter_mode/setup_tab.py
 import streamlit as st
 import os
-import pyautogui
 from io import BytesIO
 
 from core.settings_manager import save_settings
-from ui.behavior_decks_tab.generation import build_behavior_catalog
-from ui.behavior_decks_tab.models import BehaviorEntry
+from core.behavior.generation import build_behavior_catalog
+from core.behavior.models import BehaviorEntry
 from ui.encounter_mode.generation import (
     editedEncounterKeywords,
     generate_encounter_image,
@@ -172,7 +171,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     # -------------------------------------------------------------------------
     # LEFT COLUMN – SETUP / SAVE
     # -------------------------------------------------------------------------
-    with col_controls.container(height=int(pyautogui.size().height*0.65)):
+    with col_controls.container():
         st.markdown("#### Encounter Setup")
 
         # Expansion selection
@@ -501,7 +500,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         else:
             st.info("Select an encounter to get started.")
 
-    with col_event.container(height=int(pyautogui.size().height*0.65)):
+    with col_event.container():
         st.markdown("#### Events")
 
         events = st.session_state.get("encounter_events", [])

@@ -1,17 +1,16 @@
 # ui/boss_mode_tab.py
 import random
-import pyautogui
 import json
 import streamlit as st
 
-from ui.encounters_tab.generation import generate_encounter_image
-from ui.behavior_decks_tab.assets import (
+from ui.encounter_mode.generation import generate_encounter_image
+from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,
     CATEGORY_EMOJI,
     _behavior_image_path
 )
-from ui.behavior_decks_tab.logic import (
+from core.behavior.logic import (
     _ensure_state,
     _new_state_from_file,
     _load_cfg_for_state,
@@ -22,14 +21,14 @@ from ui.behavior_decks_tab.logic import (
     _clear_heatup_prompt,
     _ornstein_smough_heatup_ui,
 )
-from ui.behavior_decks_tab.generation import (
+from core.behavior.generation import (
     build_behavior_catalog,
     render_data_card_cached,
     render_dual_boss_data_cards,
     render_behavior_card_cached,
     render_dual_boss_behavior_card,
 )
-from ui.behavior_decks_tab.render import render_health_tracker
+from core.behavior.render import render_health_tracker
 from ui.boss_mode.guardian_dragon_fiery_breath import (
     GUARDIAN_DRAGON_NAME, 
     GUARDIAN_CAGE_PREFIX, 
@@ -57,7 +56,7 @@ from ui.boss_mode.executioners_chariot_death_race import (
 
 
 BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
-CARD_DISPLAY_WIDTH = int(380 * (pyautogui.size().height / 1400))
+CARD_DISPLAY_WIDTH = 380
 
 
 def _get_boss_mode_state_key(entry) -> str:

@@ -6,8 +6,8 @@ from pathlib import Path
 from copy import deepcopy
 from typing import List, Dict, Any
 
-from ui.behavior_decks_tab.models import BehaviorConfig, Entity, Heatup
-from ui.behavior_decks_tab.assets import _path, _strip_behavior_suffix
+from core.behavior.models import BehaviorConfig, Entity, Heatup
+from core.behavior.assets import _path, _strip_behavior_suffix
 from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
 
 
@@ -416,31 +416,6 @@ def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
     return [k for k in behaviors if k.lower().startswith(prefix_lower)]
 
 
-def ensure_behavior_state(state):
-    if "behavior_state" not in state:
-        state["behavior_state"] = {
-            "draw_pile": [],
-            "discard_pile": [],
-            "current_card": None,
-            "entities": [],
-        }
-    return state["behavior_state"]
-
-
-def _make_king_entity(cfg, idx: int) -> Entity:
-    """Create 'King {idx}' as an Entity object."""
-    hpmax = int(cfg.raw.get("health", 25))
-    label = f"King {idx}"
-    return Entity(
-        id=f"king_{idx}",
-        label=label,
-        hp_max=hpmax,
-        hp=hpmax,
-        heatup_thresholds=[],  # Four Kings don't use standard heat-up thresholds
-        crossed=[],
-    )
-
-
 # ------------------------
 # JSON Importer
 # ------------------------
@@ -634,23 +609,6 @@ def register_deck_rule(name: str):
         DECK_SETUP_RULES[name.lower()] = func
         return func
     return decorator
-
-
-def apply_special_rules(cfg, rng):
-    """Apply any registered special rules to the boss's deck setup."""
-    boss_name = cfg.name.lower()
-    rule_func = DECK_SETUP_RULES.get(boss_name)
-    if rule_func:
-        return rule_func(cfg, rng)
-    return cfg.deck[:]  # Default: no modification
-
-
-def build_dual_boss_draw_pile(cfg: BehaviorConfig, rng: random.Random) -> List[str]:
-    """Build a shuffled pile of length = cards count, unless cards not specified."""
-    count = cfg.raw["cards"]
-    pile = cfg.deck[:count] if len(cfg.deck) >= count else cfg.deck[:]
-    rng.shuffle(pile)
-    return pile
 
 
 def force_include(
@@ -1285,13 +1243,6 @@ def _old_dragonslayer_heatup(cfg, state, rng, confirmed=False):
     state["old_dragonslayer_heatups"] = count + 1
 
     return True, False  # applied successfully
-
-
-def _add_tag(bdata, tag):
-    """Example helper: add a tag field to a behavior if not present."""
-    tags = bdata.setdefault("tags", [])
-    if tag not in tags:
-        tags.append(tag)
 
 
 def check_and_trigger_heatup(prev_hp: int, new_hp: int, ent: Entity, state: Dict[str, Any],

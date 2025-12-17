@@ -10,6 +10,7 @@ from collections import defaultdict
 
 from ui.encounter_mode.generation import generate_encounter_image, load_encounter, load_valid_sets, ENCOUNTER_DATA_DIR
 
+
 INVADERS_PATH = Path("data/invaders.json")
 HARD_MAX_INVADERS_BY_LEVEL = {
     1: 2,

@@ -3,8 +3,8 @@ import streamlit as st
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
-from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
-from ui.behavior_decks_tab.generation import render_data_card_cached, render_dual_boss_data_cards
+from core.behavior.assets import BEHAVIOR_CARDS_PATH
+from core.behavior.generation import render_data_card_cached, render_dual_boss_data_cards
 from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
@@ -18,7 +18,7 @@ from ui.campaign_mode.core import (
 )
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
-from ui.encounters_tab.render import render_original_encounter
+from ui.encounter_mode.setup_tab import render_original_encounter
 
 
 def _is_stage_closed_for_node(campaign: Dict[str, Any], node: Dict[str, Any]) -> bool:

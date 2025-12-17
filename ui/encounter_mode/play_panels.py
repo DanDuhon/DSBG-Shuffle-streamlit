@@ -21,11 +21,11 @@ from core.encounter_triggers import (
     get_triggers_for_event,
 )
 
-from ui.behavior_decks_tab import render as behavior_decks_render
-from ui.behavior_decks_tab.assets import BEHAVIOR_CARDS_PATH
-from ui.behavior_decks_tab.generation import render_data_card_cached, build_behavior_catalog
-from ui.behavior_decks_tab.logic import load_behavior
-from ui.behavior_decks_tab.models import BehaviorEntry
+from core.behavior import render as behavior_decks_render
+from core.behavior.assets import BEHAVIOR_CARDS_PATH
+from core.behavior.generation import render_data_card_cached, build_behavior_catalog
+from core.behavior.logic import load_behavior
+from core.behavior.models import BehaviorEntry
 from ui.encounter_mode import invader_panel
 from ui.encounter_mode.assets import enemyNames
 from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS

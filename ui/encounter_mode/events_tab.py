@@ -309,9 +309,9 @@ def render(settings: Dict[str, Any]) -> None:
             allowed_exp = set(exp_sel)
             cards = [c for c in cards if str(c.get("expansion") or "") in allowed_exp]
 
-        cards = sorted(cards, key=lambda x: (str(x.get("expansion") or ""), str(x.get("id") or "")))
+        cards = sorted(cards, key=lambda x: str(x.get("name") or ""))
 
-        left, right = st.columns([1.15, 0.85], gap="large")
+        left, right = st.columns([1, 0.5], gap="large")
 
         if not cards:
             with left:
@@ -321,7 +321,7 @@ def render(settings: Dict[str, Any]) -> None:
                 st.caption("—")
         else:
             labels = [
-                f"{c.get('id','')} · {c.get('type','')} · {c.get('expansion','')}".strip()
+                f"{c.get('id','')} · {c.get('type','')}".strip()
                 for c in cards
             ]
 

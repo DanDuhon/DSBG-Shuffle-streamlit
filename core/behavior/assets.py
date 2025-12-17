@@ -236,11 +236,6 @@ def _strip_behavior_suffix(name: str) -> str:
     return re.sub(r"\s+\d+$", "", name.strip())
 
 
-def card_image_path(boss_name: str, behavior_name: str) -> str:
-    """Map a behavior name to its card image path."""
-    return _path(f"{boss_name} - {behavior_name}.jpg")
-
-
 def _path(img_rel: str) -> str:
     return str(Path("assets") / "behavior cards" / img_rel)
     

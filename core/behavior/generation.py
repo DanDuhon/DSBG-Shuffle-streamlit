@@ -4,13 +4,12 @@ import json
 import hashlib
 import io
 from PIL import Image, ImageDraw, ImageFont
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from collections import defaultdict
 
-from core.image_cache import _load_jpg_cached, _load_png_cached
-from ui.behavior_decks_tab.assets import ICONS_DIR, FONTS, coords_map, text_styles, build_icon_filename, CATEGORY_ORDER, BOSS_CATEGORY_MAP
-from ui.behavior_decks_tab.models import BehaviorEntry
-from ui.behavior_decks_tab.logic import load_behavior, list_behavior_files
+from core.behavior.assets import ICONS_DIR, FONTS, coords_map, text_styles, build_icon_filename, CATEGORY_ORDER, BOSS_CATEGORY_MAP
+from core.behavior.models import BehaviorEntry
+from core.behavior.logic import load_behavior, list_behavior_files
 
 
 @st.cache_data(show_spinner=False)
@@ -45,44 +44,6 @@ def render_behavior_card_cached(
     _ = _hash_json(behavior_json)  # incorporated into Streamlit cache key by argument value
     _ = variant_id
     return render_behavior_card(base_path, behavior_json, is_boss=is_boss, base_card=base_card)
-
-
-@st.cache_data(show_spinner=False)
-def render_behavior_deck_cached(deck_key: str, cards: List[Dict[str, Any]]) -> List[bytes]:
-    """
-    Pre-render and cache a complete deck as a list of PNG bytes, in draw order.
-
-    Each item in 'cards' should be a dict with at least:
-      - kind: "data" | "behavior"
-      - base_path: str
-      - json: dict              (raw_json for data; behavior_json for behavior)
-      - is_boss: bool
-      - no_edits: bool          (only for kind == "data"; optional otherwise)
-      - base_card: Optional[bytes]  (only for kind == "behavior" when using a pre-rendered data card)
-      - variant_id: Optional[str]
-
-    The 'deck_key' should be a stable identifier for the deck composition, e.g.:
-        f"{boss}_{difficulty}_{heatup}_{seed}"
-    Changing the key forces Streamlit to rebuild the deck cache once.
-    """
-    rendered: List[bytes] = []
-    for item in cards:
-        kind = item.get("kind")
-        base_path = item.get("base_path")
-        json_blob = item.get("json", {})
-        is_boss = bool(item.get("is_boss", False))
-        variant_id = item.get("variant_id")
-
-        if kind == "data":
-            no_edits = bool(item.get("no_edits", False))
-            img_bytes = render_data_card_cached(base_path, json_blob, is_boss, no_edits, variant_id=variant_id)
-        else:
-            base_card = item.get("base_card")
-            img_bytes = render_behavior_card_cached(base_path, json_blob, is_boss, base_card=base_card, variant_id=variant_id)
-
-        rendered.append(img_bytes)
-
-    return rendered
 
 
 def infer_category(cfg) -> str:
@@ -475,27 +436,3 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
                             w, h = icon.size
                             icon = icon.resize((int(w * size_scale), int(h * size_scale)))
                         base.alpha_composite(icon, (x, y))
-
-
-@st.cache_resource(show_spinner=False)
-def load_behavior_base(path: str) -> Image.Image:
-    """Load and cache a base behavior/data card image as RGBA."""
-    if _load_jpg_cached:
-        return _load_jpg_cached(path).convert("RGBA")
-    return Image.open(path).convert("RGBA")
-
-
-@st.cache_resource(show_spinner=False)
-def load_behavior_icon(filename: str) -> Image.Image:
-    """Load and cache a behavior icon (PNG) from assets/behavior icons."""
-    from pathlib import Path as _P
-    full = _P("assets/behavior icons") / filename
-    if _load_png_cached:
-        return _load_png_cached(full)
-    return Image.open(full).convert("RGBA")
-
-
-@st.cache_resource(show_spinner=False)
-def load_font(size: int = 32) -> ImageFont.FreeTypeFont:
-    """Load and cache OptimusPrinceps font at a given size."""
-    return ImageFont.truetype("assets/OptimusPrinceps.ttf", size)
