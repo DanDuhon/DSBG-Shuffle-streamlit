@@ -289,35 +289,13 @@ def render(settings: Dict[str, Any]) -> None:
             settings["event_deck"] = deck_state
             save_settings(settings)
 
-        # Layout:
-        #   Left: buttons + metrics
-        #   Mid: current card
-        #   Right: discard container
-        left, mid, right = st.columns([1, 0.7, 0.85], gap="small")
+        if not st.session_state.get("ui_compact", False):
+            # Desktop Layout:
+            #   Left: buttons + metrics
+            #   Mid: current card
+            #   Right: discard container
+            left, mid, right = st.columns([1, 0.7, 0.85], gap="small")
 
-        current_card = deck_state.get("current_card")
-        has_current = bool(current_card)
-        card_name = Path(str(current_card)).stem if current_card else ""
-        name_norm = card_name.replace("_", " ").strip().lower() if card_name else ""
-        is_big_pilgrims_key = name_norm == "big pilgrim's key"
-        is_lost_to_time = name_norm == "lost to time"
-
-        with left:
-            b_row1_a, b_row1_b = st.columns(2)
-            with b_row1_a:
-                if st.button("Draw", width="stretch", key="event_sim_draw"):
-                    draw_event_card()
-                    deck_state = st.session_state[DECK_STATE_KEY]
-                    settings["event_deck"] = deck_state
-                    save_settings(settings)
-            with b_row1_b:
-                if st.button("Reset and Shuffle", width="stretch", key="event_sim_reset"):
-                    reset_event_deck(configs=configs, preset=preset)
-                    deck_state = st.session_state[DECK_STATE_KEY]
-                    settings["event_deck"] = deck_state
-                    save_settings(settings)
-
-            # Refresh locals after any action.
             current_card = deck_state.get("current_card")
             has_current = bool(current_card)
             card_name = Path(str(current_card)).stem if current_card else ""
@@ -325,85 +303,190 @@ def render(settings: Dict[str, Any]) -> None:
             is_big_pilgrims_key = name_norm == "big pilgrim's key"
             is_lost_to_time = name_norm == "lost to time"
 
-            b_row2_a, b_row2_b = st.columns(2)
-            with b_row2_a:
-                if st.button(
-                    "Current → Top",
-                    width="stretch",
-                    disabled=not has_current,
-                    key="event_sim_top",
-                ):
-                    put_current_on_top()
-                    deck_state = st.session_state[DECK_STATE_KEY]
-                    settings["event_deck"] = deck_state
-                    save_settings(settings)
-            with b_row2_b:
-                if st.button(
-                    "Current → Bottom",
-                    width="stretch",
-                    disabled=not has_current,
-                    key="event_sim_bottom",
-                ):
-                    put_current_on_bottom()
-                    deck_state = st.session_state[DECK_STATE_KEY]
-                    settings["event_deck"] = deck_state
-                    save_settings(settings)
-
-            # Refresh locals after any action.
-            current_card = deck_state.get("current_card")
-            has_current = bool(current_card)
-            card_name = Path(str(current_card)).stem if current_card else ""
-            name_norm = card_name.replace("_", " ").strip().lower() if card_name else ""
-            is_big_pilgrims_key = name_norm == "big pilgrim's key"
-            is_lost_to_time = name_norm == "lost to time"
-
-            # Card-specific buttons belong in the left controls column.
-            if has_current and (is_big_pilgrims_key or is_lost_to_time):
-                a1, a2 = st.columns(2)
-                with a1:
-                    if st.button(
-                        "Shuffle into deck",
-                        width="stretch",
-                        key="event_sim_shuffle_into_deck",
-                    ):
-                        shuffle_current_into_deck()
+            with left:
+                b_row1_a, b_row1_b = st.columns(2)
+                with b_row1_a:
+                    if st.button("Draw", width="stretch", key="event_sim_draw"):
+                        draw_event_card()
                         deck_state = st.session_state[DECK_STATE_KEY]
                         settings["event_deck"] = deck_state
                         save_settings(settings)
-                        st.rerun()
-                with a2:
-                    if is_lost_to_time:
+                with b_row1_b:
+                    if st.button("Reset and Shuffle", width="stretch", key="event_sim_reset"):
+                        reset_event_deck(configs=configs, preset=preset)
+                        deck_state = st.session_state[DECK_STATE_KEY]
+                        settings["event_deck"] = deck_state
+                        save_settings(settings)
+
+                b_row2_a, b_row2_b = st.columns(2)
+                with b_row2_a:
+                    if st.button(
+                        "Current → Top",
+                        width="stretch",
+                        disabled=not has_current,
+                        key="event_sim_top",
+                    ):
+                        put_current_on_top()
+                        deck_state = st.session_state[DECK_STATE_KEY]
+                        settings["event_deck"] = deck_state
+                        save_settings(settings)
+                with b_row2_b:
+                    if st.button(
+                        "Current → Bottom",
+                        width="stretch",
+                        disabled=not has_current,
+                        key="event_sim_bottom",
+                    ):
+                        put_current_on_bottom()
+                        deck_state = st.session_state[DECK_STATE_KEY]
+                        settings["event_deck"] = deck_state
+                        save_settings(settings)
+
+                # Refresh locals after any action.
+                current_card = deck_state.get("current_card")
+                has_current = bool(current_card)
+                card_name = Path(str(current_card)).stem if current_card else ""
+                name_norm = card_name.replace("_", " ").strip().lower() if card_name else ""
+                is_big_pilgrims_key = name_norm == "big pilgrim's key"
+                is_lost_to_time = name_norm == "lost to time"
+
+                # Card-specific buttons belong in the left controls column.
+                if has_current and (is_big_pilgrims_key or is_lost_to_time):
+                    a1, a2 = st.columns(2)
+                    with a1:
                         if st.button(
-                            "Remove from deck",
+                            "Shuffle into deck",
                             width="stretch",
-                            key="event_sim_remove_from_deck",
+                            key="event_sim_shuffle_into_deck",
                         ):
-                            remove_card_from_deck()
+                            shuffle_current_into_deck()
                             deck_state = st.session_state[DECK_STATE_KEY]
                             settings["event_deck"] = deck_state
                             save_settings(settings)
                             st.rerun()
+                    with a2:
+                        if is_lost_to_time:
+                            if st.button(
+                                "Remove from deck",
+                                width="stretch",
+                                key="event_sim_remove_from_deck",
+                            ):
+                                remove_card_from_deck()
+                                deck_state = st.session_state[DECK_STATE_KEY]
+                                settings["event_deck"] = deck_state
+                                save_settings(settings)
+                                st.rerun()
 
-            draw_n = len(deck_state.get("draw_pile") or [])
-            discard_n = len(deck_state.get("discard_pile") or [])
-            total_n = draw_n + discard_n + (1 if deck_state.get("current_card") else 0)
+                draw_n = len(deck_state.get("draw_pile") or [])
+                discard_n = len(deck_state.get("discard_pile") or [])
+                total_n = draw_n + discard_n + (1 if deck_state.get("current_card") else 0)
 
-            m1, m2, m3 = st.columns(3)
-            with m1:
-                st.metric("Draw", draw_n)
-            with m2:
-                st.metric("Discard", discard_n)
-            with m3:
-                st.metric("Total", total_n)
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Draw", draw_n)
+                with m2:
+                    st.metric("Discard", discard_n)
+                with m3:
+                    st.metric("Total", total_n)
 
-        with mid:
+            with mid:
+                if current_card:
+                    card_name = Path(str(current_card)).stem
+                    st.image(str(current_card), width="stretch")
+                else:
+                    st.markdown("### Current card")
+                    st.caption("—")
+
+            with right:
+                st.markdown("### Discard")
+                _render_discard_container(deck_state)
+        else:
+            def _sync_deck_to_settings() -> None:
+                ds = st.session_state.get(DECK_STATE_KEY)
+                if not isinstance(ds, dict):
+                    return
+                settings["event_deck"] = ds
+                save_settings(settings)
+
+            def _cb_draw() -> None:
+                draw_event_card()
+                _sync_deck_to_settings()
+
+            def _cb_reset() -> None:
+                ds = st.session_state.get(DECK_STATE_KEY) or {}
+                preset_now = ds.get("preset") or preset
+                reset_event_deck(configs=configs, preset=preset_now)
+                _sync_deck_to_settings()
+
+            def _cb_top() -> None:
+                put_current_on_top()
+                _sync_deck_to_settings()
+
+            def _cb_bottom() -> None:
+                put_current_on_bottom()
+                _sync_deck_to_settings()
+
+            def _cb_shuffle_into_deck() -> None:
+                shuffle_current_into_deck()
+                _sync_deck_to_settings()
+
+            def _cb_remove_from_deck() -> None:
+                remove_card_from_deck()
+                _sync_deck_to_settings()
+
+            # Read fresh state for this render pass
+            deck_state = _ensure_deck_state(settings)
+            current_card = deck_state.get("current_card")
+            has_current = bool(current_card)
+            card_name = Path(str(current_card)).stem if current_card else ""
+            name_norm = card_name.replace("_", " ").strip().lower() if card_name else ""
+            is_big_pilgrims_key = name_norm == "big pilgrim's key"
+            is_lost_to_time = name_norm == "lost to time"
+
+            st.button("Draw", width="stretch", key="event_sim_draw", on_click=_cb_draw)
+
+            if has_current and (is_big_pilgrims_key or is_lost_to_time):
+                st.button(
+                    "Shuffle into deck",
+                    width="stretch",
+                    key="event_sim_shuffle_into_deck",
+                    on_click=_cb_shuffle_into_deck,
+                )
+                if is_lost_to_time:
+                    st.button(
+                        "Remove from deck",
+                        width="stretch",
+                        key="event_sim_remove_from_deck",
+                        on_click=_cb_remove_from_deck,
+                    )
+
             if current_card:
-                card_name = Path(str(current_card)).stem
                 st.image(str(current_card), width="stretch")
             else:
                 st.markdown("### Current card")
                 st.caption("—")
 
-        with right:
+            st.button(
+                "Current → Top",
+                width="stretch",
+                disabled=not has_current,
+                key="event_sim_top",
+                on_click=_cb_top,
+            )
+            st.button(
+                "Current → Bottom",
+                width="stretch",
+                disabled=not has_current,
+                key="event_sim_bottom",
+                on_click=_cb_bottom,
+            )
+
+            st.button(
+                "Reset and Shuffle",
+                width="stretch",
+                key="event_sim_reset",
+                on_click=_cb_reset,
+            )
+
             st.markdown("### Discard")
             _render_discard_container(deck_state)

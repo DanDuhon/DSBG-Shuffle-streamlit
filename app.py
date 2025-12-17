@@ -1,7 +1,7 @@
 # app.py
 import streamlit as st
 
-from ui import sidebar
+from ui.sidebar import render_sidebar
 from ui.encounter_mode.render import render as encounter_mode_render
 from ui.boss_mode.boss_mode_render import render as boss_mode_render
 from ui.campaign_mode.render import render as campaign_mode_render
@@ -143,7 +143,7 @@ if pending:
     del st.session_state["pending_campaign_snapshot"]
 
 # Sidebar: expansions + party + NG+
-sidebar.render_sidebar(settings)
+render_sidebar(settings)
 save_settings(settings)
 
 selected_characters = settings.get("selected_characters", [])

@@ -56,7 +56,15 @@ from ui.boss_mode.executioners_chariot_death_race import (
 
 
 BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
-CARD_DISPLAY_WIDTH = 380
+
+
+def _card_w() -> int:
+    s = st.session_state.get("user_settings") or {}
+    try:
+        w = int(s.get("ui_card_width", 360))
+    except Exception:
+        w = 360
+    return max(240, min(560, w))
 
 
 def _get_boss_mode_state_key(entry) -> str:
@@ -77,6 +85,39 @@ def _ensure_boss_state(entry):
         st.session_state["behavior_deck"] = state
         st.session_state["behavior_cfg"] = cfg
     return state, cfg
+
+
+def _boss_draw_current() -> None:
+    entry = st.session_state.get("boss_mode_choice")
+    if not entry:
+        return
+    state, _cfg = _ensure_boss_state(entry)
+
+    st.session_state["boss_mode_draw_token"] = st.session_state.get("boss_mode_draw_token", 0) + 1
+    _draw_card(state)
+
+
+def _boss_manual_heatup_current() -> None:
+    entry = st.session_state.get("boss_mode_choice")
+    if not entry:
+        return
+    state, _cfg = _ensure_boss_state(entry)
+    _manual_heatup(state)
+
+
+def _render_combat_controls(*, where: str, full_width: bool = False) -> None:
+    st.button(
+        "Draw next card",
+        key=f"boss_mode_draw_{where}",
+        use_container_width=full_width,
+        on_click=_boss_draw_current,
+    )
+    st.button(
+        "Manual Heat-Up",
+        key=f"boss_mode_heatup_{where}",
+        use_container_width=full_width,
+        on_click=_boss_manual_heatup_current,
+    )
 
 
 def render():
@@ -174,7 +215,7 @@ def render():
 
         # Convert to a buffer if you want consistency with Encounter tab;
         # here we can just pass the PIL image directly to st.image.
-        st.image(card_img, width=CARD_DISPLAY_WIDTH)
+        st.image(card_img, width=_card_w())
 
 
     _ensure_state()
@@ -334,20 +375,12 @@ def render():
             st.rerun()
             
     # Draw / Heat-up buttons
-    c_hp_btns = st.columns([1, 1])
-    with c_hp_btns[0]:
-        cfg.entities = render_health_tracker(cfg, state)
-    with c_hp_btns[1]:
-        if st.button("Draw next card"):
-            # Increment a global draw token so AoE logic can tell
-            # when a *new* card has been drawn, even if the name
-            # is the same ("Death Race" every time).
-            st.session_state["boss_mode_draw_token"] = (
-                st.session_state.get("boss_mode_draw_token", 0) + 1
-            )
-            _draw_card(state)
-        if st.button("Manual Heat-Up"):
-            _manual_heatup(state)
+    if not st.session_state.get("ui_compact", False):
+        c_hp_btns = st.columns([1, 1])
+        with c_hp_btns[0]:
+            cfg.entities = render_health_tracker(cfg, state)
+        with c_hp_btns[1]:
+            _render_combat_controls(where="top")
 
     # --- Heat-Up confirmation prompt (Boss Mode) ---
     if (
@@ -447,7 +480,7 @@ def render():
                         is_boss=True,
                     )
 
-                st.image(img, width=CARD_DISPLAY_WIDTH)
+                st.image(img, width=_card_w())
 
             # Before heat-up, show the Mega Boss Setup encounter + buttons
             if not st.session_state.get("chariot_heatup_done", False):
@@ -463,17 +496,17 @@ def render():
             # If one is dead (phase 2), show only the survivor's data card
             if ornstein_dead and not smough_dead:
                 # Smough survives
-                st.image(s_img, width=CARD_DISPLAY_WIDTH)
+                st.image(s_img, width=_card_w())
             elif smough_dead and not ornstein_dead:
                 # Ornstein survives
-                st.image(o_img, width=CARD_DISPLAY_WIDTH)
+                st.image(o_img, width=_card_w())
             else:
                 # Phase 1 (both alive) or weird edge case: show both
                 o_col, s_col = st.columns(2)
                 with o_col:
-                    st.image(o_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(o_img, width=_card_w())
                 with s_col:
-                    st.image(s_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(s_img, width=_card_w())
         # Special case for Vordt's Frostbreath
         elif cfg.name == "Vordt of the Boreal Valley":
             data_path = cfg.display_cards[0] if cfg.display_cards else None
@@ -499,21 +532,24 @@ def render():
                         # Show data card + Frostbreath side-by-side
                         c1, c2 = st.columns(2)
                         with c1:
-                            st.image(data_img, width=CARD_DISPLAY_WIDTH)
+                            st.image(data_img, width=_card_w())
                         with c2:
-                            st.image(frost_img, width=CARD_DISPLAY_WIDTH)
+                            st.image(frost_img, width=_card_w())
                     else:
                         # Safety fallback: just show data card
-                        st.image(data_img, width=CARD_DISPLAY_WIDTH)
+                        st.image(data_img, width=_card_w())
                 else:
                     # Normal Vordt display, no Frostbreath this draw
-                    st.image(data_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(data_img, width=_card_w())
         else:
             # first display card is always the data card
             data_path = cfg.display_cards[0] if cfg.display_cards else None
             if data_path:
                 img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
-                st.image(img, width=CARD_DISPLAY_WIDTH)
+                st.image(img, width=_card_w())
+                
+        if st.session_state.get("ui_compact", False):
+            cfg.entities = render_health_tracker(cfg, state)
 
     # RIGHT: Deck + current card
     with col_right:
@@ -521,7 +557,7 @@ def render():
 
         if not current:
             # No card drawn yet => show card back
-            st.image(CARD_BACK, width=CARD_DISPLAY_WIDTH)
+            st.image(CARD_BACK, width=_card_w())
         else:
         # --- Ornstein & Smough dual-boss case ---
             if cfg.name == "Ornstein & Smough":
@@ -543,7 +579,7 @@ def render():
                             is_boss=True,
                         )
 
-                    st.image(img, width=CARD_DISPLAY_WIDTH)
+                    st.image(img, width=_card_w())
 
             # --- Vordt of the Boreal Valley: movement + attack decks ---
             elif cfg.name == "Vordt of the Boreal Valley" and isinstance(current, tuple):
@@ -559,7 +595,7 @@ def render():
                             cfg.behaviors.get(move_card, {}),
                             is_boss=True,
                         ),
-                        width=CARD_DISPLAY_WIDTH,
+                        width=_card_w(),
                     )
                 with c2:
                     atk_path = _behavior_image_path(cfg, atk_card)
@@ -569,7 +605,7 @@ def render():
                             cfg.behaviors.get(atk_card, {}),
                             is_boss=True,
                         ),
-                        width=CARD_DISPLAY_WIDTH,
+                        width=_card_w(),
                     )
 
             # --- Gaping Dragon: Stomach Slam shows Crawling Charge alongside ---
@@ -600,13 +636,13 @@ def render():
                     # Show them side-by-side
                     c1, c2 = st.columns(2)
                     with c1:
-                        st.image(stomach_img, width=CARD_DISPLAY_WIDTH)
+                        st.image(stomach_img, width=_card_w())
                     with c2:
-                        st.image(crawl_img, width=CARD_DISPLAY_WIDTH)
+                        st.image(crawl_img, width=_card_w())
                 else:
                     # Fallback: if Crawling Charge isn't found for some reason,
                     # at least show Stomach Slam
-                    st.image(stomach_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(stomach_img, width=_card_w())
 
             # --- Guardian Dragon: Cage Grasp Inferno shows Fiery Breath alongside ---
             elif cfg.name == GUARDIAN_DRAGON_NAME and isinstance(current, str) and current.startswith(GUARDIAN_CAGE_PREFIX):
@@ -643,9 +679,9 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(cage_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(cage_img, width=_card_w())
                 with c2:
-                    st.image(fiery_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(fiery_img, width=_card_w())
 
             # --- Black Dragon Kalameet: Hellfire cards show Fiery Ruin alongside ---
             elif cfg.name == BLACK_DRAGON_KALAMEET_NAME and isinstance(current, str) and current.startswith(KALAMEET_HELLFIRE_PREFIX):
@@ -682,9 +718,9 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(hellfire_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(hellfire_img, width=_card_w())
                 with c2:
-                    st.image(fiery_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(fiery_img, width=_card_w())
 
             # --- Old Iron King: Fire Beam cards show Blasted Nodes alongside ---
             elif cfg.name == OLD_IRON_KING_NAME and isinstance(current, str) and current.startswith(OIK_FIRE_BEAM_PREFIX):
@@ -720,9 +756,9 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(beam_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(beam_img, width=_card_w())
                 with c2:
-                    st.image(blasted_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(blasted_img, width=_card_w())
 
             # --- Executioner's Chariot: Death Race shows AoE track alongside ---
             elif (
@@ -765,9 +801,9 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(death_race_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(death_race_img, width=_card_w())
                 with c2:
-                    st.image(aoe_img, width=CARD_DISPLAY_WIDTH)
+                    st.image(aoe_img, width=_card_w())
 
             # --- Normal single-card case ---
             else:
@@ -777,7 +813,7 @@ def render():
                     cfg.behaviors[current],
                     is_boss=True,
                 )
-                st.image(img, width=CARD_DISPLAY_WIDTH)
+                st.image(img, width=_card_w())
 
         if cfg.name == "Vordt of the Boreal Valley":
             st.caption(
@@ -789,3 +825,7 @@ def render():
                 f"Draw pile: {len(state.get('draw_pile', []))} cards"
                 f" • Discard: {len(state.get('discard_pile', [])) + (1 if current else 0)} cards"
             )
+
+    # Mobile UX: duplicate controls below the cards in "Compact layout".
+    if st.session_state.get("ui_compact", False):
+        _render_combat_controls(where="bottom", full_width=True)

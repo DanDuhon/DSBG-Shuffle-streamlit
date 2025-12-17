@@ -63,6 +63,15 @@ def _attach_event_to_current_encounter(card_path: str) -> None:
     st.session_state.encounter_events = events
 
 
+def _event_img_path(ev: dict) -> str | None:
+    return (
+        ev.get("path")
+        or ev.get("card_path")
+        or ev.get("image_path")
+        or ev.get("img_path")
+    )
+
+
 def render_event_card(event_obj):
     """Render the attached event card (or a placeholder if none)."""
     if not event_obj:
@@ -165,13 +174,415 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     if "encounter_events" not in st.session_state:
         st.session_state.encounter_events = []
 
-    # --- Two-column layout: controls | cards ---
-    col_controls, col_enc, col_event = st.columns([0.5, 0.575, 1])
+    if not st.session_state.get("ui_compact", False):
+        # --- Two-column layout: controls | cards ---
+        col_controls, col_enc, col_event = st.columns([0.5, 0.575, 1])
 
-    # -------------------------------------------------------------------------
-    # LEFT COLUMN – SETUP / SAVE
-    # -------------------------------------------------------------------------
-    with col_controls.container():
+        # -------------------------------------------------------------------------
+        # LEFT COLUMN – SETUP / SAVE
+        # -------------------------------------------------------------------------
+        with col_controls.container():
+            st.markdown("#### Encounter Setup")
+
+            # Expansion selection
+            selected_expansion = st.selectbox(
+                "Set / Expansion",
+                filtered_expansions,
+                index=0,
+                disabled=not valid_party,
+            )
+
+            all_encounters = encounters_by_expansion[selected_expansion]
+
+            filtered_encounters = filter_encounters(
+                all_encounters,
+                selected_expansion,
+                character_count,
+                tuple(active_expansions),
+                valid_sets,
+            )
+
+            if not filtered_encounters:
+                st.warning("No valid encounters for the selected expansions and party size.")
+                st.stop()
+
+            # --- Level filter radio buttons (only show levels that exist) ---
+            level_values = sorted({e["level"] for e in filtered_encounters})
+
+            level_filter = "All"
+            if len(level_values) > 1:
+                level_options = ["All"] + [str(lv) for lv in level_values]
+                prev_level = st.session_state.get("encounter_level_filter", "All")
+                if prev_level not in level_options:
+                    prev_level = "All"
+
+                level_filter = st.radio(
+                    "Encounter level",
+                    level_options,
+                    index=level_options.index(prev_level),
+                    horizontal=True,
+                    key="encounter_level_filter",
+                )
+            elif len(level_values) == 1:
+                # Only a single level available – implicitly filter to it
+                level_filter = str(level_values[0])
+
+            if level_filter != "All":
+                try:
+                    level_int = int(level_filter)
+                    filtered_encounters = [
+                        e for e in filtered_encounters if e["level"] == level_int
+                    ]
+                except ValueError:
+                    pass
+
+            if not filtered_encounters:
+                st.warning("No encounters at this level for the current filters.")
+                st.stop()
+
+            display_names = [
+                f"{e['name']} (level {e['level']})" for e in filtered_encounters
+            ]
+
+            default_label = st.session_state.get("last_encounter", {}).get("label")
+            try:
+                default_index = display_names.index(default_label) if default_label else 0
+            except ValueError:
+                default_index = 0
+
+            selected_label = st.selectbox(
+                "Encounter",
+                display_names,
+                index=default_index,
+                key="encounter_dropdown",
+                disabled=not valid_party,
+            )
+
+            # Current encounter metadata
+            if selected_label:
+                selected_encounter = filtered_encounters[display_names.index(selected_label)]
+                encounter_name = selected_encounter["name"]
+                key = f"{encounter_name}|{selected_expansion}"
+                has_edited = (encounter_name, selected_expansion) in editedEncounterKeywords
+            else:
+                encounter_name = None
+                key = None
+                has_edited = False
+
+            # Ensure edited_toggles exists
+            if "edited_toggles" not in settings:
+                settings["edited_toggles"] = {}
+
+            prev_state = settings["edited_toggles"].get(key, False) if key else False
+
+            # If this encounter has no edited variant, force toggle off
+            if not has_edited and key:
+                settings["edited_toggles"][key] = False
+                prev_state = False
+
+            use_edited = st.checkbox(
+                "Use Edited Encounter",
+                value=prev_state,
+                key=f"edited_toggle_{encounter_name}_{selected_expansion}",
+                disabled=not has_edited,
+            )
+
+            if key:
+                settings["edited_toggles"][key] = use_edited
+
+            toggle_changed = prev_state != use_edited
+            st.session_state["last_toggle"] = use_edited
+
+            # --- Shuffle / Original buttons ---
+            col_shuffle, col_original = st.columns(2)
+            with col_shuffle:
+                shuffle_clicked = st.button("Shuffle", width="stretch")
+            with col_original:
+                original_clicked = st.button("Original", width="stretch")
+
+            # Shuffle
+            if shuffle_clicked and selected_label:
+                selected_encounter = filtered_encounters[display_names.index(selected_label)]
+                res = shuffle_encounter(
+                    selected_encounter,
+                    character_count,
+                    active_expansions,
+                    selected_expansion,
+                    use_edited,
+                )
+                if res.get("ok"):
+                    st.session_state.current_encounter = res
+                    st.session_state["last_encounter"] = {
+                        "label": selected_label,
+                        "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
+                        "expansion": selected_expansion,
+                        "character_count": character_count,
+                        "edited": use_edited,
+                        "enemies": res["enemies"],
+                        "expansions_used": res["expansions_used"],
+                    }
+                    _apply_added_invaders_to_current_encounter()
+                else:
+                    st.warning(res.get("message", "Unable to shuffle encounter."))
+
+            # Original
+            if original_clicked and selected_label and "current_encounter" in st.session_state:
+                current = st.session_state.current_encounter
+                res = render_original_encounter(
+                    current["encounter_data"],
+                    current["expansion"],
+                    current["encounter_name"],
+                    current["encounter_level"],
+                    use_edited,
+                )
+                if res:
+                    st.session_state.current_encounter = res
+                    st.session_state["last_encounter"] = {
+                        "label": selected_label,
+                        "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
+                        "expansion": res["expansion"],
+                        "character_count": character_count,
+                        "edited": use_edited,
+                        "enemies": res["enemies"],
+                        "expansions_used": res["expansions_used"],
+                    }
+                    _apply_added_invaders_to_current_encounter()
+
+            # Apply edited/original toggle when we already have a current encounter
+            if toggle_changed and "current_encounter" in st.session_state:
+                current = st.session_state.current_encounter
+                res = apply_edited_toggle(
+                    current["encounter_data"],
+                    current["expansion"],
+                    current["encounter_name"],
+                    current["encounter_level"],
+                    use_edited,
+                    enemies=current["enemies"],
+                    combo=current["expansions_used"],
+                )
+                if res:
+                    st.session_state.current_encounter = res
+                    st.session_state["last_encounter"] = {
+                        "label": selected_label,
+                        "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
+                        "expansion": res["expansion"],
+                        "character_count": character_count,
+                        "edited": use_edited,
+                        "enemies": res["enemies"],
+                        "expansions_used": res["expansions_used"],
+                    }
+                    _apply_added_invaders_to_current_encounter()
+
+            # Auto-shuffle when encounter selection changes (and no explicit button pressed)
+            if (
+                selected_label
+                and not shuffle_clicked
+                and not original_clicked
+                and not toggle_changed
+            ):
+                last = st.session_state.get("last_encounter", {})
+                encounter_changed = (
+                    last.get("label") != selected_label
+                    or last.get("edited") != use_edited
+                )
+
+                if encounter_changed:
+                    selected_encounter = filtered_encounters[display_names.index(selected_label)]
+                    res = shuffle_encounter(
+                        selected_encounter,
+                        character_count,
+                        active_expansions,
+                        selected_expansion,
+                        use_edited,
+                    )
+                    if res.get("ok"):
+                        st.session_state.current_encounter = res
+                        st.session_state["last_encounter"] = {
+                            "label": selected_label,
+                            "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
+                            "expansion": selected_expansion,
+                            "character_count": character_count,
+                            "edited": use_edited,
+                            "enemies": res["enemies"],
+                            "expansions_used": res["expansions_used"],
+                        }
+                        _apply_added_invaders_to_current_encounter()
+                        # Only clear events when we actually switched encounters
+                        st.session_state.encounter_events = []
+                    else:
+                        st.warning(res.get("message", "Unable to build encounter."))
+
+            # --- Optional invader configuration for this encounter ---
+            if "current_encounter" in st.session_state:
+                _render_invader_setup_controls(st.session_state.current_encounter)
+
+            # Character / expansion icons
+            if "current_encounter" in st.session_state:
+                icons_html = render_encounter_icons(st.session_state.current_encounter)
+                st.markdown(
+                    f'<div class="encounter-icons-wrapper">{icons_html}</div>',
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("---")
+
+            # ---------------------------------------------------------
+            # Save / Load curated encounters
+            # ---------------------------------------------------------
+            st.subheader("Saved Encounters")
+
+            save_name_default = (
+                st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
+            )
+            save_name = st.text_input("Save as:", value=save_name_default)
+
+            if st.button("Save Current", width="stretch"):
+                if "current_encounter" not in st.session_state:
+                    st.warning("No active encounter to save.")
+                else:
+                    payload = {
+                        **st.session_state.current_encounter,
+                        "events": st.session_state.get("encounter_events", []),
+                        "meta_label": st.session_state.get("last_encounter", {}).get("label"),
+                        "character_count": character_count,
+                        "edited": use_edited,
+                    }
+                    st.session_state.saved_encounters[save_name] = payload
+                    st.success(f"Saved encounter as '{save_name}'.")
+
+            if st.session_state.saved_encounters:
+                load_name = st.selectbox(
+                    "Load saved encounter:",
+                    list(st.session_state.saved_encounters.keys()),
+                )
+                if st.button("Load", width="stretch"):
+                    payload = st.session_state.saved_encounters[load_name]
+                    st.session_state.current_encounter = payload
+                    st.session_state.encounter_events = payload.get("events", [])
+                    st.session_state["last_encounter"] = {
+                        "label": payload.get("meta_label", load_name),
+                        "slug": payload.get("slug"),
+                        "expansion": payload.get("expansion"),
+                        "character_count": payload.get("character_count"),
+                        "edited": payload.get("edited", False),
+                        "enemies": payload.get("enemies"),
+                        "expansions_used": payload.get("expansions_used"),
+                    }
+
+                    # Reconstruct 'added invaders' from payload['invaders']
+                    _restore_added_invaders_from_payload(payload)
+                    _apply_added_invaders_to_current_encounter()
+
+        # -------------------------------------------------------------------------
+        # RIGHT COLUMN – CARDS
+        # -------------------------------------------------------------------------
+        with col_enc:
+            if "current_encounter" in st.session_state:
+                encounter = st.session_state.current_encounter
+                render_card(encounter["card_img"])
+
+                # Divider between card and rules
+                st.markdown(
+                    "<hr style='margin: 0.5rem 0 0.75rem 0; border-color: #333;' />",
+                    unsafe_allow_html=True,
+                )
+
+                # -------------------------------------------------------------------------
+                # Keywords below the encounter card
+                # -------------------------------------------------------------------------
+                if "current_encounter" in st.session_state:
+                    current = st.session_state.current_encounter
+                    keyword_items = build_encounter_keywords(
+                        current["encounter_name"],
+                        current["expansion"],
+                        use_edited,
+                    )
+                else:
+                    keyword_items = []
+
+                if keyword_items:
+                    with st.expander("Special Rules Reference", expanded=False):
+                        for _, text in keyword_items:
+                            st.markdown(text)
+
+            elif "last_encounter" in st.session_state:
+                st.info(f"Last encounter was {st.session_state['last_encounter']['label']}")
+            else:
+                st.info("Select an encounter to get started.")
+
+        with col_event.container():
+            st.markdown("#### Events")
+
+            events = st.session_state.get("encounter_events", [])
+
+            # Event controls (attach / clear) in this column
+            col_ev1, col_ev2, col_ev3 = st.columns(3)
+            with col_ev1:
+                if st.button(
+                    "Attach Random Event",
+                    width="stretch",
+                    key="enc_attach_random_event",
+                ):
+                    # Ensure event deck exists and has a preset
+                    if DECK_STATE_KEY not in st.session_state:
+                        st.session_state[DECK_STATE_KEY] = {
+                            "draw_pile": [],
+                            "discard_pile": [],
+                            "current_card": None,
+                            "preset": None,
+                        }
+
+                    deck_state = st.session_state[DECK_STATE_KEY]
+                    configs = load_event_configs()
+
+                    preset = (
+                        deck_state.get("preset")
+                        or settings.get("event_deck", {}).get("preset")
+                    )
+
+                    # Initialize if empty or preset changed
+                    if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
+                        initialize_event_deck(preset, configs=configs)
+
+                    # Draw and attach
+                    draw_event_card()
+                    save_settings(settings)
+                    deck_state = st.session_state[DECK_STATE_KEY]
+                    card_path = deck_state.get("current_card")
+                    if card_path:
+                        _attach_event_to_current_encounter(card_path)
+                    events = st.session_state.get("encounter_events", [])
+
+            with col_ev2:
+                if st.button(
+                    "Clear Events",
+                    width="stretch",
+                    key="enc_clear_events",
+                ):
+                    st.session_state.encounter_events = []
+                    events = []
+
+            # Summary line
+            if not events:
+                st.caption("No events attached yet.")
+
+            # Event card images
+            if events:
+                ncols = 3
+                for row_start in range(0, len(events), ncols):
+                    row_events = events[row_start:row_start + ncols]
+                    cols = st.columns(ncols)
+
+                    for i, ev in enumerate(row_events):
+                        with cols[i]:
+                            img = _event_img_path(ev)
+                            if img:
+                                # migrate in-place so future code can rely on "path"
+                                ev["path"] = str(img)
+                                st.image(str(img), width="stretch")
+                            else:
+                                st.caption("Event image missing.")
+    else:
         st.markdown("#### Encounter Setup")
 
         # Expansion selection
@@ -401,72 +812,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     st.session_state.encounter_events = []
                 else:
                     st.warning(res.get("message", "Unable to build encounter."))
-
-        # --- Optional invader configuration for this encounter ---
-        if "current_encounter" in st.session_state:
-            _render_invader_setup_controls(st.session_state.current_encounter)
-
-        # Character / expansion icons
-        if "current_encounter" in st.session_state:
-            icons_html = render_encounter_icons(st.session_state.current_encounter)
-            st.markdown(
-                f'<div class="encounter-icons-wrapper">{icons_html}</div>',
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("---")
-
-        # ---------------------------------------------------------
-        # Save / Load curated encounters
-        # ---------------------------------------------------------
-        st.subheader("Saved Encounters")
-
-        save_name_default = (
-            st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
-        )
-        save_name = st.text_input("Save as:", value=save_name_default)
-
-        if st.button("Save Current", width="stretch"):
-            if "current_encounter" not in st.session_state:
-                st.warning("No active encounter to save.")
-            else:
-                payload = {
-                    **st.session_state.current_encounter,
-                    "events": st.session_state.get("encounter_events", []),
-                    "meta_label": st.session_state.get("last_encounter", {}).get("label"),
-                    "character_count": character_count,
-                    "edited": use_edited,
-                }
-                st.session_state.saved_encounters[save_name] = payload
-                st.success(f"Saved encounter as '{save_name}'.")
-
-        if st.session_state.saved_encounters:
-            load_name = st.selectbox(
-                "Load saved encounter:",
-                list(st.session_state.saved_encounters.keys()),
-            )
-            if st.button("Load", width="stretch"):
-                payload = st.session_state.saved_encounters[load_name]
-                st.session_state.current_encounter = payload
-                st.session_state.encounter_events = payload.get("events", [])
-                st.session_state["last_encounter"] = {
-                    "label": payload.get("meta_label", load_name),
-                    "slug": payload.get("slug"),
-                    "expansion": payload.get("expansion"),
-                    "character_count": payload.get("character_count"),
-                    "edited": payload.get("edited", False),
-                    "enemies": payload.get("enemies"),
-                    "expansions_used": payload.get("expansions_used"),
-                }
-
-                # Reconstruct 'added invaders' from payload['invaders']
-                _restore_added_invaders_from_payload(payload)
-                _apply_added_invaders_to_current_encounter()
-
-    # -------------------------------------------------------------------------
-    # RIGHT COLUMN – CARDS
-    # -------------------------------------------------------------------------
-    with col_enc:
+                    
         if "current_encounter" in st.session_state:
             encounter = st.session_state.current_encounter
             render_card(encounter["card_img"])
@@ -500,72 +846,70 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         else:
             st.info("Select an encounter to get started.")
 
-    with col_event.container():
+        # --- Optional invader configuration for this encounter ---
+        if "current_encounter" in st.session_state:
+            _render_invader_setup_controls(st.session_state.current_encounter)
+
         st.markdown("#### Events")
 
         events = st.session_state.get("encounter_events", [])
+        
+        if st.button(
+            "Attach Random Event",
+            width="stretch",
+            key="enc_attach_random_event",
+        ):
+            # Ensure event deck exists and has a preset
+            if DECK_STATE_KEY not in st.session_state:
+                st.session_state[DECK_STATE_KEY] = {
+                    "draw_pile": [],
+                    "discard_pile": [],
+                    "current_card": None,
+                    "preset": None,
+                }
 
-        # Event controls (attach / clear) in this column
-        col_ev1, col_ev2, col_ev3 = st.columns(3)
-        with col_ev1:
-            if st.button(
-                "Attach Random Event",
-                width="stretch",
-                key="enc_attach_random_event",
-            ):
-                # Ensure event deck exists and has a preset
-                if DECK_STATE_KEY not in st.session_state:
-                    st.session_state[DECK_STATE_KEY] = {
-                        "draw_pile": [],
-                        "discard_pile": [],
-                        "current_card": None,
-                        "preset": None,
-                    }
+            deck_state = st.session_state[DECK_STATE_KEY]
+            configs = load_event_configs()
 
-                deck_state = st.session_state[DECK_STATE_KEY]
-                configs = load_event_configs()
+            preset = (
+                deck_state.get("preset")
+                or settings.get("event_deck", {}).get("preset")
+            )
 
-                preset = (
-                    deck_state.get("preset")
-                    or settings.get("event_deck", {}).get("preset")
-                )
+            # Initialize if empty or preset changed
+            if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
+                initialize_event_deck(preset, configs=configs)
 
-                # Initialize if empty or preset changed
-                if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
-                    initialize_event_deck(preset, configs=configs)
-
-                # Draw and attach
-                draw_event_card()
-                save_settings(settings)
-                deck_state = st.session_state[DECK_STATE_KEY]
-                card_path = deck_state.get("current_card")
-                if card_path:
-                    _attach_event_to_current_encounter(card_path)
-                events = st.session_state.get("encounter_events", [])
-
-        with col_ev2:
-            if st.button(
-                "Clear Events",
-                width="stretch",
-                key="enc_clear_events",
-            ):
-                st.session_state.encounter_events = []
-                events = []
+            # Draw and attach
+            draw_event_card()
+            save_settings(settings)
+            deck_state = st.session_state[DECK_STATE_KEY]
+            card_path = deck_state.get("current_card")
+            if card_path:
+                _attach_event_to_current_encounter(card_path)
+            events = st.session_state.get("encounter_events", [])
+            
+        if st.button(
+            "Clear Events",
+            width="stretch",
+            key="enc_clear_events",
+        ):
+            st.session_state.encounter_events = []
+            events = []
 
         # Summary line
         if not events:
             st.caption("No events attached yet.")
 
         # Event card images
-        if events:
-            ncols = 3
-            for row_start in range(0, len(events), ncols):
-                row_events = events[row_start:row_start + ncols]
-                cols = st.columns(ncols)
-
-                for i, ev in enumerate(row_events):
-                    with cols[i]:
-                        st.image(ev["path"], width="stretch")
+        for ev in events:
+            img = _event_img_path(ev)
+            if img:
+                # migrate in-place so future code can rely on "path"
+                ev["path"] = str(img)
+                st.image(str(img), width="stretch")
+            else:
+                st.caption("Event image missing.")
 
 
 # -------------------------------------------------------------------------

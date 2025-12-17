@@ -25,6 +25,9 @@ all_expansions = [
     "Vordt of the Boreal Valley"
 ]
 INVADER_CAP_CLAMP = {1: 2, 2: 3, 3: 5, 4: 4}
+CARD_WIDTH_MIN = 240
+CARD_WIDTH_MAX = 560
+CARD_WIDTH_DEFAULT = 380
 
 
 def _sync_invader_caps():
@@ -43,7 +46,6 @@ def _sync_invader_caps():
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
 
-    settings = st.session_state.get("user_settings") or {}
     caps = settings.get("max_invaders_per_level") or {}
 
     # Expansions
@@ -111,3 +113,30 @@ def render_sidebar(settings: dict):
             key="ngplus_level",
             format_func=lambda v: "NG+0 (Base)" if v == 0 else f"NG+{v}",
         )
+
+    # One-time init for the widget key (must happen BEFORE st.slider is created)
+    if "ui_card_width" not in st.session_state:
+        try:
+            st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
+        except Exception:
+            st.session_state["ui_card_width"] = 360
+
+    with st.sidebar.expander("🖼️ Card Display", expanded=False):
+        st.slider(
+            "Card width (px)",
+            min_value=240,
+            max_value=560,
+            step=10,
+            key="ui_card_width",
+            value=int(st.session_state["ui_card_width"]),
+        )
+
+    # Sync widget -> persisted settings (mutate IN PLACE, do not replace settings dict)
+    settings["ui_card_width"] = int(st.session_state["ui_card_width"])
+
+    # Session-only UI controls (do not persist across devices)
+    if "ui_compact" not in st.session_state:
+        st.session_state["ui_compact"] = False
+
+    with st.sidebar.expander("📱 UI", expanded=False):
+        st.checkbox("Compact layout (mobile)", key="ui_compact")

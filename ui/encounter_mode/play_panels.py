@@ -27,7 +27,7 @@ from core.behavior.generation import render_data_card_cached, build_behavior_cat
 from core.behavior.logic import load_behavior
 from core.behavior.models import BehaviorEntry
 from ui.encounter_mode import invader_panel
-from ui.encounter_mode.assets import enemyNames
+from ui.encounter_mode.assets import enemyNames, encounterKeywords, editedEncounterKeywords, keywordText
 from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
 from ui.encounter_mode.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
@@ -84,6 +84,53 @@ def _is_v1_encounter(encounter: dict) -> bool:
     - no rules / triggers / events
     """
     return not _is_v2_encounter(encounter)
+
+
+def _keyword_label(keyword: str) -> str:
+    txt = keywordText.get(keyword)
+    if isinstance(txt, str) and txt.strip():
+        return txt.split("—", 1)[0].strip()
+
+    import re as _re
+    s = _re.sub(r"(?<!^)(?=[A-Z])", " ", str(keyword)).replace("_", " ").strip()
+    return s.title() if s else str(keyword)
+
+
+def _get_encounter_keywords(encounter: dict, settings: dict) -> list[str]:
+    if _is_v1_encounter(encounter):
+        return []
+
+    name = encounter.get("encounter_name") or encounter.get("name") or ""
+    expansion = encounter.get("expansion") or ""
+    if not name or not expansion:
+        return []
+
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+
+    src = editedEncounterKeywords if edited else encounterKeywords
+    raw = src.get((name, expansion)) or []
+
+    out: list[str] = []
+    seen: set[str] = set()
+    for k in raw:
+        if not k:
+            continue
+        k = str(k)
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(k)
+    return out
+
+
+def _render_keywords_summary(encounter: dict, settings: dict) -> None:
+    keys = _get_encounter_keywords(encounter, settings)
+    if not keys:
+        return
+
+    labels = ", ".join(_keyword_label(k) for k in keys)
+    st.caption(f"Keywords: {labels}")
 
 
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
@@ -614,6 +661,64 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
             )
 
 
+def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, show_header: bool = True) -> None:
+    """Render only the rules that apply *right now* (no upcoming section)."""
+    if _is_v1_encounter(encounter):
+        return
+
+    if show_header:
+        st.markdown("#### Rules")
+
+    name = encounter.get("encounter_name") or encounter.get("name") or "Unknown Encounter"
+    expansion = encounter.get("expansion", "Unknown Expansion")
+    encounter_key = make_encounter_key(name=name, expansion=expansion)
+    edited = _detect_edited_flag(encounter_key, encounter, settings)
+
+    enemy_names = _get_enemy_display_names(encounter)
+    player_count = get_player_count()
+    timer = play_state["timer"]
+    phase = play_state["phase"]
+
+    current_encounter_rules = get_rules_for_encounter(
+        encounter_key=encounter_key,
+        edited=edited,
+        timer=timer,
+        phase=phase,
+    )
+
+    events = st.session_state.get("encounter_events", []) or []
+    event_rule_groups: list[tuple[str, list]] = []
+
+    for ev in events:
+        ev_id = ev.get("id")
+        ev_name = ev.get("name")
+        label = ev_name or ev_id or ""
+
+        rules_for_event: list = []
+        for key in (ev_id, ev_name):
+            if not key:
+                continue
+            rules_for_event = get_rules_for_event(event_key=key, timer=timer, phase=phase)
+            if rules_for_event:
+                break
+
+        if rules_for_event:
+            event_rule_groups.append((label, rules_for_event))
+
+    if not current_encounter_rules and not event_rule_groups:
+        st.caption("No rules to show for this encounter in the current state.")
+        return
+
+    for rule in current_encounter_rules:
+        text = templates.render_text_template(rule.template, enemy_names, player_count=player_count)
+        st.markdown(f"- {text}", unsafe_allow_html=True)
+
+    for label, rules_for_event in event_rule_groups:
+        for rule in rules_for_event:
+            text = templates.render_text_template(rule.template, enemy_names, player_count=player_count)
+            st.markdown(f"- {text}", unsafe_allow_html=True)
+
+
 # ---------------------------------------------------------------------
 # Timer + phase header
 # ---------------------------------------------------------------------
@@ -664,101 +769,92 @@ def _render_turn_controls(
     play_state: dict,
     stop_on_timer_objective: bool = False,
     timer_behavior: Optional[dict] = None,
+    *,
+    compact: bool = False,
 ) -> None:
     if timer_behavior is None:
         timer_behavior = {}
 
     st.markdown("#### Turn Controls")
 
-    b1, b2, b3 = st.columns(3)
-
-    # Previous Turn
-    with b1:
-        if st.button("Previous Turn", key="encounter_play_prev_turn"):
-            st.session_state["encounter_play_pending_action"] = "prev"
+    def _action_button(label: str, *, key: str, action: str, disabled: bool = False) -> None:
+        if st.button(label, key=key, disabled=disabled, use_container_width=compact):
+            st.session_state["encounter_play_pending_action"] = action
             st.rerun()
 
-    # Next Turn
-    with b2:
-        if st.button(
-            "Next Turn",
-            key="encounter_play_next_turn",
-            disabled=stop_on_timer_objective,
-        ):
-            st.session_state["encounter_play_pending_action"] = "next"
-            st.rerun()
-
-    # Reset
-    with b3:
-        if st.button("Reset", key="encounter_play_reset"):
-            st.session_state["encounter_play_pending_action"] = "reset"
-            st.rerun()
+    if compact:
+        _action_button("Previous Turn", key="encounter_play_prev_turn", action="prev")
+        _action_button("Next Turn", key="encounter_play_next_turn", action="next", disabled=stop_on_timer_objective)
+        _action_button("Reset", key="encounter_play_reset", action="reset")
+    else:
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            _action_button("Previous Turn", key="encounter_play_prev_turn", action="prev")
+        with b2:
+            _action_button("Next Turn", key="encounter_play_next_turn", action="next", disabled=stop_on_timer_objective)
+        with b3:
+            _action_button("Reset", key="encounter_play_reset", action="reset")
 
     if stop_on_timer_objective:
         st.caption("Time has run out; Next Turn is disabled for this encounter.")
 
-    # --- Special timer actions (per-encounter) ---
     has_manual_inc = bool(timer_behavior.get("manual_increment"))
     has_reset_btn = bool(timer_behavior.get("reset_button"))
+    if not (has_manual_inc or has_reset_btn):
+        return
 
-    if has_manual_inc or has_reset_btn:
-        st.markdown("##### Special Timer Actions")
-        cols = st.columns(
-            (1 if has_manual_inc else 0) + (1 if has_reset_btn else 0)
-        )
+    st.markdown("##### Special Timer Actions")
 
-        col_idx = 0
+    if has_manual_inc:
+        label = timer_behavior.get("manual_increment_label", "Increase Timer")
+        help_text = timer_behavior.get("manual_increment_help")
+        log_text = timer_behavior.get("manual_increment_log", "Timer manually increased.")
 
-        # Manual 'Increase Timer' button (e.g. Eye of the Storm edited)
+    if has_reset_btn:
+        label2 = timer_behavior.get("reset_button_label", "Reset Timer (special rule)")
+        help_text2 = timer_behavior.get("reset_button_help")
+        log_text2 = timer_behavior.get("reset_button_log", "Timer reset due to special rule.")
+
+    if compact:
         if has_manual_inc:
-            label = timer_behavior.get(
-                "manual_increment_label",
-                "Increase Timer",
-            )
-            help_text = timer_behavior.get("manual_increment_help")
-            log_text = timer_behavior.get(
-                "manual_increment_log",
-                "Timer manually increased.",
-            )
-
-            with cols[col_idx]:
-                if st.button(
-                    label,
-                    key="encounter_play_manual_timer_increase",
-                ):
-                    play_state["timer"] += 1
-                    log_entry(play_state, log_text)
-                    st.rerun()
-            col_idx += 1
+            if st.button(label, key="encounter_play_manual_timer_increase", use_container_width=True):
+                play_state["timer"] += 1
+                log_entry(play_state, log_text)
+                st.rerun()
             if help_text:
                 st.caption(help_text)
 
-        # 'Reset Timer' button (e.g. Corvian Host: tile made active)
         if has_reset_btn:
-            label = timer_behavior.get(
-                "reset_button_label",
-                "Reset Timer (special rule)",
-            )
-            help_text = timer_behavior.get("reset_button_help")
-            log_text = timer_behavior.get(
-                "reset_button_log",
-                "Timer reset due to special rule.",
-            )
+            if st.button(label2, key="encounter_play_special_timer_reset", use_container_width=True):
+                old_timer = play_state["timer"]
+                play_state["timer"] = 0
+                log_entry(play_state, f"{log_text2} (was {old_timer}, now 0)")
+                st.rerun()
+            if help_text2:
+                st.caption(help_text2)
+        return
 
-            with cols[col_idx]:
-                if st.button(
-                    label,
-                    key="encounter_play_special_timer_reset",
-                ):
-                    old_timer = play_state["timer"]
-                    play_state["timer"] = 0
-                    log_entry(
-                        play_state,
-                        f"{log_text} (was {old_timer}, now 0)",
-                    )
-                    st.rerun()
-            if help_text:
-                st.caption(help_text)
+    cols = st.columns((1 if has_manual_inc else 0) + (1 if has_reset_btn else 0))
+    col_idx = 0
+    if has_manual_inc:
+        with cols[col_idx]:
+            if st.button(label, key="encounter_play_manual_timer_increase"):
+                play_state["timer"] += 1
+                log_entry(play_state, log_text)
+                st.rerun()
+        col_idx += 1
+        if help_text:
+            st.caption(help_text)
+
+    if has_reset_btn:
+        with cols[col_idx]:
+            if st.button(label2, key="encounter_play_special_timer_reset"):
+                old_timer = play_state["timer"]
+                play_state["timer"] = 0
+                log_entry(play_state, f"{log_text2} (was {old_timer}, now 0)")
+                st.rerun()
+        if help_text2:
+            st.caption(help_text2)
 
 
 # ---------------------------------------------------------------------
@@ -1384,7 +1480,7 @@ def _describe_behavior_mod(mod: Dict[str, Any]) -> str:
     return f"{stat} {op} {value}"
 
 
-def _render_enemy_behaviors(encounter: dict) -> None:
+def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
     """
     Right-hand column: show enemy data + behavior cards for all distinct
     enemies in this encounter, using the Behavior Decks pipeline.
@@ -1395,13 +1491,9 @@ def _render_enemy_behaviors(encounter: dict) -> None:
     """
     st.markdown("#### Enemy Behavior Cards")
 
-    # Start with the standard encounter enemies
     enemy_entries = _get_enemy_behavior_entries_for_encounter(encounter)
 
-    # Also include any invaders present in this encounter so that
-    # added invaders from Setup are visible here as well. We treat
-    # them exactly like other enemies for data-card purposes, but
-    # avoid duplicates by name.
+    # Include invaders present in this encounter (avoid dupes by name)
     try:
         invader_entries = invader_panel._get_invader_behavior_entries_for_encounter(encounter)
     except Exception:
@@ -1421,37 +1513,37 @@ def _render_enemy_behaviors(encounter: dict) -> None:
         st.caption("No enemy behavior data found for this encounter.")
         return
 
-    # Sort by order_num descending (higher priority / tougher first)
-    entries = sorted(
-        entries,
-        key=lambda e: getattr(e, "order_num", 10),
-        reverse=True,
-    )
+    # Descending "threat": prefer .threat if present; otherwise .order_num
+    def _threat_key(e: BehaviorEntry) -> int:
+        v = getattr(e, "threat", None)
+        if isinstance(v, (int, float)):
+            return int(v)
+        return int(getattr(e, "order_num", 10))
 
-    # Two sub-columns so we don't get a super tall single column
-    col_a, col_b = st.columns(2, gap="medium")
+    entries = sorted(entries, key=_threat_key, reverse=True)
+
+    # Dynamic column count (critical: compact calls with columns=1)
+    ncols = max(1, int(columns or 1))
+    if ncols == 1:
+        cols = [st.container()]
+    else:
+        cols = list(st.columns(ncols, gap="medium"))
 
     # For the combined summary below all cards
     all_enemy_names: list[str] = []
-    # key: (mod_id_or_key, source_kind, source_label) -> info dict
     aggregated_mods: dict[tuple[str, str, str], dict[str, Any]] = {}
 
     for i, entry in enumerate(entries):
-        target_col = col_a if i % 2 == 0 else col_b
+        target_col = cols[i % ncols]
         with target_col:
-            # Load behavior config (NG+ already applied inside load_behavior)
             cfg = load_behavior(entry.path)
             enemy_name = cfg.name
             all_enemy_names.append(enemy_name)
 
-            # Gather all behavior modifiers that apply to this enemy
             mod_tuples = _gather_behavior_mods_for_enemy(encounter, enemy_name)
             mod_dicts = [m for (m, _, _) in mod_tuples]
-
-            # Apply mods to raw json before rendering data card
             raw_for_render = _apply_behavior_mods_to_raw(cfg.raw, mod_dicts)
 
-            # Always show the data card for this enemy/boss if available
             data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
             data_bytes = render_data_card_cached(
                 data_card_path,
@@ -1460,16 +1552,14 @@ def _render_enemy_behaviors(encounter: dict) -> None:
             )
             if data_bytes is not None:
                 st.image(data_bytes, width="stretch")
-                # Small vertical spacer between rows
                 st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
 
-        # Outside the column context: aggregate mods for the global summary
+        # Aggregate mods for global summary (needs enemy_name + mod_tuples)
         for mod, source_kind, source_label in mod_tuples:
             desc = _describe_behavior_mod(mod)
             if not desc:
                 continue
 
-            # Use id if present; fall back to description
             mod_id = mod.get("id") or desc
             label = source_label or ""
             key = (mod_id, source_kind, label)
@@ -1481,31 +1571,24 @@ def _render_enemy_behaviors(encounter: dict) -> None:
                     "source_kind": source_kind,
                     "source_label": label,
                     "desc": desc,
-                    "enemy_names": set(),  # type: ignore[assignment]
+                    "enemy_names": set(),
                 }
                 aggregated_mods[key] = info
 
-            info["enemy_names"].add(enemy_name)  # type: ignore[index]
+            info["enemy_names"].add(enemy_name)
 
-    # Render a single combined list of behavior modifiers under all cards
     if aggregated_mods:
         st.markdown("#### Behavior modifiers in effect")
 
         unique_enemy_names = set(all_enemy_names)
 
-        # Nice stable ordering: encounter first, then events, then by label/desc
         def _sort_key(info: dict[str, Any]) -> tuple:
             kind = info["source_kind"]
-            # Encounter before event
             kind_order = 0 if kind == "encounter" else 1
-            return (
-                kind_order,
-                info.get("source_label", "") or "",
-                info.get("desc", ""),
-            )
+            return (kind_order, info.get("source_label", "") or "", info.get("desc", ""))
 
         for info in sorted(aggregated_mods.values(), key=_sort_key):
-            enemies = sorted(info["enemy_names"])  # type: ignore[index]
+            enemies = sorted(info["enemy_names"])
             if len(enemies) == len(unique_enemy_names):
                 applies_to = "all enemies"
             elif len(enemies) == 1:
@@ -1517,10 +1600,7 @@ def _render_enemy_behaviors(encounter: dict) -> None:
             label = info.get("source_label") or ""
             desc = info["desc"]
 
-            if source_kind == "event":
-                prefix = f"Event: {label}" if label else "Event"
-            else:
-                prefix = "Encounter"
+            prefix = (f"Event: {label}" if label else "Event") if source_kind == "event" else "Encounter"
 
             st.markdown(
                 f"- **{prefix}** — {desc}  \n"
