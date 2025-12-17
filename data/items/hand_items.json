@@ -6395,7 +6395,7 @@
         },
         "block_dice": {},
         "resist_dice": {},
-        "dodge_dice": 2,
+        "dodge_dice": 1,
         "upgrade_slots": 0,
         "range": 0,
         "hands_required": 1,

@@ -1,5 +1,6 @@
 #ui/sidebar.py
 import streamlit as st
+from core.settings_manager import save_settings
 from core.characters import CHARACTER_EXPANSIONS
 
 all_expansions = [
@@ -23,9 +24,27 @@ all_expansions = [
     "The Last Giant",
     "Vordt of the Boreal Valley"
 ]
+INVADER_CAP_CLAMP = {1: 2, 2: 3, 3: 5, 4: 4}
+
+
+def _sync_invader_caps():
+    settings = st.session_state.get("user_settings") or {}
+    caps = settings.get("max_invaders_per_level")
+    if not isinstance(caps, dict):
+        caps = {}
+    out = {}
+    for lvl, mx in INVADER_CAP_CLAMP.items():
+        out[str(lvl)] = int(st.session_state.get(f"cap_invaders_lvl_{lvl}", mx))
+    settings["max_invaders_per_level"] = out
+    st.session_state["user_settings"] = settings
+    save_settings(settings)
+
 
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
+
+    settings = st.session_state.get("user_settings") or {}
+    caps = settings.get("max_invaders_per_level") or {}
 
     # Expansions
     with st.sidebar.expander("🧩 Expansions", expanded=False):
@@ -59,6 +78,24 @@ def render_sidebar(settings: dict):
             key="selected_characters",
         )
         settings["selected_characters"] = selected_characters
+
+    # Invaders
+    with st.sidebar.expander("⚔️ Encounter Invader Cap", expanded=False):
+        for lvl, mx in INVADER_CAP_CLAMP.items():
+            cur = caps.get(str(lvl), mx)
+            try:
+                cur = int(cur)
+            except Exception:
+                cur = mx
+            cur = max(0, min(cur, mx))
+            st.slider(
+                f"Level {lvl}",
+                min_value=0,
+                max_value=mx,
+                value=cur,
+                key=f"cap_invaders_lvl_{lvl}",
+                on_change=_sync_invader_caps,
+            )
 
     # --- New Game+ selection ---
     current_ng = int(st.session_state.get("ngplus_level", 0))

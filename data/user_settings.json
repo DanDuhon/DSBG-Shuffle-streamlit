@@ -21,7 +21,7 @@
     "Vordt of the Boreal Valley"
   ],
   "selected_characters": [
-    "Deprived"
+    "Assassin"
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,
@@ -83,13 +83,17 @@
     "Velka's Chosen|Painted World of Ariamis": false,
     "Black Dungeon|Dark Souls The Board Game": false,
     "Burned Gardens|Dark Souls The Board Game": false,
-    "Courtyard of Lothric|Vordt of the Boreal Valley": false
+    "Courtyard of Lothric|Vordt of the Boreal Valley": false,
+    "Dark Resurrection|Tomb of Giants": false
+  },
+  "max_invaders_per_level": {
+    "1": 2,
+    "2": 3,
+    "3": 5,
+    "4": 4
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Green Blossom.jpg",
-      "assets\\events\\Princess Guard.jpg",
-      "assets\\events\\Firekeeper's Boon.jpg",
       "assets\\events\\Stolen Artifact.jpg",
       "assets\\events\\Lifegem.jpg",
       "assets\\events\\Skeletal Reforging.jpg",
@@ -125,9 +129,12 @@
     ],
     "discard_pile": [
       "assets\\events\\Alluring Skull.jpg",
-      "assets\\events\\Fleeting Glory.jpg"
+      "assets\\events\\Fleeting Glory.jpg",
+      "assets\\events\\Unhallowed Offering.jpg",
+      "assets\\events\\Green Blossom.jpg",
+      "assets\\events\\Princess Guard.jpg"
     ],
-    "current_card": "assets\\events\\Unhallowed Offering.jpg",
+    "current_card": "assets\\events\\Firekeeper's Boon.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",

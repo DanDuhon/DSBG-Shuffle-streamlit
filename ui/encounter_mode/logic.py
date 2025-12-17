@@ -2,13 +2,26 @@
 import streamlit as st
 import re
 import os
+import json
+from pathlib import Path
 from io import BytesIO
 from random import choice
 from collections import defaultdict
 
 from ui.encounter_mode.generation import generate_encounter_image, load_encounter, load_valid_sets, ENCOUNTER_DATA_DIR
 
-
+INVADERS_PATH = Path("data/invaders.json")
+HARD_MAX_INVADERS_BY_LEVEL = {
+    1: 2,
+    2: 3,
+    3: 5,
+    4: 4,
+}
+INVADER_LIMIT_SETTING_KEYS = (
+    "max_invaders_per_level",            # preferred
+    "max_invaders_by_level",             # tolerated alias
+    "max_allowed_invaders_per_level",    # tolerated alias
+)
 ENCOUNTER_BEHAVIOR_MODIFIERS = {
     "Painted World of Ariamis_1_Frozen Sentries": [
         {
@@ -466,6 +479,85 @@ def _load_valid_sets_cached():
     return load_valid_sets()
 
 
+def _coerce_enemy_id(x):
+    # Enemies are usually ints; be defensive in case a dict/name slips in.
+    if isinstance(x, dict):
+        x = x.get("enemy_id") or x.get("id") or x.get("name")
+    if isinstance(x, int):
+        return x
+    if isinstance(x, str):
+        s = x.strip()
+        if s.isdigit():
+            try:
+                return int(s)
+            except Exception:
+                return s
+        return s
+    return x
+
+
+@st.cache_data(show_spinner=False)
+def _load_invader_enemy_ids():
+    """
+    Load invader identifiers so we can count how many invaders are in a chosen enemy list.
+    Supports a few plausible shapes for invaders.json.
+    """
+    if not INVADERS_PATH.exists():
+        return set()
+
+    try:
+        with INVADERS_PATH.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return set()
+
+    ids = set()
+
+    if isinstance(data, dict):
+        for k, v in data.items():
+            # Always include the key as a fallback identifier
+            ids.add(_coerce_enemy_id(k))
+            if isinstance(v, dict):
+                cand = v.get("enemy_id") or v.get("id") or v.get("name")
+                if cand is not None:
+                    ids.add(_coerce_enemy_id(cand))
+    elif isinstance(data, list):
+        for v in data:
+            ids.add(_coerce_enemy_id(v))
+
+    return ids
+
+
+def _get_invader_limit_for_level(level: int) -> int:
+    lvl = int(level)
+    hard = int(HARD_MAX_INVADERS_BY_LEVEL.get(lvl, 0))
+
+    settings = st.session_state.get("user_settings") or {}
+    limits = None
+    for k in INVADER_LIMIT_SETTING_KEYS:
+        if k in settings:
+            limits = settings.get(k)
+            break
+
+    user_val = None
+    if isinstance(limits, dict):
+        user_val = limits.get(str(lvl), limits.get(lvl))
+    elif isinstance(limits, (list, tuple)) and len(limits) >= lvl:
+        user_val = limits[lvl - 1]
+    elif isinstance(limits, int):
+        user_val = limits
+
+    if user_val is None:
+        user_val = hard
+
+    try:
+        user_int = int(user_val)
+    except Exception:
+        user_int = hard
+
+    return max(0, min(hard, user_int))
+
+
 def apply_edited_toggle(encounter_data, expansion, encounter_name, encounter_level,
                         use_edited, enemies, combo):
     """Swap between edited/original encounter visuals (no reshuffle)."""
@@ -534,17 +626,21 @@ def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: t
 
 def shuffle_encounter(selected_encounter, character_count, active_expansions,
                       selected_expansion, use_edited):
-    """Shuffle and generate a randomized encounter"""
+    """Shuffle and generate a randomized encounter (respects invader limit setting)."""
     name = selected_encounter["name"]
-    level = selected_encounter["level"]
+    level = int(selected_encounter["level"])
     encounter_slug = f"{selected_expansion}_{level}_{name}"
 
     encounter_data = load_encounter(encounter_slug, character_count)
 
-    # Pick random enemies
-    combo, enemies = pick_random_alternative(encounter_data, set(active_expansions))
+    # Pick random enemies (filtered by invader limit per encounter level)
+    combo, enemies = pick_random_alternative(encounter_data, set(active_expansions), level)
     if not combo or not enemies:
-        return {"ok": False, "message": "No valid alternatives."}
+        limit = _get_invader_limit_for_level(level)
+        return {
+            "ok": False,
+            "message": f"No valid alternatives under current invader limit (level {level} max invaders = {limit}).",
+        }
 
     card_img = generate_encounter_image(
         selected_expansion, level, name, encounter_data, enemies, use_edited
@@ -577,13 +673,46 @@ def get_alternatives(data, active_expansions):
     return valid_alts
 
 
-def pick_random_alternative(data, active_expansions):
-    """Randomly pick one valid alternative enemy set."""
+def pick_random_alternative(data, active_expansions, encounter_level: int):
+    """Randomly pick one valid alternative enemy set (respects invader limit)."""
     valid_alts = get_alternatives(data, active_expansions)
     if not valid_alts:
         return None, None
-    combo = choice(list(valid_alts.keys()))
-    enemies = choice(valid_alts[combo])
+
+    invader_limit = _get_invader_limit_for_level(int(encounter_level))
+    invader_ids = _load_invader_enemy_ids()
+
+    filtered = {}
+    for combo, alt_sets in valid_alts.items():
+        kept = []
+        for enemies in alt_sets or []:
+            if enemies is None:
+                continue
+            # enemies should be a list[int], but tolerate other iterables
+            try:
+                enemy_list = list(enemies)
+            except Exception:
+                continue
+
+            inv_count = 0
+            if invader_ids and invader_limit >= 0:
+                for e in enemy_list:
+                    if _coerce_enemy_id(e) in invader_ids:
+                        inv_count += 1
+                        if inv_count > invader_limit:
+                            break
+
+            if inv_count <= invader_limit:
+                kept.append(enemy_list)
+
+        if kept:
+            filtered[combo] = kept
+
+    if not filtered:
+        return None, None
+
+    combo = choice(list(filtered.keys()))
+    enemies = choice(filtered[combo])
     return combo, enemies
 
 
