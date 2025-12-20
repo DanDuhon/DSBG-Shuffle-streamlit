@@ -14,6 +14,7 @@ HAND_FEATURE_OPTIONS = [
     "repeat",
     "stamina_recovery",
     "heal",
+    "ignore_block",
 ]
 HAND_CONDITION_OPTIONS = ["bleed", "poison", "frostbite", "stagger"]
 

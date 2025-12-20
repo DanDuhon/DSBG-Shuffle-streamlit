@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Set
+
 from ui.character_mode.constants import DICE_ICON
-from ui.character_mode.dice_math import _dice_count, _roll_min_max_avg, _sum_rolls
+from ui.character_mode.dice_math import _dice_count
 from ui.character_mode.item_fields import _id, _name
 
 
@@ -45,18 +46,6 @@ def _attack_dice_string(atk: Dict[str, Any]) -> str:
     return s
 
 
-def _attack_min_max_avg(atk: Dict[str, Any]) -> tuple[int, int, float]:
-    c = _attack_dice_counts(atk)
-    parts = [
-        _roll_min_max_avg("black", c["black"]),
-        _roll_min_max_avg("blue", c["blue"]),
-        _roll_min_max_avg("orange", c["orange"]),
-    ]
-    mn, mx, avg = _sum_rolls(parts)
-    flat = _attack_flat_mod(atk)
-    return (mn + flat, mx + flat, avg + float(flat))
-
-
 def _attack_range(it: Dict[str, Any], atk: Dict[str, Any]) -> str:
     r = (atk or {}).get("range")
     if r is None or str(r).strip() == "":
@@ -78,6 +67,13 @@ def _attack_has_dice(atk: Dict[str, Any]) -> bool:
     return False
 
 
+def _attack_ignore_block(it: Dict[str, Any], atk: Dict[str, Any]) -> bool:
+    # allow item-level default, with attack-level override
+    if "ignore_block" in (atk or {}):
+        return bool((atk or {}).get("ignore_block"))
+    return bool((it or {}).get("ignore_block"))
+
+
 def _rows_for_attacks_table(items: List[Dict[str, Any]], selected_item_ids: Set[str]) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for it in items:
@@ -88,7 +84,6 @@ def _rows_for_attacks_table(items: List[Dict[str, Any]], selected_item_ids: Set[
             continue
         for idx, atk in enumerate(atks):
             atk = atk or {}
-            mn, mx, avg = _attack_min_max_avg(atk)
             rows.append(
                 {
                     "RowId": f"{iid}::atk::{idx}",
@@ -97,22 +92,19 @@ def _rows_for_attacks_table(items: List[Dict[str, Any]], selected_item_ids: Set[
                     "Atk#": idx + 1,
                     "Stam": _attack_int(atk, "stamina", 0),
                     "Dice": _attack_dice_string(atk),
-                    "Heal": _attack_int(atk, "heal", 0),
-                    "StamRec": _attack_int(atk, "stamina_recovery", 0),
-                    "Cond": _attack_str(atk, "condition"),
-                    "Text": _attack_str(atk, "text"),
                     "Magic": _attack_bool(atk, "magic") or _attack_bool(it, "magic"),
-                    "Shift Before": _attack_int(atk, "shift_before", 0),
-                    "Shift After": _attack_int(atk, "shift_after", 0),
-                    "Node": _attack_bool(atk, "node_attack") or _attack_bool(it, "node_attack"),
-                    "Push": _attack_int(atk, "push", 0),
                     "Range": _attack_range(it, atk),
                     "Shaft": _attack_bool(atk, "shaft") or _attack_bool(it, "shaft"),
                     "Repeat": "" if _attack_int(atk, "repeat", 0) == 0 else _attack_int(atk, "repeat", 0),
-                    "Min": mn,
-                    "Max": mx,
-                    "Avg": round(avg, 2),
-                    "Avg/Stam": "" if _attack_int(atk, "stamina", 0) == 0 else round(avg/_attack_int(atk, "stamina", 0),2)
+                    "Heal": _attack_int(atk, "heal", 0),
+                    "Stam Rec": _attack_int(atk, "stamina_recovery", 0),
+                    "Node": _attack_bool(atk, "node_attack") or _attack_bool(it, "node_attack"),
+                    "Cond": _attack_str(atk, "condition"),
+                    "Push": _attack_int(atk, "push", 0),
+                    "Ign Blk": _attack_ignore_block(it, atk),
+                    "Text": _attack_str(atk, "text"),
+                    "Shift Before": _attack_int(atk, "shift_before", 0),
+                    "Shift After": _attack_int(atk, "shift_after", 0),
                 }
             )
     return rows

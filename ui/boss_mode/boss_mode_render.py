@@ -4,6 +4,7 @@ import json
 import streamlit as st
 
 from ui.encounter_mode.generation import generate_encounter_image
+from ui.ngplus_tab.logic import get_current_ngplus_level
 from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,
@@ -73,15 +74,24 @@ def _get_boss_mode_state_key(entry) -> str:
 
 def _ensure_boss_state(entry):
     key = _get_boss_mode_state_key(entry)
+    current_ng = int(get_current_ngplus_level() or 0)
     state = st.session_state.get(key)
     if not state:
         state, cfg = _new_state_from_file(entry.path)
+        state["ngplus_level"] = current_ng
         st.session_state[key] = state
         # also keep "current" pointers for functions that expect behavior_deck
         st.session_state["behavior_deck"] = state
         st.session_state["behavior_cfg"] = cfg
     else:
-        cfg = _load_cfg_for_state(state)
+        cached_ng = int(state.get("ngplus_level", -1))
+        if cached_ng != current_ng:
+            # NG+ changed since this boss was loaded: rebuild from disk so cfg.raw/cfg.behaviors re-apply NG+
+            state, cfg = _new_state_from_file(entry.path)
+            state["ngplus_level"] = current_ng
+            st.session_state[key] = state
+        else:
+            cfg = _load_cfg_for_state(state)
         st.session_state["behavior_deck"] = state
         st.session_state["behavior_cfg"] = cfg
     return state, cfg

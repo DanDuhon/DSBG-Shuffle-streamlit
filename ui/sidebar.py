@@ -2,6 +2,7 @@
 import streamlit as st
 from core.settings_manager import save_settings
 from core.characters import CHARACTER_EXPANSIONS
+from ui.ngplus_tab.logic import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
 
 all_expansions = [
     "Painted World of Ariamis",
@@ -28,6 +29,13 @@ INVADER_CAP_CLAMP = {1: 2, 2: 3, 3: 5, 4: 4}
 CARD_WIDTH_MIN = 240
 CARD_WIDTH_MAX = 560
 CARD_WIDTH_DEFAULT = 380
+
+if "sidebar_ngplus_expanded" not in st.session_state:
+    st.session_state.sidebar_ngplus_expanded = False
+
+
+def _ngplus_level_changed():
+    st.session_state.sidebar_ngplus_expanded = True
 
 
 def _sync_invader_caps():
@@ -100,19 +108,48 @@ def render_sidebar(settings: dict):
             )
 
     # --- New Game+ selection ---
+    if "sidebar_ngplus_expanded" not in st.session_state:
+        st.session_state["sidebar_ngplus_expanded"] = False
+
+    def _ngplus_level_changed():
+        st.session_state["sidebar_ngplus_expanded"] = True
+
     current_ng = int(st.session_state.get("ngplus_level", 0))
 
     with st.sidebar.expander(
         f"⬆️ New Game+ (Current: NG+{current_ng})",
-        expanded=False,
+        expanded=bool(st.session_state.get("sidebar_ngplus_expanded", False)),
     ):
-        level = st.radio(
+        level = st.number_input(
             "NG+ Level",
-            options=list(range(0, 6)),  # 0–5
-            index=current_ng,
+            min_value=0,
+            max_value=MAX_NGPLUS_LEVEL,
+            value=max(0, min(int(current_ng), MAX_NGPLUS_LEVEL)),
+            step=1,
             key="ngplus_level",
-            format_func=lambda v: "NG+0 (Base)" if v == 0 else f"NG+{v}",
+            on_change=_ngplus_level_changed,
         )
+
+        lvl = int(level)
+        if lvl > 0:
+            dodge_b = dodge_bonus_for_level(lvl)
+            if dodge_b == 1:
+                dodge_text = "+1 to dodge difficulty."
+            elif dodge_b == 2:
+                dodge_text = "+2 to dodge difficulty."
+
+            st.markdown(
+                "\n".join(
+                    [
+                        f"- Base HP 1-3: +{lvl}",
+                        f"- Base HP 4-7: +{_HP_4_TO_7_BONUS[lvl]}",
+                        f"- Base HP 8-10: +{lvl*2}",
+                        f"- Base HP 11+: +{lvl*10}% (rounded up)",
+                        f"- +{lvl} damage to all attacks.",
+                    ]
+                    + ([f"- {dodge_text}"] if dodge_b > 0 else [])
+                )
+            )
 
     # One-time init for the widget key (must happen BEFORE st.slider is created)
     if "ui_card_width" not in st.session_state:
@@ -130,6 +167,7 @@ def render_sidebar(settings: dict):
             key="ui_card_width",
             value=int(st.session_state["ui_card_width"]),
         )
+        st.caption("This scales the size of boss cards and event cards in Encounter Mode's Event tab.")
 
     # Sync widget -> persisted settings (mutate IN PLACE, do not replace settings dict)
     settings["ui_card_width"] = int(st.session_state["ui_card_width"])

@@ -70,10 +70,24 @@ def _slot_cost(item: Dict[str, Any]) -> int:
 
 
 def _extra_upgrade_slots(item: Dict[str, Any]) -> int:
+    # Legacy v1 field
     try:
-        return int(item.get("upgrade_slot_mod") or 0)
+        v1 = int(item.get("upgrade_slot_mod") or 0)
     except Exception:
-        return 0
+        v1 = 0
+
+    # v2 canonical field: mods.meta.upgrade_slots
+    v2 = 0
+    mods = item.get("mods") or {}
+    if isinstance(mods, dict):
+        meta = mods.get("meta") or {}
+        if isinstance(meta, dict):
+            try:
+                v2 = int(meta.get("upgrade_slots") or 0)
+            except Exception:
+                v2 = 0
+
+    return int(v1) + int(v2)
 
 
 def _upgrade_slots(item: Dict[str, Any]) -> int:

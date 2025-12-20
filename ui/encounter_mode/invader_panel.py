@@ -21,6 +21,7 @@ from core.behavior.logic import (
 from core.behavior.models import BehaviorEntry, BehaviorConfig
 from ui.encounter_mode import play_state
 from ui.encounter_mode.assets import enemyNames
+from ui.ngplus_tab.logic import get_current_ngplus_level
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +74,8 @@ def reset_invaders_for_encounter(encounter: dict) -> None:
     # Start with whatever tracker we already have (or an empty dict)
     tracker = st.session_state.get("hp_tracker") or {}
 
+    current_ng = int(get_current_ngplus_level() or 0)
+
     for entry in entries:
         state_key = _invader_state_key(entry, encounter)
 
@@ -84,6 +87,8 @@ def reset_invaders_for_encounter(encounter: dict) -> None:
             st.session_state.pop(state_key, None)
             continue
 
+        state["ngplus_level"] = current_ng
+        
         st.session_state[state_key] = state
 
         # Reset HP on the BehaviorConfig entities and clear tracker
@@ -269,11 +274,27 @@ def _ensure_invader_state(entry: BehaviorEntry, encounter: dict) -> dict:
     """
     state_key = _invader_state_key(entry, encounter)
 
-    if state_key in st.session_state and st.session_state[state_key]:
-        return st.session_state[state_key]
+    current_ng = int(get_current_ngplus_level() or 0)
+    existing = st.session_state.get(state_key)
+    if existing:
+        cached_ng = int(existing.get("ngplus_level", -1))
+        if cached_ng == current_ng:
+            return existing
 
+    # NG+ changed (or no state): rebuild from disk so NG+ is re-applied
     state, cfg = _new_state_from_file(str(entry.path))
+    state["ngplus_level"] = current_ng
     st.session_state[state_key] = state
+
+    # Reset HP slider initialization to pick up new hp_max
+    tracker = st.session_state.get("hp_tracker") or {}
+    for ent in getattr(cfg, "entities", []) or []:
+        ent_id = getattr(ent, "id", None)
+        if ent_id:
+            tracker.pop(ent_id, None)
+    st.session_state["hp_tracker"] = tracker
+    st.session_state["deck_reset_id"] = st.session_state.get("deck_reset_id", 0) + 1
+
     return state
 
 

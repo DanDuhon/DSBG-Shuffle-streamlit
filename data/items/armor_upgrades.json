@@ -1,515 +1,651 @@
-[{
-        "id": "minotaur_helmet",
-        "name": "Minotaur Helmet",
-        "source": {
-            "expansion": ["Phantoms"],
-            "entity": "Oliver the Collector",
-            "type": "invader"
-        },
-        "requirements": {
-            "str": 26
-        },
-        "slot_cost": 1,
-        "effects": {
-            "0range_attack_push": true
-        },
-        "text": "Your 0 range attacks gain push."
-    }, {
-        "id": "mon_ring",
-        "name": "Mon Ring",
-        "source": {
-            "expansion": ["Phantoms"],
-            "entity": "Invader Brylex",
-            "type": "invader"
-        },
-        "requirements": {
-            "dex": 20,
-            "itl": 20
-        },
-        "slot_cost": 1,
-        "text": "Once per spark, the party may take their first activation before the enemies' first activation."
-    }, {
-        "id": "clear_bluestone_ring",
-        "name": "Clear Bluestone Ring",
-        "source": {
-            "expansion": ["Phantoms"],
-            "entity": "Armorer Dennis",
-            "type": "invader"
-        },
-        "requirements": {
-            "itl": 30,
-            "fth": 30
-        },
-        "slot_cost": 1,
-        "effects": {
-            "backup_magic_use": true
-        },
-        "text": "You can use one-handed magical attacks in your backup slot as if they were equipped."
-    }, {
-        "id": "sanctum_priestess_tiara",
-        "name": "Sanctum Priestess Tiara",
-        "source": {
-            "expansion": ["Phantoms"],
-            "entity": "Fencer Sharron",
-            "type": "invader"
-        },
-        "requirements": {
-            "itl": 27,
-            "fth": 27
-        },
-        "slot_cost": 1,
-        "effects": {
-            "magic_damage_mod": {
-                "flat_mod": 1
-            }
-        },
-        "text": "Your magical attacks gain +1 damage."
-    }, {
-        "id": "hornet_ring",
-        "name": "Hornet Ring",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Assassin",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 30
-        },
-        "slot_cost": 1,
-        "effects": {
-            "damage_mod": {
-                "orange": 1,
-                "flat_mod": -2
-            }
-        },
-        "text": "Your attacks gain an additional orange die but get -2 total damage."
-    }, {
-        "id": "red_tearstone_ring",
-        "name": "Red Tearstone Ring",
-        "source": {
-            "expansion": ["Painted World of Ariamis"]
-        },
-        "requirements": {
-            "fth": 20
-        },
-        "slot_cost": 1,
-        "text": "All of your attacks gain +1 damage while you have four or more damage cubes/tokens on your endurance bar."
-    }, {
-        "id": "great_swamp_ring",
-        "name": "Great Swamp Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants", "The Sunless City"],
-            "entity": "Pyromancer",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 15,
-            "itl": 20
-        },
-        "slot_cost": 1,
-        "text": "When you use the Explosive Crit heroic ability, instead of gaining a black die, you gain a blue die."
-    }, {
-        "id": "chloranthy_ring",
-        "name": "Chloranthy Ring",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Tomb of Giants"]
-        },
-        "requirements": {
-            "str": 18,
-            "dex": 18,
-            "itl": 18,
-            "fth": 18
-        },
-        "slot_cost": 1,
-        "effects": {
-            "stamina_regen": 4
-        },
-        "text": "This character and other characters on the same node as this character gain 4 stamina at the start of their turn."
-    }, {
-        "id": "divine_blessing",
-        "name": "Divine Blessing",
-        "source": {
-            "expansion": ["Tomb of Giants"]
-        },
-        "requirements": {
-            "fth": 22
-        },
-        "slot_cost": 1,
-        "text": "During your activation, you may permanently discard this card to remove all damage and conditions from your character."
-    }, {
-        "id": "dark_wood_grain_ring",
-        "name": "Dark Wood Grain Ring",
-        "source": {
-            "expansion": ["Explorers", "The Sunless City"]
-        },
-        "requirements": {
-            "dex": 26
-        },
-        "slot_cost": 1,
-        "text": "When you dodge, you may move 2 nodes (instead of 1)."
-    }, {
-        "id": "life_ring",
-        "name": "Life Ring",
-        "source": {
-            "expansion": ["Iron Keep"]
-        },
-        "requirements": {
-            "fth": 30
-        },
-        "slot_cost": 1,
-        "text": "You can place a cube/token here instead of on your endurance bar (remove the cube/token when the encounter ends)."
-    }, {
-        "id": "dusk_crown_ring",
-        "name": "Dusk Crown Ring",
-        "source": {
-            "expansion": ["Darkroot"]
-        },
-        "requirements": {
-            "itl": 30
-        },
-        "slot_cost": 1,
-        "effects": {
-            "magical_stamina_mod": -2,
-            "magical_attacks_damage_user": 1
-        },
-        "text": "Your magical attacks cost -2 stamina. When you make a magical attack, you suffer 1 damage."
-    }, {
-        "id": "tiny_beings_ring",
-        "name": "Tiny Being's Ring",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Herald",
-            "type": "class"
-        },
-        "requirements": {
-            "fth": 20
-        },
-        "slot_cost": 1,
-        "effects": {
-            "recovery_option": {
-                "health": 2,
-                "stamina": 0
-            }
-        },
-        "text": "At the start of this character's turn, this character can heal 2 damage instead of gaining 3 stamina."
-    }, {
-        "id": "blue_tearstone_ring",
-        "name": "Blue Tearstone Ring",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Knight",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 25,
-            "fth": 25
-        },
-        "slot_cost": 1,
-        "text": "After you suffer damage from an enemy attack, gain 1 stamina."
-    }, {
-        "id": "sun_princess_ring",
-        "name": "Sun Princess Ring",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Knight",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 30,
-            "fth": 25
-        },
-        "slot_cost": 1,
-        "effects": {
-            "end_of_turn_healing": 1
-        },
-        "text": "When you end your activation, gain 1 health."
-    }, {
-        "id": "ring_of_favour",
-        "name": "Ring of Favour",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Mercenary",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 21,
-            "fth": 21
-        },
-        "slot_cost": 1,
-        "effects": {
-            "two_attack_stamina_recovery": 1
-        },
-        "text": "At the end of your activation, if you made two or more attack rolls, gain 1 stamina."
-    }, {
-        "id": "wolf_ring",
-        "name": "Wolf Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Mercenary",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 25,
-            "dex": 35,
-            "itl": 25
-        },
-        "slot_cost": 1,
-        "effects": {
-            "reroll_defense": true
-        },
-        "text": "This character can reroll their defence roll. They must accept the result of the second roll."
-    }, {
-        "id": "binoculars",
-        "name": "Binoculars",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Deprived",
-            "type": "class"
-        },
-        "requirements": {
-            "itl": 20,
-            "fth": 20
-        },
-        "slot_cost": 1,
-        "text": "At the start of each trapped encounter, you may look at 2 trap tokens."
-    }, {
-        "id": "carthus_milkring",
-        "name": "Carthus Milkring",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Deprived",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 24,
-            "dex": 30
-        },
-        "slot_cost": 1,
-        "effects": {
-            "dodge": 1
-        },
-        "text": "Increase your dodge value by 1."
-    }, {
-        "id": "magic_stoneplate_ring",
-        "name": "Magic Stoneplate Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Cleric",
-            "type": "transposed"
-        },
-        "requirements": {
-            "fth": 32
-        },
-        "slot_cost": 1,
-        "effects": {
-            "resist": {
-                "black": 1
-            }
-        },
-        "text": "Gain 1 black die for magic resist."
-    }, {
-        "id": "obscuring_ring",
-        "name": "Obscuring Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Thief",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 28,
-            "fth": 20
-        },
-        "slot_cost": 1,
-        "text": "You gain +2 dodge if the attacker is 2 or more nodes away."
-    }, {
-        "id": "covetous_silver_serpent_ring",
-        "name": "Covetous Silver Serpent Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Thief",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 31,
-            "itl": 27
-        },
-        "slot_cost": 1,
-        "text": "Encounters reward the party with 1 additional soul."
-    }, {
-        "id": "covetous_gold_serpent_ring",
-        "name": "Covetous Gold Serpent Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Thief",
-            "type": "transposed"
-        },
-        "requirements": {
-            "dex": 30,
-            "itl": 25
-        },
-        "slot_cost": 1,
-        "text": "If the party defeats an encounter and does not open a chest, add 1 card from the treasure deck to the inventory."
-    }, {
-        "id": "knight_slayers_ring",
-        "name": "Knight Slayer's Ring",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Warrior",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 30
-        },
-        "slot_cost": 1,
-        "text": "After you make an attack that exceeds an enemy's Block or Resist value by 3 or more, gain 1 stamina."
-    }, {
-        "id": "bellowing_dragoncrest_ring",
-        "name": "Bellowing Dragoncrest Ring",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Sorcerer",
-            "type": "transposed"
-        },
-        "requirements": {
-            "itl": 30,
-            "fth": 15
-        },
-        "slot_cost": 1,
-        "text": "When you use the Spell Fury heroic ability, your attack deals +1 damage."
-    }, {
-        "id": "big_pilgrims_key",
-        "name": "Big Pilgrim's Key",
-        "source": {
-            "expansion": ["Asylum Demon"],
-            "entity": "Asylum Demon",
-            "type": "boss"
-        },
-        "requirements": {
-            "dex": 17,
-            "itl": 17
-        },
-        "slot_cost": 1,
-        "text": "(V1 only) You may place this character on any entry node (not just entry nodes aligned with the tile you moved from)."
-    }, {
-        "id": "homeward_bone",
-        "name": "Homeward Bone",
-        "source": {
-            "expansion": ["Asylum Demon"],
-            "entity": "Stray Demon",
-            "type": "boss"
-        },
-        "requirements": {
-            "itl": 20,
-            "fth": 20
-        },
-        "slot_cost": 1,
-        "text": "During your activation, you may discard this card to end an encounter and return to the Bonfire."
-    }, {
-        "id": "old_leo_ring",
-        "name": "Old Leo Ring",
-        "source": {
-            "expansion": ["Explorers"],
-            "entity": "Old Dragonslayer",
-            "type": "boss"
-        },
-        "requirements": {
-            "dex": 18,
-            "itl": 18
-        },
-        "slot_cost": 1,
-        "text": "Your attacks gain +1 damage against enemies that damaged you during the last enemy activation."
-    }, {
-        "id": "ring_of_blades",
-        "name": "Ring of Blades",
-        "source": {
-            "expansion": ["Explorers"],
-            "entity": "The Pursuer",
-            "type": "boss"
-        },
-        "requirements": {
-            "dex": 22,
-            "itl": 22
-        },
-        "slot_cost": 1,
-        "text": "At the start of your activation, you may suffer 1 damage to flip your Luck token to the ready side."
-    }, {
-        "id": "calamity_ring",
-        "name": "Calamity Ring",
-        "source": {
-            "expansion": ["Black Dragon Kalameet"],
-            "entity": "Black Dragon Kalameet",
-            "type": "boss"
-        },
-        "requirements": {},
-        "slot_cost": 1,
-        "effects": {
-            "attack_mods": [{
-                    "target": "all",
-                    "flat_mod": 1
-                }
-            ],
-            "block": {
-                "flat_mod": -1
-            },
-            "resist": {
-                "flat_mod": -1
-            },
-            "dodge": {
-                "flat_mod": -1
-            }
-        },
-        "text": "You suffer -1 success on each Block, Resist, and Dodge roll but gain +1 success on each Attack roll."
-    }, {
-        "id": "blighttown_key",
-        "name": "Blighttown Key",
-        "source": {
-            "expansion": ["Gaping Dragon"],
-            "entity": "Gaping Dragon",
-            "type": "boss"
-        },
-        "requirements": {},
-        "slot_cost": 1,
-        "text": "(V1 only) You may look at face-down encounter cards."
-    }, {
-        "id": "pontiffs_left_eye",
-        "name": "Pontiff's Left Eye",
-        "source": {
-            "expansion": ["Vordt of the Boreal Valley"],
-            "entity": "Vordt of the Boreal Valley",
-            "type": "boss"
-        },
-        "requirements": {
-            "itl": 21,
-            "fth": 21
-        },
-        "slot_cost": 1,
-        "text": "At the end of your activation, if you made two or more attack rolls, gain 1 health."
-    }, {
-        "id": "soldier_key",
-        "name": "Soldier Key",
-        "source": {
-            "expansion": ["The Last Giant"],
-            "entity": "The Last Giant",
-            "type": "boss"
-        },
-        "requirements": {},
-        "slot_cost": 1,
-        "text": "You may discard this card to replace an encounter card with a random encounter of the same level."
-    }, {
-        "id": "bequeathed_lord_soul",
-        "name": "Bequeathed Lord Soul",
-        "source": {
-            "expansion": ["The Four Kings"],
-            "entity": "The Four Kings",
-            "type": "boss"
-        },
-        "requirements": {
-            "str": 20,
-            "dex": 20,
-            "itl": 20,
-            "fth": 20
-        },
-        "slot_cost": 1,
-        "text": "Tier 3 for each of your stats is 40 while you have this equipped."
+[
+  {
+    "id": "minotaur_helmet",
+    "name": "Minotaur Helmet",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Oliver the Collector",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 26
+    },
+    "slot_cost": 1,
+    "text": "Your 0 range attacks gain push.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "range",
+          "value": 0
+        },
+        "set": {
+          "push": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "mon_ring",
+    "name": "Mon Ring",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Invader Brylex",
+      "type": "invader"
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 20
+    },
+    "slot_cost": 1,
+    "text": "Once per spark, the party may take their first activation before the enemies' first activation."
+  },
+  {
+    "id": "clear_bluestone_ring",
+    "name": "Clear Bluestone Ring",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Armorer Dennis",
+      "type": "invader"
+    },
+    "requirements": {
+      "itl": 30,
+      "fth": 30
+    },
+    "slot_cost": 1,
+    "text": "You can use one-handed magical attacks in your backup slot as if they were equipped."
+  },
+  {
+    "id": "sanctum_priestess_tiara",
+    "name": "Sanctum Priestess Tiara",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Fencer Sharron",
+      "type": "invader"
+    },
+    "requirements": {
+      "itl": 27,
+      "fth": 27
+    },
+    "slot_cost": 1,
+    "text": "Your magical attacks gain +1 damage.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "all"
+        },
+        "when": {
+          "attack": {
+            "magic": true
+          }
+        },
+        "add": {
+          "dice": {
+            "flat_mod": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "hornet_ring",
+    "name": "Hornet Ring",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 30
+    },
+    "slot_cost": 1,
+    "text": "Your attacks gain an additional orange die but get -2 total damage.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "orange": 1,
+          "flat_mod": -2
+        }
+      }
     }
+  },
+  {
+    "id": "red_tearstone_ring",
+    "name": "Red Tearstone Ring",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "fth": 20
+    },
+    "slot_cost": 1,
+    "text": "All of your attacks gain +1 damage while you have four or more damage cubes/tokens on your endurance bar."
+  },
+  {
+    "id": "great_swamp_ring",
+    "name": "Great Swamp Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 15,
+      "itl": 20
+    },
+    "slot_cost": 1,
+    "text": "When you use the Explosive Crit heroic ability, instead of gaining a black die, you gain a blue die."
+  },
+  {
+    "id": "chloranthy_ring",
+    "name": "Chloranthy Ring",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 18,
+      "dex": 18,
+      "itl": 18,
+      "fth": 18
+    },
+    "slot_cost": 1,
+    "text": "This character and other characters on the same node as this character gain 4 stamina at the start of their turn."
+  },
+  {
+    "id": "divine_blessing",
+    "name": "Divine Blessing",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "fth": 22
+    },
+    "slot_cost": 1,
+    "text": "During your activation, you may permanently discard this card to remove all damage and conditions from your character."
+  },
+  {
+    "id": "dark_wood_grain_ring",
+    "name": "Dark Wood Grain Ring",
+    "source": {
+      "expansion": [
+        "Explorers",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "dex": 26
+    },
+    "slot_cost": 1,
+    "text": "When you dodge, you may move 2 nodes (instead of 1)."
+  },
+  {
+    "id": "life_ring",
+    "name": "Life Ring",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "fth": 30
+    },
+    "slot_cost": 1,
+    "text": "You can place a cube/token here instead of on your endurance bar (remove the cube/token when the encounter ends)."
+  },
+  {
+    "id": "dusk_crown_ring",
+    "name": "Dusk Crown Ring",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "itl": 30
+    },
+    "slot_cost": 1,
+    "text": "Your magical attacks cost -2 stamina. When you make a magical attack, you suffer 1 damage.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "all"
+        },
+        "when": {
+          "attack": {
+            "magic": true
+          }
+        },
+        "add": {
+          "stamina": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "tiny_beings_ring",
+    "name": "Tiny Being's Ring",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "class"
+    },
+    "requirements": {
+      "fth": 20
+    },
+    "slot_cost": 1,
+    "text": "At the start of this character's turn, this character can heal 2 damage instead of gaining 3 stamina."
+  },
+  {
+    "id": "blue_tearstone_ring",
+    "name": "Blue Tearstone Ring",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 25,
+      "fth": 25
+    },
+    "slot_cost": 1,
+    "text": "After you suffer damage from an enemy attack, gain 1 stamina."
+  },
+  {
+    "id": "sun_princess_ring",
+    "name": "Sun Princess Ring",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 30,
+      "fth": 25
+    },
+    "slot_cost": 1,
+    "text": "When you end your activation, gain 1 health."
+  },
+  {
+    "id": "ring_of_favour",
+    "name": "Ring of Favour",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 21,
+      "fth": 21
+    },
+    "slot_cost": 1,
+    "text": "At the end of your activation, if you made two or more attack rolls, gain 1 stamina."
+  },
+  {
+    "id": "wolf_ring",
+    "name": "Wolf Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 25,
+      "dex": 35,
+      "itl": 25
+    },
+    "slot_cost": 1,
+    "text": "This character can reroll their defence roll. They must accept the result of the second roll."
+  },
+  {
+    "id": "binoculars",
+    "name": "Binoculars",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 20,
+      "fth": 20
+    },
+    "slot_cost": 1,
+    "text": "At the start of each trapped encounter, you may look at 2 trap tokens."
+  },
+  {
+    "id": "carthus_milkring",
+    "name": "Carthus Milkring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 30
+    },
+    "slot_cost": 1,
+    "text": "Increase your dodge value by 1.",
+    "mods": {
+      "defense": {
+        "dodge": 1
+      }
+    }
+  },
+  {
+    "id": "magic_stoneplate_ring",
+    "name": "Magic Stoneplate Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "transposed"
+    },
+    "requirements": {
+      "fth": 32
+    },
+    "slot_cost": 1,
+    "text": "Gain 1 black die for magic resist.",
+    "mods": {
+      "defense": {
+        "resist": {
+          "black": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "obscuring_ring",
+    "name": "Obscuring Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 28,
+      "fth": 20
+    },
+    "slot_cost": 1,
+    "text": "You gain +2 dodge if the attacker is 2 or more nodes away."
+  },
+  {
+    "id": "covetous_silver_serpent_ring",
+    "name": "Covetous Silver Serpent Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 31,
+      "itl": 27
+    },
+    "slot_cost": 1,
+    "text": "Encounters reward the party with 1 additional soul."
+  },
+  {
+    "id": "covetous_gold_serpent_ring",
+    "name": "Covetous Gold Serpent Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 30,
+      "itl": 25
+    },
+    "slot_cost": 1,
+    "text": "If the party defeats an encounter and does not open a chest, add 1 card from the treasure deck to the inventory."
+  },
+  {
+    "id": "knight_slayers_ring",
+    "name": "Knight Slayer's Ring",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 30
+    },
+    "slot_cost": 1,
+    "text": "After you make an attack that exceeds an enemy's Block or Resist value by 3 or more, gain 1 stamina."
+  },
+  {
+    "id": "bellowing_dragoncrest_ring",
+    "name": "Bellowing Dragoncrest Ring",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 30,
+      "fth": 15
+    },
+    "slot_cost": 1,
+    "text": "When you use the Spell Fury heroic ability, your attack deals +1 damage."
+  },
+  {
+    "id": "big_pilgrims_key",
+    "name": "Big Pilgrim's Key",
+    "source": {
+      "expansion": [
+        "Asylum Demon"
+      ],
+      "entity": "Asylum Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 17,
+      "itl": 17
+    },
+    "slot_cost": 1,
+    "text": "(V1 only) You may place this character on any entry node (not just entry nodes aligned with the tile you moved from)."
+  },
+  {
+    "id": "homeward_bone",
+    "name": "Homeward Bone",
+    "source": {
+      "expansion": [
+        "Asylum Demon"
+      ],
+      "entity": "Stray Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "itl": 20,
+      "fth": 20
+    },
+    "slot_cost": 1,
+    "text": "During your activation, you may discard this card to end an encounter and return to the Bonfire."
+  },
+  {
+    "id": "old_leo_ring",
+    "name": "Old Leo Ring",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ],
+      "entity": "Old Dragonslayer",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 18,
+      "itl": 18
+    },
+    "slot_cost": 1,
+    "text": "Your attacks gain +1 damage against enemies that damaged you during the last enemy activation."
+  },
+  {
+    "id": "ring_of_blades",
+    "name": "Ring of Blades",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ],
+      "entity": "The Pursuer",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 22,
+      "itl": 22
+    },
+    "slot_cost": 1,
+    "text": "At the start of your activation, you may suffer 1 damage to flip your Luck token to the ready side."
+  },
+  {
+    "id": "calamity_ring",
+    "name": "Calamity Ring",
+    "source": {
+      "expansion": [
+        "Black Dragon Kalameet"
+      ],
+      "entity": "Black Dragon Kalameet",
+      "type": "boss"
+    },
+    "requirements": {},
+    "slot_cost": 1,
+    "text": "You suffer -1 success on each Block, Resist, and Dodge roll but gain +1 success on each Attack roll.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "flat_mod": 1
+        }
+      },
+      "defense": {
+        "block": {
+          "flat_mod": -1
+        },
+        "resist": {
+          "flat_mod": -1
+        },
+        "dodge": -1
+      }
+    }
+  },
+  {
+    "id": "blighttown_key",
+    "name": "Blighttown Key",
+    "source": {
+      "expansion": [
+        "Gaping Dragon"
+      ],
+      "entity": "Gaping Dragon",
+      "type": "boss"
+    },
+    "requirements": {},
+    "slot_cost": 1,
+    "text": "(V1 only) You may look at face-down encounter cards."
+  },
+  {
+    "id": "pontiffs_left_eye",
+    "name": "Pontiff's Left Eye",
+    "source": {
+      "expansion": [
+        "Vordt of the Boreal Valley"
+      ],
+      "entity": "Vordt of the Boreal Valley",
+      "type": "boss"
+    },
+    "requirements": {
+      "itl": 21,
+      "fth": 21
+    },
+    "slot_cost": 1,
+    "text": "At the end of your activation, if you made two or more attack rolls, gain 1 health."
+  },
+  {
+    "id": "soldier_key",
+    "name": "Soldier Key",
+    "source": {
+      "expansion": [
+        "The Last Giant"
+      ],
+      "entity": "The Last Giant",
+      "type": "boss"
+    },
+    "requirements": {},
+    "slot_cost": 1,
+    "text": "You may discard this card to replace an encounter card with a random encounter of the same level."
+  },
+  {
+    "id": "bequeathed_lord_soul",
+    "name": "Bequeathed Lord Soul",
+    "source": {
+      "expansion": [
+        "The Four Kings"
+      ],
+      "entity": "The Four Kings",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 20,
+      "dex": 20,
+      "itl": 20,
+      "fth": 20
+    },
+    "slot_cost": 1,
+    "text": "Tier 3 for each of your stats is 40 while you have this equipped."
+  }
 ]

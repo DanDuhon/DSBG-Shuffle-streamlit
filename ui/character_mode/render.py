@@ -3,14 +3,15 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 from typing import Any, Dict, List, Set
-from ui.character_mode.attacks import _rows_for_attacks_table
 from ui.character_mode.build import _build_stats, _validate_build
 from ui.character_mode.constants import CLASS_TIERS, HAND_CONDITION_OPTIONS, HAND_FEATURE_OPTIONS, TIERS
 from ui.character_mode.data_io import _find_data_file, _load_json_list
+from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg
 from ui.character_mode.filters import _apply_armor_filters, _apply_hand_item_filters, _filter_items
-from ui.character_mode.item_fields import _armor_dodge_int, _armor_upgrade_slots_int, _hand_dodge_int, _hand_hands_required_int, _hand_range_str, _hand_upgrade_slots_int, _hands_required, _id, _immunities_set, _item_expansions, _name, _slot_cost, _sorted_with_none_first, _src_str, _upgrade_slots
+from ui.character_mode.item_fields import _armor_dodge_int, _armor_upgrade_slots_int, _extra_upgrade_slots, _hand_dodge_int, _hand_hands_required_int, _hand_range_str, _hand_upgrade_slots_int, _hands_required, _id, _immunities_set, _item_expansions, _name, _slot_cost, _sorted_with_none_first, _src_str, _upgrade_slots
 from ui.character_mode.selection import _merge_visible_selection, _normalize_hand_selection, _ordered_unique
 from ui.character_mode.tables import _rows_for_armor_table, _rows_for_hand_table
+from ui.character_mode.aggregates import build_attack_totals_rows, build_defense_totals, expected_damage_taken
 from ui.character_mode.widgets import _render_selection_table
 
 
@@ -93,11 +94,6 @@ def render(settings: Dict[str, Any]) -> None:
         ss["cm_persist_tiers"] = dict(tier_indices)
 
         stats = _build_stats(class_name, tier_indices)
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("STR", stats["str"])
-        c2.metric("DEX", stats["dex"])
-        c3.metric("INT", stats["itl"])
-        c4.metric("FAI", stats["fth"])
 
     with right:
         summary_slot = st.empty()
@@ -405,15 +401,17 @@ def render(settings: Dict[str, Any]) -> None:
             "Hands": st.column_config.NumberColumn("Hands", width=60),
             "Range": st.column_config.TextColumn("Range", width=70),
             "Upg Slots": st.column_config.NumberColumn("Slots", width=60),
+            "Block": st.column_config.TextColumn("Block", width=95),
+            "Resist": st.column_config.TextColumn("Resist", width=95),
             "Dodge": st.column_config.TextColumn("Dodge", width=75),
             "Text": st.column_config.TextColumn("Text", width="large"),
         }
 
         hand_col_order = [
             "Select", "Name",
-            "Category", "Hands", "Range", "Upg Slots", "Dodge", "Text",
+            "Category", "Hands", "Range", "Upg Slots", "Block", "Resist", "Dodge", "Text",
             "STR", "DEX", "INT", "FAI",
-            "Legendary", "Expansions", "Source Type", "Source Entity",
+            "Legendary", "Expansions", "SourceType", "SourceEntity",
         ]
 
         chosen = _render_selection_table(
@@ -439,8 +437,23 @@ def render(settings: Dict[str, Any]) -> None:
     with tab_attacks:
         prev_ids = list(ss.get("cm_selected_hand_ids") or [])
         prev_set = set(prev_ids)
+        # Build totals using current selection (armor + upgrades + weapon upgrades)
+        armor_obj = armor_by_id.get(ss.get("cm_selected_armor_id") or "") if ss.get("cm_selected_armor_id") else None
+        armor_upgrade_objs = [au_by_id[uid] for uid in (ss.get("cm_selected_armor_upgrade_ids") or []) if uid in au_by_id]
 
-        attack_rows = _rows_for_attacks_table(filtered_hand, prev_set)
+        wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
+        weapon_upgrades_by_hand = {
+            hid: [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
+            for hid in set([_id(x) for x in filtered_hand])
+        }
+
+        attack_rows = build_attack_totals_rows(
+            hand_items=filtered_hand,
+            selected_hand_ids=prev_set,
+            armor_obj=armor_obj,
+            armor_upgrade_objs=armor_upgrade_objs,
+            weapon_upgrades_by_hand=weapon_upgrades_by_hand,
+        )
         if not attack_rows:
             st.caption("0 attack lines (current Hand Items filters hide all attack lines).")
         else:
@@ -452,26 +465,30 @@ def render(settings: Dict[str, Any]) -> None:
                 return
 
             df = df.set_index("RowId", drop=True)
-
             att_cfg = {
                 "Select": st.column_config.CheckboxColumn("Select", width="small"),
                 "Item": st.column_config.TextColumn("Item", width="medium"),
-                "Dice": st.column_config.TextColumn("Dice", width=170),
+                "Dice": st.column_config.TextColumn("Dice", width=150),
+                "TotDice": st.column_config.TextColumn("Tot Dice", width=170),
+                "TotMin": st.column_config.NumberColumn("Tot Min", width=70),
+                "TotMax": st.column_config.NumberColumn("Tot Max", width=70),
+                "TotAvg": st.column_config.NumberColumn("Tot Avg", width=80, format="%.2f"),
+                "TotCond": st.column_config.TextColumn("Tot Cond", width=140),
+                "TotStam": st.column_config.NumberColumn("Tot Stam", width=80),
                 "Range": st.column_config.TextColumn("Range", width=70),
                 "Magic": st.column_config.CheckboxColumn("Magic", disabled=True, width=70),
                 "Node": st.column_config.CheckboxColumn("Node", disabled=True, width=70),
                 "Shaft": st.column_config.CheckboxColumn("Shaft", disabled=True, width=70),
+                "Ign Blk": st.column_config.CheckboxColumn("Ign Blk", disabled=True, width=75),
                 "Cond": st.column_config.TextColumn("Cond", width=90),
                 "Text": st.column_config.TextColumn("Text", width="large"),
             }
-
             att_order = [
-                "Select", "Item", "Atk#", "Dice",
-                "Stam", "Min", "Max", "Avg",
-                "Heal", "StamRec", "Cond", "Text",
-                "Magic", "Node", "Push", "Range", "Shaft", "Repeat",
+                "Select", "Item", "Atk#",
+                "TotDice", "TotStam", "TotMin", "TotMax", "TotAvg", "TotCond",
+                "Dice", "Stam", "Cond", "Text",
+                "Magic", "Node", "Ign Blk", "Push", "Range", "Shaft", "Repeat",
             ]
-
             edited = st.data_editor(
                 df,
                 key="cm_table_attacks",
@@ -606,15 +623,6 @@ def render(settings: Dict[str, Any]) -> None:
             "Block": st.column_config.TextColumn("Block", width=95),
             "Resist": st.column_config.TextColumn("Resist", width=95),
             "Dodge": st.column_config.TextColumn("Dodge", width=70),
-
-            "Block Min": st.column_config.NumberColumn("B Min", width=65),
-            "Block Max": st.column_config.NumberColumn("B Max", width=65),
-            "Block Avg": st.column_config.NumberColumn("B Avg", width=65),
-
-            "Resist Min": st.column_config.NumberColumn("R Min", width=65),
-            "Resist Max": st.column_config.NumberColumn("R Max", width=65),
-            "Resist Avg": st.column_config.NumberColumn("R Avg", width=65),
-
             "Upg Slots": st.column_config.NumberColumn("Slots", width=60),
             "Text": st.column_config.TextColumn("Text", width="large"),
         }
@@ -622,8 +630,6 @@ def render(settings: Dict[str, Any]) -> None:
         armor_col_order = [
             "Select", "Name",
             "Block", "Resist", "Dodge",
-            "Block Min", "Block Max", "Block Avg",
-            "Resist Min", "Resist Max", "Resist Avg",
             "Upg Slots", "Text",
             "STR", "DEX", "INT", "FAI",
             "Legendary", "Expansions", "SourceType", "SourceEntity",
@@ -663,11 +669,12 @@ def render(settings: Dict[str, Any]) -> None:
 
             for hid in ss["cm_selected_hand_ids"]:
                 h = hand_by_id.get(hid) or {}
-                cap = _upgrade_slots(h)
+                prev = list(wu_map.get(hid) or [])
+                extra = sum(_extra_upgrade_slots(wu_by_id.get(uid) or {}) for uid in prev)
+                cap = _upgrade_slots(h) + int(extra)
                 if cap <= 0:
                     continue
                 with st.expander(f"{_name(h)} (upgrade slots: {cap})", expanded=False):
-                    prev = list(wu_map.get(hid) or [])
                     chosen = _render_selection_table(
                         items=filtered_wu,
                         selected_ids=prev,
@@ -782,9 +789,12 @@ def render(settings: Dict[str, Any]) -> None:
             st.markdown("**Hand Items:**")
             for hid in list(ss["cm_selected_hand_ids"]):
                 h = hand_by_id.get(hid) or {}
+                ups = list((ss["cm_selected_weapon_upgrade_ids_by_hand"].get(hid) or []))
+                extra = sum(_extra_upgrade_slots(wu_by_id.get(uid) or {}) for uid in ups)
+                cap = _upgrade_slots(h) + int(extra)
                 hrow = st.columns([8, 2])
                 hrow[0].markdown(
-                    f"- {_name(h)} (hands {_hands_required(h)}, slot cost {_slot_cost(h)}, upgrade slots {_upgrade_slots(h)})"
+                    f"- {_name(h)} (hands {_hands_required(h)}, slot cost {_slot_cost(h)}, upgrade slots {cap})"
                 )
                 if hrow[1].button("Remove", key=f"cm_remove_hand_{hid}"):
                     ss["cm_selected_hand_ids"] = [x for x in ss["cm_selected_hand_ids"] if x != hid]
@@ -792,8 +802,7 @@ def render(settings: Dict[str, Any]) -> None:
                     wu_map.pop(hid, None)
                     ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
                     st.rerun()
-
-                ups = list((ss["cm_selected_weapon_upgrade_ids_by_hand"].get(hid) or []))
+ 
                 for uid in ups:
                     u = wu_by_id.get(uid) or {}
                     urow = st.columns([8, 2])
@@ -805,3 +814,109 @@ def render(settings: Dict[str, Any]) -> None:
                         st.rerun()
         else:
             st.markdown("**Hand Items:** (none)")
+
+        st.markdown("---")
+        st.markdown("#### Totals")
+
+        # Gather selected objects
+        armor_id = ss.get("cm_selected_armor_id") or ""
+        armor_obj = armor_by_id.get(armor_id) if armor_id else None
+        armor_upgrade_objs = [au_by_id[uid] for uid in (ss.get("cm_selected_armor_upgrade_ids") or []) if uid in au_by_id]
+
+        selected_hand_ids = list(ss.get("cm_selected_hand_ids") or [])
+        selected_hand_objs = [hand_by_id[hid] for hid in selected_hand_ids if hid in hand_by_id]
+
+        wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
+        selected_weapon_upgrade_objs = []
+        for hid in selected_hand_ids:
+            for uid in (wu_map.get(hid) or []):
+                if uid in wu_by_id:
+                    selected_weapon_upgrade_objs.append(wu_by_id[uid])
+
+        def_tot = build_defense_totals(
+            armor_obj=armor_obj,
+            armor_upgrade_objs=armor_upgrade_objs,
+            hand_objs=selected_hand_objs,
+            weapon_upgrade_objs=selected_weapon_upgrade_objs,
+        )
+
+        dodge_effective = max(int(def_tot.dodge_armor), 0) + max(int(def_tot.dodge_hand_max), 0)
+
+        bstats = _dice_min_max_avg(def_tot.block)
+        rstats = _dice_min_max_avg(def_tot.resist)
+
+        st.markdown(f"**Dodge dice (effective):** {dodge_effective} (armor {def_tot.dodge_armor} + best hand {def_tot.dodge_hand_max})")
+        st.markdown(f"**Block (total):** {_dice_icons(def_tot.block)} | min {bstats['min']:.0f}, max {bstats['max']:.0f}, avg {bstats['avg']:.2f}")
+        st.markdown(f"**Resist (total):** {_dice_icons(def_tot.resist)} | min {rstats['min']:.0f}, max {rstats['max']:.0f}, avg {rstats['avg']:.2f}")
+
+        # Total attack lines for selected items (includes armor + upgrades)
+        weapon_upgrades_by_hand = {
+            hid: [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
+            for hid in selected_hand_ids
+        }
+        atk_rows = build_attack_totals_rows(
+            hand_items=selected_hand_objs,
+            selected_hand_ids=set(selected_hand_ids),
+            armor_obj=armor_obj,
+            armor_upgrade_objs=armor_upgrade_objs,
+            weapon_upgrades_by_hand=weapon_upgrades_by_hand,
+        )
+        if atk_rows:
+            df_atk = pd.DataFrame(atk_rows)
+            cols = [c for c in ["Item", "Atk#", "TotStam", "TotDice", "TotMin", "TotMax", "TotAvg", "TotCond", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"] if c in df_atk.columns]
+            st.dataframe(df_atk[cols], hide_index=True, width="stretch")
+        else:
+            st.caption("No attack lines on selected items.")
+
+        st.markdown("#### Damage Intake Simulator")
+        incoming = st.slider("Incoming damage", min_value=2, max_value=15, value=6, step=1, key="cm_sim_incoming")
+        diff = st.slider("Dodge difficulty", min_value=1, max_value=5, value=2, step=1, key="cm_sim_dodge_diff")
+
+        sim_block = expected_damage_taken(incoming_damage=incoming, dodge_dice=dodge_effective, dodge_difficulty=diff, defense_dice=def_tot.block)
+        sim_resist = expected_damage_taken(incoming_damage=incoming, dodge_dice=dodge_effective, dodge_difficulty=diff, defense_dice=def_tot.resist)
+
+        st.markdown(f"**Dodge success:** {sim_block['p_dodge']*100:.1f}%")
+        st.markdown(f"**Expected damage taken (physical/block):** {sim_block['exp_taken']:.2f} (if dodge fails: {sim_block['exp_after_def']:.2f})")
+        st.markdown(f"**Expected damage taken (magic/resist):** {sim_resist['exp_taken']:.2f} (if dodge fails: {sim_resist['exp_after_def']:.2f})")
+
+        st.markdown("#### Effects")
+        effects = []
+
+        def _add_eff(x):
+            s = str(x or '').strip()
+            if s:
+                effects.append(s)
+
+        if armor_obj:
+            _add_eff(armor_obj.get('text'))
+            for imm in (armor_obj.get('immunities') or []):
+                _add_eff(f"Immunity: {imm}")
+
+        for u in armor_upgrade_objs:
+            _add_eff(u.get('text'))
+            for imm in (u.get('immunities') or []):
+                _add_eff(f"Immunity: {imm}")
+
+        for h in selected_hand_objs:
+            _add_eff(h.get('text'))
+            for imm in (h.get('immunities') or []):
+                _add_eff(f"Immunity: {imm}")
+
+        for u in selected_weapon_upgrade_objs:
+            _add_eff(u.get('text'))
+            for imm in (u.get('immunities') or []):
+                _add_eff(f"Immunity: {imm}")
+
+        # Derived effects from attack lines
+        for r in atk_rows or []:
+            _add_eff(r.get('TotCond'))
+            _add_eff(r.get('Text'))
+
+        effects = list(dict.fromkeys([e for e in effects if e]))
+        if effects:
+            for e in effects:
+                st.markdown(f"- {e}")
+        else:
+            st.caption("No effects found on selected items.")
+
+

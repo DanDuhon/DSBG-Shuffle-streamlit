@@ -44,6 +44,12 @@ def _hand_has_shaft(item: Dict[str, Any]) -> bool:
     return _hand_any_attack_pred(item, lambda a: bool(a.get("shaft")))
 
 
+
+def _hand_has_ignore_block(item: Dict[str, Any]) -> bool:
+    if bool(item.get("ignore_block")):
+        return True
+    return _hand_any_attack_pred(item, lambda a: bool((a or {}).get("ignore_block")))
+
 def _hand_has_shift_before(item: Dict[str, Any]) -> bool:
     return _hand_any_attack_pred(
         item,
@@ -243,4 +249,5 @@ _HAND_FEATURE_PRED = {
     "repeat": _hand_has_repeat,
     "stamina_recovery": _hand_has_stamina_recovery,
     "heal": _hand_has_heal,
+    "ignore_block": _hand_has_ignore_block,
 }
