@@ -16,7 +16,7 @@ from core.behavior.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
     , render_behavior_card_cached, build_behavior_catalog)
 from core.behavior.models import BehaviorEntry
-from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
+from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
 
 
 def render():

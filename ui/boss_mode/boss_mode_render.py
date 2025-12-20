@@ -4,7 +4,7 @@ import json
 import streamlit as st
 
 from ui.encounter_mode.generation import generate_encounter_image
-from ui.ngplus_tab.logic import get_current_ngplus_level
+from core.ngplus import get_current_ngplus_level
 from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,

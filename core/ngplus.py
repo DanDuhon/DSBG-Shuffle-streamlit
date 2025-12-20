@@ -1,4 +1,4 @@
-#ui/ngplus_tab/logic.py
+#core/ngplus/logic.py
 import math
 from copy import deepcopy
 from typing import Any, Dict, Optional
@@ -6,6 +6,20 @@ from typing import Any, Dict, Optional
 import streamlit as st
 
 MAX_NGPLUS_LEVEL = 5
+
+# NG+ HP scaling (relative to base HP):
+#  - Base HP 1-3: +1 HP per NG+ level
+#  - Base HP 4-7: bonuses by level: 0,2,3,5,6,8
+#  - Base HP 8-10: +2 HP per NG+ level
+#  - Base HP >10: +10% HP per NG+ level (rounded up)
+_HP_4_TO_7_BONUS = {
+    0: 0,
+    1: 2,
+    2: 3,
+    3: 5,
+    4: 6,
+    5: 8,
+}
 
 
 def get_current_ngplus_level() -> int:
@@ -44,63 +58,6 @@ def dodge_for_level(base_dodge: Optional[int], level: int) -> Optional[int]:
     if base_dodge is None:
         return None
     return int(base_dodge) + dodge_bonus_for_level(level)
-
-
-# NG+ HP scaling (relative to base HP):
-#  - Base HP 1-3: +1 HP per NG+ level
-#  - Base HP 4-7: bonuses by level: 0,2,3,5,6,8
-#  - Base HP 8-10: +2 HP per NG+ level
-#  - Base HP >10: +10% HP per NG+ level (rounded up)
-_HP_4_TO_7_BONUS = {
-    0: 0,
-    1: 2,
-    2: 3,
-    3: 5,
-    4: 6,
-    5: 8,
-}
-
-
-def health_for_level(base_hp: Optional[int], level: int) -> Optional[int]:
-    if base_hp is None:
-        return None
-    base_hp = int(base_hp)
-    level = max(0, min(MAX_NGPLUS_LEVEL, level))
-    if level == 0:
-        return base_hp
-
-    # 1-3 → +1 per level
-    if 1 <= base_hp <= 3:
-        return base_hp + level
-
-    # 4-7 → lookup table
-    if 4 <= base_hp <= 7:
-        bonus = _HP_4_TO_7_BONUS.get(level, _HP_4_TO_7_BONUS[max(_HP_4_TO_7_BONUS)])
-        return base_hp + bonus
-
-    # 8-10 → +2 per level
-    if 8 <= base_hp <= 10:
-        return base_hp + 2 * level
-
-    # >10 → +10% per level, rounded up
-    if base_hp > 10:
-        factor = 1.0 + 0.10 * level
-        return int(math.ceil(base_hp * factor))
-    
-
-def health_bonus_for_level(base_hp: Optional[int], level: int) -> int:
-    """
-    Convenience helper used for:
-      - heat-up trigger scaling
-      - Paladin Leeroy's 'set health to X' rule
-    """
-    if base_hp is None:
-        return 0
-    base_hp = int(base_hp)
-    hp_ng = health_for_level(base_hp, level)
-    if hp_ng is None:
-        return 0
-    return int(hp_ng) - base_hp
 
 
 def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
@@ -188,3 +145,59 @@ def apply_ngplus_to_raw(
             raw[key] = _apply_to_card_dict(value, level)
 
     return raw
+
+
+def health_for_level(base_hp: Optional[int], level: int) -> Optional[int]:
+    if base_hp is None:
+        return None
+    base_hp = int(base_hp)
+    level = max(0, min(MAX_NGPLUS_LEVEL, level))
+    if level == 0:
+        return base_hp
+
+    # 1-3 → +1 per level
+    if 1 <= base_hp <= 3:
+        return base_hp + level
+
+    # 4-7 → lookup table
+    if 4 <= base_hp <= 7:
+        bonus = _HP_4_TO_7_BONUS.get(level, _HP_4_TO_7_BONUS[max(_HP_4_TO_7_BONUS)])
+        return base_hp + bonus
+
+    # 8-10 → +2 per level
+    if 8 <= base_hp <= 10:
+        return base_hp + 2 * level
+
+    # >10 → +10% per level, rounded up
+    if base_hp > 10:
+        factor = 1.0 + 0.10 * level
+        return int(math.ceil(base_hp * factor))
+    
+
+def health_bonus_for_level(base_hp: Optional[int], level: int) -> int:
+    """
+    Convenience helper used for:
+      - heat-up trigger scaling
+      - Paladin Leeroy's 'set health to X' rule
+    """
+    if base_hp is None:
+        return 0
+    base_hp = int(base_hp)
+    hp_ng = health_for_level(base_hp, level)
+    if hp_ng is None:
+        return 0
+    return int(hp_ng) - base_hp
+
+
+def dodge_bonus_for_level(level: int) -> int:
+    """
+    NG+ dodge rules:
+      - NG+0-1: +0
+      - NG+2-3: +1
+      - NG+4-5: +2
+    """
+    if level <= 1:
+        return 0
+    if 2 <= level <= 3:
+        return 1
+    return 2

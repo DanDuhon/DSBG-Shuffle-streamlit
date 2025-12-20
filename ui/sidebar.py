@@ -2,7 +2,7 @@
 import streamlit as st
 from core.settings_manager import save_settings
 from core.characters import CHARACTER_EXPANSIONS
-from ui.ngplus_tab.logic import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
+from core.ngplus import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
 
 all_expansions = [
     "Painted World of Ariamis",

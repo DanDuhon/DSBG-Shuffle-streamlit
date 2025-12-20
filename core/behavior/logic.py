@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 
 from core.behavior.models import BehaviorConfig, Entity, Heatup
 from core.behavior.assets import _path, _strip_behavior_suffix
-from ui.ngplus_tab.logic import apply_ngplus_to_raw, get_current_ngplus_level
+from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
 
 
 DATA_DIR = Path("data/behaviors")

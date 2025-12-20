@@ -21,7 +21,7 @@ from core.behavior.logic import (
 from core.behavior.models import BehaviorEntry, BehaviorConfig
 from ui.encounter_mode import play_state
 from ui.encounter_mode.assets import enemyNames
-from ui.ngplus_tab.logic import get_current_ngplus_level
+from core.ngplus import get_current_ngplus_level
 
 
 # ---------------------------------------------------------------------------
