@@ -187,39 +187,40 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
     if not instants and not consumables and not orphans:
         return
 
-    # 4-column grid: Immediate events in the left 2 columns, consumables in the right 2 columns.
+    # 4-column grid:
+    # - Immediate events in left two columns
+    # - Consumable events in right two columns
     c0, c1, c2, c3 = st.columns(4)
-    with c0:
-        if instants:
+
+    if instants:
+        with c0:
             st.markdown("**Immediate**")
-    with c2:
-        if consumables:
+    if consumables:
+        with c2:
             st.markdown("**Consumable**")
 
-    # Immediate events
     if isinstance(instants, list) and instants:
         cols = [c0, c1]
         for i, ev in enumerate(instants):
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
             with cols[i % 2]:
-                st.image(ev["path"], use_container_width=True)
-                # Keep captions minimal; these are usually resolved immediately.
-                name = str(ev.get("name") or ev.get("id") or "")
-                if name:
-                    st.caption(name)
+                st.image(ev["path"], width="stretch")
+                nm = str(ev.get("name") or ev.get("id") or "").strip()
+                if nm:
+                    st.caption(nm)
 
-    # Consumable events
     if isinstance(consumables, list) and consumables:
         cols = [c2, c3]
         for i, ev in enumerate(consumables):
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
             with cols[i % 2]:
-                st.image(ev["path"], use_container_width=True)
-                name = str(ev.get("name") or ev.get("id") or "Consumable")
-                st.caption(name)
+                st.image(ev["path"], width="stretch")
+                nm = str(ev.get("name") or ev.get("id") or "Consumable").strip()
+                st.caption(nm)
 
+    # Controls
     if instants:
         if st.button("Clear immediate event notifications", key="campaign_clear_instant_events"):
             state["instant_events_unresolved"] = []
@@ -230,8 +231,6 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
         for ev in orphans:
             if isinstance(ev, dict) and ev.get("name"):
                 st.caption(str(ev["name"]))
-
-
 def _render_campaign_tab(
     bosses_by_name: Dict[str, Any],
     invaders_by_name: Dict[str, Any],
@@ -282,6 +281,11 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     campaign["current_node_id"] = current_node.get("id", "bonfire")
     state["campaign"] = campaign
     souls_token_node_id = state.get("souls_token_node_id")
+
+    if bool(st.session_state.get("ui_compact")):
+        _render_v1_campaign_compact(settings=settings, state=state, campaign=campaign, nodes=nodes, current_node=current_node)
+        st.session_state["campaign_v1_state"] = state
+        return
 
     col_overview, col_detail = st.columns([2, 1])
 
@@ -418,6 +422,11 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     state["campaign"] = campaign
     souls_token_node_id = state.get("souls_token_node_id")
 
+    if bool(st.session_state.get("ui_compact")):
+        _render_v2_campaign_compact(settings=settings, state=state, campaign=campaign, nodes=nodes, current_node=current_node)
+        st.session_state["campaign_v2_state"] = state
+        return
+
     col_overview, col_detail = st.columns([2, 1])
 
     with col_overview:
@@ -456,9 +465,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             )
             state["souls"] = int(souls_value)
 
-        # Render party-attached events beneath the bonfire + party stats row.
         _render_party_events_panel(state)
-
         st.markdown("---")
         st.markdown(
             f"**Current location:** "
@@ -537,6 +544,304 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         _render_boss_outcome_controls(state, campaign, current_node)
 
     st.session_state["campaign_v2_state"] = state
+
+
+def _render_v1_campaign_compact(
+    *,
+    settings: Dict[str, Any],
+    state: Dict[str, Any],
+    campaign: Dict[str, Any],
+    nodes: List[Dict[str, Any]],
+    current_node: Dict[str, Any],
+) -> None:
+    # Optional bonfire art (kept out of the main flow to save vertical space)
+    with st.expander("Bonfire", expanded=False):
+        st.image(str(BONFIRE_ICON_PATH), width="stretch")
+
+    _render_party_icons(settings)
+
+    player_count = _get_player_count(settings)
+    sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+
+    sparks_key = "campaign_v1_sparks_campaign"
+    if sparks_key not in st.session_state:
+        st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
+
+    sparks_value = st.number_input(
+        "Sparks",
+        min_value=0,
+        step=1,
+        key=sparks_key,
+    )
+    state["sparks"] = int(sparks_value)
+
+    souls_key = "campaign_v1_souls_campaign"
+    if souls_key not in st.session_state:
+        st.session_state[souls_key] = int(state.get("souls", 0) or 0)
+
+    souls_value = st.number_input(
+        "Soul cache",
+        min_value=0,
+        step=1,
+        key=souls_key,
+    )
+    state["souls"] = int(souls_value)
+
+    st.markdown(
+        f"**Current location:** "
+        f"{_describe_v1_node_label(campaign, current_node)}"
+    )
+
+    # Path is still available, but collapsed to avoid dominating the scroll.
+    with st.expander("Full path", expanded=False):
+        st.markdown("#### Path")
+
+        bonfire_nodes: List[Dict[str, Any]] = []
+        stage_nodes: Dict[str, List[Dict[str, Any]]] = {
+            "mini": [],
+            "main": [],
+            "mega": [],
+        }
+        other_nodes: List[Dict[str, Any]] = []
+
+        for node in nodes:
+            kind = node.get("kind")
+            stage = node.get("stage")
+            if kind == "bonfire":
+                bonfire_nodes.append(node)
+            elif stage in stage_nodes:
+                stage_nodes[stage].append(node)
+            else:
+                other_nodes.append(node)
+
+        for n in bonfire_nodes:
+            _render_v1_path_row(n, campaign, state)
+
+        chapter_labels = {
+            "mini": "Mini Boss Chapter",
+            "main": "Main Boss Chapter",
+            "mega": "Mega Boss Chapter",
+        }
+
+        for stage in ("mini", "main", "mega"):
+            nodes_for_stage = stage_nodes.get(stage) or []
+            if not nodes_for_stage:
+                continue
+            with st.expander(chapter_labels[stage], expanded=False):
+                for n in nodes_for_stage:
+                    _render_v1_path_row(n, campaign, state)
+
+        for n in other_nodes:
+            _render_v1_path_row(n, campaign, state)
+
+    st.markdown("---")
+    _render_v1_current_panel(campaign, current_node)
+    _render_boss_outcome_controls(state, campaign, current_node)
+
+
+def _render_v2_campaign_compact(
+    *,
+    settings: Dict[str, Any],
+    state: Dict[str, Any],
+    campaign: Dict[str, Any],
+    nodes: List[Dict[str, Any]],
+    current_node: Dict[str, Any],
+) -> None:
+    # Optional bonfire art (kept out of the main flow to save vertical space)
+    with st.expander("Bonfire", expanded=False):
+        st.image(str(BONFIRE_ICON_PATH), width="stretch")
+
+    _render_party_icons(settings)
+
+    player_count = _get_player_count(settings)
+    sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+
+    sparks_key = "campaign_v2_sparks_campaign"
+    if sparks_key not in st.session_state:
+        st.session_state[sparks_key] = int(state.get("sparks", sparks_max))
+
+    sparks_value = st.number_input(
+        "Sparks",
+        min_value=0,
+        step=1,
+        key=sparks_key,
+    )
+    state["sparks"] = int(sparks_value)
+
+    souls_key = "campaign_v2_souls_campaign"
+    if souls_key not in st.session_state:
+        st.session_state[souls_key] = int(state.get("souls", 0) or 0)
+
+    souls_value = st.number_input(
+        "Soul cache",
+        min_value=0,
+        step=1,
+        key=souls_key,
+    )
+    state["souls"] = int(souls_value)
+
+    # Party-attached events (immediate + consumable)
+    _render_party_events_panel(state)
+
+    st.markdown(
+        f"**Current location:** "
+        f"{_describe_v2_node_label(campaign, current_node)}"
+    )
+
+    allowed_destinations = _v2_compute_allowed_destinations(campaign)
+
+    def _label_for_node(node: Dict[str, Any]) -> str:
+        base = _describe_v2_node_label(campaign, node)
+        rv = node.get("rendezvous_event")
+        if node.get("kind") == "encounter" and isinstance(rv, dict):
+            rv_name = str(rv.get("name") or rv.get("id") or "").strip()
+            if rv_name:
+                base = f"{base} [{rv_name}]"
+        return base
+
+    # ----- Travel controller -----
+    current_id = campaign.get("current_node_id")
+    current_is_bonfire = current_node.get("kind") == "bonfire"
+
+    candidates: List[str] = []
+    labels: Dict[str, str] = {}
+
+    for node in nodes:
+        node_id = node.get("id")
+        if not node_id or node_id == current_id:
+            continue
+
+        kind = node.get("kind")
+        stage_closed = _is_stage_closed_for_node(campaign, node)
+        if stage_closed and kind in ("encounter", "boss"):
+            continue
+
+        if allowed_destinations is not None and node_id not in allowed_destinations:
+            continue
+
+        lab = "Bonfire" if kind == "bonfire" else _label_for_node(node)
+        if current_is_bonfire and kind in ("encounter", "boss") and node.get("shortcut_unlocked"):
+            lab = f"{lab} (Shortcut)"
+
+        candidates.append(node_id)
+        labels[node_id] = lab
+
+    if candidates:
+        sel = st.selectbox(
+            "Destination",
+            options=candidates,
+            format_func=lambda x: labels.get(x, str(x)),
+            key="campaign_v2_compact_destination",
+        )
+        dest_node = None
+        for n in nodes:
+            if n.get("id") == sel:
+                dest_node = n
+                break
+
+        btn_label = "Travel"
+        if isinstance(dest_node, dict):
+            k = dest_node.get("kind")
+            if k == "bonfire":
+                btn_label = "Return to Bonfire (spend 1 Spark)"
+            elif k == "boss":
+                btn_label = "Confront"
+            if current_is_bonfire and dest_node.get("shortcut_unlocked"):
+                btn_label = "Take Shortcut"
+
+        if st.button(btn_label, key="campaign_v2_compact_travel_btn"):
+            if isinstance(dest_node, dict):
+                k = dest_node.get("kind")
+                node_id = dest_node.get("id")
+
+                if k == "bonfire":
+                    _reset_all_encounters_on_bonfire_return(campaign)
+
+                    sparks_cur = int(state.get("sparks") or 0)
+                    state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
+                    st.session_state["campaign_v2_sparks_campaign"] = int(state["sparks"])
+
+                    campaign["current_node_id"] = "bonfire"
+                    state["campaign"] = campaign
+                    st.session_state["campaign_v2_state"] = state
+                    st.rerun()
+
+                if k in ("encounter", "boss") and node_id:
+                    campaign["current_node_id"] = node_id
+                    dest_node["revealed"] = True
+                    state["campaign"] = campaign
+                    st.session_state["campaign_v2_state"] = state
+                    st.rerun()
+    else:
+        st.caption("No legal destinations available.")
+
+    # ----- Full path (collapsed) -----
+    with st.expander("Full path", expanded=False):
+        st.markdown("#### Path")
+
+        bonfire_nodes: List[Dict[str, Any]] = []
+        stage_nodes: Dict[str, List[Dict[str, Any]]] = {
+            "mini": [],
+            "main": [],
+            "mega": [],
+        }
+        other_nodes: List[Dict[str, Any]] = []
+
+        for node in nodes:
+            kind = node.get("kind")
+            stage = node.get("stage")
+            if kind == "bonfire":
+                bonfire_nodes.append(node)
+            elif stage in stage_nodes:
+                stage_nodes[stage].append(node)
+            else:
+                other_nodes.append(node)
+
+        for n in bonfire_nodes:
+            _render_v2_path_row(n, campaign, state, allowed_destinations)
+
+        chapter_labels: Dict[str, str] = {
+            "mini": "Mini Boss Chapter",
+            "main": "Main Boss Chapter",
+            "mega": "Mega Boss Chapter",
+        }
+
+        mini_boss = stage_nodes.get("mini", [])[-1] if stage_nodes.get("mini") else None
+        main_boss = stage_nodes.get("main", [])[-1] if stage_nodes.get("main") else None
+        mega_boss = stage_nodes.get("mega", [])[-1] if stage_nodes.get("mega") else None
+
+        if mini_boss is not None:
+            if mini_boss.get("was_random") and not mini_boss.get("revealed"):
+                chapter_labels["mini"] = "Unknown Mini Boss Chapter"
+            else:
+                chapter_labels["mini"] = f"{mini_boss.get('boss_name', 'Mini Boss')} Chapter"
+
+        if main_boss is not None:
+            if main_boss.get("was_random") and not main_boss.get("revealed"):
+                chapter_labels["main"] = "Unknown Main Boss Chapter"
+            else:
+                chapter_labels["main"] = f"{main_boss.get('boss_name', 'Main Boss')} Chapter"
+
+        if mega_boss is not None:
+            if mega_boss.get("was_random") and not mega_boss.get("revealed"):
+                chapter_labels["mega"] = "Unknown Mega Boss Chapter"
+            else:
+                chapter_labels["mega"] = f"{mega_boss.get('boss_name', 'Mega Boss')} Chapter"
+
+        for stage in ("mini", "main", "mega"):
+            nodes_for_stage = stage_nodes.get(stage) or []
+            if not nodes_for_stage:
+                continue
+            with st.expander(chapter_labels[stage], expanded=False):
+                for n in nodes_for_stage:
+                    _render_v2_path_row(n, campaign, state, allowed_destinations)
+
+        for n in other_nodes:
+            _render_v2_path_row(n, campaign, state, allowed_destinations)
+
+    st.markdown("---")
+    _render_v2_current_panel(campaign, current_node, state)
+    _render_boss_outcome_controls(state, campaign, current_node)
 
 
 def _render_v1_path_row(

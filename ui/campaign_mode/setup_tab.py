@@ -53,7 +53,11 @@ def _render_v1_setup(
         active_expansions=active_expansions,
     )
 
-    cols = st.columns(3)
+    if bool(st.session_state.get("ui_compact")):
+        cols = [st.container(), st.container(), st.container()]
+    else:
+        cols = st.columns(3)
+
 
     # Mini boss
     with cols[0]:
@@ -177,7 +181,11 @@ def _render_v2_setup(
         active_expansions=active_expansions,
     )
 
-    cols = st.columns(3)
+    if bool(st.session_state.get("ui_compact")):
+        cols = [st.container(), st.container(), st.container()]
+    else:
+        cols = st.columns(3)
+
 
     # Mini boss
     with cols[0]:
@@ -282,7 +290,12 @@ def _render_save_load_section(
 
     campaigns = _load_campaigns()
 
-    col_save, col_load = st.columns([1, 1])
+    if bool(st.session_state.get("ui_compact")):
+        col_save = st.container()
+        col_load = st.container()
+    else:
+        col_save, col_load = st.columns([1, 1])
+
 
     # ----- SAVE -----
     with col_save:
@@ -335,7 +348,12 @@ def _render_save_load_section(
                 key=f"campaign_load_select_{version}",
             )
 
-            load_col, delete_col = st.columns([1, 1])
+            if bool(st.session_state.get("ui_compact")):
+                load_col = st.container()
+                delete_col = st.container()
+            else:
+                load_col, delete_col = st.columns([1, 1])
+
 
             with load_col:
                 if st.button(
