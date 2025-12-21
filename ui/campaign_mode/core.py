@@ -24,6 +24,58 @@ SOULS_TOKEN_PATH = ASSETS_DIR / "souls_token.png"
 BONFIRE_ICON_PATH = ASSETS_DIR / "bonfire.gif"
 CHARACTERS_DIR = ASSETS_DIR / "characters"
 V2_EXPANSIONS_SET = set(V2_EXPANSIONS)
+ENCOUNTER_GRAVESTONES = {
+    "Frozen Sentries": 1,
+    "No Safe Haven": 1,
+    "Painted Passage": 1,
+    "Cold Snap": 2,
+    "Distant Tower": 1,
+    "Inhospitable Ground": 1,
+    "Central Plaza": 2,
+    "Deathly Freeze": 1,
+    "Draconic Decay": 1,
+    "Eye of the Storm": 1,
+    "The Last Bastion": 1,
+    "Trecherous Tower": 1,
+    "Velka's Chosen": 1,
+    "Aged Sentinel": 2,
+    "Undead Sanctum": 1,
+    "Deathly Tolls": 1,
+    "Parish Church": 1,
+    "The Fountainhead": 1,
+    "The Shine of Gold": 1,
+    "Depths of the Cathedral": 1,
+    "The Grand Hall": 1,
+    "Trophy Room": 1,
+    "Twilight Falls": 2,
+    "Dark Resurrection": 1,
+    "Grave Matters": 1,
+    "Last Rites": 1,
+    "The Beast From the Depths": 1,
+    "Altar of Bones": 1,
+    "In Deep Water": 1,
+    "Lost Chapel": 1,
+    "Maze of the Dead": 1,
+    "Pitch Black": 2,
+    "The Abandonded Chest": 1,
+    "A Trusty Ally": 2,
+    "Death's Precipice": 2,
+    "Giant's Coffin": 1,
+    "Honour Guard": 1,
+    "Lakeview Refuge": 1,
+    "Skeleton Overlord": 1,
+    "The Locked Grave": 1,
+    "The Skeleton Ball": 1,
+}
+
+
+def _card_w() -> int:
+    s = st.session_state.get("user_settings") or {}
+    try:
+        w = int(s.get("ui_card_width", 360))
+    except Exception:
+        w = 360
+    return max(240, min(560, w))
 
 
 def _get_player_count_from_settings(settings: Dict[str, Any]) -> int:
@@ -354,6 +406,67 @@ def _campaign_encounter_signature(
         return None
 
 
+
+def _v2_pick_scout_ahead_alt_frozen(
+    *,
+    settings: Dict[str, Any],
+    level: int,
+    exclude_signatures: Optional[set[tuple[str, int, str]]] = None,
+    max_tries: int = 30,
+) -> Optional[Dict[str, Any]]:
+    """
+    Scout Ahead rendezvous helper.
+
+    Generate a single additional frozen encounter at `level` using the V2
+    eligibility rules, trying to avoid any (expansion, level, name) signatures
+    in `exclude_signatures`.
+
+    Returns None if no distinct candidate can be found.
+    """
+    try:
+        lvl_int = int(level)
+    except Exception:
+        lvl_int = 1
+
+    exclude = exclude_signatures or set()
+
+    try:
+        player_count = _get_player_count_from_settings(settings)
+    except Exception:
+        player_count = 1
+
+    active_expansions = settings.get("active_expansions") or []
+    if not active_expansions:
+        return None
+
+    encounters_by_expansion = _list_encounters_cached()
+    if not encounters_by_expansion:
+        return None
+
+    valid_sets = _load_valid_sets_cached()
+
+    tries = max(1, int(max_tries or 30))
+    for _ in range(tries):
+        try:
+            cand = _pick_random_campaign_encounter(
+                encounters_by_expansion=encounters_by_expansion,
+                valid_sets=valid_sets,
+                character_count=player_count,
+                active_expansions=active_expansions,
+                level=lvl_int,
+                eligibility_fn=_is_v2_campaign_eligible,
+            )
+        except Exception:
+            continue
+
+        sig = _campaign_encounter_signature(cand, lvl_int)
+        if sig is not None and sig in exclude:
+            continue
+        return cand
+
+    return None
+
+
 def _generate_v1_campaign(
     bosses_by_name: Dict[str, Any],
     settings: Dict[str, Any],
@@ -506,6 +619,35 @@ def _generate_v1_campaign(
         _add_stage("mega", mega_name)
 
     return campaign
+
+
+def _campaign_find_next_encounter_node(
+    campaign: Dict[str, Any],
+    from_node_id: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    """
+    Find the next encounter node in campaign order after from_node_id.
+    Skips bosses automatically by selecting only kind == "encounter".
+    Returns the node dict (live reference inside campaign["nodes"]).
+    """
+    nodes = campaign.get("nodes") or []
+    if not nodes or not from_node_id:
+        return None
+
+    start_idx = None
+    for i, n in enumerate(nodes):
+        if n.get("id") == from_node_id:
+            start_idx = i
+            break
+
+    if start_idx is None:
+        # If we can't find it, treat as "before start"
+        start_idx = -1
+
+    for n in nodes[start_idx + 1 :]:
+        if n.get("kind") == "encounter":
+            return n
+    return None
 
 
 def _generate_v2_campaign(
@@ -810,103 +952,6 @@ def _describe_v2_node_label(campaign: Dict[str, Any], node: Dict[str, Any]) -> s
         return f"{prefix}: {boss_name}"
 
     return "Unknown node"
-
-
-def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:
-    """
-    Determine the 'current chapter' (stage) for a V2 campaign.
-
-    Priority:
-      1. If the current node has a stage, use that.
-      2. Otherwise, pick the first stage in (mini, main, mega) whose boss
-         is not complete.
-      3. If all bosses are complete, fall back to the last stage that exists.
-    """
-    nodes = campaign.get("nodes") or []
-    if not nodes:
-        return None
-
-    stage_order = ("mini", "main", "mega")
-
-    node_by_id = {n.get("id"): n for n in nodes}
-    current_id = campaign.get("current_node_id")
-    current_node = node_by_id.get(current_id)
-
-    if current_node is not None:
-        stage = current_node.get("stage")
-        if stage in stage_order:
-            return stage
-
-    # First stage whose boss is not complete
-    for stage in stage_order:
-        boss = next(
-            (
-                n
-                for n in nodes
-                if n.get("stage") == stage and n.get("kind") == "boss"
-            ),
-            None,
-        )
-        if boss is None:
-            continue
-        if boss.get("status") != "complete":
-            return stage
-
-    # All bosses complete; fall back to the last stage that exists
-    for stage in reversed(stage_order):
-        if any(n.get("stage") == stage for n in nodes):
-            return stage
-
-    return None
-
-
-def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:
-    """
-    Determine the 'current chapter' (stage) for a V2 campaign.
-
-    Priority:
-      1. If the current node has a stage, use that.
-      2. Otherwise, pick the first stage in (mini, main, mega) whose boss
-         is not complete.
-      3. If all bosses are complete, fall back to the last stage that exists.
-    """
-    nodes = campaign.get("nodes") or []
-    if not nodes:
-        return None
-
-    stage_order = ("mini", "main", "mega")
-
-    node_by_id = {n.get("id"): n for n in nodes}
-    current_id = campaign.get("current_node_id")
-    current_node = node_by_id.get(current_id)
-
-    # If we're currently on an encounter or boss, use its stage directly
-    if current_node is not None:
-        stage = current_node.get("stage")
-        if stage in stage_order:
-            return stage
-
-    # Otherwise, choose the first stage whose boss is not complete
-    for stage in stage_order:
-        boss = next(
-            (
-                n
-                for n in nodes
-                if n.get("stage") == stage and n.get("kind") == "boss"
-            ),
-            None,
-        )
-        if boss is None:
-            continue
-        if boss.get("status") != "complete":
-            return stage
-
-    # All bosses complete; fall back to the last stage that exists
-    for stage in reversed(stage_order):
-        if any(n.get("stage") == stage for n in nodes):
-            return stage
-
-    return None
 
 
 def _v2_get_current_stage(campaign: Dict[str, Any]) -> Optional[str]:

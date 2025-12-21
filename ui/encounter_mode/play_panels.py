@@ -927,7 +927,7 @@ def _render_encounter_triggers(
             }
         )
 
-    # 2) Event-level triggers (NEW)
+    # 2) Event-level triggers
     events = st.session_state.get("encounter_events", []) or []
     for ev in events:
         ev_id = ev.get("id")
@@ -1356,6 +1356,9 @@ def _apply_behavior_mods_to_raw(
             base = mod.get("base")
             per_player = mod.get("per_player")
 
+            amount = 0
+            if isinstance(base, (int, float)):
+                amount += base
             if isinstance(per_player, (int, float)):
                 amount += per_player * get_player_count()
 

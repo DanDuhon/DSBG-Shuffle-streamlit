@@ -8,6 +8,7 @@ from ui.campaign_mode.core import (
     _describe_v2_node_label,
     _reset_all_encounters_on_bonfire_return,
     _record_dropped_souls,
+    _campaign_find_next_encounter_node,
 )
 from ui.campaign_mode.state import _get_player_count, _get_settings, _ensure_v1_state, _ensure_v2_state
 from ui.encounter_mode import play_tab as encounter_play_tab
@@ -18,47 +19,43 @@ from ui.event_mode.logic import (
     DECK_STATE_KEY,
     compute_draw_rewards_for_card,
     RENDEZVOUS_EVENTS,
+    CONSUMABLE_EVENTS,
+    IMMEDIATE_EVENTS,
     list_event_deck_options,
 )
 
 
-def _auto_apply_pending_events_to_current_encounter(
-    campaign: Dict[str, Any],
-    state: Dict[str, Any],
-    current_node: Dict[str, Any],
-) -> None:
-    """
-    If this is a V2 campaign and there are pending event rewards, automatically
-    draw that many events from the event deck and attach them to the current
-    encounter.
+def _event_kind_for_card(base_id: str, configs: Dict[str, Any]) -> str:
+    bid = str(base_id or "")
+    if bid in RENDEZVOUS_EVENTS:
+        return "rendezvous"
+    if bid in CONSUMABLE_EVENTS:
+        return "consumable"
+    if bid in IMMEDIATE_EVENTS:
+        return "instant"
 
-    Rules:
-    - Only applies to V2 campaigns.
-    - Only applies on encounter spaces (never bonfire or boss).
-    - Does nothing if there are 0 pending events.
-    """
-    # Use the global rules toggle instead of relying on the campaign payload.
-    rules_version = str(st.session_state.get("campaign_rules_version", "V1")).upper()
-    if rules_version != "V2":
-        return
+    cfg = configs.get(bid)
+    if isinstance(cfg, dict):
+        raw = str(
+            cfg.get("kind")
+            or cfg.get("type")
+            or cfg.get("event_type")
+            or cfg.get("category")
+            or cfg.get("timing")
+            or ""
+        ).lower()
+        if "rendez" in raw:
+            return "rendezvous"
+        if "consum" in raw:
+            return "consumable"
+        if "instant" in raw:
+            return "instant"
 
-    pending = int(state.get("pending_events") or 0)
-    if pending <= 0:
-        return
+    # Safe fallback: tell the user immediately rather than silently misapplying.
+    return "instant"
 
-    # Pending events only apply to encounter spaces, never bonfire or bosses.
-    if current_node.get("kind") != "encounter":
-        return
 
-    encounter = st.session_state.get("current_encounter") or {}
-    if not encounter:
-        return
-
-    # Prepare settings and event configs
-    settings = _get_settings()
-    configs = load_event_configs()
-
-    # Ensure deck state exists (mirror Encounters tab logic)
+def _ensure_event_deck_ready(settings: Dict[str, Any], configs: Dict[str, Any]) -> Optional[str]:
     deck_state = st.session_state.get(DECK_STATE_KEY)
     if not deck_state:
         deck_state = settings.get("event_deck") or {
@@ -75,59 +72,137 @@ def _auto_apply_pending_events_to_current_encounter(
         opts = list_event_deck_options(configs=configs)
         preset = opts[0] if opts else None
     if not preset:
-        return
+        return None
 
-    # (Re)initialize deck if needed
     if deck_state.get("preset") != preset or not deck_state.get("draw_pile"):
         initialize_event_deck(preset, configs=configs)
-        deck_state = st.session_state[DECK_STATE_KEY]
 
-    attached = 0
-    player_count = _get_player_count(settings)
-
-    # Draw and attach the pending events
-    for _ in range(pending):
-        card_path = draw_event_card()
-        deck_state = st.session_state.get(DECK_STATE_KEY, deck_state)
+    # Persist whatever the deck is now
+    deck_state = st.session_state.get(DECK_STATE_KEY)
+    if deck_state:
         settings["event_deck"] = deck_state
         save_settings(settings)
+
+    return preset
+
+
+def _consume_fight_attached_events(state: Dict[str, Any], current_node: Dict[str, Any]) -> None:
+    # Clear party consumables after the fight resolves
+    if isinstance(state.get("party_consumable_events"), list):
+        state["party_consumable_events"] = []
+
+    # Remove rendezvous from this node after it has been used in the fight
+    if isinstance(current_node, dict):
+        current_node.pop("rendezvous_event", None)
+
+
+def _inject_fight_events_into_session(
+    *,
+    state: Dict[str, Any],
+    current_node: Dict[str, Any],
+) -> None:
+    events = []
+
+    rv = current_node.get("rendezvous_event")
+    if isinstance(rv, dict) and rv.get("path"):
+        e = dict(rv)
+        e["is_rendezvous"] = True
+        events.append(e)
+
+    consumables = state.get("party_consumable_events") or []
+    if isinstance(consumables, list):
+        for ev in consumables:
+            if not isinstance(ev, dict) or not ev.get("path"):
+                continue
+            e = dict(ev)
+            e["is_rendezvous"] = False
+            e["is_consumable"] = True
+            events.append(e)
+
+    st.session_state["encounter_events"] = events
+
+
+def _draw_and_apply_campaign_events(
+    *,
+    count: int,
+    campaign: Dict[str, Any],
+    state: Dict[str, Any],
+    from_node_id: str,
+    settings: Dict[str, Any],
+) -> Dict[str, int]:
+    """
+    Draw `count` events immediately and route by type:
+      - rendezvous -> attach to next encounter node (skip bosses)
+      - consumable -> attach to party
+      - instant -> add to unresolved list
+
+    Returns counters: {"drawn": x, "rendezvous": a, "consumable": b, "instant": c}
+    """
+    out = {
+        "drawn": 0, "rendezvous": 0, "consumable": 0, "instant": 0,
+        "instant_events": [], "consumable_events": [], "rendezvous_events": [],
+    }
+
+    configs = load_event_configs()
+    preset = _ensure_event_deck_ready(settings, configs=configs)
+    if not preset:
+        return out
+
+    player_count = _get_player_count(settings)
+
+    for _ in range(max(0, int(count))):
+        card_path = draw_event_card()
+        deck_state = st.session_state.get(DECK_STATE_KEY)
+        if deck_state:
+            settings["event_deck"] = deck_state
+            save_settings(settings)
 
         if not card_path:
             break
 
-        # Attach the event card to this encounter, enforcing rendezvous rules.
         base = Path(str(card_path)).stem
-        is_rendezvous = base in RENDEZVOUS_EVENTS
+        kind = _event_kind_for_card(base, configs=configs)
 
-        events = st.session_state.get("encounter_events", [])
-        if is_rendezvous:
-            events = [ev for ev in events if not ev.get("is_rendezvous")]
+        ev = {
+            "id": base,
+            "name": base,
+            "path": str(card_path),
+            "kind": kind,
+            "is_rendezvous": (kind == "rendezvous"),
+        }
 
-        events.append(
-            {
-                "id": base,
-                "name": base,
-                "path": str(card_path),
-                "is_rendezvous": is_rendezvous,
-            }
-        )
-        st.session_state["encounter_events"] = events
-        attached += 1
-
-        # Apply any immediate mechanical draw rewards (e.g., Bonfire Ascetics).
-        draw_totals = compute_draw_rewards_for_card(
-            card_path, player_count=player_count
-        )
+        # Apply any draw-time rewards (souls, etc.)
+        draw_totals = compute_draw_rewards_for_card(card_path, player_count=player_count)
         souls_delta = int(draw_totals.get("souls") or 0)
         if souls_delta:
             state["souls"] = int(state.get("souls") or 0) + souls_delta
 
-        # Note: draw-time treasure rewards are computed but not yet wired
-        # to the treasure-deck UI; that can be added later if desired.
+        if kind == "rendezvous":
+            target = _campaign_find_next_encounter_node(campaign, from_node_id)
+            if target is None:
+                state.setdefault("orphaned_rendezvous_events", [])
+                state["orphaned_rendezvous_events"].append(ev)
+            else:
+                # overwrite semantics
+                target["rendezvous_event"] = ev
+            out["rendezvous"] += 1
+            out["rendezvous_events"].append(ev)
 
-    if attached:
-        state["pending_events"] = max(0, pending - attached)
-        st.session_state["campaign_v2_state"] = state
+        elif kind == "consumable":
+            state.setdefault("party_consumable_events", [])
+            state["party_consumable_events"].append(ev)
+            out["consumable"] += 1
+            out["consumable_events"].append(ev)
+
+        else:
+            state.setdefault("instant_events_unresolved", [])
+            state["instant_events_unresolved"].append(ev)
+            out["instant"] += 1
+            out["instant_events"].append(ev)
+
+        out["drawn"] += 1
+
+    return out
 
 
 def _sync_current_encounter_from_campaign_for_play(*_args, **_kwargs) -> bool:
@@ -303,6 +378,7 @@ def _render_campaign_play_tab(
 
     # Ensure Encounter Mode's current_encounter matches this campaign node.
     has_valid_encounter = _sync_current_encounter_from_campaign_for_play()
+    _inject_fight_events_into_session(state=state, current_node=current_node)
 
     # In V2, an encounter space with no choice selected yet is not playable.
     if not has_valid_encounter:
@@ -317,9 +393,6 @@ def _render_campaign_play_tab(
             st.info("No encounter is configured for this campaign space.")
         return
 
-    # Auto-attach any pending events to THIS encounter (V2 only, encounter spaces only).
-    _auto_apply_pending_events_to_current_encounter(campaign, state, current_node)
-
     encounter = st.session_state.get("current_encounter")
     if not encounter:
         st.info("No encounter is available on this space.")
@@ -327,7 +400,7 @@ def _render_campaign_play_tab(
 
     # Finally, render the normal Encounter Mode Play tab for the current encounter.
     # using the shared user settings just like Encounter Mode does.
-    encounter_play_tab.render(settings)
+    encounter_play_tab.render(settings, True)
 
     st.markdown("---")
 
@@ -443,10 +516,22 @@ def _render_campaign_play_tab(
                     )
                     st.session_state[souls_key] = new_souls
 
-                # Events are *queued* to be auto-applied on the next encounter space
+                # Consume events used in THIS fight (rendezvous on this node + party consumables)
+                _consume_fight_attached_events(state, current_node)
+
                 if reward_events > 0 and active_version == "V2":
-                    pending_events = int(state.get("pending_events") or 0)
-                    state["pending_events"] = pending_events + reward_events
+                    counts = _draw_and_apply_campaign_events(
+                        count=reward_events,
+                        campaign=campaign,
+                        state=state,
+                        from_node_id=str(current_node.get("id") or campaign.get("current_node_id") or ""),
+                        settings=settings,
+                    )
+
+                    # Keep campaign soul widget synced if draw rewards added souls
+                    new_souls = int(state.get("souls") or 0)
+                    souls_key = "campaign_v2_souls_campaign"
+                    st.session_state[souls_key] = new_souls
 
                 # For V2, mark this encounter node as completed so movement to the
                 # next encounter/boss becomes legal, and record shortcut unlocks
@@ -509,6 +594,9 @@ def _render_campaign_play_tab(
                 failed_node_id = current_node.get("id") or campaign.get("current_node_id")
             else:
                 failed_node_id = campaign.get("current_node_id")
+
+            if active_version == "V2":
+                _consume_fight_attached_events(state, current_node)
 
             # Souls in the cache at the moment of failure
             current_souls = int(state.get("souls") or 0)

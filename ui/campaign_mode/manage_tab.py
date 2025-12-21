@@ -15,10 +15,153 @@ from ui.campaign_mode.core import (
     _v2_compute_allowed_destinations,
     _reset_all_encounters_on_bonfire_return,
     _record_dropped_souls,
+    _card_w,
+    _v2_pick_scout_ahead_alt_frozen,
 )
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.encounter_mode.setup_tab import render_original_encounter
+
+
+
+_SCOUT_AHEAD_ID = "scout ahead"
+
+
+def _frozen_sig(frozen: Dict[str, Any], default_level: int) -> Optional[tuple[str, int, str]]:
+    """(expansion, level, encounter_name) signature for a frozen encounter."""
+    if not isinstance(frozen, dict):
+        return None
+    try:
+        exp = str(frozen.get("expansion") or "")
+        lvl = int(frozen.get("encounter_level", default_level))
+        name = str(frozen.get("encounter_name") or "")
+    except Exception:
+        return None
+    if not exp or not name:
+        return None
+    return (exp, lvl, name)
+
+
+def _is_scout_ahead_event(rv: Any) -> bool:
+    if not isinstance(rv, dict):
+        return False
+    raw = str(rv.get("id") or rv.get("name") or "").strip().lower()
+    return raw == _SCOUT_AHEAD_ID
+
+
+def _consume_scout_ahead(current_node: Dict[str, Any]) -> None:
+    rv = current_node.get("rendezvous_event")
+    if not isinstance(rv, dict):
+        return
+    rid = str(rv.get("id") or rv.get("name") or "").strip().lower()
+    if rid != "scout ahead":
+        return
+
+    # One-time effect: once a final encounter is chosen, Scout Ahead is spent.
+    current_node.pop("rendezvous_event", None)
+    current_node.pop("scout_ahead", None)
+
+
+def _v2_cleanup_scout_ahead_if_unpicked(node: Dict[str, Any]) -> None:
+    """
+    If Scout Ahead was attached and we already appended an extra option, but the
+    node still has no choice selected (choice_index is None), and the Scout Ahead
+    rendezvous is no longer present, remove the extra option so the user can't
+    pick it without the event.
+    """
+    if not isinstance(node, dict):
+        return
+    if node.get("choice_index") is not None:
+        return
+
+    sa = node.get("scout_ahead")
+    if not isinstance(sa, dict):
+        return
+
+    base_count = sa.get("base_options_count")
+    opts = node.get("options")
+    if isinstance(base_count, int) and isinstance(opts, list) and base_count >= 0:
+        node["options"] = opts[:base_count]
+
+    node.pop("scout_ahead", None)
+
+
+def _v2_ensure_scout_ahead_alt_option(
+    *,
+    node: Dict[str, Any],
+    settings: Dict[str, Any],
+) -> Optional[int]:
+    """
+    Ensure a Scout Ahead node has a persistent additional option appended to
+    node['options'] and return its choice index.
+
+    Persists under node['scout_ahead'].
+    """
+    options = node.get("options")
+    if not isinstance(options, list) or not options:
+        return None
+
+    level = node.get("level")
+    try:
+        lvl_int = int(level)
+    except Exception:
+        lvl_int = 1
+
+    sa = node.get("scout_ahead")
+    if not isinstance(sa, dict):
+        sa = {}
+        node["scout_ahead"] = sa
+
+    # Record how many options existed before we appended the Scout Ahead alternative.
+    if "base_options_count" not in sa:
+        sa["base_options_count"] = len(options)
+
+    # If we already generated an alt, ensure it exists in options and return its index.
+    alt_frozen = sa.get("alt_frozen")
+    alt_idx = sa.get("alt_choice_index")
+
+    if isinstance(alt_frozen, dict):
+        # Try to locate by signature if the stored index is stale.
+        if isinstance(alt_idx, int) and 0 <= alt_idx < len(options):
+            return alt_idx
+
+        alt_sig = _frozen_sig(alt_frozen, lvl_int)
+        if alt_sig is not None:
+            for i, fr in enumerate(options):
+                if _frozen_sig(fr, lvl_int) == alt_sig:
+                    sa["alt_choice_index"] = i
+                    return i
+
+        # Not found: append it now.
+        options.append(alt_frozen)
+        sa["alt_choice_index"] = len(options) - 1
+        return sa["alt_choice_index"]
+
+    # Need to generate a new alt
+    exclude: set[tuple[str, int, str]] = set()
+    for fr in options:
+        sig = _frozen_sig(fr, lvl_int)
+        if sig is not None:
+            exclude.add(sig)
+
+    cand = _v2_pick_scout_ahead_alt_frozen(
+        settings=settings,
+        level=lvl_int,
+        exclude_signatures=exclude,
+    )
+    if not isinstance(cand, dict):
+        return None
+
+    sa["alt_frozen"] = cand
+    options.append(cand)
+    sa["alt_choice_index"] = len(options) - 1
+
+    # If we don't have a "previously chosen" base yet, default to the first original option.
+    base_idx = sa.get("base_choice_index")
+    if not isinstance(base_idx, int):
+        sa["base_choice_index"] = 0
+
+    return sa["alt_choice_index"]
 
 
 def _is_stage_closed_for_node(campaign: Dict[str, Any], node: Dict[str, Any]) -> bool:
@@ -34,6 +177,59 @@ def _is_stage_closed_for_node(campaign: Dict[str, Any], node: Dict[str, Any]) ->
         if n.get("kind") == "boss" and n.get("stage") == stage:
             return n.get("status") == "complete"
     return False
+
+
+def _render_party_events_panel(state: Dict[str, Any]) -> None:
+    instants = state.get("instant_events_unresolved") or []
+    consumables = state.get("party_consumable_events") or []
+    orphans = state.get("orphaned_rendezvous_events") or []
+
+    if not instants and not consumables and not orphans:
+        return
+
+    # 4-column grid: Immediate events in the left 2 columns, consumables in the right 2 columns.
+    c0, c1, c2, c3 = st.columns(4)
+    with c0:
+        if instants:
+            st.markdown("**Immediate**")
+    with c2:
+        if consumables:
+            st.markdown("**Consumable**")
+
+    # Immediate events
+    if isinstance(instants, list) and instants:
+        cols = [c0, c1]
+        for i, ev in enumerate(instants):
+            if not isinstance(ev, dict) or not ev.get("path"):
+                continue
+            with cols[i % 2]:
+                st.image(ev["path"], use_container_width=True)
+                # Keep captions minimal; these are usually resolved immediately.
+                name = str(ev.get("name") or ev.get("id") or "")
+                if name:
+                    st.caption(name)
+
+    # Consumable events
+    if isinstance(consumables, list) and consumables:
+        cols = [c2, c3]
+        for i, ev in enumerate(consumables):
+            if not isinstance(ev, dict) or not ev.get("path"):
+                continue
+            with cols[i % 2]:
+                st.image(ev["path"], use_container_width=True)
+                name = str(ev.get("name") or ev.get("id") or "Consumable")
+                st.caption(name)
+
+    if instants:
+        if st.button("Clear immediate event notifications", key="campaign_clear_instant_events"):
+            state["instant_events_unresolved"] = []
+            st.rerun()
+
+    if orphans:
+        st.markdown("**Rendezvous with no remaining encounter target**")
+        for ev in orphans:
+            if isinstance(ev, dict) and ev.get("name"):
+                st.caption(str(ev["name"]))
 
 
 def _render_campaign_tab(
@@ -260,6 +456,9 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             )
             state["souls"] = int(souls_value)
 
+        # Render party-attached events beneath the bonfire + party stats row.
+        _render_party_events_panel(state)
+
         st.markdown("---")
         st.markdown(
             f"**Current location:** "
@@ -374,12 +573,19 @@ def _render_v1_path_row(
         # Bonfire row
         if kind == "bonfire":
             if st.button(
-                "Return to Bonfire",
+                "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v1_goto_{node_id}",
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain.
                 _reset_all_encounters_on_bonfire_return(campaign)
+
+                # Spend a Spark, but not below zero
+                sparks_cur = int(state.get("sparks") or 0)
+                state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
+
+                # Keep the Sparks widget key in sync or it will overwrite state on rerun
+                st.session_state["campaign_v1_sparks_campaign"] = int(state["sparks"])
 
                 campaign["current_node_id"] = node_id
                 state["campaign"] = campaign
@@ -415,6 +621,11 @@ def _render_v2_path_row(
     allowed_destinations: Optional[Set[str]] = None,
 ) -> None:
     label = _describe_v2_node_label(campaign, node)
+    rv = node.get("rendezvous_event")
+    if node.get("kind") == "encounter" and isinstance(rv, dict):
+        rv_name = str(rv.get("name") or rv.get("id") or "").strip()
+        if rv_name:
+            label = f"{label} [{rv_name}]"
     row_cols = st.columns([3, 1])
 
     with row_cols[0]:
@@ -456,12 +667,19 @@ def _render_v2_path_row(
             if not can_travel_here:
                 return
             if st.button(
-                "Return to Bonfire",
+                "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v2_goto_{node_id}",
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain valid.
                 _reset_all_encounters_on_bonfire_return(campaign)
+
+                # Spend a Spark, but not below zero
+                sparks_cur = int(state.get("sparks") or 0)
+                state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
+
+                # Keep the Sparks widget key in sync or it will overwrite state on rerun
+                st.session_state["campaign_v2_sparks_campaign"] = int(state["sparks"])
 
                 campaign["current_node_id"] = node_id
                 state["campaign"] = campaign
@@ -610,9 +828,10 @@ def _render_v2_current_panel(
     if kind == "bonfire":
         st.caption("Resting at the bonfire.")
         return
-
     # Encounter with choice
     if kind == "encounter":
+        settings = _get_settings()
+
         options = current_node.get("options") or []
         choice_idx = current_node.get("choice_index")
 
@@ -620,7 +839,19 @@ def _render_v2_current_panel(
             st.caption("No encounter options attached to this space. Regenerate this campaign.")
             return
 
-        # No choice yet: present options side-by-side
+        rv = current_node.get("rendezvous_event")
+        is_scout_ahead = _is_scout_ahead_event(rv)
+
+        alt_idx: Optional[int] = None
+        if is_scout_ahead:
+            alt_idx = _v2_ensure_scout_ahead_alt_option(node=current_node, settings=settings)
+            # Refresh local view after mutation
+            options = current_node.get("options") or []
+            choice_idx = current_node.get("choice_index")
+        else:
+            _v2_cleanup_scout_ahead_if_unpicked(current_node)
+
+        # No choice yet: present options side-by-side (Scout Ahead adds one extra option)
         if choice_idx is None:
             st.markdown("**Choose an encounter for this space**")
 
@@ -628,27 +859,119 @@ def _render_v2_current_panel(
             for idx, frozen in enumerate(options):
                 with cols[idx]:
                     _render_campaign_encounter_card(frozen)
+
+                    if is_scout_ahead and alt_idx is not None and idx == int(alt_idx):
+                        btn_label = "Choose Scout Ahead"
+                    else:
+                        btn_label = f"Choose option {idx + 1}"
+
                     if st.button(
-                        f"Choose option {idx + 1}",
+                        btn_label,
                         key=f"campaign_v2_choose_{current_node.get('id')}_{idx}",
                     ):
+                        # Persist base choice index for Scout Ahead comparisons
+                        if is_scout_ahead:
+                            sa = current_node.get("scout_ahead")
+                            if isinstance(sa, dict):
+                                if alt_idx is not None and idx != int(alt_idx):
+                                    sa["base_choice_index"] = idx
+                                elif not isinstance(sa.get("base_choice_index"), int):
+                                    sa["base_choice_index"] = 0
+
                         current_node["choice_index"] = idx
                         current_node["frozen"] = frozen
                         current_node["revealed"] = True
+
+                        _consume_scout_ahead(current_node)
+
                         state["campaign"] = campaign
                         st.session_state["campaign_v2_state"] = state
                         st.rerun()
+
+            # Always show attached rendezvous card under the encounter card(s)
+            if isinstance(rv, dict) and rv.get("path"):
+                st.image(rv["path"], width=_card_w())
+
             return
 
-        # Choice already made: behave like V1
-        idx = int(choice_idx)
-        if not (0 <= idx < len(options)):
+        # Choice already made
+        try:
+            chosen_idx = int(choice_idx)
+        except Exception:
+            chosen_idx = -1
+
+        if not (0 <= chosen_idx < len(options)):
             st.caption("Chosen encounter index is out of range; regenerate this campaign.")
             return
 
-        frozen = options[idx]
+        # Scout Ahead: show the choice again (previously chosen vs new encounter)
+        if is_scout_ahead:
+            sa = current_node.get("scout_ahead")
+            if isinstance(sa, dict):
+                if alt_idx is None:
+                    alt_idx = sa.get("alt_choice_index")
+                try:
+                    alt_idx_int = int(alt_idx) if alt_idx is not None else None
+                except Exception:
+                    alt_idx_int = None
+
+                base_idx = sa.get("base_choice_index")
+                if not isinstance(base_idx, int) or not (0 <= base_idx < len(options)):
+                    base_idx = chosen_idx
+                    if alt_idx_int is not None and base_idx == alt_idx_int:
+                        base_idx = 0 if len(options) > 0 else chosen_idx
+                        if alt_idx_int is not None and base_idx == alt_idx_int and len(options) > 1:
+                            base_idx = 1
+                    sa["base_choice_index"] = base_idx
+
+                if alt_idx_int is not None and 0 <= alt_idx_int < len(options) and alt_idx_int != base_idx:
+                    st.markdown("**Scout Ahead**")
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.caption("Previously chosen")
+                        _render_campaign_encounter_card(options[base_idx])
+                    with col_b:
+                        st.caption("Scout Ahead")
+                        _render_campaign_encounter_card(options[alt_idx_int])
+
+                    radio_key = f"campaign_v2_scout_ahead_pick_{current_node.get('id')}"
+                    default_index = 1 if chosen_idx == alt_idx_int else 0
+                    pick = st.radio(
+                        "Use which encounter?",
+                        options=["Previously chosen", "Scout Ahead"],
+                        index=default_index,
+                        horizontal=True,
+                        key=radio_key,
+                    )
+
+                    if st.button(
+                        "Apply choice",
+                        key=f"campaign_v2_scout_ahead_apply_{current_node.get('id')}",
+                    ):
+                        new_idx = alt_idx_int if pick == "Scout Ahead" else base_idx
+                        current_node["choice_index"] = int(new_idx)
+                        current_node["frozen"] = options[int(new_idx)]
+                        current_node["revealed"] = True
+                        
+                        _consume_scout_ahead(current_node)
+
+                        state["campaign"] = campaign
+                        st.session_state["campaign_v2_state"] = state
+                        st.rerun()
+
+                    # Scout Ahead card under the encounter card(s)
+                    if isinstance(rv, dict) and rv.get("path"):
+                        st.image(rv["path"], width=_card_w())
+                    return
+
+        # Normal: show the chosen encounter card
+        frozen = options[chosen_idx]
         _render_campaign_encounter_card(frozen)
-        
+
+        # Always show attached rendezvous card under the encounter card
+        if isinstance(rv, dict) and rv.get("path"):
+            st.image(rv["path"], width=_card_w())
+
         return
 
     # Boss: identical to V1 logic

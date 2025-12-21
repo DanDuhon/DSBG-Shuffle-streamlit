@@ -16,8 +16,6 @@ from ui.character_mode.widgets import _render_selection_table
 
 
 def render(settings: Dict[str, Any]) -> None:
-    st.markdown("## Character Mode")
-
     active = set(x for x in (settings.get("active_expansions") or []))
 
     # Selection state
@@ -56,14 +54,6 @@ def render(settings: Dict[str, Any]) -> None:
         ss["cm_persist_class"] = class_name
 
         cfg = CLASS_TIERS[class_name]
-        class_exps = sorted(x for x in cfg["expansions"])
-        enabled_for_class = sorted(set(class_exps) & active)
-        st.caption(
-            "Class expansions: "
-            + (", ".join(class_exps) if class_exps else "(none)")
-            + " | Enabled for class: "
-            + (", ".join(enabled_for_class) if enabled_for_class else "(none)")
-        )
 
         tier_opts = [0, 1, 2, 3]
 
@@ -235,7 +225,6 @@ def render(settings: Dict[str, Any]) -> None:
     filtered_hand: List[Dict[str, Any]] = []
     filtered_armor: List[Dict[str, Any]] = []
     hand_order: List[str] = []
-    armor_order: List[str] = []
 
     tab_hand, tab_attacks, tab_armor, tab_wu, tab_au = st.tabs(
         ["Hand Items", "Attacks", "Armor", "Weapon Upgrades", "Armor Upgrades"]
@@ -751,71 +740,6 @@ def render(settings: Dict[str, Any]) -> None:
     )
 
     with summary_slot.container():
-        st.markdown("### Selected Items")
-
-        if validation_errors:
-            st.warning("Build is invalid:")
-            for e in validation_errors:
-                st.markdown(f"- {e}")
-
-        # Armor
-        armor_id = ss.get("cm_selected_armor_id") or ""
-        armor_obj = armor_by_id.get(armor_id) if armor_id else None
-        armor_capacity = _upgrade_slots(armor_obj or {})
-
-        if armor_obj:
-            arow = st.columns([8, 2])
-            arow[0].markdown(f"**Armor:** {_name(armor_obj)}")
-            if arow[1].button("Remove", key="cm_remove_armor"):
-                ss["cm_selected_armor_id"] = ""
-                ss["cm_selected_armor_upgrade_ids"] = []
-                st.rerun()
-
-            if ss["cm_selected_armor_upgrade_ids"]:
-                used = sum(_slot_cost(au_by_id.get(x) or {}) for x in ss["cm_selected_armor_upgrade_ids"])
-                st.caption(f"Armor upgrade slots: {armor_capacity} (used {used})")
-                for uid in list(ss["cm_selected_armor_upgrade_ids"]):
-                    u = au_by_id.get(uid) or {}
-                    urow = st.columns([8, 2])
-                    urow[0].markdown(f"- {_name(u)} (cost {_slot_cost(u)})")
-                    if urow[1].button("Remove", key=f"cm_remove_armor_up_{uid}"):
-                        ss["cm_selected_armor_upgrade_ids"] = [x for x in ss["cm_selected_armor_upgrade_ids"] if x != uid]
-                        st.rerun()
-        else:
-            st.markdown("**Armor:** (none)")
-
-        # Hand items
-        if ss["cm_selected_hand_ids"]:
-            st.markdown("**Hand Items:**")
-            for hid in list(ss["cm_selected_hand_ids"]):
-                h = hand_by_id.get(hid) or {}
-                ups = list((ss["cm_selected_weapon_upgrade_ids_by_hand"].get(hid) or []))
-                extra = sum(_extra_upgrade_slots(wu_by_id.get(uid) or {}) for uid in ups)
-                cap = _upgrade_slots(h) + int(extra)
-                hrow = st.columns([8, 2])
-                hrow[0].markdown(
-                    f"- {_name(h)} (hands {_hands_required(h)}, slot cost {_slot_cost(h)}, upgrade slots {cap})"
-                )
-                if hrow[1].button("Remove", key=f"cm_remove_hand_{hid}"):
-                    ss["cm_selected_hand_ids"] = [x for x in ss["cm_selected_hand_ids"] if x != hid]
-                    wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
-                    wu_map.pop(hid, None)
-                    ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
-                    st.rerun()
- 
-                for uid in ups:
-                    u = wu_by_id.get(uid) or {}
-                    urow = st.columns([8, 2])
-                    urow[0].markdown(f"  - {_name(u)} (cost {_slot_cost(u)})")
-                    if urow[1].button("Remove", key=f"cm_remove_wu_{hid}_{uid}"):
-                        wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
-                        wu_map[hid] = [x for x in (wu_map.get(hid) or []) if x != uid]
-                        ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
-                        st.rerun()
-        else:
-            st.markdown("**Hand Items:** (none)")
-
-        st.markdown("---")
         st.markdown("#### Totals")
 
         # Gather selected objects

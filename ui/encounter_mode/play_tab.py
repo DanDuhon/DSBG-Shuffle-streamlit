@@ -3,11 +3,18 @@ from __future__ import annotations
 
 import re
 import streamlit as st
+import random
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from core.encounter_rules import make_encounter_key
 from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state, play_panels, invader_panel
+from ui.encounter_mode.setup_tab import render_original_encounter
 from ui.encounter_mode.assets import encounterKeywords, editedEncounterKeywords, keywordText
+from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
+from ui.campaign_mode.core import ENCOUNTER_GRAVESTONES, _v2_pick_scout_ahead_alt_frozen
+
 
 
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
@@ -73,7 +80,379 @@ def _render_keywords_summary(encounter: dict, edited: bool) -> None:
     st.caption(f"Keywords: {labels}")
 
 
-def render(settings: dict) -> None:
+def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict) -> None:
+    name = str((encounter or {}).get("encounter_name") or (encounter or {}).get("name") or "").strip()
+    n = int(ENCOUNTER_GRAVESTONES.get(name, 0) or 0)
+    if n <= 0:
+        return
+
+    def _event_card_label(card: Any) -> str:
+        if isinstance(card, dict):
+            nm = str(card.get("name") or card.get("id") or "").strip()
+            if nm:
+                return nm
+            p = card.get("path")
+            if isinstance(p, str) and p:
+                return Path(p).stem
+        if isinstance(card, str) and card:
+            return Path(card).stem
+        return "Event"
+
+    def _get_event_deck_ref() -> Optional[Dict[str, Any]]:
+        deck = settings.get("event_deck")
+        if isinstance(deck, dict):
+            return deck
+
+        # Common fallbacks if event mode stores it directly in session_state
+        for k in ("event_deck", "event_deck_state"):
+            d = st.session_state.get(k)
+            if isinstance(d, dict):
+                settings["event_deck"] = d
+                return d
+
+        if _EVENT_DECK_STATE_KEY:
+            d = st.session_state.get(_EVENT_DECK_STATE_KEY)
+            if isinstance(d, dict):
+                settings["event_deck"] = d
+                return d
+
+        return None
+    
+    def _sig(fr: Any, default_level: int) -> Optional[tuple[str, int, str]]:
+        if not isinstance(fr, dict):
+            return None
+        try:
+            exp = str(fr.get("expansion") or "")
+            lvl = int(fr.get("encounter_level", default_level))
+            nm = str(fr.get("encounter_name") or "")
+        except Exception:
+            return None
+        if not exp or not nm:
+            return None
+        return (exp, lvl, nm)
+
+    def _render_frozen_encounter_card(frozen: Any) -> str:
+        """
+        Render and return a label for a frozen campaign encounter.
+        """
+        if not isinstance(frozen, dict):
+            st.caption("Encounter card unavailable.")
+            return "Encounter"
+
+        exp = frozen.get("expansion")
+        lvl = frozen.get("encounter_level")
+        nm = frozen.get("encounter_name")
+        enemies = frozen.get("enemies") or []
+        encounter_data = frozen.get("encounter_data")
+        use_edited = bool(frozen.get("edited", False))
+
+        label = str(nm or "Encounter")
+
+        if not (exp and lvl is not None and nm and encounter_data):
+            st.caption(label)
+            return label
+
+        res = render_original_encounter(
+            encounter_data,
+            exp,
+            nm,
+            lvl,
+            use_edited,
+            enemies=enemies,
+        )
+        if res and res.get("ok"):
+            st.image(res["card_img"], width="stretch")
+        else:
+            st.caption(label)
+
+        return label
+
+    def _ensure_draw_pile(deck: Dict[str, Any]) -> list:
+        draw = deck.get("draw_pile")
+        disc = deck.get("discard_pile")
+        if not isinstance(draw, list):
+            draw = []
+            deck["draw_pile"] = draw
+        if not isinstance(disc, list):
+            disc = []
+            deck["discard_pile"] = disc
+
+        # If draw is empty but discard has cards, reshuffle discard into draw.
+        if not draw and disc:
+            draw[:] = disc
+            disc.clear()
+            random.shuffle(draw)
+
+        return draw
+
+    # Per-encounter persistent UI state (disables rows after use)
+    ctx = str(
+        encounter.get("encounter_slug")
+        or encounter.get("slug")
+        or f"{name}|{encounter.get('encounter_level') or encounter.get('level') or ''}"
+    )
+    store = st.session_state.setdefault("gravestones_state", {})
+    ctx_state = store.setdefault(ctx, {})  # row_idx -> row dict
+
+    with st.expander("Gravestones", expanded=False):
+        # Header row (keeps layout readable on narrow widths)
+        h0, h1, h2, h3 = st.columns([0.5, 1.5, 1.8, 1.6])
+        with h0:
+            st.write("")
+        with h1:
+            st.markdown("**Events**")
+        with h2:
+            st.markdown("**Encounters**")
+        with h3:
+            st.markdown("**Treasure**")
+
+        for i in range(1, n + 1):
+            row_key = str(i)
+            row = ctx_state.setdefault(
+                row_key,
+                {
+                    "phase": "idle",            # idle | events_choose | encounters_choose | done
+                    "pending_card": None,       # events: removed top card while deciding
+                    "pending_enc": None,        # encounters: {"target_node_id": str, "peek_frozen": dict}
+                    "result": None,
+                }
+            )
+
+            phase = str(row.get("phase") or "idle")
+
+            c0, c1, c2, c3 = st.columns([0.5, 1.5, 1.8, 1.6])
+
+            with c0:
+                if n > 1:
+                    st.write(f"{i}")
+
+            if phase == "idle":
+                # Row action buttons
+                with c1:
+                    if st.button("Use", key=f"gravestone_events_{ctx}_{i}", help="Use On Events"):
+                        deck = _get_event_deck_ref()
+                        if not isinstance(deck, dict):
+                            row["phase"] = "done"
+                            row["result"] = "No event deck is initialized in this session."
+                            st.rerun()
+
+                        draw = _ensure_draw_pile(deck)
+                        if not draw:
+                            row["phase"] = "done"
+                            row["result"] = "Event deck is empty."
+                            st.rerun()
+
+                        # Take the top card out while the user decides.
+                        top = draw.pop(0)
+                        row["pending_card"] = top
+                        row["phase"] = "events_choose"
+
+                        # Keep settings/session in sync (best-effort)
+                        settings["event_deck"] = deck
+                        if _EVENT_DECK_STATE_KEY and isinstance(st.session_state.get(_EVENT_DECK_STATE_KEY), dict):
+                            st.session_state[_EVENT_DECK_STATE_KEY] = deck
+
+                        st.rerun()
+
+                with c2:
+                    if st.button("Use", key=f"gravestone_encounters_{ctx}_{i}", disabled=False, help="Use On Encounters"):
+                        # Requires an active V2 campaign; encounters are peeked from the next unchosen encounter space.
+                        v2_state = st.session_state.get("campaign_v2_state")
+                        if not isinstance(v2_state, dict) or not isinstance(v2_state.get("campaign"), dict):
+                            row["phase"] = "done"
+                            row["result"] = "No V2 campaign is loaded."
+                            st.rerun()
+
+                        campaign = v2_state["campaign"]
+                        nodes = campaign.get("nodes") or []
+                        if not isinstance(nodes, list) or not nodes:
+                            row["phase"] = "done"
+                            row["result"] = "Campaign has no nodes."
+                            st.rerun()
+
+                        from_id = str(campaign.get("current_node_id") or "")
+
+                        # Find next encounter node after from_id where choice_index is None (unchosen).
+                        start_idx = -1
+                        for ix, n in enumerate(nodes):
+                            if n.get("id") == from_id:
+                                start_idx = ix
+                                break
+
+                        target = None
+                        for n in nodes[start_idx + 1 :]:
+                            if n.get("kind") != "encounter":
+                                continue
+                            if n.get("choice_index") is None:
+                                target = n
+                                break
+
+                        if not isinstance(target, dict):
+                            row["phase"] = "done"
+                            row["result"] = "No upcoming unchosen encounter space found."
+                            st.rerun()
+
+                        options = target.get("options")
+                        if not isinstance(options, list) or not options:
+                            row["phase"] = "done"
+                            row["result"] = "Target encounter space has no options."
+                            st.rerun()
+
+                        peek = options[0]
+                        row["pending_enc"] = {"target_node_id": str(target.get("id") or ""), "peek_frozen": peek}
+                        row["phase"] = "encounters_choose"
+                        st.rerun()
+
+                with c3:
+                    if st.button("Use", key=f"gravestone_treasure_{ctx}_{i}", help="Use On Treasure"):
+                        row["phase"] = "done"
+                        row["result"] = "Look at the top card of the treasure deck, then put it on the top or bottom of the deck."
+                        st.rerun()
+
+            elif phase == "events_choose":
+                pending = row.get("pending_card")
+                deck = _get_event_deck_ref()
+
+                # Column 2: show the card
+                with c1:
+                    if isinstance(pending, dict) and pending.get("path"):
+                        st.image(pending["path"], width="stretch")
+                    elif isinstance(pending, str) and pending:
+                        st.image(pending, width="stretch")
+                    else:
+                        st.write("Event card unavailable.")
+                    st.caption(_event_card_label(pending))
+
+                # Column 3: Put On Top
+                with c2:
+                    if st.button("Put On Top", key=f"gravestone_evt_top_{ctx}_{i}"):
+                        if isinstance(deck, dict):
+                            draw = _ensure_draw_pile(deck)
+                            draw.insert(0, pending)
+                            settings["event_deck"] = deck
+                            if _EVENT_DECK_STATE_KEY and isinstance(st.session_state.get(_EVENT_DECK_STATE_KEY), dict):
+                                st.session_state[_EVENT_DECK_STATE_KEY] = deck
+
+                        row["phase"] = "done"
+                        row["result"] = f"{_event_card_label(pending)} put on top."
+                        row["pending_card"] = None
+                        st.rerun()
+
+                # Column 4: Put On Bottom
+                with c3:
+                    if st.button("Put On Bottom", key=f"gravestone_evt_bottom_{ctx}_{i}"):
+                        if isinstance(deck, dict):
+                            draw = _ensure_draw_pile(deck)
+                            draw.append(pending)
+                            settings["event_deck"] = deck
+                            if _EVENT_DECK_STATE_KEY and isinstance(st.session_state.get(_EVENT_DECK_STATE_KEY), dict):
+                                st.session_state[_EVENT_DECK_STATE_KEY] = deck
+
+                        row["phase"] = "done"
+                        row["result"] = f"{_event_card_label(pending)} put on bottom."
+                        row["pending_card"] = None
+                        st.rerun()
+            elif phase == "encounters_choose":
+                pending = row.get("pending_enc") or {}
+                target_node_id = str(pending.get("target_node_id") or "")
+                peek_frozen = pending.get("peek_frozen")
+
+                # Column 2: show the encounter card we are peeking at
+                with c1:
+                    label = _render_frozen_encounter_card(peek_frozen)
+
+                # Column 3: Put On Top (no-op)
+                with c2:
+                    if st.button("Put On Top", key=f"gravestone_enc_top_{ctx}_{i}"):
+                        row["phase"] = "done"
+                        row["result"] = f"{label} put on top."
+                        row["pending_enc"] = None
+                        st.rerun()
+
+                # Column 4: Put On Bottom (replace the top option on the target node)
+                with c3:
+                    if st.button("Put On Bottom", key=f"gravestone_enc_bottom_{ctx}_{i}"):
+                        v2_state = st.session_state.get("campaign_v2_state")
+                        if not isinstance(v2_state, dict) or not isinstance(v2_state.get("campaign"), dict):
+                            row["phase"] = "done"
+                            row["result"] = "No V2 campaign is loaded."
+                            row["pending_enc"] = None
+                            st.rerun()
+
+                        campaign = v2_state["campaign"]
+                        nodes = campaign.get("nodes") or []
+                        target = None
+                        for n in nodes:
+                            if n.get("id") == target_node_id:
+                                target = n
+                                break
+
+                        if not isinstance(target, dict):
+                            row["phase"] = "done"
+                            row["result"] = "Target encounter space no longer exists."
+                            row["pending_enc"] = None
+                            st.rerun()
+
+                        # If the target was chosen while this UI was open, do nothing.
+                        if target.get("choice_index") is not None:
+                            row["phase"] = "done"
+                            row["result"] = "Target encounter space was already chosen; no change made."
+                            row["pending_enc"] = None
+                            st.rerun()
+
+                        options = target.get("options")
+                        if not isinstance(options, list) or not options:
+                            row["phase"] = "done"
+                            row["result"] = "Target encounter space has no options."
+                            row["pending_enc"] = None
+                            st.rerun()
+
+                        try:
+                            lvl_int = int(target.get("level") or 1)
+                        except Exception:
+                            lvl_int = 1
+
+                        # Exclude signatures of all current options so we don't re-roll the same card.
+                        exclude: set[tuple[str, int, str]] = set()
+                        for fr in options:
+                            s = _sig(fr, lvl_int)
+                            if s is not None:
+                                exclude.add(s)
+
+                        cand = _v2_pick_scout_ahead_alt_frozen(
+                            settings=settings,
+                            level=lvl_int,
+                            exclude_signatures=exclude,
+                        )
+
+                        if isinstance(cand, dict):
+                            options[0] = cand
+                            target["options"] = options
+                            v2_state["campaign"] = campaign
+                            st.session_state["campaign_v2_state"] = v2_state
+                            row["phase"] = "done"
+                            row["result"] = f"{label} put on bottom. New encounter generated."
+                        else:
+                            row["phase"] = "done"
+                            row["result"] = "No alternative encounter found; encounter left on top."
+
+                        row["pending_enc"] = None
+                        st.rerun()
+
+            else:
+                # done
+                with c1:
+                    st.write("")
+                with c2:
+                    st.write("")
+                with c3:
+                    st.write("")
+                msg = row.get("result")
+                if isinstance(msg, str) and msg:
+                    st.caption(msg)
+
+
+def render(settings: dict, campaign: bool=False) -> None:
     """
     Encounter Play tab.
 
@@ -119,6 +498,8 @@ def render(settings: dict) -> None:
             compact=True,
         )
         play_panels._render_encounter_triggers(encounter, play, settings)
+        if campaign:
+            _render_gravestones_for_encounter(encounter, settings)
         play_panels._render_current_rules(encounter, settings, play)
         play_panels._render_keywords_summary(encounter, settings)
 
@@ -162,6 +543,8 @@ def render(settings: dict) -> None:
                 timer_behavior=timer_behavior,
             )
             play_panels._render_encounter_triggers(encounter, play, settings)
+            if campaign:
+                _render_gravestones_for_encounter(encounter, settings)
             play_panels._render_attached_events(encounter)
             play_panels._render_log(play)
 

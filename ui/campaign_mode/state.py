@@ -18,6 +18,20 @@ def _get_player_count(settings: Dict[str, Any]) -> int:
         return max(1, len(selected_chars))
     raw = st.session_state.get("player_count", 1)
     return max(1, int(raw))
+
+
+def _ensure_campaign_event_state(state: Dict[str, Any]) -> None:
+    # Consumables held by party, apply to next fight (encounter or boss)
+    if not isinstance(state.get("party_consumable_events"), list):
+        state["party_consumable_events"] = []
+
+    # Instant events drawn that need table resolution
+    if not isinstance(state.get("instant_events_unresolved"), list):
+        state["instant_events_unresolved"] = []
+
+    # If a rendezvous draw has nowhere to go (end of campaign), keep it visible
+    if not isinstance(state.get("orphaned_rendezvous_events"), list):
+        state["orphaned_rendezvous_events"] = []
     
 
 def _ensure_v1_state(player_count: int) -> Dict[str, Any]:
@@ -48,6 +62,7 @@ def _ensure_v1_state(player_count: int) -> Dict[str, Any]:
         state["sparks"] = min(int(prev_current), sparks_max)
 
     st.session_state[key] = state
+    _ensure_campaign_event_state(state)
     return state
 
 
@@ -83,4 +98,5 @@ def _ensure_v2_state(player_count: int) -> Dict[str, Any]:
         state["sparks"] = int(prev_current)
 
     st.session_state[key] = state
+    _ensure_campaign_event_state(state)
     return state

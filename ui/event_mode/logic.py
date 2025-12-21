@@ -40,6 +40,29 @@ RENDEZVOUS_EVENTS = {
     "Virulent Bonfire Ascetic"
 }
 
+CONSUMABLE_EVENTS = {
+    "Alluring Skull",
+    "Blacksmith's Trial",
+    "Fleeting Glory",
+    "Green Blossom",
+    "Lifegem",
+    "Pine Resin",
+    "Princess Guard",
+    "Repair Powder",
+    "Rite of Rekindling"
+}
+
+IMMEDIATE_EVENTS = {
+    "Firekeeper's Boon",
+    "Forgotten Supplies",
+    "Lost to Time",
+    "Obscured Knowledge",
+    "Scrying Stone",
+    "Skeletal Reforging",
+    "Stolen Artifact",
+    "Unhallowed Offering"
+}
+
 EVENT_BEHAVIOR_MODIFIERS = {
     "Bleak Bonfire Ascetic": [
         {
