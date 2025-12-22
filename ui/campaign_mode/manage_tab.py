@@ -238,7 +238,7 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
 
     # Controls
     if instants:
-        if st.button("Clear immediate event notifications", key="campaign_clear_instant_events"):
+        if st.button("Clear immediate event notifications", key="campaign_clear_instant_events", width="stretch"):
             state["instant_events_unresolved"] = []
             st.rerun()
 
@@ -247,6 +247,8 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
         for ev in orphans:
             if isinstance(ev, dict) and ev.get("name"):
                 st.caption(str(ev["name"]))
+
+                
 def _render_campaign_tab(
     bosses_by_name: Dict[str, Any],
     invaders_by_name: Dict[str, Any],
@@ -759,7 +761,7 @@ def _render_v2_campaign_compact(
             if current_is_bonfire and dest_node.get("shortcut_unlocked"):
                 btn_label = "Take Shortcut"
 
-        if st.button(btn_label, key="campaign_v2_compact_travel_btn"):
+        if st.button(btn_label, key="campaign_v2_compact_travel_btn", width="stretch"):
             if isinstance(dest_node, dict):
                 k = dest_node.get("kind")
                 node_id = dest_node.get("id")
@@ -895,6 +897,7 @@ def _render_v1_path_row(
             if st.button(
                 "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v1_goto_{node_id}",
+                width="stretch"
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain.
@@ -925,7 +928,7 @@ def _render_v1_path_row(
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])
                 with cur_cols[0]:
-                    if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
+                    if st.button(btn_label, key=f"campaign_v1_goto_{node_id}", width="stretch"):
                         campaign["current_node_id"] = node_id
                         node["revealed"] = True
                         state["campaign"] = campaign
@@ -934,7 +937,7 @@ def _render_v1_path_row(
                 with cur_cols[1]:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
-                if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
+                if st.button(btn_label, key=f"campaign_v1_goto_{node_id}", width="stretch"):
                     campaign["current_node_id"] = node_id
                     node["revealed"] = True
                     state["campaign"] = campaign
@@ -1001,6 +1004,7 @@ def _render_v2_path_row(
             if st.button(
                 "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v2_goto_{node_id}",
+                width="stretch"
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain valid.
@@ -1038,7 +1042,7 @@ def _render_v2_path_row(
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])
                 with cur_cols[0]:
-                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch"):
                         campaign["current_node_id"] = node_id
                         node["revealed"] = True
                         state["campaign"] = campaign
@@ -1047,7 +1051,7 @@ def _render_v2_path_row(
                 with cur_cols[1]:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
-                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch"):
                     campaign["current_node_id"] = node_id
                     node["revealed"] = True
                     state["campaign"] = campaign
@@ -1167,6 +1171,7 @@ def _render_v1_current_panel(
         if st.button(
             "Start Boss Fight",
             key=f"campaign_v1_start_boss_{current_node.get('id')}",
+            width="stretch"
         ):
             if not boss_name:
                 st.warning("No boss configured for this node.")
@@ -1240,6 +1245,7 @@ def _render_v2_current_panel(
                     if st.button(
                         btn_label,
                         key=f"campaign_v2_choose_{current_node.get('id')}_{idx}",
+                        width="stretch"
                     ):
                         # Persist base choice index for Scout Ahead comparisons
                         if is_scout_ahead:
@@ -1263,16 +1269,18 @@ def _render_v2_current_panel(
             # Always show attached rendezvous card under the encounter card(s)
             if isinstance(rv, dict) and rv.get("path"):
                 w = _card_w()
+                p = Path(rv["path"])
+                b64 = base64.b64encode(p.read_bytes()).decode()
 
                 st.markdown(
                     f"""
-                    <div class="card-image" style="width:{w}px">
-                        <img src="{rv['path']}" style="width:100%">
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-
+                
             return
 
         # Choice already made
@@ -1328,6 +1336,7 @@ def _render_v2_current_panel(
                     if st.button(
                         "Apply choice",
                         key=f"campaign_v2_scout_ahead_apply_{current_node.get('id')}",
+                        width="stretch"
                     ):
                         new_idx = alt_idx_int if pick == "Scout Ahead" else base_idx
                         current_node["choice_index"] = int(new_idx)
@@ -1545,6 +1554,7 @@ def _render_boss_outcome_controls(
         if st.button(
             "Boss defeated (close chapter)",
             key=f"campaign_{version.lower()}_boss_defeated",
+            width="stretch"
         ):
             _apply_boss_defeated(state, campaign, current_node, version)
 
@@ -1552,6 +1562,7 @@ def _render_boss_outcome_controls(
         if st.button(
             "Boss failed (return to bonfire, lose 1 Spark)",
             key=f"campaign_{version.lower()}_boss_failed",
+            width="stretch"
         ):
             _apply_boss_failure(state, campaign, current_node, version)
 

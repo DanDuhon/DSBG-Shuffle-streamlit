@@ -240,7 +240,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
             if phase == "idle":
                 # Row action buttons
                 with c1:
-                    if st.button("Use", key=f"gravestone_events_{ctx}_{i}", help="Use On Events"):
+                    if st.button("Use", key=f"gravestone_events_{ctx}_{i}", help="Use On Events", width="stretch"):
                         deck = _get_event_deck_ref()
                         if not isinstance(deck, dict):
                             row["phase"] = "done"
@@ -266,7 +266,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                         st.rerun()
 
                 with c2:
-                    if st.button("Use", key=f"gravestone_encounters_{ctx}_{i}", disabled=False, help="Use On Encounters"):
+                    if st.button("Use", key=f"gravestone_encounters_{ctx}_{i}", disabled=False, help="Use On Encounters", width="stretch"):
                         # Requires an active V2 campaign; encounters are peeked from the next unchosen encounter space.
                         v2_state = st.session_state.get("campaign_v2_state")
                         if not isinstance(v2_state, dict) or not isinstance(v2_state.get("campaign"), dict):
@@ -315,7 +315,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                         st.rerun()
 
                 with c3:
-                    if st.button("Use", key=f"gravestone_treasure_{ctx}_{i}", help="Use On Treasure"):
+                    if st.button("Use", key=f"gravestone_treasure_{ctx}_{i}", help="Use On Treasure", width="stretch"):
                         row["phase"] = "done"
                         row["result"] = "Look at the top card of the treasure deck, then put it on the top or bottom of the deck."
                         st.rerun()
@@ -354,7 +354,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 3: Put On Top
                 with c2:
-                    if st.button("Put On Top", key=f"gravestone_evt_top_{ctx}_{i}"):
+                    if st.button("Put On Top", key=f"gravestone_evt_top_{ctx}_{i}", width="stretch"):
                         if isinstance(deck, dict):
                             draw = _ensure_draw_pile(deck)
                             draw.insert(0, pending)
@@ -369,7 +369,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 4: Put On Bottom
                 with c3:
-                    if st.button("Put On Bottom", key=f"gravestone_evt_bottom_{ctx}_{i}"):
+                    if st.button("Put On Bottom", key=f"gravestone_evt_bottom_{ctx}_{i}", width="stretch"):
                         if isinstance(deck, dict):
                             draw = _ensure_draw_pile(deck)
                             draw.append(pending)
@@ -392,7 +392,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 3: Put On Top (no-op)
                 with c2:
-                    if st.button("Put On Top", key=f"gravestone_enc_top_{ctx}_{i}"):
+                    if st.button("Put On Top", key=f"gravestone_enc_top_{ctx}_{i}", width="stretch"):
                         row["phase"] = "done"
                         row["result"] = f"{label} put on top."
                         row["pending_enc"] = None
@@ -400,7 +400,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 4: Put On Bottom (replace the top option on the target node)
                 with c3:
-                    if st.button("Put On Bottom", key=f"gravestone_enc_bottom_{ctx}_{i}"):
+                    if st.button("Put On Bottom", key=f"gravestone_enc_bottom_{ctx}_{i}", width="stretch"):
                         v2_state = st.session_state.get("campaign_v2_state")
                         if not isinstance(v2_state, dict) or not isinstance(v2_state.get("campaign"), dict):
                             row["phase"] = "done"

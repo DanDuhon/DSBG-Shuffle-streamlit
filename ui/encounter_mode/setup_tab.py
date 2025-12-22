@@ -1142,6 +1142,7 @@ def _render_invader_setup_controls(encounter: dict) -> None:
                     if st.button(
                         "X",
                         key=f"remove_invader_{key}_{idx}",
+                        width="stretch"
                     ):
                         added_names = [n for n in added_names if n != name]
                         added_map[key] = added_names
@@ -1183,7 +1184,8 @@ def _render_invader_setup_controls(encounter: dict) -> None:
         )
 
         if choice != "(none)" and st.button(
-            "Add invader", key=f"invader_add_btn_{key}"
+            "Add invader", key=f"invader_add_btn_{key}",
+            width="stretch"
         ):
             if choice not in added_names:
                 added_names.append(choice)

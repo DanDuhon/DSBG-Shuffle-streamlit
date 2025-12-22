@@ -120,7 +120,7 @@ def _render_v1_setup(
             state["bosses"]["mega"] = mega_choice
 
     # --- Generate full campaign encounters (frozen) ---
-    if st.button("Generate campaign", key="campaign_v1_generate"):
+    if st.button("Generate campaign", key="campaign_v1_generate", width="stretch"):
         with st.spinner("Generating campaign..."):
             campaign = _generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
@@ -247,7 +247,7 @@ def _render_v2_setup(
             )
             state["bosses"]["mega"] = mega_choice
 
-    if st.button("Generate campaign", key="campaign_v2_generate"):
+    if st.button("Generate campaign", key="campaign_v2_generate", width="stretch"):
         with st.spinner("Generating V2 campaign..."):
             campaign = _generate_v2_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
@@ -306,7 +306,7 @@ def _render_save_load_section(
             key=f"campaign_name_{version}",
         )
 
-        if st.button("Save campaign", key=f"campaign_save_{version}"):
+        if st.button("Save campaign", key=f"campaign_save_{version}", width="stretch"):
             name = name_input.strip()
             if not name:
                 st.error("Campaign name is required to save.")
@@ -359,6 +359,7 @@ def _render_save_load_section(
                 if st.button(
                     "Load selected campaign",
                     key=f"campaign_load_btn_{version}",
+                    width="stretch"
                 ):
                     if selected_name != "<none>":
                         snapshot = campaigns[selected_name]
@@ -372,6 +373,7 @@ def _render_save_load_section(
                 if st.button(
                     "Delete selected",
                     key=f"campaign_delete_btn_{version}",
+                    width="stretch"
                 ):
                     if selected_name == "<none>":
                         st.error("Select a campaign to delete.")

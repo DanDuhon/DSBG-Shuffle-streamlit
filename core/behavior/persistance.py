@@ -27,7 +27,7 @@ def _save_slot_ui(settings, state):
             with cols[0]:
                 new_title = st.text_input(f"Name (Slot {i+1})", value=title, key=f"slot_title_{i}")
             with cols[1]:
-                if st.button("Save", key=f"slot_save_{i}"):
+                if st.button("Save", key=f"slot_save_{i}", width="stretch"):
                     payload = serialize_state(state) if state else {}
                     entry = {"title": new_title, "state": payload}
                     if i < len(saves):
@@ -38,7 +38,7 @@ def _save_slot_ui(settings, state):
                     save_settings(settings)
                     st.success(f"Saved to Slot {i+1}")
             with cols[2]:
-                if st.button("Load", key=f"slot_load_{i}"):
+                if st.button("Load", key=f"slot_load_{i}", width="stretch"):
                     if i < len(saves) and saves[i].get("state"):
                         st.session_state["behavior_deck"] = saves[i]["state"]
                         st.success(f"Loaded Slot {i+1}")

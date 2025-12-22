@@ -127,7 +127,6 @@
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Cracked Bonfire Ascetic.jpg",
       "assets\\events\\Trustworthy Promise.jpg",
       "assets\\events\\Green Blossom.jpg",
       "assets\\events\\Undead Merchant.jpg",
@@ -167,7 +166,7 @@
       "assets\\events\\Firekeeper's Boon.jpg"
     ],
     "discard_pile": [],
-    "current_card": null,
+    "current_card": "assets\\events\\Cracked Bonfire Ascetic.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",

@@ -146,7 +146,7 @@ def render():
         state = st.session_state["behavior_deck"]
         cfg = _load_cfg_for_state(state)
 
-    if st.button("🔄 Reset Deck and Health", key="reset_deck"):
+    if st.button("🔄 Reset Deck and Health", key="reset_deck", width="stretch"):
         _reset_deck(st.session_state["behavior_deck"], cfg)
 
     state = st.session_state["behavior_deck"]
@@ -267,7 +267,7 @@ def render():
 
         confirm_cols = st.columns([1, 1])
         with confirm_cols[0]:
-            if st.button("🔥 Confirm Heat-Up", key="confirm_heatup"):
+            if st.button("🔥 Confirm Heat-Up", key="confirm_heatup", width="stretch"):
                 rng = random.Random()
                 apply_heatup(state, cfg, rng, reason="auto")
                 _clear_heatup_prompt()
@@ -278,7 +278,7 @@ def render():
                     st.session_state["heatup_done"] = True
                 st.rerun()
         with confirm_cols[1]:
-            if st.button("Cancel", key="cancel_heatup"):
+            if st.button("Cancel", key="cancel_heatup", width="stretch"):
                 _clear_heatup_prompt()
                 st.session_state["heatup_done"] = False
                 st.rerun()
@@ -288,13 +288,13 @@ def render():
             st.warning("Was 4+ damage was done in a single attack?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Heat-Up"):
+                if st.button("🔥 Confirm Heat-Up", width="stretch"):
                     state["old_dragonslayer_confirmed"] = True
                     _clear_heatup_prompt()
                     apply_heatup(state, cfg, random.Random(), reason="manual")
                     st.rerun()
             with c2:
-                if st.button("Cancel"):
+                if st.button("Cancel", width="stretch"):
                     _clear_heatup_prompt()
                     state["old_dragonslayer_pending"] = False
                     state["old_dragonslayer_confirmed"] = False
@@ -306,10 +306,10 @@ def render():
             st.warning("⚔️ One of the duo has fallen! Apply the new phase?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Phase Change"):
+                if st.button("🔥 Confirm Phase Change", width="stretch"):
                     _ornstein_smough_heatup_ui(state, cfg)
             with c2:
-                if st.button("Cancel"):
+                if st.button("Cancel", width="stretch"):
                     st.session_state["pending_heatup_prompt"] = False
                     st.session_state["smough_dead_pending"] = False
                     st.session_state["ornstein_dead_pending"] = False

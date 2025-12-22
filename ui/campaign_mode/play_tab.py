@@ -500,6 +500,7 @@ def _render_campaign_play_tab(
             if st.button(
                 "Mark encounter as completed (apply rewards to campaign)",
                 key="campaign_play_mark_completed",
+                width="stretch"
             ):
                 # Souls (normal reward + any dropped souls) go straight into the soul cache
                 total_souls_gain = max(reward_souls, 0) + max(dropped_souls, 0)
@@ -587,6 +588,7 @@ def _render_campaign_play_tab(
         if st.button(
             "Mark encounter as failed (return to bonfire, lose 1 Spark)",
             key="campaign_play_mark_failed",
+            width="stretch"
         ):
             # Identify which node just failed (for the souls token in the management tab)
             failed_node_id = None

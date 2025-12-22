@@ -778,7 +778,7 @@ def _render_turn_controls(
     st.markdown("#### Turn Controls")
 
     def _action_button(label: str, *, key: str, action: str, disabled: bool = False) -> None:
-        if st.button(label, key=key, disabled=disabled, use_container_width=compact):
+        if st.button(label, key=key, disabled=disabled, width="stretch"):
             st.session_state["encounter_play_pending_action"] = action
             st.rerun()
 
@@ -817,7 +817,7 @@ def _render_turn_controls(
 
     if compact:
         if has_manual_inc:
-            if st.button(label, key="encounter_play_manual_timer_increase", use_container_width=True):
+            if st.button(label, key="encounter_play_manual_timer_increase", width="stretch"):
                 play_state["timer"] += 1
                 log_entry(play_state, log_text)
                 st.rerun()
@@ -825,7 +825,7 @@ def _render_turn_controls(
                 st.caption(help_text)
 
         if has_reset_btn:
-            if st.button(label2, key="encounter_play_special_timer_reset", use_container_width=True):
+            if st.button(label2, key="encounter_play_special_timer_reset", width="stretch"):
                 old_timer = play_state["timer"]
                 play_state["timer"] = 0
                 log_entry(play_state, f"{log_text2} (was {old_timer}, now 0)")
@@ -838,7 +838,7 @@ def _render_turn_controls(
     col_idx = 0
     if has_manual_inc:
         with cols[col_idx]:
-            if st.button(label, key="encounter_play_manual_timer_increase"):
+            if st.button(label, key="encounter_play_manual_timer_increase", width="stretch"):
                 play_state["timer"] += 1
                 log_entry(play_state, log_text)
                 st.rerun()
@@ -848,7 +848,7 @@ def _render_turn_controls(
 
     if has_reset_btn:
         with cols[col_idx]:
-            if st.button(label2, key="encounter_play_special_timer_reset"):
+            if st.button(label2, key="encounter_play_special_timer_reset", width="stretch"):
                 old_timer = play_state["timer"]
                 play_state["timer"] = 0
                 log_entry(play_state, f"{log_text2} (was {old_timer}, now 0)")

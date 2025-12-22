@@ -561,7 +561,7 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
         col_confirm, col_cancel = st.columns(2)
 
         with col_confirm:
-            if st.button("🔥 Confirm Heat-Up", key=f"{slider_key}_confirm_heatup"):
+            if st.button("🔥 Confirm Heat-Up", key=f"{slider_key}_confirm_heatup", width="stretch"):
                 prev = int(st.session_state.get(pending_prev_key, current_hp))
                 new = int(st.session_state.get(pending_new_key, current_hp))
 
@@ -582,7 +582,7 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
                 st.rerun()
 
         with col_cancel:
-            if st.button("Cancel", key=f"{slider_key}_cancel_heatup"):
+            if st.button("Cancel", key=f"{slider_key}_cancel_heatup", width="stretch"):
                 # Just drop the pending heat-up; no changes to heat-up state
                 st.session_state[pending_flag_key] = False
                 st.session_state.pop(pending_prev_key, None)
@@ -605,12 +605,12 @@ def _render_invader_deck_controls(cfg: BehaviorConfig, state: dict) -> None:
     col_draw, col_heatup = st.columns(2)
 
     with col_draw:
-        if st.button("Draw next card", key=f"invader_draw_{cfg.name}"):
+        if st.button("Draw next card", key=f"invader_draw_{cfg.name}", width="stretch"):
             _draw_card(state)
 
     with col_heatup:
         # Optional: only show if cfg has heat-up behavior
-        if st.button("Manual heat-up", key=f"invader_heatup_{cfg.name}"):
+        if st.button("Manual heat-up", key=f"invader_heatup_{cfg.name}", width="stretch"):
             _manual_heatup(state)
 
     # TODO: If you want a tiny discard/draw pile summary, add it here.

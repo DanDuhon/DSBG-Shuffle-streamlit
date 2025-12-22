@@ -117,17 +117,17 @@ def _boss_manual_heatup_current() -> None:
     _manual_heatup(state)
 
 
-def _render_combat_controls(*, where: str, full_width: bool = False) -> None:
+def _render_combat_controls(*, where: str) -> None:
     st.button(
         "Draw next card",
         key=f"boss_mode_draw_{where}",
-        use_container_width=full_width,
+        width="stretch",
         on_click=_boss_draw_current,
     )
     st.button(
         "Manual Heat-Up",
         key=f"boss_mode_heatup_{where}",
-        use_container_width=full_width,
+        width="stretch",
         on_click=_boss_manual_heatup_current,
     )
 
@@ -186,7 +186,7 @@ def render():
         # Controls: Shuffle / Original
         col_shuffle, col_original = st.columns(2)
         with col_shuffle:
-            if st.button("Shuffle Setup", key="ec_mega_shuffle"):
+            if st.button("Shuffle Setup", key="ec_mega_shuffle", width="stretch"):
                 # Pick a random alternative combo.
                 alts = encounter_data.get("alternatives") or {}
                 candidates = []
@@ -209,7 +209,7 @@ def render():
                     st.session_state[enemies_key] = random.choice(candidates)
                     st.session_state[mode_key] = "shuffled"
         with col_original:
-            if st.button("Original Setup", key="ec_mega_original"):
+            if st.button("Original Setup", key="ec_mega_original", width="stretch"):
                 st.session_state[enemies_key] = encounter_data["original"]
                 st.session_state[mode_key] = "original"
 
@@ -362,7 +362,7 @@ def render():
                 value=True,
             )
 
-        if st.button("🔄 Reset fight"):
+        if st.button("🔄 Reset fight", width="stretch"):
             _reset_deck(state, cfg)
             if cfg.name == GUARDIAN_DRAGON_NAME:
                 # Clear Fiery Breath state when resetting the fight
@@ -417,7 +417,7 @@ def render():
 
         confirm_cols = st.columns(2)
         with confirm_cols[0]:
-            if st.button("🔥 Confirm Heat-Up", key="boss_mode_confirm_heatup"):
+            if st.button("🔥 Confirm Heat-Up", key="boss_mode_confirm_heatup", width="stretch"):
                 rng = random.Random()
                 apply_heatup(state, cfg, rng, reason="auto")
 
@@ -435,7 +435,7 @@ def render():
                 st.rerun()
 
         with confirm_cols[1]:
-            if st.button("Cancel", key="boss_mode_cancel_heatup"):
+            if st.button("Cancel", key="boss_mode_cancel_heatup", width="stretch"):
                 _clear_heatup_prompt()
                 st.session_state["heatup_done"] = False
                 st.rerun()
@@ -449,13 +449,13 @@ def render():
             st.warning("Was 4+ damage done in a single attack?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Heat-Up", key="boss_mode_ods_confirm"):
+                if st.button("🔥 Confirm Heat-Up", key="boss_mode_ods_confirm", width="stretch"):
                     state["old_dragonslayer_confirmed"] = True
                     _clear_heatup_prompt()
                     apply_heatup(state, cfg, random.Random(), reason="manual")
                     st.rerun()
             with c2:
-                if st.button("Cancel", key="boss_mode_ods_cancel"):
+                if st.button("Cancel", key="boss_mode_ods_cancel", width="stretch"):
                     _clear_heatup_prompt()
                     state["old_dragonslayer_pending"] = False
                     state["old_dragonslayer_confirmed"] = False
@@ -466,10 +466,10 @@ def render():
             st.warning("⚔️ One of the duo has fallen! Apply the new phase?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Phase Change", key="boss_mode_ons_confirm"):
+                if st.button("🔥 Confirm Phase Change", key="boss_mode_ons_confirm", width="stretch"):
                     _ornstein_smough_heatup_ui(state, cfg)
             with c2:
-                if st.button("Cancel", key="boss_mode_ons_cancel"):
+                if st.button("Cancel", key="boss_mode_ons_cancel", width="stretch"):
                     st.session_state["pending_heatup_prompt"] = False
                     st.session_state["smough_dead_pending"] = False
                     st.session_state["ornstein_dead_pending"] = False
@@ -1122,4 +1122,4 @@ def render():
 
     # Mobile UX: duplicate controls below the cards in "Compact layout".
     if st.session_state.get("ui_compact", False):
-        _render_combat_controls(where="bottom", full_width=True)
+        _render_combat_controls(where="bottom")
