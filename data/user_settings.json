@@ -127,8 +127,6 @@
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Pine Resin.jpg",
-      "assets\\events\\Trustworthy Promise.jpg",
       "assets\\events\\Blacksmith's Trial.jpg",
       "assets\\events\\Forgotten Supplies.jpg",
       "assets\\events\\Fleeting Glory.jpg",
@@ -164,9 +162,11 @@
       "assets\\events\\Undead Merchant.jpg",
       "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
       "assets\\events\\Fleeting Glory.jpg",
-      "assets\\events\\Forgotten Supplies.jpg"
+      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Unhallowed Offering.jpg",
+      "assets\\events\\Pine Resin.jpg"
     ],
-    "current_card": "assets\\events\\Unhallowed Offering.jpg",
+    "current_card": "assets\\events\\Trustworthy Promise.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",
