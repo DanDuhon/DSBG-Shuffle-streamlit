@@ -647,12 +647,6 @@ def _render_v2_campaign_compact(
     nodes: List[Dict[str, Any]],
     current_node: Dict[str, Any],
 ) -> None:
-    # Optional bonfire art (kept out of the main flow to save vertical space)
-    with st.expander("Bonfire", expanded=False):
-        st.image(str(BONFIRE_ICON_PATH), width="stretch")
-
-    _render_party_icons(settings)
-
     player_count = _get_player_count(settings)
     sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
 
@@ -759,10 +753,10 @@ def _render_v2_campaign_compact(
 
                     sparks_cur = int(state.get("sparks") or 0)
                     state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
-                    st.session_state["campaign_v2_sparks_campaign"] = int(state["sparks"])
 
-                    campaign["current_node_id"] = "bonfire"
-                    state["campaign"] = campaign
+                    # Force widget to re-seed on rerun
+                    st.session_state.pop("campaign_v2_sparks_campaign", None)
+
                     st.session_state["campaign_v2_state"] = state
                     st.rerun()
 
@@ -889,12 +883,10 @@ def _render_v1_path_row(
                 sparks_cur = int(state.get("sparks") or 0)
                 state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
 
-                # Keep the Sparks widget key in sync or it will overwrite state on rerun
-                st.session_state["campaign_v1_sparks_campaign"] = int(state["sparks"])
+                # Force widget to re-seed on rerun
+                st.session_state.pop("campaign_v2_sparks_campaign", None)
 
-                campaign["current_node_id"] = node_id
-                state["campaign"] = campaign
-                st.session_state["campaign_v1_state"] = state
+                st.session_state["campaign_v2_state"] = state
                 st.rerun()
             return
 
@@ -983,11 +975,9 @@ def _render_v2_path_row(
                 sparks_cur = int(state.get("sparks") or 0)
                 state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
 
-                # Keep the Sparks widget key in sync or it will overwrite state on rerun
-                st.session_state["campaign_v2_sparks_campaign"] = int(state["sparks"])
+                # Force widget to re-seed on rerun
+                st.session_state.pop("campaign_v2_sparks_campaign", None)
 
-                campaign["current_node_id"] = node_id
-                state["campaign"] = campaign
                 st.session_state["campaign_v2_state"] = state
                 st.rerun()
             return
