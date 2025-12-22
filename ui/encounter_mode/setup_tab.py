@@ -1,6 +1,8 @@
 #ui/encounter_mode/setup_tab.py
 import streamlit as st
 import os
+import base64
+from pathlib import Path
 from io import BytesIO
 
 from core.settings_manager import save_settings
@@ -84,17 +86,19 @@ def render_event_card(event_obj):
     # If you store an image for the event, show it here
     image = event_obj.get("image")
     if image is not None:
-        st.image(image, width="stretch")
+        st.markdown(
+            f"""
+            <div class="card-image">
+                <img src="{image}" style="width:100%">
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Fallback / extra rules text
     text = event_obj.get("text")
     if text:
         st.markdown(text)
-
-
-# --- Encounter helpers --------------------------------------------------------
-def render_card(card_img):
-    st.image(card_img, width="stretch")
 
 
 def render_original_encounter(
@@ -479,7 +483,20 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         with col_enc:
             if "current_encounter" in st.session_state:
                 encounter = st.session_state.current_encounter
-                render_card(encounter["card_img"])
+                img = encounter["card_img"]
+
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                b64 = base64.b64encode(buf.getvalue()).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
                 # Divider between card and rules
                 st.markdown(
@@ -577,9 +594,18 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         with cols[i]:
                             img = _event_img_path(ev)
                             if img:
-                                # migrate in-place so future code can rely on "path"
                                 ev["path"] = str(img)
-                                st.image(str(img), width="stretch")
+                                p = Path(ev["path"])
+                                b64 = base64.b64encode(p.read_bytes()).decode()
+
+                                st.markdown(
+                                    f"""
+                                    <div class="card-image">
+                                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True,
+                                )
                             else:
                                 st.caption("Event image missing.")
     else:
@@ -815,7 +841,20 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     
         if "current_encounter" in st.session_state:
             encounter = st.session_state.current_encounter
-            render_card(encounter["card_img"])
+            img = encounter["card_img"]
+
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode()
+
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="data:image/png;base64,{b64}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
             # Divider between card and rules
             st.markdown(
@@ -907,7 +946,14 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             if img:
                 # migrate in-place so future code can rely on "path"
                 ev["path"] = str(img)
-                st.image(str(img), width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{str(img)}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
                 st.caption("Event image missing.")
 

@@ -1,6 +1,8 @@
 #ui/campaign_mode/manage_tab.py
 import streamlit as st
 import json
+import base64
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
@@ -205,7 +207,14 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
             with cols[i % 2]:
-                st.image(ev["path"], width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{ev['path']}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 nm = str(ev.get("name") or ev.get("id") or "").strip()
                 if nm:
                     st.caption(nm)
@@ -216,7 +225,14 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
             with cols[i % 2]:
-                st.image(ev["path"], width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{ev['path']}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 nm = str(ev.get("name") or ev.get("id") or "Consumable").strip()
                 st.caption(nm)
 
@@ -865,8 +881,13 @@ def _render_v1_path_row(
         # Current location: party token (and optional souls token)
         if is_current:
             if show_souls_token:
-                st.image(str(SOULS_TOKEN_PATH), width=32)
-            st.image(str(PARTY_TOKEN_PATH), width=48)
+                cur_cols = st.columns([1, 0.5])
+                with cur_cols[0]:
+                    st.image(str(PARTY_TOKEN_PATH), width=48)
+                with cur_cols[1]:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+            else:
+                st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
         # Bonfire row
@@ -883,6 +904,9 @@ def _render_v1_path_row(
                 sparks_cur = int(state.get("sparks") or 0)
                 state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
 
+                campaign["current_node_id"] = "bonfire"
+                state["campaign"] = campaign
+
                 # Force widget to re-seed on rerun
                 st.session_state.pop("campaign_v2_sparks_campaign", None)
 
@@ -894,20 +918,28 @@ def _render_v1_path_row(
         if kind in ("encounter", "boss"):
             # Chapter closed: no more travel into this stage
             if stage_closed:
-                if show_souls_token:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
                 return
 
             btn_label = "Travel" if kind == "encounter" else "Confront"
-            if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
-                campaign["current_node_id"] = node_id
-                node["revealed"] = True
-                state["campaign"] = campaign
-                st.session_state["campaign_v1_state"] = state
-                st.rerun()
 
             if show_souls_token:
-                st.image(str(SOULS_TOKEN_PATH), width=32)
+                cur_cols = st.columns([1, 0.5])
+                with cur_cols[0]:
+                    if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
+                        campaign["current_node_id"] = node_id
+                        node["revealed"] = True
+                        state["campaign"] = campaign
+                        st.session_state["campaign_v1_state"] = state
+                        st.rerun()
+                with cur_cols[1]:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+            else:
+                if st.button(btn_label, key=f"campaign_v1_goto_{node_id}"):
+                    campaign["current_node_id"] = node_id
+                    node["revealed"] = True
+                    state["campaign"] = campaign
+                    st.session_state["campaign_v1_state"] = state
+                    st.rerun()
             return
 
 
@@ -945,14 +977,17 @@ def _render_v2_path_row(
         # Current location: party token (and optional souls token)
         if is_current:
             if show_souls_token:
-                st.image(str(SOULS_TOKEN_PATH), width=32)
-            st.image(str(PARTY_TOKEN_PATH), width=48)
+                cur_cols = st.columns([1, 0.5])
+                with cur_cols[0]:
+                    st.image(str(PARTY_TOKEN_PATH), width=48)
+                with cur_cols[1]:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+            else:
+                st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
         # If chapter is closed, encounters/bosses in this stage are no longer legal destinations
         if stage_closed and kind in ("encounter", "boss"):
-            if show_souls_token:
-                st.image(str(SOULS_TOKEN_PATH), width=32)
             return
 
         can_travel_here = True
@@ -974,6 +1009,9 @@ def _render_v2_path_row(
                 # Spend a Spark, but not below zero
                 sparks_cur = int(state.get("sparks") or 0)
                 state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
+
+                campaign["current_node_id"] = "bonfire"
+                state["campaign"] = campaign
 
                 # Force widget to re-seed on rerun
                 st.session_state.pop("campaign_v2_sparks_campaign", None)
@@ -997,15 +1035,24 @@ def _render_v2_path_row(
             if is_shortcut_destination:
                 btn_label = "Take Shortcut"
 
-            if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
-                campaign["current_node_id"] = node_id
-                node["revealed"] = True
-                state["campaign"] = campaign
-                st.session_state["campaign_v2_state"] = state
-                st.rerun()
-
             if show_souls_token:
-                st.image(str(SOULS_TOKEN_PATH), width=32)
+                cur_cols = st.columns([1, 0.5])
+                with cur_cols[0]:
+                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                        campaign["current_node_id"] = node_id
+                        node["revealed"] = True
+                        state["campaign"] = campaign
+                        st.session_state["campaign_v2_state"] = state
+                        st.rerun()
+                with cur_cols[1]:
+                    st.image(str(SOULS_TOKEN_PATH), width=32)
+            else:
+                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}"):
+                    campaign["current_node_id"] = node_id
+                    node["revealed"] = True
+                    state["campaign"] = campaign
+                    st.session_state["campaign_v2_state"] = state
+                    st.rerun()
             return
         
 
@@ -1058,7 +1105,14 @@ def _render_v1_current_panel(
             if raw_data is None:
                 # Fallback: show static base data card
                 data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
-                st.image(data_path, width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{data_path}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
                 # Special case: Ornstein & Smough dual-boss card
                 if "Ornstein" in boss_name and "Smough" in boss_name:
@@ -1066,9 +1120,23 @@ def _render_v1_current_panel(
                         o_img, s_img = render_dual_boss_data_cards(raw_data)
                         o_col, s_col = st.columns(2)
                         with o_col:
-                            st.image(o_img, width="stretch")
+                            st.markdown(
+                                f"""
+                                <div class="card-image">
+                                    <img src="{o_img}" style="width:100%">
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
                         with s_col:
-                            st.image(s_img, width="stretch")
+                            st.markdown(
+                                f"""
+                                <div class="card-image">
+                                    <img src="{s_img}" style="width:100%">
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
                     except Exception as exc:
                         st.warning(f"Failed to render Ornstein & Smough data cards: {exc}")
                 else:
@@ -1082,7 +1150,14 @@ def _render_v1_current_panel(
                             raw_data,
                             is_boss=True,
                         )
-                        st.image(img, width="stretch")
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="{img}" style="width:100%">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     except Exception as exc:
                         st.warning(f"Failed to render boss data card: {exc}")
         else:
@@ -1155,6 +1230,8 @@ def _render_v2_current_panel(
                 with cols[idx]:
                     _render_campaign_encounter_card(frozen)
 
+                    st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
+
                     if is_scout_ahead and alt_idx is not None and idx == int(alt_idx):
                         btn_label = "Choose Scout Ahead"
                     else:
@@ -1185,7 +1262,16 @@ def _render_v2_current_panel(
 
             # Always show attached rendezvous card under the encounter card(s)
             if isinstance(rv, dict) and rv.get("path"):
-                st.image(rv["path"], width=_card_w())
+                w = _card_w()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image" style="width:{w}px">
+                        <img src="{rv['path']}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             return
 
@@ -1256,7 +1342,16 @@ def _render_v2_current_panel(
 
                     # Scout Ahead card under the encounter card(s)
                     if isinstance(rv, dict) and rv.get("path"):
-                        st.image(rv["path"], width=_card_w())
+                        w = _card_w()
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image" style="width:{w}px">
+                                <img src="{rv['path']}" style="width:100%">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     return
 
         # Normal: show the chosen encounter card
@@ -1265,7 +1360,16 @@ def _render_v2_current_panel(
 
         # Always show attached rendezvous card under the encounter card
         if isinstance(rv, dict) and rv.get("path"):
-            st.image(rv["path"], width=_card_w())
+            w = _card_w()
+
+            st.markdown(
+                f"""
+                <div class="card-image" style="width:{w}px">
+                    <img src="{rv['path']}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         return
 
@@ -1481,6 +1585,19 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
         enemies=enemies,
     )
     if res and res.get("ok"):
-        st.image(res["card_img"], width="stretch")
+        img = res["card_img"]
+
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        b64 = base64.b64encode(buf.getvalue()).decode()
+
+        st.markdown(
+            f"""
+            <div class="card-image">
+                <img src="data:image/png;base64,{b64}" style="width:100%">
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     else:
         st.warning("Failed to render encounter card.")

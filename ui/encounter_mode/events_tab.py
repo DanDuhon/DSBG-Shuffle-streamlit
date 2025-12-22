@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import streamlit as st
+import base64
 
 from core.settings_manager import save_settings
 from ui.encounter_mode.play_panels import _is_v1_encounter
@@ -274,7 +275,17 @@ def render(settings: Dict[str, Any]) -> None:
 
             with mid:
                 if current_card:
-                    st.image(str(current_card), width=card_w)
+                    p = Path(str(current_card))
+                    b64 = base64.b64encode(p.read_bytes()).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="{card_w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                     st.caption(event_name or "—")
                 else:
                     st.markdown("### Current card")
@@ -340,7 +351,17 @@ def render(settings: Dict[str, Any]) -> None:
             attached_n = len(st.session_state.get("encounter_events") or [])
 
             if current_card:
-                st.image(str(current_card), width=card_w)
+                p = Path(str(current_card))
+                b64 = base64.b64encode(p.read_bytes()).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="{card_w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 st.caption(event_name or "—")
             else:
                 st.markdown("### Current card")
@@ -482,7 +503,17 @@ def render(settings: Dict[str, Any]) -> None:
 
             with right:
                 st.markdown("### Card")
-                st.image(str(chosen["image_path"]), width=card_w)
+                p = Path(str(chosen["image_path"]))
+                b64 = base64.b64encode(p.read_bytes()).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="{card_w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 txt = str(chosen.get("text") or "").strip()
                 if txt:
                     st.caption(txt)

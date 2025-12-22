@@ -1,6 +1,7 @@
 # ui/event_mode/render.py
 import os
 import base64
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict
 
@@ -240,7 +241,19 @@ def render(settings: Dict[str, Any]) -> None:
 
             r_img, r_id, r_exp, r_type, r_text, r_copies = st.columns([0.4, 1.4, 1.2, 1.2, 3.1, 1.6])
             with r_img:
-                st.image(img_path, width="stretch")
+                p = Path(img_path)
+                b64 = base64.b64encode(p.read_bytes()).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
             with r_id:
                 st.caption(card_id)
             with r_exp:
@@ -392,7 +405,18 @@ def render(settings: Dict[str, Any]) -> None:
             with mid:
                 if current_card:
                     card_name = Path(str(current_card)).stem
-                    st.image(str(current_card), width="stretch")
+                    print(str(current_card))
+                    p = Path(str(current_card))
+                    b64 = base64.b64encode(p.read_bytes()).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:100%">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 else:
                     st.markdown("### Current card")
                     st.caption("—")
@@ -461,7 +485,17 @@ def render(settings: Dict[str, Any]) -> None:
                     )
 
             if current_card:
-                st.image(str(current_card), width="stretch")
+                    p = Path(str(current_card))
+                    b64 = base64.b64encode(p.read_bytes()).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:100%">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
             else:
                 st.markdown("### Current card")
                 st.caption("—")

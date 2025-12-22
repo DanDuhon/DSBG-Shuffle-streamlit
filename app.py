@@ -54,13 +54,12 @@ st.markdown("""
     }
 
     /* Card-style images: subtle 3D drop shadow */
-    img {
+    .card-image img {
         border-radius: 6px;
         background: radial-gradient(circle at top, #444 0, #111 65%);
         box-shadow:
             0 10px 22px rgba(0, 0, 0, 0.9),
             0 0 0 1px rgba(255, 255, 255, 0.06);
-        transition: box-shadow 120ms ease-out, transform 120ms ease-out;
     }
 
     /* Tighter spacing between party/expansion icons */

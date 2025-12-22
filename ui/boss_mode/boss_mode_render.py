@@ -2,6 +2,8 @@
 import random
 import json
 import streamlit as st
+import base64
+from pathlib import Path
 
 from ui.encounter_mode.generation import generate_encounter_image
 from core.ngplus import get_current_ngplus_level
@@ -223,9 +225,18 @@ def render():
             use_edited=False,
         )
 
-        # Convert to a buffer if you want consistency with Encounter tab;
-        # here we can just pass the PIL image directly to st.image.
-        st.image(card_img, width=_card_w())
+        w = _card_w()
+
+        b64 = base64.b64encode(card_img).decode()
+
+        st.markdown(
+            f"""
+            <div class="card-image">
+                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
     _ensure_state()
@@ -490,7 +501,18 @@ def render():
                         is_boss=True,
                     )
 
-                st.image(img, width=_card_w())
+                w = _card_w()
+
+                b64 = base64.b64encode(img).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             # Before heat-up, show the Mega Boss Setup encounter + buttons
             if not st.session_state.get("chariot_heatup_done", False):
@@ -506,17 +528,61 @@ def render():
             # If one is dead (phase 2), show only the survivor's data card
             if ornstein_dead and not smough_dead:
                 # Smough survives
-                st.image(s_img, width=_card_w())
+                w = _card_w()
+
+                b64 = base64.b64encode(s_img).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             elif smough_dead and not ornstein_dead:
                 # Ornstein survives
-                st.image(o_img, width=_card_w())
+                w = _card_w()
+
+                b64 = base64.b64encode(o_img).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
-                # Phase 1 (both alive) or weird edge case: show both
+                # Phase 1 (both alive): show both
                 o_col, s_col = st.columns(2)
                 with o_col:
-                    st.image(o_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(o_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 with s_col:
-                    st.image(s_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(s_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
         # Special case for Vordt's Frostbreath
         elif cfg.name == "Vordt of the Boreal Valley":
             data_path = cfg.display_cards[0] if cfg.display_cards else None
@@ -542,21 +608,76 @@ def render():
                         # Show data card + Frostbreath side-by-side
                         c1, c2 = st.columns(2)
                         with c1:
-                            st.image(data_img, width=_card_w())
+                            w = _card_w()
+
+                            b64 = base64.b64encode(data_img).decode()
+
+                            st.markdown(
+                                f"""
+                                <div class="card-image">
+                                    <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
                         with c2:
-                            st.image(frost_img, width=_card_w())
+                            w = _card_w()
+
+                            b64 = base64.b64encode(frost_img).decode()
+
+                            st.markdown(
+                                f"""
+                                <div class="card-image">
+                                    <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
                     else:
                         # Safety fallback: just show data card
-                        st.image(data_img, width=_card_w())
+                        w = _card_w()
+
+                        b64 = base64.b64encode(data_img).decode()
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                 else:
                     # Normal Vordt display, no Frostbreath this draw
-                    st.image(data_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(data_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
         else:
             # first display card is always the data card
             data_path = cfg.display_cards[0] if cfg.display_cards else None
             if data_path:
                 img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
-                st.image(img, width=_card_w())
+                w = _card_w()
+
+                b64 = base64.b64encode(img).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 
         if st.session_state.get("ui_compact", False):
             cfg.entities = render_health_tracker(cfg, state)
@@ -567,7 +688,19 @@ def render():
 
         if not current:
             # No card drawn yet => show card back
-            st.image(CARD_BACK, width=_card_w())
+            w = _card_w()
+
+            p = Path(CARD_BACK)
+            b64 = base64.b64encode(p.read_bytes()).decode()
+
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         else:
         # --- Ornstein & Smough dual-boss case ---
             if cfg.name == "Ornstein & Smough":
@@ -589,7 +722,18 @@ def render():
                             is_boss=True,
                         )
 
-                    st.image(img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             # --- Vordt of the Boreal Valley: movement + attack decks ---
             elif cfg.name == "Vordt of the Boreal Valley" and isinstance(current, tuple):
@@ -599,23 +743,31 @@ def render():
                 c1, c2 = st.columns(2)
                 with c1:
                     move_path = _behavior_image_path(cfg, move_card)
-                    st.image(
-                        render_behavior_card_cached(
-                            move_path,
-                            cfg.behaviors.get(move_card, {}),
-                            is_boss=True,
-                        ),
-                        width=_card_w(),
+                    w = _card_w()
+
+                    b64 = base64.b64encode(move_path).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
                 with c2:
                     atk_path = _behavior_image_path(cfg, atk_card)
-                    st.image(
-                        render_behavior_card_cached(
-                            atk_path,
-                            cfg.behaviors.get(atk_card, {}),
-                            is_boss=True,
-                        ),
-                        width=_card_w(),
+                    w = _card_w()
+
+                    b64 = base64.b64encode(atk_path).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
 
             # --- Gaping Dragon: Stomach Slam shows Crawling Charge alongside ---
@@ -646,13 +798,46 @@ def render():
                     # Show them side-by-side
                     c1, c2 = st.columns(2)
                     with c1:
-                        st.image(stomach_img, width=_card_w())
+                        w = _card_w()
+
+                        b64 = base64.b64encode(stomach_img).decode()
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     with c2:
-                        st.image(crawl_img, width=_card_w())
+                        w = _card_w()
+
+                        b64 = base64.b64encode(crawl_img).decode()
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                 else:
                     # Fallback: if Crawling Charge isn't found for some reason,
                     # at least show Stomach Slam
-                    st.image(stomach_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(stomach_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             # --- Guardian Dragon: Cage Grasp Inferno shows Fiery Breath alongside ---
             elif cfg.name == GUARDIAN_DRAGON_NAME and isinstance(current, str) and current.startswith(GUARDIAN_CAGE_PREFIX):
@@ -689,9 +874,31 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(cage_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(cage_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 with c2:
-                    st.image(fiery_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(fiery_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             # --- Black Dragon Kalameet: Hellfire cards show Fiery Ruin alongside ---
             elif cfg.name == BLACK_DRAGON_KALAMEET_NAME and isinstance(current, str) and current.startswith(KALAMEET_HELLFIRE_PREFIX):
@@ -728,9 +935,31 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(hellfire_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(hellfire_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 with c2:
-                    st.image(fiery_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(fiery_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             # --- Old Iron King: Fire Beam cards show Blasted Nodes alongside ---
             elif cfg.name == OLD_IRON_KING_NAME and isinstance(current, str) and current.startswith(OIK_FIRE_BEAM_PREFIX):
@@ -766,9 +995,31 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(beam_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(beam_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 with c2:
-                    st.image(blasted_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(blasted_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             # --- Executioner's Chariot: Death Race shows AoE track alongside ---
             elif (
@@ -811,9 +1062,31 @@ def render():
                 # Show them side-by-side
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(death_race_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(death_race_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 with c2:
-                    st.image(aoe_img, width=_card_w())
+                    w = _card_w()
+
+                    b64 = base64.b64encode(aoe_img).decode()
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             # --- Normal single-card case ---
             else:
@@ -823,7 +1096,18 @@ def render():
                     cfg.behaviors[current],
                     is_boss=True,
                 )
-                st.image(img, width=_card_w())
+                w = _card_w()
+
+                b64 = base64.b64encode(img).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
         if cfg.name == "Vordt of the Boreal Valley":
             st.caption(

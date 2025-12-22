@@ -1554,7 +1554,16 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                 is_boss=(cfg.tier == "boss"),
             )
             if data_bytes is not None:
-                st.image(data_bytes, width="stretch")
+                b64 = base64.b64encode(data_bytes).decode()
+
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/jpeg;base64,{b64}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
 
         # Aggregate mods for global summary (needs enemy_name + mod_tuples)

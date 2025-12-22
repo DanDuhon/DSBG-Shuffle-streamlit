@@ -4,6 +4,8 @@ from __future__ import annotations
 import re
 import streamlit as st
 import random
+import base64
+from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -161,7 +163,16 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
             enemies=enemies,
         )
         if res and res.get("ok"):
-            st.image(res["card_img"], width="stretch")
+            b64 = base64.b64encode(res["card_img"]).decode()
+
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="data:image/jpeg;base64,{b64}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         else:
             st.caption(label)
 
@@ -316,9 +327,27 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                 # Column 2: show the card
                 with c1:
                     if isinstance(pending, dict) and pending.get("path"):
-                        st.image(pending["path"], width="stretch")
+                        b64 = base64.b64encode(pending["path"]).decode()
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="data:image/jpeg;base64,{b64}" style="width:100%">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     elif isinstance(pending, str) and pending:
-                        st.image(pending, width="stretch")
+                        b64 = base64.b64encode(pending).decode()
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="data:image/jpeg;base64,{b64}" style="width:100%">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     else:
                         st.write("Event card unavailable.")
                     st.caption(_event_card_label(pending))

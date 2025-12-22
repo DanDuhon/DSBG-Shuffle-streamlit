@@ -115,7 +115,14 @@ def render():
         with cols[0]:
             data_card = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
             img_bytes = render_data_card_cached(data_card, cfg.raw, is_boss=False)
-            st.image(img_bytes)
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="{img_bytes}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         return
 
     # --- Boss / Invader mode ---
@@ -173,20 +180,55 @@ def render():
                 is_boss=True,
             )
         with cols[0]:
-            st.image(edited_img)
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="{edited_img}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
     elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
         ornstein_img, smough_img = render_dual_boss_data_cards(cfg.raw)
         dual_cols = st.columns(2)
         with dual_cols[0]:
             if st.session_state.get("ornstein_dead"):
-                st.image(_dim_greyscale(ornstein_img), width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{_dim_greyscale(ornstein_img)}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
-                st.image(ornstein_img, width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{ornstein_img}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
         with dual_cols[1]:
             if st.session_state.get("smough_dead"):
-                st.image(_dim_greyscale(smough_img), width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{_dim_greyscale(smough_img)}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
-                st.image(smough_img, width="stretch")
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{smough_img}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
     else:
         for i, data_path in enumerate(state["display_cards"]):
             if i == 0:
@@ -197,7 +239,14 @@ def render():
                     data_path, cfg.raw[card_name], is_boss=True
                 )
             with cols[i if i < len(cols) else -1]:
-                st.image(edited_img)
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{edited_img}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
                 
     if cfg.name == "Crossbreed Priscilla":
         invis = st.session_state["behavior_deck"].get("priscilla_invisible", False)
@@ -275,19 +324,40 @@ def render():
         if cfg.name == "Vordt of the Boreal Valley":
             st.caption(f"{len(state['vordt_move_draw'])} movement cards remaining")
             if state["vordt_move_draw"]:
-                st.image(CARD_BACK)
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{CARD_BACK}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown("<div style='min-height:484px;'></div>", unsafe_allow_html=True)
                 
             st.caption(f"{len(state['vordt_attack_draw'])} attack cards remaining")
             if state["vordt_attack_draw"]:
-                st.image(CARD_BACK)
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{CARD_BACK}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown("<div style='min-height:484px;'></div>", unsafe_allow_html=True)
         else:
             st.caption(f"{len(state['draw_pile'])} cards remaining")
             if state["draw_pile"]:
-                st.image(CARD_BACK)
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{CARD_BACK}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown("<div style='min-height:484px;'></div>", unsafe_allow_html=True)
 
@@ -303,23 +373,33 @@ def render():
             # --- Movement Deck Row ---
             if move_card:
                 st.caption(f"{len(state['vordt_move_discard'])} movement cards played")
-                st.image(
-                    render_behavior_card_cached(
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{render_behavior_card_cached(
                         move_path,
                         cfg.behaviors.get(move_card, {}),
                         is_boss=True,
-                    )
+                    )}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
 
             # --- Attack Deck Row ---
             if atk_card:
                 st.caption(f"{len(state['vordt_attack_discard'])} attack cards played")
-                st.image(
-                    render_behavior_card_cached(
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{render_behavior_card_cached(
                         atk_path,
                         cfg.behaviors.get(atk_card, {}),
                         is_boss=True,
-                    )
+                    )}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
 
         # --- Ornstein & Smough dual boss case
@@ -342,7 +422,14 @@ def render():
                         is_boss=True,
                     )
 
-                st.image(edited_behavior)
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="{edited_behavior}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
         # --- Normal single-card bosses
         elif state.get("current_card"):
@@ -355,7 +442,14 @@ def render():
             edited_behavior = render_behavior_card_cached(
                 current_path, beh_json, is_boss=True
             )
-            st.image(edited_behavior)
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="{edited_behavior}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     # --- Action buttons
     btn_cols = st.columns(2)
