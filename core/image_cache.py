@@ -1,4 +1,3 @@
-
 """
 core.image_cache
 -----------------
@@ -13,6 +12,7 @@ Provides disk-persistent caching for:
 
 from pathlib import Path
 from PIL import Image
+import io
 import streamlit as st
 import base64
 
@@ -147,3 +147,39 @@ def get_image_data_uri_cached(path: str) -> str:
     suffix = p.suffix.lower()
     mime = "image/png" if suffix == ".png" else "image/jpeg"
     return bytes_to_data_uri(data, mime=mime)
+
+
+# -------------------------------------------------------------
+# PIL Image helpers (cached by file mtime)
+# -------------------------------------------------------------
+@st.cache_resource(show_spinner=False)
+def _load_pil_image_cached_raw(
+    path_str: str, mtime_ns: int, convert: str | None = None
+) -> Image.Image:
+    """Internal helper: load image bytes and return a PIL Image.
+
+    Keyed by (path, mtime) so updates to the file invalidate the cache.
+    """
+    data = _get_image_bytes_cached(path_str, mtime_ns)
+    img = Image.open(io.BytesIO(data))
+    if convert:
+        try:
+            img = img.convert(convert)
+        except Exception:
+            pass
+    return img
+
+
+def load_pil_image_cached(path: str, convert: str | None = "RGBA") -> Image.Image:
+    """Public helper: return a PIL Image for `path` (cached).
+
+    The returned Image should be copied by callers before mutating it.
+    """
+    p = Path(path)
+    return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert)
+
+
+def get_icon_image(name: str) -> Image.Image:
+    """Load an icon from `assets/behavior icons` as a cached PIL Image."""
+    icon_path = ASSETS / "behavior icons" / name
+    return load_pil_image_cached(str(icon_path), convert="RGBA")

@@ -1,4 +1,4 @@
-#ui/behavior_decks_tab/generation.py
+# ui/behavior_decks_tab/generation.py
 import streamlit as st
 import json
 import hashlib
@@ -7,7 +7,16 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import Dict, Any, Optional
 from collections import defaultdict
 
-from core.behavior.assets import ICONS_DIR, FONTS, coords_map, text_styles, build_icon_filename, CATEGORY_ORDER, BOSS_CATEGORY_MAP
+from core.behavior.assets import (
+    ICONS_DIR,
+    FONTS,
+    coords_map,
+    text_styles,
+    build_icon_filename,
+    CATEGORY_ORDER,
+    BOSS_CATEGORY_MAP,
+)
+from core.image_cache import load_pil_image_cached, get_icon_image
 from core.behavior.models import BehaviorEntry
 from core.behavior.logic import load_behavior, list_behavior_files
 
@@ -41,9 +50,13 @@ def render_behavior_card_cached(
     Cached wrapper for render_behavior_card(...). Returns PNG bytes.
     Cache key includes a stable hash of behavior_json and variant.
     """
-    _ = _hash_json(behavior_json)  # incorporated into Streamlit cache key by argument value
+    _ = _hash_json(
+        behavior_json
+    )  # incorporated into Streamlit cache key by argument value
     _ = variant_id
-    return render_behavior_card(base_path, behavior_json, is_boss=is_boss, base_card=base_card)
+    return render_behavior_card(
+        base_path, behavior_json, is_boss=is_boss, base_card=base_card
+    )
 
 
 def infer_category(cfg) -> str:
@@ -72,11 +85,15 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
 
     Cached with Streamlit so repeated UI reruns don't re-scan disk.
     """
-    files = list_behavior_files()  # returns Paths to *.json:contentReference[oaicite:2]{index=2}
+    files = (
+        list_behavior_files()
+    )  # returns Paths to *.json:contentReference[oaicite:2]{index=2}
     groups: dict[str, list[BehaviorEntry]] = defaultdict(list)
 
     for fpath in files:
-        cfg = load_behavior(fpath)   # BehaviorConfig:contentReference[oaicite:3]{index=3}
+        cfg = load_behavior(
+            fpath
+        )  # BehaviorConfig:contentReference[oaicite:3]{index=3}
         category = infer_category(cfg)
 
         entry = BehaviorEntry(
@@ -85,7 +102,7 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
             path=fpath,
             tier=cfg.tier,
             is_invader=cfg.is_invader,
-            order_num=getattr(cfg, "raw", {}).get("order_num", 10)
+            order_num=getattr(cfg, "raw", {}).get("order_num", 10),
         )
         groups[category].append(entry)
 
@@ -122,7 +139,9 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     draw.text((x, y), value, font=font, fill=style["fill"])
 
 
-def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, is_boss: bool):
+def _overlay_effect_icons(
+    base: Image.Image, effects: list[str], slot: str, *, is_boss: bool
+):
     """Overlay up to two status effect icons for a given attack slot."""
     if not effects:
         return
@@ -139,7 +158,7 @@ def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, i
         icon_path = ICONS_DIR / f"{effect}.png"
         if not icon_path.exists():
             return
-        icon = Image.open(icon_path).convert("RGBA")
+        icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
         if size_scale != 1.0:
             w, h = icon.size
             icon = icon.resize((int(w * size_scale), int(h * size_scale)))
@@ -154,7 +173,7 @@ def _overlay_effect_icons(base: Image.Image, effects: list[str], slot: str, *, i
             icon_path = ICONS_DIR / f"{effect}.png"
             if not icon_path.exists():
                 continue
-            icon = Image.open(icon_path).convert("RGBA")
+            icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
             w, h = icon.size
             icon = icon.resize((int(w * size_scale), int(h * size_scale)))
             base.alpha_composite(icon, (x, y))
@@ -178,10 +197,7 @@ def _overlay_push_node_icon(
     assert kind in ("push", "node")
 
     prefix = "boss" if is_boss else "enemy"
-    coord_map = (
-        coords_map.get(f"{prefix}_{kind}")
-        or coords_map.get(kind)
-    )
+    coord_map = coords_map.get(f"{prefix}_{kind}") or coords_map.get(kind)
     if not coord_map:
         return
 
@@ -195,16 +211,18 @@ def _overlay_push_node_icon(
     if not icon_path.exists():
         return
 
-    icon = Image.open(icon_path).convert("RGBA")
+    icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
     base.alpha_composite(icon, (x, y))
 
 
 @st.cache_data(show_spinner=False)
-def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bool=False) -> bytes:
+def render_data_card(
+    base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
+) -> bytes:
     """
     Paint stats (health, armor, resist, maybe heatup) on the base data card.
     """
-    base = Image.open(base_path).convert("RGBA")
+    base = load_pil_image_cached(base_path, convert="RGBA").copy()
     if no_edits:
         buf = io.BytesIO()
         base.save(buf, format="PNG")
@@ -237,7 +255,9 @@ def render_data_card(base_path: str, raw_json: dict, is_boss: bool, no_edits: bo
         beh = raw_json.get("behavior") or {}
         if "dodge" in beh:
             _draw_text(base, "dodge", str(beh["dodge"]), is_boss)
-            return render_behavior_card(base_path, raw_json["behavior"], is_boss=False, base_card=base)
+            return render_behavior_card(
+                base_path, raw_json["behavior"], is_boss=False, base_card=base
+            )
 
     buf = io.BytesIO()
     base.save(buf, format="PNG")
@@ -272,8 +292,12 @@ def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
         return img
 
     # Load Ornstein and Smough base data cards
-    ornstein_img = Image.open("assets/behavior cards/Ornstein - data.jpg").convert("RGBA")
-    smough_img   = Image.open("assets/behavior cards/Smough - data.jpg").convert("RGBA")
+    ornstein_img = load_pil_image_cached(
+        "assets/behavior cards/Ornstein - data.jpg", convert="RGBA"
+    ).copy()
+    smough_img = load_pil_image_cached(
+        "assets/behavior cards/Smough - data.jpg", convert="RGBA"
+    ).copy()
 
     # Draw their respective stats if available
     if "Ornstein" in raw_json:
@@ -290,7 +314,9 @@ def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
 
 
 @st.cache_data(show_spinner=False)
-def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, base_card: Image=None) -> bytes:
+def render_behavior_card(
+    base_path: str, behavior_json: dict, *, is_boss: bool, base_card: Image = None
+) -> bytes:
     """
     Take a behavior card image (e.g. 'Artorias - Heavy Thrust.jpg')
     and paint icons (left/middle/right) + repeat in the right place.
@@ -298,7 +324,7 @@ def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, 
     if base_card:
         base = base_card
     else:
-        base = Image.open(base_path).convert("RGBA")
+        base = load_pil_image_cached(base_path, convert="RGBA").copy()
 
     # where to place repeat if behavior_json has a repeat
     repeat_icon_slot = "boss_repeat" if is_boss else "enemy_repeat"
@@ -306,7 +332,7 @@ def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, 
     if is_boss:
         if "repeat" in behavior_json:
             icon_path = f"{ICONS_DIR}\\repeat_{behavior_json['repeat']}.png"
-            icon = Image.open(icon_path).convert("RGBA")
+            icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
             x, y = coords_map[repeat_icon_slot]
             base.alpha_composite(icon, (x, y))
         if "dodge" in behavior_json:
@@ -328,7 +354,7 @@ def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, 
         if not icon_path.exists():
             continue
 
-        icon = Image.open(icon_path).convert("RGBA")
+        icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
 
         if not is_boss and icon_name.startswith("repeat_"):
             x, y = coords_map["enemy_repeat"][slot]
@@ -359,19 +385,24 @@ def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool, 
     return buf.getvalue()
 
 
-def render_dual_boss_behavior_card(raw_json: dict, card_name: str, boss_name: str = "Ornstein & Smough") -> bytes:
+def render_dual_boss_behavior_card(
+    raw_json: dict, card_name: str, boss_name: str = "Ornstein & Smough"
+) -> bytes:
     """
     Draw Ornstein & Smough's combined behavior card.
     Each half (Ornstein / Smough) can have independent attacks and effects.
     """
     img_path = f"assets/behavior cards/{boss_name} - {card_name}.jpg"
-    base = Image.open(img_path).convert("RGBA")
+    base = load_pil_image_cached(img_path, convert="RGBA").copy()
 
     div_idx = card_name.index("&")
-    ornstein_beh = card_name[:div_idx-1]
-    smough_beh = card_name[div_idx+2:]
+    ornstein_beh = card_name[: div_idx - 1]
+    smough_beh = card_name[div_idx + 2 :]
 
-    for boss_key, zone in [(ornstein_beh, "dual_ornstein"), (smough_beh, "dual_smough")]:
+    for boss_key, zone in [
+        (ornstein_beh, "dual_ornstein"),
+        (smough_beh, "dual_smough"),
+    ]:
         data = raw_json[card_name].get(boss_key)
         _draw_dual_attack(base, data, zone)
 
@@ -403,7 +434,9 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
             if atk_icon_path.exists():
                 coords = zone_map.get(f"attack_{attack_type}", {}).get(slot)
                 if coords:
-                    icon = Image.open(atk_icon_path).convert("RGBA")
+                    icon = load_pil_image_cached(
+                        str(atk_icon_path), convert="RGBA"
+                    ).copy()
                     base.alpha_composite(icon, coords)
 
         # --- Repeat icon ---
@@ -411,7 +444,7 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
             rpt_coords = zone_map.get("repeat", {}).get(slot)
             rpt_icon = ICONS_DIR / "repeat.png"
             if rpt_coords and rpt_icon.exists():
-                icon = Image.open(rpt_icon).convert("RGBA")
+                icon = load_pil_image_cached(str(rpt_icon), convert="RGBA").copy()
                 base.alpha_composite(icon, rpt_coords)
 
         # --- Effects ---
@@ -422,7 +455,9 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
                 eff_coords = zone_map.get("effect_one", {}).get(slot)
                 eff_icon_path = ICONS_DIR / f"{effects[0]}.png"
                 if eff_coords and eff_icon_path.exists():
-                    icon = Image.open(eff_icon_path).convert("RGBA")
+                    icon = load_pil_image_cached(
+                        str(eff_icon_path), convert="RGBA"
+                    ).copy()
                     if size_scale != 1.0:
                         w, h = icon.size
                         icon = icon.resize((int(w * size_scale), int(h * size_scale)))
@@ -435,8 +470,12 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
                     x, y = eff_coords_list[i]
                     eff_icon_path = ICONS_DIR / f"{eff}.png"
                     if eff_icon_path.exists():
-                        icon = Image.open(eff_icon_path).convert("RGBA")
+                        icon = load_pil_image_cached(
+                            str(eff_icon_path), convert="RGBA"
+                        ).copy()
                         if size_scale != 1.0:
                             w, h = icon.size
-                            icon = icon.resize((int(w * size_scale), int(h * size_scale)))
+                            icon = icon.resize(
+                                (int(w * size_scale), int(h * size_scale))
+                            )
                         base.alpha_composite(icon, (x, y))
