@@ -1,9 +1,11 @@
-#ui/campaign_mode/ui_helpers.py
+# ui/campaign_mode/ui_helpers.py
 import streamlit as st
 import base64
 from pathlib import Path
 from typing import Any, Dict, Optional
 from ui.campaign_mode.core import CHARACTERS_DIR
+from core.image_cache import get_image_data_uri_cached
+
 
 def _img_tag_from_path(
     path: Path,
@@ -14,14 +16,15 @@ def _img_tag_from_path(
     if not path.is_file():
         return None
     try:
-        data = path.read_bytes()
+        src = get_image_data_uri_cached(str(path))
     except Exception:
         return None
-    b64 = base64.b64encode(data).decode("ascii")
+    if not src:
+        return None
     style = f"height:{height_px}px; {extra_css}".strip()
     style_attr = f" style='{style}'" if style else ""
     title_attr = f" title='{title}'" if title else ""
-    return f"<img src='data:image/png;base64,{b64}'{title_attr}{style_attr} />"
+    return f"<img src='{src}'{title_attr}{style_attr} />"
 
 
 def _render_party_icons(settings: Dict[str, Any]) -> None:

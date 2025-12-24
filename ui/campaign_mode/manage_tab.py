@@ -1,4 +1,4 @@
-#ui/campaign_mode/manage_tab.py
+# ui/campaign_mode/manage_tab.py
 import streamlit as st
 import json
 import base64
@@ -6,7 +6,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
-from core.behavior.generation import render_data_card_cached, render_dual_boss_data_cards
+from core.behavior.generation import (
+    render_data_card_cached,
+    render_dual_boss_data_cards,
+)
+from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
@@ -25,11 +29,12 @@ from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.encounter_mode.setup_tab import render_original_encounter
 
 
-
 _SCOUT_AHEAD_ID = "scout ahead"
 
 
-def _frozen_sig(frozen: Dict[str, Any], default_level: int) -> Optional[tuple[str, int, str]]:
+def _frozen_sig(
+    frozen: Dict[str, Any], default_level: int
+) -> Optional[tuple[str, int, str]]:
     """(expansion, level, encounter_name) signature for a frozen encounter."""
     if not isinstance(frozen, dict):
         return None
@@ -214,15 +219,13 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
                 # image renders reliably across platforms/browsers.
                 img_src = path_str
                 try:
-                    from pathlib import Path as _P
-                    p = _P(path_str)
-                    if p.is_file():
-                        data = p.read_bytes()
-                        import base64 as _b64
-                        ext = p.suffix.lower()
-                        mime = "image/png" if ext in (".png",) else "image/jpeg"
-                        b64 = _b64.b64encode(data).decode()
-                        img_src = f"data:{mime};base64,{b64}"
+                    from core.image_cache import get_image_data_uri_cached
+
+                    src = get_image_data_uri_cached(path_str)
+                    if src:
+                        img_src = src
+                    else:
+                        img_src = path_str
                 except Exception:
                     img_src = path_str
 
@@ -247,15 +250,13 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
                 path_str = str(ev.get("path") or "")
                 img_src = path_str
                 try:
-                    from pathlib import Path as _P
-                    p = _P(path_str)
-                    if p.is_file():
-                        data = p.read_bytes()
-                        import base64 as _b64
-                        ext = p.suffix.lower()
-                        mime = "image/png" if ext in (".png",) else "image/jpeg"
-                        b64 = _b64.b64encode(data).decode()
-                        img_src = f"data:{mime};base64,{b64}"
+                    from core.image_cache import get_image_data_uri_cached
+
+                    src = get_image_data_uri_cached(path_str)
+                    if src:
+                        img_src = src
+                    else:
+                        img_src = path_str
                 except Exception:
                     img_src = path_str
 
@@ -272,7 +273,11 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
 
     # Controls
     if instants:
-        if st.button("Clear immediate event notifications", key="campaign_clear_instant_events", width="stretch"):
+        if st.button(
+            "Clear immediate event notifications",
+            key="campaign_clear_instant_events",
+            width="stretch",
+        ):
             state["instant_events_unresolved"] = []
             st.rerun()
 
@@ -282,7 +287,7 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             if isinstance(ev, dict) and ev.get("name"):
                 st.caption(str(ev["name"]))
 
-                
+
 def _render_campaign_tab(
     bosses_by_name: Dict[str, Any],
     invaders_by_name: Dict[str, Any],
@@ -335,7 +340,13 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     souls_token_node_id = state.get("souls_token_node_id")
 
     if bool(st.session_state.get("ui_compact")):
-        _render_v1_campaign_compact(settings=settings, state=state, campaign=campaign, nodes=nodes, current_node=current_node)
+        _render_v1_campaign_compact(
+            settings=settings,
+            state=state,
+            campaign=campaign,
+            nodes=nodes,
+            current_node=current_node,
+        )
         st.session_state["campaign_v1_state"] = state
         return
 
@@ -418,12 +429,20 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         mega_boss = [] if not stage_nodes["mega"] else stage_nodes["mega"][-1]
 
         chapter_labels = {
-            "mini": "Unknown Mini Boss Chapter" if mini_boss["was_random"] and not mini_boss["revealed"] else f"{mini_boss['boss_name']} Chapter",
-            "main": "Unknown Main Boss Chapter" if main_boss["was_random"] and not main_boss["revealed"] else f"{main_boss['boss_name']} Chapter",
+            "mini": "Unknown Mini Boss Chapter"
+            if mini_boss["was_random"] and not mini_boss["revealed"]
+            else f"{mini_boss['boss_name']} Chapter",
+            "main": "Unknown Main Boss Chapter"
+            if main_boss["was_random"] and not main_boss["revealed"]
+            else f"{main_boss['boss_name']} Chapter",
         }
 
         if mega_boss:
-            chapter_labels["mega"] = "Unknown Mega Boss Chapter" if mega_boss["was_random"] and not mega_boss["revealed"] else f"{mega_boss['boss_name']} Chapter"
+            chapter_labels["mega"] = (
+                "Unknown Mega Boss Chapter"
+                if mega_boss["was_random"] and not mega_boss["revealed"]
+                else f"{mega_boss['boss_name']} Chapter"
+            )
 
         # Ensure expander state keys exist. By default: mini expanded, main/mega closed.
         for _stage in ("mini", "main", "mega"):
@@ -437,7 +456,9 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             if not nodes_for_stage:
                 continue
             exp_key = f"campaign_v1_chapter_expander_{stage}"
-            with st.expander(chapter_labels[stage], expanded=bool(st.session_state.get(exp_key))):
+            with st.expander(
+                chapter_labels[stage], expanded=bool(st.session_state.get(exp_key))
+            ):
                 for n in nodes_for_stage:
                     _render_v1_path_row(n, campaign, state)
 
@@ -482,7 +503,13 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     souls_token_node_id = state.get("souls_token_node_id")
 
     if bool(st.session_state.get("ui_compact")):
-        _render_v2_campaign_compact(settings=settings, state=state, campaign=campaign, nodes=nodes, current_node=current_node)
+        _render_v2_campaign_compact(
+            settings=settings,
+            state=state,
+            campaign=campaign,
+            nodes=nodes,
+            current_node=current_node,
+        )
         st.session_state["campaign_v2_state"] = state
         return
 
@@ -539,7 +566,10 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         # controls until a choice is applied.
         disable_travel = False
         try:
-            if current_node.get("kind") == "encounter" and current_node.get("choice_index") is None:
+            if (
+                current_node.get("kind") == "encounter"
+                and current_node.get("choice_index") is None
+            ):
                 disable_travel = True
         except Exception:
             disable_travel = False
@@ -565,7 +595,9 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                 other_nodes.append(node)
 
         for n in bonfire_nodes:
-            _render_v2_path_row(n, campaign, state, allowed_destinations, disable_travel=disable_travel)
+            _render_v2_path_row(
+                n, campaign, state, allowed_destinations, disable_travel=disable_travel
+            )
 
         # Same chapter labelling logic as V1
         if stage_nodes["mini"]:
@@ -583,19 +615,25 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             if mini_boss.get("was_random") and not mini_boss.get("revealed"):
                 chapter_labels["mini"] = "Unknown Mini Boss Chapter"
             else:
-                chapter_labels["mini"] = f"{mini_boss.get('boss_name', 'Mini Boss')} Chapter"
+                chapter_labels[
+                    "mini"
+                ] = f"{mini_boss.get('boss_name', 'Mini Boss')} Chapter"
 
         if main_boss is not None:
             if main_boss.get("was_random") and not main_boss.get("revealed"):
                 chapter_labels["main"] = "Unknown Main Boss Chapter"
             else:
-                chapter_labels["main"] = f"{main_boss.get('boss_name', 'Main Boss')} Chapter"
+                chapter_labels[
+                    "main"
+                ] = f"{main_boss.get('boss_name', 'Main Boss')} Chapter"
 
         if mega_boss is not None:
             if mega_boss.get("was_random") and not mega_boss.get("revealed"):
                 chapter_labels["mega"] = "Unknown Mega Boss Chapter"
             else:
-                chapter_labels["mega"] = f"{mega_boss.get('boss_name', 'Mega Boss')} Chapter"
+                chapter_labels[
+                    "mega"
+                ] = f"{mega_boss.get('boss_name', 'Mega Boss')} Chapter"
 
         for stage in ("mini", "main", "mega"):
             nodes_for_stage = stage_nodes.get(stage) or []
@@ -603,10 +641,18 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                 continue
             with st.expander(chapter_labels[stage], expanded=True):
                 for n in nodes_for_stage:
-                    _render_v2_path_row(n, campaign, state, allowed_destinations, disable_travel=disable_travel)
+                    _render_v2_path_row(
+                        n,
+                        campaign,
+                        state,
+                        allowed_destinations,
+                        disable_travel=disable_travel,
+                    )
 
         for n in other_nodes:
-            _render_v2_path_row(n, campaign, state, allowed_destinations, disable_travel=disable_travel)
+            _render_v2_path_row(
+                n, campaign, state, allowed_destinations, disable_travel=disable_travel
+            )
 
     with col_detail:
         _render_v2_current_panel(campaign, current_node, state)
@@ -657,8 +703,7 @@ def _render_v1_campaign_compact(
     state["souls"] = int(souls_value)
 
     st.markdown(
-        f"**Current location:** "
-        f"{_describe_v1_node_label(campaign, current_node)}"
+        f"**Current location:** " f"{_describe_v1_node_label(campaign, current_node)}"
     )
 
     # Path is still available, but collapsed to avoid dominating the scroll.
@@ -747,8 +792,7 @@ def _render_v2_campaign_compact(
     _render_party_events_panel(state)
 
     st.markdown(
-        f"**Current location:** "
-        f"{_describe_v2_node_label(campaign, current_node)}"
+        f"**Current location:** " f"{_describe_v2_node_label(campaign, current_node)}"
     )
 
     allowed_destinations = _v2_compute_allowed_destinations(campaign)
@@ -783,7 +827,11 @@ def _render_v2_campaign_compact(
             continue
 
         lab = "Bonfire" if kind == "bonfire" else _label_for_node(node)
-        if current_is_bonfire and kind in ("encounter", "boss") and node.get("shortcut_unlocked"):
+        if (
+            current_is_bonfire
+            and kind in ("encounter", "boss")
+            and node.get("shortcut_unlocked")
+        ):
             lab = f"{lab} (Shortcut)"
 
         candidates.append(node_id)
@@ -816,11 +864,19 @@ def _render_v2_campaign_compact(
         # current encounter space.
         disable_travel_compact = False
         try:
-            disable_travel_compact = current_node.get("kind") == "encounter" and current_node.get("choice_index") is None
+            disable_travel_compact = (
+                current_node.get("kind") == "encounter"
+                and current_node.get("choice_index") is None
+            )
         except Exception:
             disable_travel_compact = False
 
-        if st.button(btn_label, key="campaign_v2_compact_travel_btn", width="stretch", disabled=disable_travel_compact):
+        if st.button(
+            btn_label,
+            key="campaign_v2_compact_travel_btn",
+            width="stretch",
+            disabled=disable_travel_compact,
+        ):
             if isinstance(dest_node, dict):
                 k = dest_node.get("kind")
                 node_id = dest_node.get("id")
@@ -885,19 +941,25 @@ def _render_v2_campaign_compact(
             if mini_boss.get("was_random") and not mini_boss.get("revealed"):
                 chapter_labels["mini"] = "Unknown Mini Boss Chapter"
             else:
-                chapter_labels["mini"] = f"{mini_boss.get('boss_name', 'Mini Boss')} Chapter"
+                chapter_labels[
+                    "mini"
+                ] = f"{mini_boss.get('boss_name', 'Mini Boss')} Chapter"
 
         if main_boss is not None:
             if main_boss.get("was_random") and not main_boss.get("revealed"):
                 chapter_labels["main"] = "Unknown Main Boss Chapter"
             else:
-                chapter_labels["main"] = f"{main_boss.get('boss_name', 'Main Boss')} Chapter"
+                chapter_labels[
+                    "main"
+                ] = f"{main_boss.get('boss_name', 'Main Boss')} Chapter"
 
         if mega_boss is not None:
             if mega_boss.get("was_random") and not mega_boss.get("revealed"):
                 chapter_labels["mega"] = "Unknown Mega Boss Chapter"
             else:
-                chapter_labels["mega"] = f"{mega_boss.get('boss_name', 'Mega Boss')} Chapter"
+                chapter_labels[
+                    "mega"
+                ] = f"{mega_boss.get('boss_name', 'Mega Boss')} Chapter"
 
         for stage in ("mini", "main", "mega"):
             nodes_for_stage = stage_nodes.get(stage) or []
@@ -979,7 +1041,7 @@ def _render_v1_path_row(
             if st.button(
                 "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v1_goto_{node_id}",
-                width="stretch"
+                width="stretch",
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain.
@@ -1017,7 +1079,9 @@ def _render_v1_path_row(
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])
                 with cur_cols[0]:
-                    if st.button(btn_label, key=f"campaign_v1_goto_{node_id}", width="stretch"):
+                    if st.button(
+                        btn_label, key=f"campaign_v1_goto_{node_id}", width="stretch"
+                    ):
                         campaign["current_node_id"] = node_id
                         node["revealed"] = True
                         state["campaign"] = campaign
@@ -1026,7 +1090,9 @@ def _render_v1_path_row(
                 with cur_cols[1]:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
-                if st.button(btn_label, key=f"campaign_v1_goto_{node_id}", width="stretch"):
+                if st.button(
+                    btn_label, key=f"campaign_v1_goto_{node_id}", width="stretch"
+                ):
                     campaign["current_node_id"] = node_id
                     node["revealed"] = True
                     state["campaign"] = campaign
@@ -1140,7 +1206,12 @@ def _render_v2_path_row(
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])
                 with cur_cols[0]:
-                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch", disabled=disabled):
+                    if st.button(
+                        btn_label,
+                        key=f"campaign_v2_goto_{node_id}",
+                        width="stretch",
+                        disabled=disabled,
+                    ):
                         campaign["current_node_id"] = node_id
                         node["revealed"] = True
                         state["campaign"] = campaign
@@ -1149,14 +1220,19 @@ def _render_v2_path_row(
                 with cur_cols[1]:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
-                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch", disabled=disabled):
+                if st.button(
+                    btn_label,
+                    key=f"campaign_v2_goto_{node_id}",
+                    width="stretch",
+                    disabled=disabled,
+                ):
                     campaign["current_node_id"] = node_id
                     node["revealed"] = True
                     state["campaign"] = campaign
                     st.session_state["campaign_v2_state"] = state
                     st.rerun()
             return
-        
+
 
 def _render_v1_current_panel(
     campaign: Dict[str, Any],
@@ -1223,8 +1299,9 @@ def _render_v1_current_panel(
                         o_col, s_col = st.columns(2)
                         with o_col:
                             try:
-                                b64_o = base64.b64encode(o_img).decode()
-                                src_o = f"data:image/png;base64,{b64_o}"
+                                src_o = bytes_to_data_uri(o_img, mime="image/png")
+                                if not src_o:
+                                    raise Exception("empty data uri")
                             except Exception:
                                 src_o = o_img
                             st.markdown(
@@ -1237,8 +1314,9 @@ def _render_v1_current_panel(
                             )
                         with s_col:
                             try:
-                                b64_s = base64.b64encode(s_img).decode()
-                                src_s = f"data:image/png;base64,{b64_s}"
+                                src_s = bytes_to_data_uri(s_img, mime="image/png")
+                                if not src_s:
+                                    raise Exception("empty data uri")
                             except Exception:
                                 src_s = s_img
                             st.markdown(
@@ -1250,10 +1328,15 @@ def _render_v1_current_panel(
                                 unsafe_allow_html=True,
                             )
                     except Exception as exc:
-                        st.warning(f"Failed to render Ornstein & Smough data cards: {exc}")
+                        st.warning(
+                            f"Failed to render Ornstein & Smough data cards: {exc}"
+                        )
                 else:
                     if boss_name == "Executioner's Chariot":
-                        data_path = BEHAVIOR_CARDS_PATH + "Executioner's Chariot - Skeletal Horse.jpg"
+                        data_path = (
+                            BEHAVIOR_CARDS_PATH
+                            + "Executioner's Chariot - Skeletal Horse.jpg"
+                        )
                     else:
                         data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
                     try:
@@ -1263,8 +1346,9 @@ def _render_v1_current_panel(
                             is_boss=True,
                         )
                         try:
-                            b64 = base64.b64encode(img).decode()
-                            src = f"data:image/png;base64,{b64}"
+                            src = bytes_to_data_uri(img, mime="image/png")
+                            if not src:
+                                raise Exception("empty data uri")
                         except Exception:
                             src = img
                         st.markdown(
@@ -1286,7 +1370,7 @@ def _render_v1_current_panel(
         if st.button(
             "Start Boss Fight",
             key=f"campaign_v1_start_boss_{current_node.get('id')}",
-            width="stretch"
+            width="stretch",
         ):
             if not boss_name:
                 st.warning("No boss configured for this node.")
@@ -1324,7 +1408,9 @@ def _render_v2_current_panel(
         choice_idx = current_node.get("choice_index")
 
         if not options:
-            st.caption("No encounter options attached to this space. Regenerate this campaign.")
+            st.caption(
+                "No encounter options attached to this space. Regenerate this campaign."
+            )
             return
 
         rv = current_node.get("rendezvous_event")
@@ -1332,7 +1418,9 @@ def _render_v2_current_panel(
 
         alt_idx: Optional[int] = None
         if is_scout_ahead:
-            alt_idx = _v2_ensure_scout_ahead_alt_option(node=current_node, settings=settings, campaign=campaign)
+            alt_idx = _v2_ensure_scout_ahead_alt_option(
+                node=current_node, settings=settings, campaign=campaign
+            )
             # Refresh local view after mutation
             options = current_node.get("options") or []
             choice_idx = current_node.get("choice_index")
@@ -1348,7 +1436,9 @@ def _render_v2_current_panel(
                 with cols[idx]:
                     _render_campaign_encounter_card(frozen)
 
-                    st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
+                    st.markdown(
+                        "<div style='height:0.05rem'></div>", unsafe_allow_html=True
+                    )
 
                     if is_scout_ahead and alt_idx is not None and idx == int(alt_idx):
                         btn_label = "Choose Scout Ahead"
@@ -1358,7 +1448,7 @@ def _render_v2_current_panel(
                     if st.button(
                         btn_label,
                         key=f"campaign_v2_choose_{current_node.get('id')}_{idx}",
-                        width="stretch"
+                        width="stretch",
                     ):
                         # Persist base choice index for Scout Ahead comparisons
                         if is_scout_ahead:
@@ -1383,17 +1473,22 @@ def _render_v2_current_panel(
             if isinstance(rv, dict) and rv.get("path"):
                 w = _card_w()
                 p = Path(rv["path"])
-                b64 = base64.b64encode(p.read_bytes()).decode()
+                try:
+                    src = get_image_data_uri_cached(str(p))
+                    if not src:
+                        raise Exception("empty data uri")
+                except Exception:
+                    src = str(p)
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                        <img src="{src}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                
+
             return
 
         # Choice already made
@@ -1403,7 +1498,9 @@ def _render_v2_current_panel(
             chosen_idx = -1
 
         if not (0 <= chosen_idx < len(options)):
-            st.caption("Chosen encounter index is out of range; regenerate this campaign.")
+            st.caption(
+                "Chosen encounter index is out of range; regenerate this campaign."
+            )
             return
 
         # Scout Ahead: show the choice again (previously chosen vs new encounter)
@@ -1422,11 +1519,19 @@ def _render_v2_current_panel(
                     base_idx = chosen_idx
                     if alt_idx_int is not None and base_idx == alt_idx_int:
                         base_idx = 0 if len(options) > 0 else chosen_idx
-                        if alt_idx_int is not None and base_idx == alt_idx_int and len(options) > 1:
+                        if (
+                            alt_idx_int is not None
+                            and base_idx == alt_idx_int
+                            and len(options) > 1
+                        ):
                             base_idx = 1
                     sa["base_choice_index"] = base_idx
 
-                if alt_idx_int is not None and 0 <= alt_idx_int < len(options) and alt_idx_int != base_idx:
+                if (
+                    alt_idx_int is not None
+                    and 0 <= alt_idx_int < len(options)
+                    and alt_idx_int != base_idx
+                ):
                     st.markdown("**Scout Ahead**")
                     col_a, col_b = st.columns(2)
                     with col_a:
@@ -1449,13 +1554,13 @@ def _render_v2_current_panel(
                     if st.button(
                         "Apply choice",
                         key=f"campaign_v2_scout_ahead_apply_{current_node.get('id')}",
-                        width="stretch"
+                        width="stretch",
                     ):
                         new_idx = alt_idx_int if pick == "Scout Ahead" else base_idx
                         current_node["choice_index"] = int(new_idx)
                         current_node["frozen"] = options[int(new_idx)]
                         current_node["revealed"] = True
-                        
+
                         _consume_scout_ahead(current_node)
 
                         state["campaign"] = campaign
@@ -1608,7 +1713,9 @@ def _apply_boss_defeated(
 
     st.session_state[state_key] = state
 
-    st.success("Boss defeated; rewards applied and the party has returned to the bonfire.")
+    st.success(
+        "Boss defeated; rewards applied and the party has returned to the bonfire."
+    )
     st.rerun()
 
 
@@ -1663,13 +1770,9 @@ def _apply_boss_failure(
     st.session_state.pop("last_encounter_rewards_for_slug", None)
 
     if sparks_cur > 0:
-        st.warning(
-            "Boss failed; party returned to the bonfire and lost 1 Spark."
-        )
+        st.warning("Boss failed; party returned to the bonfire and lost 1 Spark.")
     else:
-        st.warning(
-            "Boss failed; party returned to the bonfire but has no Sparks left."
-        )
+        st.warning("Boss failed; party returned to the bonfire but has no Sparks left.")
     st.rerun()
 
 
@@ -1695,7 +1798,7 @@ def _render_boss_outcome_controls(
         if st.button(
             "Boss defeated (close chapter)",
             key=f"campaign_{version.lower()}_boss_defeated",
-            width="stretch"
+            width="stretch",
         ):
             _apply_boss_defeated(state, campaign, current_node, version)
 
@@ -1703,7 +1806,7 @@ def _render_boss_outcome_controls(
         if st.button(
             "Boss failed (return to bonfire, lose 1 Spark)",
             key=f"campaign_{version.lower()}_boss_failed",
-            width="stretch"
+            width="stretch",
         ):
             _apply_boss_failure(state, campaign, current_node, version)
 
@@ -1741,12 +1844,12 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
 
         buf = BytesIO()
         img.save(buf, format="PNG")
-        b64 = base64.b64encode(buf.getvalue()).decode()
+        src = bytes_to_data_uri(buf.getvalue(), mime="image/png")
 
         st.markdown(
             f"""
             <div class="card-image">
-                <img src="data:image/png;base64,{b64}" style="width:100%">
+                <img src="{src}" style="width:100%">
             </div>
             """,
             unsafe_allow_html=True,

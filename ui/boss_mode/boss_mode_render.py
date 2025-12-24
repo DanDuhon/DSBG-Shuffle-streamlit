@@ -3,6 +3,7 @@ import random
 import json
 import streamlit as st
 import base64
+from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from pathlib import Path
 
 from ui.encounter_mode.generation import generate_encounter_image
@@ -11,7 +12,7 @@ from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,
     CARD_BACK,
     CATEGORY_EMOJI,
-    _behavior_image_path
+    _behavior_image_path,
 )
 from core.behavior.logic import (
     _ensure_state,
@@ -33,16 +34,16 @@ from core.behavior.generation import (
 )
 from core.behavior.render import render_health_tracker
 from ui.boss_mode.guardian_dragon_fiery_breath import (
-    GUARDIAN_DRAGON_NAME, 
-    GUARDIAN_CAGE_PREFIX, 
-    _guardian_fiery_next_pattern, 
-    _guardian_render_fiery_breath
+    GUARDIAN_DRAGON_NAME,
+    GUARDIAN_CAGE_PREFIX,
+    _guardian_fiery_next_pattern,
+    _guardian_render_fiery_breath,
 )
 from ui.boss_mode.kalameet_fiery_ruin import (
-    BLACK_DRAGON_KALAMEET_NAME, 
-    KALAMEET_HELLFIRE_PREFIX, 
-    _kalameet_next_pattern, 
-    _kalameet_render_fiery_ruin
+    BLACK_DRAGON_KALAMEET_NAME,
+    KALAMEET_HELLFIRE_PREFIX,
+    _kalameet_next_pattern,
+    _kalameet_render_fiery_ruin,
 )
 from ui.boss_mode.old_iron_king_blasted_nodes import (
     OLD_IRON_KING_NAME,
@@ -105,7 +106,9 @@ def _boss_draw_current() -> None:
         return
     state, _cfg = _ensure_boss_state(entry)
 
-    st.session_state["boss_mode_draw_token"] = st.session_state.get("boss_mode_draw_token", 0) + 1
+    st.session_state["boss_mode_draw_token"] = (
+        st.session_state.get("boss_mode_draw_token", 0) + 1
+    )
     _draw_card(state)
 
 
@@ -166,7 +169,6 @@ def render():
 
         return st.session_state[cache_key]
 
-
     def _render_ec_mega_boss_setup_panel():
         """
         Show the Executioner's Chariot Mega Boss Setup encounter card
@@ -197,7 +199,11 @@ def render():
                     active = set(settings.get("active_expansions", []))
 
                     for exp_combo, combos in alts.items():
-                        exp_set = {e.strip() for e in exp_combo.split(",")} if exp_combo else set()
+                        exp_set = (
+                            {e.strip() for e in exp_combo.split(",")}
+                            if exp_combo
+                            else set()
+                        )
                         # Only use combos that are compatible with the currently active expansions.
                         if not exp_set or exp_set.issubset(active):
                             candidates.extend(combos)
@@ -227,17 +233,16 @@ def render():
 
         w = _card_w()
 
-        b64 = base64.b64encode(card_img).decode()
+        src = bytes_to_data_uri(card_img, mime="image/png")
 
         st.markdown(
             f"""
             <div class="card-image">
-                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                <img src="{src}" style="width:{w}px">
             </div>
             """,
             unsafe_allow_html=True,
         )
-
 
     _ensure_state()
 
@@ -394,7 +399,7 @@ def render():
                 state.pop("ec_death_race_current_pattern", None)
                 state.pop("ec_death_race_current_mode", None)
             st.rerun()
-            
+
     # Draw / Heat-up buttons
     if not st.session_state.get("ui_compact", False):
         c_hp_btns = st.columns([1, 1])
@@ -406,7 +411,10 @@ def render():
     # --- Heat-Up confirmation prompt (Boss Mode) ---
     if (
         st.session_state.get("pending_heatup_prompt", False)
-        and (cfg.name == "Vordt of the Boreal Valley" or not state.get("heatup_done", False))
+        and (
+            cfg.name == "Vordt of the Boreal Valley"
+            or not state.get("heatup_done", False)
+        )
         and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}
     ):
         # Generic bosses (and Vordt), first-time heat-up
@@ -417,7 +425,9 @@ def render():
 
         confirm_cols = st.columns(2)
         with confirm_cols[0]:
-            if st.button("🔥 Confirm Heat-Up", key="boss_mode_confirm_heatup", width="stretch"):
+            if st.button(
+                "🔥 Confirm Heat-Up", key="boss_mode_confirm_heatup", width="stretch"
+            ):
                 rng = random.Random()
                 apply_heatup(state, cfg, rng, reason="auto")
 
@@ -449,7 +459,9 @@ def render():
             st.warning("Was 4+ damage done in a single attack?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Heat-Up", key="boss_mode_ods_confirm", width="stretch"):
+                if st.button(
+                    "🔥 Confirm Heat-Up", key="boss_mode_ods_confirm", width="stretch"
+                ):
                     state["old_dragonslayer_confirmed"] = True
                     _clear_heatup_prompt()
                     apply_heatup(state, cfg, random.Random(), reason="manual")
@@ -466,7 +478,11 @@ def render():
             st.warning("⚔️ One of the duo has fallen! Apply the new phase?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Phase Change", key="boss_mode_ons_confirm", width="stretch"):
+                if st.button(
+                    "🔥 Confirm Phase Change",
+                    key="boss_mode_ons_confirm",
+                    width="stretch",
+                ):
                     _ornstein_smough_heatup_ui(state, cfg)
             with c2:
                 if st.button("Cancel", key="boss_mode_ons_cancel", width="stretch"):
@@ -503,12 +519,12 @@ def render():
 
                 w = _card_w()
 
-                b64 = base64.b64encode(img).decode()
+                src = bytes_to_data_uri(img, mime="image/png")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        <img src="{src}" style="width:{w}px">
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -530,12 +546,12 @@ def render():
                 # Smough survives
                 w = _card_w()
 
-                b64 = base64.b64encode(s_img).decode()
+                src = bytes_to_data_uri(s_img, mime="image/png")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        <img src="{src}" style="width:{w}px">
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -544,12 +560,12 @@ def render():
                 # Ornstein survives
                 w = _card_w()
 
-                b64 = base64.b64encode(o_img).decode()
+                src = bytes_to_data_uri(o_img, mime="image/png")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        <img src="{src}" style="width:{w}px">
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -560,12 +576,12 @@ def render():
                 with o_col:
                     w = _card_w()
 
-                    b64 = base64.b64encode(o_img).decode()
+                    src = bytes_to_data_uri(o_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -573,12 +589,12 @@ def render():
                 with s_col:
                     w = _card_w()
 
-                    b64 = base64.b64encode(s_img).decode()
+                    src = bytes_to_data_uri(s_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -610,12 +626,12 @@ def render():
                         with c1:
                             w = _card_w()
 
-                            b64 = base64.b64encode(data_img).decode()
+                            src = bytes_to_data_uri(data_img, mime="image/png")
 
                             st.markdown(
                                 f"""
                                 <div class="card-image">
-                                    <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                    <img src="{src}" style="width:{w}px">
                                 </div>
                                 """,
                                 unsafe_allow_html=True,
@@ -623,12 +639,12 @@ def render():
                         with c2:
                             w = _card_w()
 
-                            b64 = base64.b64encode(frost_img).decode()
+                            src = bytes_to_data_uri(frost_img, mime="image/png")
 
                             st.markdown(
                                 f"""
                                 <div class="card-image">
-                                    <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                    <img src="{src}" style="width:{w}px">
                                 </div>
                                 """,
                                 unsafe_allow_html=True,
@@ -637,12 +653,12 @@ def render():
                         # Safety fallback: just show data card
                         w = _card_w()
 
-                        b64 = base64.b64encode(data_img).decode()
+                        src = bytes_to_data_uri(data_img, mime="image/png")
 
                         st.markdown(
                             f"""
                             <div class="card-image">
-                                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                <img src="{src}" style="width:{w}px">
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -651,12 +667,12 @@ def render():
                     # Normal Vordt display, no Frostbreath this draw
                     w = _card_w()
 
-                    b64 = base64.b64encode(data_img).decode()
+                    src = bytes_to_data_uri(data_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -668,17 +684,17 @@ def render():
                 img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
                 w = _card_w()
 
-                b64 = base64.b64encode(img).decode()
+                src = bytes_to_data_uri(img, mime="image/png")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        <img src="{src}" style="width:{w}px">
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-                
+
         if st.session_state.get("ui_compact", False):
             cfg.entities = render_health_tracker(cfg, state)
 
@@ -691,18 +707,23 @@ def render():
             w = _card_w()
 
             p = Path(CARD_BACK)
-            b64 = base64.b64encode(p.read_bytes()).decode()
+            try:
+                src = get_image_data_uri_cached(str(p))
+                if not src:
+                    raise Exception("empty data uri")
+            except Exception:
+                src = str(p)
 
             st.markdown(
                 f"""
                 <div class="card-image">
-                    <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                    <img src="{src}" style="width:{w}px">
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
         else:
-        # --- Ornstein & Smough dual-boss case ---
+            # --- Ornstein & Smough dual-boss case ---
             if cfg.name == "Ornstein & Smough":
                 current_name = current
 
@@ -724,19 +745,21 @@ def render():
 
                     w = _card_w()
 
-                    b64 = base64.b64encode(img).decode()
+                    src = bytes_to_data_uri(img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
 
             # --- Vordt of the Boreal Valley: movement + attack decks ---
-            elif cfg.name == "Vordt of the Boreal Valley" and isinstance(current, tuple):
+            elif cfg.name == "Vordt of the Boreal Valley" and isinstance(
+                current, tuple
+            ):
                 move_card, atk_card = current
 
                 # Show the cards side-by-side
@@ -745,12 +768,12 @@ def render():
                     move_path = _behavior_image_path(cfg, move_card)
                     w = _card_w()
 
-                    b64 = base64.b64encode(move_path).decode()
+                    src = get_image_data_uri_cached(move_path)
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -759,12 +782,12 @@ def render():
                     atk_path = _behavior_image_path(cfg, atk_card)
                     w = _card_w()
 
-                    b64 = base64.b64encode(atk_path).decode()
+                    src = get_image_data_uri_cached(atk_path)
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -800,12 +823,12 @@ def render():
                     with c1:
                         w = _card_w()
 
-                        b64 = base64.b64encode(stomach_img).decode()
+                        src = bytes_to_data_uri(stomach_img, mime="image/png")
 
                         st.markdown(
                             f"""
                             <div class="card-image">
-                                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                <img src="{src}" style="width:{w}px">
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -813,12 +836,12 @@ def render():
                     with c2:
                         w = _card_w()
 
-                        b64 = base64.b64encode(crawl_img).decode()
+                        src = bytes_to_data_uri(crawl_img, mime="image/png")
 
                         st.markdown(
                             f"""
                             <div class="card-image">
-                                <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                                <img src="{src}" style="width:{w}px">
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -828,19 +851,23 @@ def render():
                     # at least show Stomach Slam
                     w = _card_w()
 
-                    b64 = base64.b64encode(stomach_img).decode()
+                    src = bytes_to_data_uri(stomach_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
 
             # --- Guardian Dragon: Cage Grasp Inferno shows Fiery Breath alongside ---
-            elif cfg.name == GUARDIAN_DRAGON_NAME and isinstance(current, str) and current.startswith(GUARDIAN_CAGE_PREFIX):
+            elif (
+                cfg.name == GUARDIAN_DRAGON_NAME
+                and isinstance(current, str)
+                and current.startswith(GUARDIAN_CAGE_PREFIX)
+            ):
                 # Track when a new card is drawn so we only change the pattern
                 # when the deck actually advances.
                 last_key = f"boss_mode_last_current::{cfg.name}"
@@ -849,7 +876,11 @@ def render():
                 st.session_state[last_key] = current
 
                 # Decide which Fiery Breath pattern mode we're in
-                mode = "generated" if st.session_state.get("guardian_fiery_generate", False) else "deck"
+                mode = (
+                    "generated"
+                    if st.session_state.get("guardian_fiery_generate", False)
+                    else "deck"
+                )
 
                 # Reuse the existing pattern for this card where possible,
                 # otherwise draw a new one according to the selected mode.
@@ -876,12 +907,12 @@ def render():
                 with c1:
                     w = _card_w()
 
-                    b64 = base64.b64encode(cage_img).decode()
+                    src = bytes_to_data_uri(cage_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -889,19 +920,23 @@ def render():
                 with c2:
                     w = _card_w()
 
-                    b64 = base64.b64encode(fiery_img).decode()
+                    src = bytes_to_data_uri(fiery_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
 
             # --- Black Dragon Kalameet: Hellfire cards show Fiery Ruin alongside ---
-            elif cfg.name == BLACK_DRAGON_KALAMEET_NAME and isinstance(current, str) and current.startswith(KALAMEET_HELLFIRE_PREFIX):
+            elif (
+                cfg.name == BLACK_DRAGON_KALAMEET_NAME
+                and isinstance(current, str)
+                and current.startswith(KALAMEET_HELLFIRE_PREFIX)
+            ):
                 # Track when a new card is drawn so we only change the pattern
                 # when the deck actually advances.
                 last_key = f"boss_mode_last_current::{cfg.name}"
@@ -910,7 +945,11 @@ def render():
                 st.session_state[last_key] = current
 
                 # Decide which Fiery Ruin pattern mode we're in
-                mode = "generated" if st.session_state.get("kalameet_aoe_generate", False) else "deck"
+                mode = (
+                    "generated"
+                    if st.session_state.get("kalameet_aoe_generate", False)
+                    else "deck"
+                )
 
                 # Reuse the existing pattern for this card where possible,
                 # otherwise draw a new one according to the selected mode.
@@ -937,12 +976,12 @@ def render():
                 with c1:
                     w = _card_w()
 
-                    b64 = base64.b64encode(hellfire_img).decode()
+                    src = bytes_to_data_uri(hellfire_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -950,19 +989,23 @@ def render():
                 with c2:
                     w = _card_w()
 
-                    b64 = base64.b64encode(fiery_img).decode()
+                    src = bytes_to_data_uri(fiery_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
 
             # --- Old Iron King: Fire Beam cards show Blasted Nodes alongside ---
-            elif cfg.name == OLD_IRON_KING_NAME and isinstance(current, str) and current.startswith(OIK_FIRE_BEAM_PREFIX):
+            elif (
+                cfg.name == OLD_IRON_KING_NAME
+                and isinstance(current, str)
+                and current.startswith(OIK_FIRE_BEAM_PREFIX)
+            ):
                 # track when a new card is drawn so we only change the pattern
                 last_key = f"boss_mode_last_current::{cfg.name}"
                 last_current = st.session_state.get(last_key)
@@ -970,7 +1013,11 @@ def render():
                 st.session_state[last_key] = current
 
                 # Decide which Blasted Nodes pattern mode we're in
-                mode = "generated" if st.session_state.get("oik_blasted_generate", False) else "deck"
+                mode = (
+                    "generated"
+                    if st.session_state.get("oik_blasted_generate", False)
+                    else "deck"
+                )
 
                 # Reuse the existing pattern for this card where possible,
                 # otherwise draw a new one according to the selected mode.
@@ -997,12 +1044,12 @@ def render():
                 with c1:
                     w = _card_w()
 
-                    b64 = base64.b64encode(beam_img).decode()
+                    src = bytes_to_data_uri(beam_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1010,12 +1057,12 @@ def render():
                 with c2:
                     w = _card_w()
 
-                    b64 = base64.b64encode(blasted_img).decode()
+                    src = bytes_to_data_uri(blasted_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1037,7 +1084,11 @@ def render():
                 st.session_state[last_key] = draw_token
 
                 # Decide which Death Race pattern mode we're in
-                mode = "generated" if st.session_state.get("ec_death_race_generate", False) else "deck"
+                mode = (
+                    "generated"
+                    if st.session_state.get("ec_death_race_generate", False)
+                    else "deck"
+                )
 
                 # Reuse the existing pattern where possible,
                 # otherwise draw a new one according to the selected mode.
@@ -1064,12 +1115,12 @@ def render():
                 with c1:
                     w = _card_w()
 
-                    b64 = base64.b64encode(death_race_img).decode()
+                    src = bytes_to_data_uri(death_race_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1077,12 +1128,12 @@ def render():
                 with c2:
                     w = _card_w()
 
-                    b64 = base64.b64encode(aoe_img).decode()
+                    src = bytes_to_data_uri(aoe_img, mime="image/png")
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                            <img src="{src}" style="width:{w}px">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1098,12 +1149,12 @@ def render():
                 )
                 w = _card_w()
 
-                b64 = base64.b64encode(img).decode()
+                src = bytes_to_data_uri(img, mime="image/png")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:{w}px">
+                        <img src="{src}" style="width:{w}px">
                     </div>
                     """,
                     unsafe_allow_html=True,

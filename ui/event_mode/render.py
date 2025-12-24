@@ -57,9 +57,16 @@ def _builder_get() -> Dict[str, Any]:
 
 @st.cache_resource(show_spinner=False)
 def img_to_base64(path: str) -> str:
-    """Convert image to base64 for inline rendering."""
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode("ascii")
+    """Compatibility wrapper returning base64 payload for `path` using cached helpers."""
+    from core.image_cache import get_image_data_uri_cached
+
+    uri = get_image_data_uri_cached(path)
+    if not uri:
+        return ""
+    try:
+        return uri.split(",", 1)[1]
+    except Exception:
+        return ""
 
 
 def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_height=300):
@@ -75,10 +82,17 @@ def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_heig
     cards_html = []
     for i, path in enumerate(discard_pile):
         top = i * offset
-        b64 = img_to_base64(path)
         title = os.path.splitext(os.path.basename(path))[0]
+        try:
+            src = __import__(
+                "core.image_cache", fromlist=["get_image_data_uri_cached"]
+            ).get_image_data_uri_cached(path)
+            if not src:
+                raise Exception("empty data uri")
+        except Exception:
+            src = path
         cards_html.append(
-            f'<img src="data:image/jpeg;base64,{b64}" '
+            f'<img src="{src}" '
             f'style="position:absolute; top:{top}px; left:0; '
             f'width:{card_width}px; border-radius:8px; box-shadow:2px 2px 6px rgba(0,0,0,0.5);" '
             f'title="{title}">'
@@ -101,7 +115,14 @@ def _render_discard_container(deck_state: Dict[str, Any]) -> None:
         with i_col:
             render_discard_pile(discard)
         with t_col:
-            st.caption("  \n".join([os.path.splitext(os.path.basename(path))[0] for path in reversed(discard)]))
+            st.caption(
+                "  \n".join(
+                    [
+                        os.path.splitext(os.path.basename(path))[0]
+                        for path in reversed(discard)
+                    ]
+                )
+            )
 
 
 def render(settings: Dict[str, Any]) -> None:
@@ -109,13 +130,19 @@ def render(settings: Dict[str, Any]) -> None:
     deck_state = _ensure_deck_state(settings)
 
     options = list_event_deck_options(configs=configs)
-    current = deck_state.get("preset") or (settings.get("event_deck") or {}).get("preset")
+    current = deck_state.get("preset") or (settings.get("event_deck") or {}).get(
+        "preset"
+    )
     if current not in options:
         current = options[0] if options else None
 
     # Active deck selector (this is the global toggle used by all modes)
     if options:
-        chosen = st.selectbox("Active event deck", options=options, index=options.index(current) if current in options else 0)
+        chosen = st.selectbox(
+            "Active event deck",
+            options=options,
+            index=options.index(current) if current in options else 0,
+        )
         if chosen != current:
             initialize_event_deck(chosen, configs=configs)
             deck_state = st.session_state[DECK_STATE_KEY]
@@ -142,7 +169,9 @@ def render(settings: Dict[str, Any]) -> None:
                 else:
                     d = custom_decks.get(pick) or {}
                     cards = d.get("cards") if isinstance(d, dict) else {}
-                    b.update({"name": pick, "cards": dict(cards or {}), "loaded_from": pick})
+                    b.update(
+                        {"name": pick, "cards": dict(cards or {}), "loaded_from": pick}
+                    )
                 st.session_state[_BUILDER_KEY] = b
                 st.session_state[_BUILDER_SYNC_KEY] = True
 
@@ -175,7 +204,9 @@ def render(settings: Dict[str, Any]) -> None:
                     custom_decks[name] = {"cards": dict(cards_map)}
                     save_custom_event_decks(custom_decks)
 
-            del_disabled = not (b.get("loaded_from") and b.get("loaded_from") in custom_decks)
+            del_disabled = not (
+                b.get("loaded_from") and b.get("loaded_from") in custom_decks
+            )
             if st.button("Delete loaded deck", width="stretch", disabled=del_disabled):
                 loaded = b.get("loaded_from")
                 if loaded in custom_decks:
@@ -185,7 +216,7 @@ def render(settings: Dict[str, Any]) -> None:
                     st.session_state[_BUILDER_KEY] = b
                     st.session_state[_BUILDER_SYNC_KEY] = True
                     st.rerun()
-    
+
         st.markdown("---")
 
         search_col, type_col, deck_col = st.columns([1, 1, 1])
@@ -193,14 +224,16 @@ def render(settings: Dict[str, Any]) -> None:
             search = st.text_input("Search card names", value="")
         with type_col:
             type_opts = ["Consumable", "Immediate", "Rendezvous"]
-            type_filter = st.multiselect("Card types", options=type_opts, default=type_opts)
+            type_filter = st.multiselect(
+                "Card types", options=type_opts, default=type_opts
+            )
         with deck_col:
             show_only_selected = st.checkbox("Show only cards in deck", value=False)
 
         cards = list_all_event_cards(configs=configs)
         if search.strip():
             s = search.strip().lower()
-            cards = [c for c in cards if s in str(c.get("id","")).lower()]
+            cards = [c for c in cards if s in str(c.get("id", "")).lower()]
         if type_filter:
             allowed = set(type_filter)
             cards = [c for c in cards if str(c.get("type") or "") in allowed]
@@ -239,21 +272,32 @@ def render(settings: Dict[str, Any]) -> None:
             elif key not in st.session_state:
                 st.session_state[key] = cur
 
-            r_img, r_id, r_exp, r_type, r_text, r_copies = st.columns([0.4, 1.4, 1.2, 1.2, 3.1, 1.6])
+            r_img, r_id, r_exp, r_type, r_text, r_copies = st.columns(
+                [0.4, 1.4, 1.2, 1.2, 3.1, 1.6]
+            )
             with r_img:
                 p = Path(img_path)
-                b64 = base64.b64encode(p.read_bytes()).decode()
+                try:
+                    src = __import__(
+                        "core.image_cache", fromlist=["get_image_data_uri_cached"]
+                    ).get_image_data_uri_cached(str(p))
+                    if not src:
+                        raise Exception("empty data uri")
+                except Exception:
+                    src = str(p)
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                        <img src="{src}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-                st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div style='height:0.05rem'></div>", unsafe_allow_html=True
+                )
             with r_id:
                 st.caption(card_id)
             with r_exp:
@@ -286,7 +330,9 @@ def render(settings: Dict[str, Any]) -> None:
     # ---------------- Deck Simulator ----------------
     with tab_sim:
         deck_state = _ensure_deck_state(settings)
-        preset = deck_state.get("preset") or (settings.get("event_deck") or {}).get("preset")
+        preset = deck_state.get("preset") or (settings.get("event_deck") or {}).get(
+            "preset"
+        )
         opts = list_event_deck_options(configs=configs)
         if not preset and opts:
             preset = opts[0]
@@ -296,7 +342,11 @@ def render(settings: Dict[str, Any]) -> None:
             save_settings(settings)
 
         # Only auto-init if the deck is truly empty (avoid rebuilding mid-run).
-        if preset and not (deck_state.get("draw_pile") or deck_state.get("discard_pile") or deck_state.get("current_card")):
+        if preset and not (
+            deck_state.get("draw_pile")
+            or deck_state.get("discard_pile")
+            or deck_state.get("current_card")
+        ):
             initialize_event_deck(preset, configs=configs)
             deck_state = st.session_state[DECK_STATE_KEY]
             settings["event_deck"] = deck_state
@@ -325,7 +375,9 @@ def render(settings: Dict[str, Any]) -> None:
                         settings["event_deck"] = deck_state
                         save_settings(settings)
                 with b_row1_b:
-                    if st.button("Reset and Shuffle", width="stretch", key="event_sim_reset"):
+                    if st.button(
+                        "Reset and Shuffle", width="stretch", key="event_sim_reset"
+                    ):
                         reset_event_deck(configs=configs, preset=preset)
                         deck_state = st.session_state[DECK_STATE_KEY]
                         settings["event_deck"] = deck_state
@@ -359,7 +411,9 @@ def render(settings: Dict[str, Any]) -> None:
                 current_card = deck_state.get("current_card")
                 has_current = bool(current_card)
                 card_name = Path(str(current_card)).stem if current_card else ""
-                name_norm = card_name.replace("_", " ").strip().lower() if card_name else ""
+                name_norm = (
+                    card_name.replace("_", " ").strip().lower() if card_name else ""
+                )
                 is_big_pilgrims_key = name_norm == "big pilgrim's key"
                 is_lost_to_time = name_norm == "lost to time"
 
@@ -392,7 +446,9 @@ def render(settings: Dict[str, Any]) -> None:
 
                 draw_n = len(deck_state.get("draw_pile") or [])
                 discard_n = len(deck_state.get("discard_pile") or [])
-                total_n = draw_n + discard_n + (1 if deck_state.get("current_card") else 0)
+                total_n = (
+                    draw_n + discard_n + (1 if deck_state.get("current_card") else 0)
+                )
 
                 m1, m2, m3 = st.columns(3)
                 with m1:
@@ -406,12 +462,19 @@ def render(settings: Dict[str, Any]) -> None:
                 if current_card:
                     card_name = Path(str(current_card)).stem
                     p = Path(str(current_card))
-                    b64 = base64.b64encode(p.read_bytes()).decode()
+                    try:
+                        src = __import__(
+                            "core.image_cache", fromlist=["get_image_data_uri_cached"]
+                        ).get_image_data_uri_cached(str(p))
+                        if not src:
+                            raise Exception("empty data uri")
+                    except Exception:
+                        src = str(p)
 
                     st.markdown(
                         f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:100%">
+                            <img src="{src}" style="width:100%">
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -424,6 +487,7 @@ def render(settings: Dict[str, Any]) -> None:
                 st.markdown("### Discard")
                 _render_discard_container(deck_state)
         else:
+
             def _sync_deck_to_settings() -> None:
                 ds = st.session_state.get(DECK_STATE_KEY)
                 if not isinstance(ds, dict):
@@ -484,17 +548,24 @@ def render(settings: Dict[str, Any]) -> None:
                     )
 
             if current_card:
-                    p = Path(str(current_card))
-                    b64 = base64.b64encode(p.read_bytes()).decode()
+                p = Path(str(current_card))
+                try:
+                    src = __import__(
+                        "core.image_cache", fromlist=["get_image_data_uri_cached"]
+                    ).get_image_data_uri_cached(str(p))
+                    if not src:
+                        raise Exception("empty data uri")
+                except Exception:
+                    src = str(p)
 
-                    st.markdown(
-                        f"""
+                st.markdown(
+                    f"""
                         <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="width:100%">
+                            <img src="{src}" style="width:100%">
                         </div>
                         """,
-                        unsafe_allow_html=True,
-                    )
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown("### Current card")
                 st.caption("—")
