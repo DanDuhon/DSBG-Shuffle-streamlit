@@ -21,6 +21,7 @@ from ui.event_mode.logic import (
     reset_event_deck,
     shuffle_current_into_deck,
 )
+from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 
 
 def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
@@ -276,16 +277,22 @@ def render(settings: Dict[str, Any]) -> None:
             with mid:
                 if current_card:
                     p = Path(str(current_card))
-                    b64 = base64.b64encode(p.read_bytes()).decode()
+                    try:
+                        img_bytes = get_image_bytes_cached(str(p))
+                    except Exception:
+                        img_bytes = None
 
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="data:image/png;base64,{b64}" style="{card_w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    if img_bytes:
+                        data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
+
+                        st.markdown(
+                            f"""
+                            <div class="card-image">
+                                <img src="{data_uri}" style="{card_w}px">
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                     st.caption(event_name or "—")
                 else:
                     st.markdown("### Current card")
@@ -352,16 +359,22 @@ def render(settings: Dict[str, Any]) -> None:
 
             if current_card:
                 p = Path(str(current_card))
-                b64 = base64.b64encode(p.read_bytes()).decode()
+                try:
+                    img_bytes = get_image_bytes_cached(str(p))
+                except Exception:
+                    img_bytes = None
 
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="{card_w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                if img_bytes:
+                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="{data_uri}" style="{card_w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 st.caption(event_name or "—")
             else:
                 st.markdown("### Current card")
@@ -504,16 +517,21 @@ def render(settings: Dict[str, Any]) -> None:
             with right:
                 st.markdown("### Card")
                 p = Path(str(chosen["image_path"]))
-                b64 = base64.b64encode(p.read_bytes()).decode()
+                try:
+                    img_bytes = get_image_bytes_cached(str(p))
+                except Exception:
+                    img_bytes = None
 
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="{card_w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                if img_bytes:
+                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="{data_uri}" style="{card_w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                 txt = str(chosen.get("text") or "").strip()
                 if txt:
                     st.caption(txt)

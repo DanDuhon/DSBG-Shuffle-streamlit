@@ -14,6 +14,7 @@ from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state, play_panels, invader_panel
 from ui.encounter_mode.setup_tab import render_original_encounter
 from ui.encounter_mode.assets import encounterKeywords, editedEncounterKeywords, keywordText
+from core.image_cache import get_image_bytes_cached, get_image_data_uri_cached, bytes_to_data_uri
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
 from ui.campaign_mode.core import ENCOUNTER_GRAVESTONES, _v2_pick_scout_ahead_alt_frozen
 
@@ -200,24 +201,22 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                 # Path string
                 elif isinstance(img_obj, str):
                     try:
-                        p = Path(img_obj)
-                        if p.is_file():
-                            img_bytes = p.read_bytes()
+                        img_bytes = get_image_bytes_cached(img_obj)
                     except Exception:
                         img_bytes = None
             except Exception:
                 img_bytes = None
 
-            if img_bytes:
-                b64 = base64.b64encode(img_bytes).decode()
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                if img_bytes:
+                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="{data_uri}" style="width:100%">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
             else:
                 st.caption(label)
         else:
@@ -374,27 +373,43 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                 # Column 2: show the card
                 with c1:
                     if isinstance(pending, dict) and pending.get("path"):
-                        b64 = base64.b64encode(pending["path"]).decode()
+                        img_ref = pending.get("path")
+                        img_bytes = None
+                        try:
+                            if isinstance(img_ref, (bytes, bytearray)):
+                                img_bytes = bytes(img_ref)
+                            elif isinstance(img_ref, str):
+                                img_bytes = get_image_bytes_cached(img_ref)
+                            elif hasattr(img_ref, "read") and callable(img_ref.read):
+                                img_bytes = img_ref.read()
+                        except Exception:
+                            img_bytes = None
 
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="data:image/jpeg;base64,{b64}" style="width:100%">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        if img_bytes:
+                            data_uri = bytes_to_data_uri(img_bytes, mime="image/jpeg")
+                            st.markdown(
+                                f"""
+                                <div class="card-image">
+                                    <img src="{data_uri}" style="width:100%">
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
                     elif isinstance(pending, str) and pending:
-                        b64 = base64.b64encode(pending).decode()
-
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="data:image/jpeg;base64,{b64}" style="width:100%">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        try:
+                            img_bytes = get_image_bytes_cached(pending)
+                        except Exception:
+                            img_bytes = None
+                        if img_bytes:
+                            data_uri = bytes_to_data_uri(img_bytes, mime="image/jpeg")
+                            st.markdown(
+                                f"""
+                                <div class="card-image">
+                                    <img src="{data_uri}" style="width:100%">
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
                     else:
                         st.write("Event card unavailable.")
                     st.caption(_event_card_label(pending))

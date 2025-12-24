@@ -31,6 +31,7 @@ from ui.encounter_mode.assets import enemyNames, encounterKeywords, editedEncoun
 from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
 from ui.encounter_mode.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
+from core.image_cache import get_image_bytes_cached, get_image_data_uri_cached, bytes_to_data_uri
 
 
 # ---------------------------------------------------------------------
@@ -731,10 +732,9 @@ def _render_timer_and_phase(play_state: dict) -> None:
     # Left side: Timer [icon] [counter]
     with c1:
         try:
-            with open(TIMER_ICON_PATH, "rb") as f:
-                data = base64.b64encode(f.read()).decode("utf-8")
+            data_uri = get_image_data_uri_cached(str(TIMER_ICON_PATH))
             img_tag = (
-                f"<img src='data:image/png;base64,{data}' "
+                f"<img src='{data_uri}' "
                 f"style='height:18px; width:auto; margin:0 0.25rem;'/>"
             )
         except Exception:
@@ -1554,12 +1554,12 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                 is_boss=(cfg.tier == "boss"),
             )
             if data_bytes is not None:
-                b64 = base64.b64encode(data_bytes).decode()
+                data_uri = bytes_to_data_uri(data_bytes, mime="image/jpeg")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/jpeg;base64,{b64}" style="width:100%">
+                        <img src="{data_uri}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,

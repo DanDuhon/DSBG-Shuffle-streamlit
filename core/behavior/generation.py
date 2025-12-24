@@ -66,8 +66,12 @@ def infer_category(cfg) -> str:
     return BOSS_CATEGORY_MAP.get(cfg.name, "Main Bosses")
 
 
+@st.cache_data(show_spinner=False)
 def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
-    """Scan behavior JSON files and group them by category for the UI."""
+    """Scan behavior JSON files and group them by category for the UI.
+
+    Cached with Streamlit so repeated UI reruns don't re-scan disk.
+    """
     files = list_behavior_files()  # returns Paths to *.json:contentReference[oaicite:2]{index=2}
     groups: dict[str, list[BehaviorEntry]] = defaultdict(list)
 

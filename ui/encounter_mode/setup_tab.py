@@ -33,6 +33,7 @@ from ui.event_mode.logic import (
     DECK_STATE_KEY,
     RENDEZVOUS_EVENTS,
 )
+from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 
 
 # --- Event attachment helpers -------------------------------------------------
@@ -498,12 +499,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                 buf = BytesIO()
                 img.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode()
+                data_uri = bytes_to_data_uri(buf.getvalue(), mime="image/png")
 
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                        <img src="{data_uri}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -607,16 +608,21 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                             if img:
                                 ev["path"] = str(img)
                                 p = Path(ev["path"])
-                                b64 = base64.b64encode(p.read_bytes()).decode()
+                                try:
+                                    img_bytes = get_image_bytes_cached(str(p))
+                                except Exception:
+                                    img_bytes = None
 
-                                st.markdown(
-                                    f"""
-                                    <div class="card-image">
-                                        <img src="data:image/png;base64,{b64}" style="width:100%">
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True,
-                                )
+                                if img_bytes:
+                                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
+                                    st.markdown(
+                                        f"""
+                                        <div class="card-image">
+                                            <img src="{data_uri}" style="width:100%">
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True,
+                                    )
                             else:
                                 st.caption("Event image missing.")
     else:
@@ -856,12 +862,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             buf = BytesIO()
             img.save(buf, format="PNG")
-            b64 = base64.b64encode(buf.getvalue()).decode()
+            data_uri = bytes_to_data_uri(buf.getvalue(), mime="image/png")
 
             st.markdown(
                 f"""
                 <div class="card-image">
-                    <img src="data:image/png;base64,{b64}" style="width:100%">
+                    <img src="{data_uri}" style="width:100%">
                 </div>
                 """,
                 unsafe_allow_html=True,

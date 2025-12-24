@@ -9,6 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 from ui.encounter_mode.assets import (get_enemy_image_by_id, encounterKeywords, editedEncounterKeywords, keywordSize, keywordText, v1Expansions, v1Level4s, positions, ENCOUNTER_CARDS_DIR, EDITED_ENCOUNTER_CARDS_DIR)
+from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
@@ -84,7 +85,7 @@ def load_valid_sets():
 
 def build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edited):
     """Return HTML block for card image + keyword hotspots"""
-    img_b64 = base64.b64encode(buf.getvalue()).decode()
+    img_data_uri = bytes_to_data_uri(buf.getvalue(), mime="image/png")
 
     tooltip_css = """
     <style>
@@ -124,7 +125,7 @@ def build_encounter_hotspots(buf, card_img, encounter_name, expansion, use_edite
     hotspots_html = "".join(hotspots)
     return f"""{tooltip_css}
     <div class="encounter-container">
-      <img src="data:image/png;base64,{img_b64}" alt="{encounter_name}"/>
+    <img src="{img_data_uri}" alt="{encounter_name}"/>
       {hotspots_html}
     </div>
     """
@@ -134,8 +135,13 @@ def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: s
     try:
         if not path.exists():
             return ""
-        data = path.read_bytes()
-        b64 = base64.b64encode(data).decode("ascii")
+        try:
+            data = get_image_bytes_cached(str(path))
+        except Exception:
+            return ""
+        suffix = path.suffix.lower()
+        mime = "image/png" if suffix == ".png" else "image/jpeg"
+        data_uri = bytes_to_data_uri(data, mime=mime)
 
         style = (
             f"height:{height_px}px; "
@@ -146,10 +152,9 @@ def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: s
         )
 
         return (
-            f"<img src='data:image/png;base64,{b64}' "
+            f"<img src='{data_uri}' "
             f"title='{title}' alt='{title}' "
-            f"style='{style}'/>"
-        )
+            f"style='{style}'/>")
     except Exception:
         return ""
 
