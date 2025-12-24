@@ -23,6 +23,7 @@ from ui.encounter_mode.logic import (
     filter_expansions,
     filter_encounters,
     shuffle_encounter,
+    analyze_encounter_availability,
     apply_edited_toggle,
 )
 from ui.event_mode.logic import (
@@ -297,12 +298,21 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             toggle_changed = prev_state != use_edited
             st.session_state["last_toggle"] = use_edited
 
+            # Determine availability for shuffle/original buttons
+            availability = analyze_encounter_availability(selected_encounter, character_count, tuple(active_expansions)) if selected_label else {"num_viable_alternatives": 0, "original_viable": False}
+            shuffle_disabled = availability.get("num_viable_alternatives", 0) <= 1
+            original_disabled = not availability.get("original_viable", False)
+
             # --- Shuffle / Original buttons ---
             col_shuffle, col_original = st.columns(2)
             with col_shuffle:
-                shuffle_clicked = st.button("Shuffle", width="stretch")
+                shuffle_clicked = st.button("Shuffle", width="stretch", disabled=shuffle_disabled)
+                if shuffle_disabled:
+                    st.warning("No other enemy alternatives available for this encounter.")
             with col_original:
-                original_clicked = st.button("Original", width="stretch")
+                original_clicked = st.button("Original", width="stretch", disabled=original_disabled)
+                if original_disabled:
+                    st.warning("Original enemy list is not available (disabled or unmapped enemies).")
 
             # Shuffle
             if shuffle_clicked and selected_label:
@@ -392,6 +402,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                 if encounter_changed:
                     selected_encounter = filtered_encounters[display_names.index(selected_label)]
+                    # Always auto-shuffle to ensure the encounter card is shown
                     res = shuffle_encounter(
                         selected_encounter,
                         character_count,

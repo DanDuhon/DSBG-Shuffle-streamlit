@@ -405,7 +405,6 @@ def render(settings: Dict[str, Any]) -> None:
             with mid:
                 if current_card:
                     card_name = Path(str(current_card)).stem
-                    print(str(current_card))
                     p = Path(str(current_card))
                     b64 = base64.b64encode(p.read_bytes()).decode()
 

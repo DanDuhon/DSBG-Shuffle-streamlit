@@ -92,6 +92,7 @@ def _v2_ensure_scout_ahead_alt_option(
     *,
     node: Dict[str, Any],
     settings: Dict[str, Any],
+    campaign: Optional[Dict[str, Any]] = None,
 ) -> Optional[int]:
     """
     Ensure a Scout Ahead node has a persistent additional option appended to
@@ -150,6 +151,7 @@ def _v2_ensure_scout_ahead_alt_option(
         settings=settings,
         level=lvl_int,
         exclude_signatures=exclude,
+        campaign=campaign,
     )
     if not isinstance(cand, dict):
         return None
@@ -207,10 +209,27 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
             with cols[i % 2]:
+                path_str = str(ev.get("path") or "")
+                # Prefer embedding the file as a base64 data URI so the
+                # image renders reliably across platforms/browsers.
+                img_src = path_str
+                try:
+                    from pathlib import Path as _P
+                    p = _P(path_str)
+                    if p.is_file():
+                        data = p.read_bytes()
+                        import base64 as _b64
+                        ext = p.suffix.lower()
+                        mime = "image/png" if ext in (".png",) else "image/jpeg"
+                        b64 = _b64.b64encode(data).decode()
+                        img_src = f"data:{mime};base64,{b64}"
+                except Exception:
+                    img_src = path_str
+
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="{ev['path']}" style="width:100%">
+                        <img src="{img_src}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -225,10 +244,25 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
             with cols[i % 2]:
+                path_str = str(ev.get("path") or "")
+                img_src = path_str
+                try:
+                    from pathlib import Path as _P
+                    p = _P(path_str)
+                    if p.is_file():
+                        data = p.read_bytes()
+                        import base64 as _b64
+                        ext = p.suffix.lower()
+                        mime = "image/png" if ext in (".png",) else "image/jpeg"
+                        b64 = _b64.b64encode(data).decode()
+                        img_src = f"data:{mime};base64,{b64}"
+                except Exception:
+                    img_src = path_str
+
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="{ev['path']}" style="width:100%">
+                        <img src="{img_src}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -391,12 +425,19 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         if mega_boss:
             chapter_labels["mega"] = "Unknown Mega Boss Chapter" if mega_boss["was_random"] and not mega_boss["revealed"] else f"{mega_boss['boss_name']} Chapter"
 
-        # Wrap mini/main/mega tracks in expanders
+        # Ensure expander state keys exist. By default: mini expanded, main/mega closed.
+        for _stage in ("mini", "main", "mega"):
+            exp_key = f"campaign_v1_chapter_expander_{_stage}"
+            if exp_key not in st.session_state:
+                st.session_state[exp_key] = True if _stage == "mini" else False
+
+        # Wrap mini/main/mega tracks in expanders using session-state for expansion.
         for stage in ("mini", "main", "mega"):
             nodes_for_stage = stage_nodes.get(stage) or []
             if not nodes_for_stage:
                 continue
-            with st.expander(chapter_labels[stage], expanded=True):
+            exp_key = f"campaign_v1_chapter_expander_{stage}"
+            with st.expander(chapter_labels[stage], expanded=bool(st.session_state.get(exp_key))):
                 for n in nodes_for_stage:
                     _render_v1_path_row(n, campaign, state)
 
@@ -493,6 +534,16 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         # When standing on an encounter space, restrict legal destinations.
         allowed_destinations = _v2_compute_allowed_destinations(campaign)
 
+        # If the party is currently on an encounter space that has not yet had a
+        # choice made (choice_index is None), disable all other travel/return
+        # controls until a choice is applied.
+        disable_travel = False
+        try:
+            if current_node.get("kind") == "encounter" and current_node.get("choice_index") is None:
+                disable_travel = True
+        except Exception:
+            disable_travel = False
+
         st.markdown("#### Path")
 
         bonfire_nodes: List[Dict[str, Any]] = []
@@ -514,7 +565,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                 other_nodes.append(node)
 
         for n in bonfire_nodes:
-            _render_v2_path_row(n, campaign, state, allowed_destinations)
+            _render_v2_path_row(n, campaign, state, allowed_destinations, disable_travel=disable_travel)
 
         # Same chapter labelling logic as V1
         if stage_nodes["mini"]:
@@ -552,10 +603,10 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                 continue
             with st.expander(chapter_labels[stage], expanded=True):
                 for n in nodes_for_stage:
-                    _render_v2_path_row(n, campaign, state, allowed_destinations)
+                    _render_v2_path_row(n, campaign, state, allowed_destinations, disable_travel=disable_travel)
 
         for n in other_nodes:
-            _render_v2_path_row(n, campaign, state, allowed_destinations)
+            _render_v2_path_row(n, campaign, state, allowed_destinations, disable_travel=disable_travel)
 
     with col_detail:
         _render_v2_current_panel(campaign, current_node, state)
@@ -761,7 +812,15 @@ def _render_v2_campaign_compact(
             if current_is_bonfire and dest_node.get("shortcut_unlocked"):
                 btn_label = "Take Shortcut"
 
-        if st.button(btn_label, key="campaign_v2_compact_travel_btn", width="stretch"):
+        # Disable the compact travel button if choices must be resolved on the
+        # current encounter space.
+        disable_travel_compact = False
+        try:
+            disable_travel_compact = current_node.get("kind") == "encounter" and current_node.get("choice_index") is None
+        except Exception:
+            disable_travel_compact = False
+
+        if st.button(btn_label, key="campaign_v2_compact_travel_btn", width="stretch", disabled=disable_travel_compact):
             if isinstance(dest_node, dict):
                 k = dest_node.get("kind")
                 node_id = dest_node.get("id")
@@ -873,6 +932,29 @@ def _render_v1_path_row(
         is_current = node_id == campaign.get("current_node_id")
         stage_closed = _is_stage_closed_for_node(campaign, node)
 
+        # Determine the campaign's current chapter (stage).
+        # If the party is on a non-bonfire node, use that node's stage. If the
+        # party is at the bonfire, pick the first non-complete boss stage in
+        # order (mini, main, mega) to treat as the current chapter for the UI.
+        def _campaign_current_stage(camp: Dict[str, Any]) -> Optional[str]:
+            cur_id = camp.get("current_node_id")
+            nodes = camp.get("nodes") or []
+            if cur_id and cur_id != "bonfire":
+                for nn in nodes:
+                    if nn.get("id") == cur_id:
+                        return nn.get("stage")
+
+            # If at bonfire (or can't find current node), choose the first boss
+            # stage that is not complete in the usual order.
+            for stg in ("mini", "main", "mega"):
+                for nn in nodes:
+                    if nn.get("kind") == "boss" and nn.get("stage") == stg:
+                        if nn.get("status") != "complete":
+                            return stg
+            return None
+
+        current_stage = _campaign_current_stage(campaign)
+
         souls_token_node_id = state.get("souls_token_node_id")
         show_souls_token = (
             souls_token_node_id is not None
@@ -923,6 +1005,13 @@ def _render_v1_path_row(
             if stage_closed:
                 return
 
+            # Only show Travel/Confront controls for nodes that belong to the
+            # campaign's current chapter. If we couldn't determine a current
+            # stage, fall back to the previous behavior (show controls).
+            node_stage = node.get("stage")
+            if current_stage is not None and node_stage != current_stage:
+                return
+
             btn_label = "Travel" if kind == "encounter" else "Confront"
 
             if show_souls_token:
@@ -951,6 +1040,7 @@ def _render_v2_path_row(
     campaign: Dict[str, Any],
     state: Dict[str, Any],
     allowed_destinations: Optional[Set[str]] = None,
+    disable_travel: bool = False,
 ) -> None:
     label = _describe_v2_node_label(campaign, node)
     rv = node.get("rendezvous_event")
@@ -1001,10 +1091,14 @@ def _render_v2_path_row(
         if kind == "bonfire":
             if not can_travel_here:
                 return
+            # When travel is disabled due to an unresolved encounter choice,
+            # render the Return button as disabled for other nodes.
+            disabled = disable_travel and node_id != campaign.get("current_node_id")
             if st.button(
                 "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v2_goto_{node_id}",
-                width="stretch"
+                width="stretch",
+                disabled=disabled,
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain valid.
@@ -1039,10 +1133,14 @@ def _render_v2_path_row(
             if is_shortcut_destination:
                 btn_label = "Take Shortcut"
 
+            # When travel is disabled due to an unresolved encounter choice,
+            # render the travel/confront/shortcut button disabled for other nodes.
+            disabled = disable_travel and node_id != campaign.get("current_node_id")
+
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])
                 with cur_cols[0]:
-                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch"):
+                    if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch", disabled=disabled):
                         campaign["current_node_id"] = node_id
                         node["revealed"] = True
                         state["campaign"] = campaign
@@ -1051,7 +1149,7 @@ def _render_v2_path_row(
                 with cur_cols[1]:
                     st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
-                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch"):
+                if st.button(btn_label, key=f"campaign_v2_goto_{node_id}", width="stretch", disabled=disabled):
                     campaign["current_node_id"] = node_id
                     node["revealed"] = True
                     state["campaign"] = campaign
@@ -1124,19 +1222,29 @@ def _render_v1_current_panel(
                         o_img, s_img = render_dual_boss_data_cards(raw_data)
                         o_col, s_col = st.columns(2)
                         with o_col:
+                            try:
+                                b64_o = base64.b64encode(o_img).decode()
+                                src_o = f"data:image/png;base64,{b64_o}"
+                            except Exception:
+                                src_o = o_img
                             st.markdown(
                                 f"""
                                 <div class="card-image">
-                                    <img src="{o_img}" style="width:100%">
+                                    <img src="{src_o}" style="width:100%">
                                 </div>
                                 """,
                                 unsafe_allow_html=True,
                             )
                         with s_col:
+                            try:
+                                b64_s = base64.b64encode(s_img).decode()
+                                src_s = f"data:image/png;base64,{b64_s}"
+                            except Exception:
+                                src_s = s_img
                             st.markdown(
                                 f"""
                                 <div class="card-image">
-                                    <img src="{s_img}" style="width:100%">
+                                    <img src="{src_s}" style="width:100%">
                                 </div>
                                 """,
                                 unsafe_allow_html=True,
@@ -1154,10 +1262,15 @@ def _render_v1_current_panel(
                             raw_data,
                             is_boss=True,
                         )
+                        try:
+                            b64 = base64.b64encode(img).decode()
+                            src = f"data:image/png;base64,{b64}"
+                        except Exception:
+                            src = img
                         st.markdown(
                             f"""
                             <div class="card-image">
-                                <img src="{img}" style="width:100%">
+                                <img src="{src}" style="width:100%">
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -1167,6 +1280,8 @@ def _render_v1_current_panel(
         else:
             st.markdown(f"**{prefix}: Unknown**")
             st.caption("No boss selected for this space.")
+
+        st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
 
         if st.button(
             "Start Boss Fight",
@@ -1181,8 +1296,6 @@ def _render_v1_current_panel(
                 }
                 st.rerun()
         return
-
-    st.caption("No details available for this space.")
 
 
 def _render_v2_current_panel(
@@ -1219,7 +1332,7 @@ def _render_v2_current_panel(
 
         alt_idx: Optional[int] = None
         if is_scout_ahead:
-            alt_idx = _v2_ensure_scout_ahead_alt_option(node=current_node, settings=settings)
+            alt_idx = _v2_ensure_scout_ahead_alt_option(node=current_node, settings=settings, campaign=campaign)
             # Refresh local view after mutation
             options = current_node.get("options") or []
             choice_idx = current_node.get("choice_index")
@@ -1453,6 +1566,34 @@ def _apply_boss_defeated(
     # 3) Mark boss as defeated, close the chapter
     boss_node["status"] = "complete"
     boss_node["revealed"] = True
+
+    # Update chapter expander visibility: close the defeated chapter and
+    # open the next chapter expander (if any). Use version-prefixed keys so
+    # V1/V2 UI state remains separate.
+    try:
+        order = ["mini", "main", "mega"]
+        if stage in order:
+            idx = order.index(stage)
+            cur_key = f"campaign_{version.lower()}_chapter_expander_{stage}"
+            st.session_state[cur_key] = False
+
+            # Find the next stage that exists in the campaign and is not complete
+            next_stage = None
+            for j in range(idx + 1, len(order)):
+                candidate = order[j]
+                for n in campaign.get("nodes") or []:
+                    if n.get("kind") == "boss" and n.get("stage") == candidate:
+                        if n.get("status") != "complete":
+                            next_stage = candidate
+                        break
+                if next_stage:
+                    break
+
+            if next_stage:
+                next_key = f"campaign_{version.lower()}_chapter_expander_{next_stage}"
+                st.session_state[next_key] = True
+    except Exception:
+        pass
 
     # 4) When the party returns to the bonfire, clear completion on all encounters.
     # This applies to both V1 and V2; shortcuts remain valid.

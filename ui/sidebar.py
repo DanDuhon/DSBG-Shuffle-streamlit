@@ -3,6 +3,8 @@ import streamlit as st
 from core.settings_manager import save_settings
 from core.characters import CHARACTER_EXPANSIONS
 from core.ngplus import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
+from core.enemies import ENEMY_EXPANSIONS_BY_ID
+from ui.encounter_mode.assets import enemyNames
 
 all_expansions = [
     "Painted World of Ariamis",
@@ -65,6 +67,73 @@ def render_sidebar(settings: dict):
             key="active_expansions",
         )
         settings["active_expansions"] = active_expansions
+
+    # Enemy selection (global): group by expansion and let user enable/disable enemies
+    # Applies to both Encounter Mode and Campaign Mode generation.
+    with st.sidebar.expander("🛡️ Enemy Selection", expanded=False):
+        active_expansions = settings.get("active_expansions") or []
+        if not active_expansions:
+            st.caption("Enable expansions to pick available enemies.")
+        else:
+            # Build reverse map: expansion -> list of eid
+            exp_map: dict = {}
+            # Special combined expander for enemies that appear in both base game and Sunless City
+            DSBG = "Dark Souls The Board Game"
+            SUN = "The Sunless City"
+            COMBO = f"{DSBG} & {SUN}"
+            combo_list: list[int] = []
+
+            for eid, exps in ENEMY_EXPANSIONS_BY_ID.items():
+                # consider only expansions that are currently active
+                exps_active = [exp for exp in exps if exp in active_expansions]
+                if not exps_active:
+                    continue
+                # If enemy appears in both DSBG and Sunless City, place it in the combined list
+                if DSBG in exps_active and SUN in exps_active:
+                    combo_list.append(int(eid))
+                    continue
+                # Otherwise, add to each individual expansion that is active
+                for exp in exps_active:
+                    exp_map.setdefault(exp, []).append(int(eid))
+
+            # If combo_list has entries and at least one of the two expansions is active,
+            # add the combined expander to the map under a dedicated key.
+            if combo_list and (DSBG in active_expansions or SUN in active_expansions):
+                exp_map[COMBO] = combo_list
+
+            # Ensure settings key exists
+            settings.setdefault("enemy_included", {})
+            included = settings.get("enemy_included") or {}
+
+            # Render expanders per expansion
+            seen = set()
+            # Ensure the combined expander (if present) appears near the top
+            ordered_exps = sorted([e for e in exp_map.keys() if e != COMBO])
+            if COMBO in exp_map:
+                ordered_exps = [COMBO] + ordered_exps
+
+            for exp in ordered_exps:
+                with st.expander(f"{exp}", expanded=False):
+                    eids = sorted(exp_map.get(exp, []), key=lambda x: enemyNames.get(x, str(x)))
+                    for idx, eid in enumerate(eids):
+                        name = enemyNames.get(eid, str(eid))
+                        # Only render an interactive checkbox the first time we see this enemy.
+                        # If the same enemy appears under multiple expansions, show a non-interactive
+                        # label in subsequent expansion groups to avoid duplicate widget keys.
+                        if eid in seen:
+                            st.write(f"{name}  ", unsafe_allow_html=False)
+                            continue
+
+                        seen.add(eid)
+                        key = f"enemy_incl_{eid}"
+                        # Persist keys as strings for JSON safety
+                        default_val = bool(included.get(str(eid), True))
+                        val = st.checkbox(name, value=default_val, key=key)
+                        included[str(eid)] = bool(val)
+
+            # Mirror changes back into settings/session
+            settings["enemy_included"] = included
+            st.session_state["user_settings"] = settings
 
     # Characters
     available_characters = sorted(

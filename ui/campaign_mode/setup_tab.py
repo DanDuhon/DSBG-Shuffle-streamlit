@@ -13,14 +13,14 @@ def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
         current = "V1"
     index = options.index(current)
 
-    # Widget uses a different key so we can freely mutate campaign_rules_version
-    version = st.radio(
-        "Rules version",
-        options=options,
-        index=index,
-        horizontal=True,
-        key="campaign_rules_version_widget",
-    )
+    # Widget uses a different key so we can freely mutate campaign_rules_version.
+    # Only provide `index` the first time the widget is created; passing
+    # `index` on every render can interfere with the widget's internal state
+    # and cause clicks to require multiple presses to take effect.
+    radio_kwargs = {"options": options, "horizontal": True, "key": "campaign_rules_version_widget"}
+    if "campaign_rules_version_widget" not in st.session_state:
+        radio_kwargs["index"] = index
+    version = st.radio("Rules version", **radio_kwargs)
 
     # This is now safe; no widget with this key exists
     st.session_state["campaign_rules_version"] = version
@@ -120,6 +120,18 @@ def _render_v1_setup(
             state["bosses"]["mega"] = mega_choice
 
     # --- Generate full campaign encounters (frozen) ---
+    # Option: only use original enemy lists when building encounters
+    if "only_original_enemies" not in state:
+        state["only_original_enemies"] = False
+    only_original = st.checkbox(
+        "Only use original enemies (do not select alternative enemy sets)",
+        value=bool(state.get("only_original_enemies", False)),
+        key="campaign_v1_only_original_enemies",
+    )
+    state["only_original_enemies"] = bool(only_original)
+    # Mirror into settings so campaign generation code can read it
+    settings["only_original_enemies_for_campaigns"] = bool(only_original)
+
     if st.button("Generate campaign", key="campaign_v1_generate", width="stretch"):
         with st.spinner("Generating campaign..."):
             campaign = _generate_v1_campaign(bosses_by_name, settings, state)
@@ -186,7 +198,6 @@ def _render_v2_setup(
     else:
         cols = st.columns(3)
 
-
     # Mini boss
     with cols[0]:
         st.markdown("**Mini Boss**")
@@ -247,8 +258,24 @@ def _render_v2_setup(
             )
             state["bosses"]["mega"] = mega_choice
 
+    # Option: only use original enemy lists when building encounters (V2)
+    if "only_original_enemies" not in state:
+        state["only_original_enemies"] = False
+    only_original = st.checkbox(
+        "Only use original enemies (do not select alternative enemy sets)",
+        value=bool(state.get("only_original_enemies", False)),
+        key="campaign_v2_only_original_enemies",
+    )
+    state["only_original_enemies"] = bool(only_original)
+    # Mirror into settings so campaign generation reads it immediately
+    settings["only_original_enemies_for_campaigns"] = bool(only_original)
+
     if st.button("Generate campaign", key="campaign_v2_generate", width="stretch"):
         with st.spinner("Generating V2 campaign..."):
+            # Mirror v2-only original-enemy option into settings as well
+            if "only_original_enemies" not in state:
+                state["only_original_enemies"] = False
+            settings["only_original_enemies_for_campaigns"] = bool(state.get("only_original_enemies", False))
             campaign = _generate_v2_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
         player_count = _get_player_count(settings)

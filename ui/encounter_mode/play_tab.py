@@ -163,16 +163,63 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
             enemies=enemies,
         )
         if res and res.get("ok"):
-            b64 = base64.b64encode(res["card_img"]).decode()
+            img_obj = res.get("card_img")
+            img_bytes = None
+            try:
+                # bytes-like
+                if isinstance(img_obj, (bytes, bytearray)):
+                    img_bytes = bytes(img_obj)
+                # BytesIO or file-like
+                elif hasattr(img_obj, "read") and callable(img_obj.read):
+                    try:
+                        pos = None
+                        try:
+                            pos = img_obj.tell()
+                        except Exception:
+                            pos = None
+                        img_obj.seek(0)
+                    except Exception:
+                        pass
+                    try:
+                        img_bytes = img_obj.read()
+                    except Exception:
+                        img_bytes = None
+                    try:
+                        if pos is not None:
+                            img_obj.seek(pos)
+                    except Exception:
+                        pass
+                # PIL Image (duck-typed by having a save method)
+                elif hasattr(img_obj, "save") and callable(img_obj.save):
+                    try:
+                        buf = BytesIO()
+                        img_obj.save(buf, format="PNG")
+                        img_bytes = buf.getvalue()
+                    except Exception:
+                        img_bytes = None
+                # Path string
+                elif isinstance(img_obj, str):
+                    try:
+                        p = Path(img_obj)
+                        if p.is_file():
+                            img_bytes = p.read_bytes()
+                    except Exception:
+                        img_bytes = None
+            except Exception:
+                img_bytes = None
 
-            st.markdown(
-                f"""
-                <div class="card-image">
-                    <img src="data:image/jpeg;base64,{b64}" style="width:100%">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            if img_bytes:
+                b64 = base64.b64encode(img_bytes).decode()
+                st.markdown(
+                    f"""
+                    <div class="card-image">
+                        <img src="data:image/png;base64,{b64}" style="width:100%">
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.caption(label)
         else:
             st.caption(label)
 
@@ -452,6 +499,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                             settings=settings,
                             level=lvl_int,
                             exclude_signatures=exclude,
+                            campaign=campaign,
                         )
 
                         if isinstance(cand, dict):

@@ -262,6 +262,7 @@ def _pick_random_campaign_encounter(
     character_count: int,
     active_expansions: List[str],
     level: int,
+    settings: Optional[Dict[str, Any]] = None,
     eligibility_fn=_is_v1_campaign_eligible,
 ) -> Dict[str, Any]:
     """
@@ -344,12 +345,24 @@ def _pick_random_campaign_encounter(
         base_idx = random.randrange(len(level_candidates))
         base_enc = level_candidates[base_idx]
 
+        # Determine whether to use the "edited" variant for this encounter
+        # by consulting the persistent `edited_toggles` stored in `settings`.
+        key = f"{base_enc.get('name')}|{exp_choice}"
+        use_edited = False
+        try:
+            if isinstance(settings, dict):
+                edited_toggles = settings.get("edited_toggles") or {}
+                use_edited = bool(edited_toggles.get(key, False))
+        except Exception:
+            use_edited = False
+
         res = shuffle_encounter(
             base_enc,
             character_count,
             active_expansions,
             exp_choice,
-            use_edited=False,
+            use_edited,
+            bool(settings.get("only_original_enemies_for_campaigns", False)),
         )
 
         if res.get("ok"):
@@ -406,13 +419,13 @@ def _campaign_encounter_signature(
         return None
 
 
-
 def _v2_pick_scout_ahead_alt_frozen(
     *,
     settings: Dict[str, Any],
     level: int,
     exclude_signatures: Optional[set[tuple[str, int, str]]] = None,
     max_tries: int = 30,
+    campaign: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Scout Ahead rendezvous helper.
@@ -445,6 +458,37 @@ def _v2_pick_scout_ahead_alt_frozen(
 
     valid_sets = _load_valid_sets_cached()
 
+    # If the campaign includes a pre-generated V2 extra pool, prefer drawing
+    # from it. This avoids on-the-fly generation during play (gravestones,
+    # Scout Ahead, etc.). If no suitable pool item is found, fall back to
+    # the existing generation loop.
+    try:
+        if isinstance(campaign, dict):
+            pool = campaign.get("v2_extra_pool")
+            if isinstance(pool, list) and pool:
+                for i, cand in enumerate(list(pool)):
+                    try:
+                        cand_lvl = int(cand.get("encounter_level") or cand.get("level") or 0)
+                    except Exception:
+                        cand_lvl = 0
+                    if cand_lvl != lvl_int:
+                        continue
+                    sig = _campaign_encounter_signature(cand, lvl_int)
+                    if sig is not None and sig in exclude:
+                        continue
+                    # Remove the used candidate from the pool and return it.
+                    try:
+                        pool.remove(cand)
+                    except Exception:
+                        pass
+                    return cand
+    except Exception as exc:
+        try:
+            if isinstance(campaign, dict):
+                campaign.setdefault("v2_debug_log", []).append(f"picker exception: {exc}")
+        except Exception:
+            pass
+
     tries = max(1, int(max_tries or 30))
     for _ in range(tries):
         try:
@@ -454,6 +498,7 @@ def _v2_pick_scout_ahead_alt_frozen(
                 character_count=player_count,
                 active_expansions=active_expansions,
                 level=lvl_int,
+                settings=settings,
                 eligibility_fn=_is_v2_campaign_eligible,
             )
         except Exception:
@@ -530,6 +575,7 @@ def _generate_v1_campaign(
                 character_count=player_count,
                 active_expansions=active_expansions,
                 level=lvl_int,
+                settings=settings,
             )
             last_candidate = candidate
             sig = _campaign_encounter_signature(candidate, lvl_int)
@@ -549,6 +595,7 @@ def _generate_v1_campaign(
                     character_count=player_count,
                     active_expansions=active_expansions,
                     level=lvl_int,
+                    settings=settings,
                 )
                 sig = _campaign_encounter_signature(frozen, lvl_int)
             else:
@@ -715,6 +762,7 @@ def _generate_v2_campaign(
                 character_count=player_count,
                 active_expansions=active_expansions,
                 level=lvl_int,
+                settings=settings,
                 eligibility_fn=_is_v2_campaign_eligible,
             )
             last_candidate = candidate
@@ -736,6 +784,7 @@ def _generate_v2_campaign(
                     character_count=player_count,
                     active_expansions=active_expansions,
                     level=lvl_int,
+                    settings=settings,
                     eligibility_fn=_is_v2_campaign_eligible,
                 )
                 first_sig = _campaign_encounter_signature(first, lvl_int)
@@ -759,6 +808,7 @@ def _generate_v2_campaign(
                 character_count=player_count,
                 active_expansions=active_expansions,
                 level=lvl_int,
+                settings=settings,
                 eligibility_fn=_is_v2_campaign_eligible,
             )
 
@@ -853,6 +903,90 @@ def _generate_v2_campaign(
     mega_name = resolved_bosses.get("mega", {}).get("name")
     if mega_name:
         _add_stage("mega", mega_name)
+
+    # Pre-generate a small extra pool of encounters to support Scout Ahead
+    # and gravestone fallbacks without on-the-fly generation. Size the pool
+    # as one extra per encounter space plus two extras.
+    try:
+        encounter_nodes = [n for n in nodes if n.get("kind") == "encounter"]
+        total_spaces = len(encounter_nodes)
+        pool_size = max(0, total_spaces + 2)
+
+        pool: List[Dict[str, Any]] = []
+        pool_sigs: set[tuple[str, int, str]] = set()
+
+        # Don't duplicate signatures already used by the generated options
+        used = set(used_signatures) if isinstance(used_signatures, set) else set()
+
+        # Reasonable attempt budget to avoid long loops
+        max_attempts = max(200, pool_size * 20)
+        attempts = 0
+
+        # Precompute available encounter levels from the generated nodes so
+        # we request pool entries at levels that actually appear in the campaign.
+        avail_levels = []
+        for n in encounter_nodes:
+            try:
+                lvl = int(n.get("level") or 0)
+            except Exception:
+                lvl = 0
+            if lvl > 0:
+                avail_levels.append(lvl)
+        if not avail_levels:
+            avail_levels = [1]
+
+        while len(pool) < pool_size and attempts < max_attempts:
+            attempts += 1
+            # Pick a target level from the campaign encounter levels
+            try:
+                target_level = int(random.choice(avail_levels))
+            except Exception:
+                target_level = 1
+
+            try:
+                cand = _pick_random_campaign_encounter(
+                    encounters_by_expansion=encounters_by_expansion,
+                    valid_sets=valid_sets,
+                    character_count=player_count,
+                    active_expansions=active_expansions,
+                    level=target_level,
+                    settings=settings,
+                    eligibility_fn=_is_v2_campaign_eligible,
+                )
+            except Exception as exc:
+                continue
+
+            # Determine candidate level
+            try:
+                cand_level = int(cand.get("encounter_level") or cand.get("level") or 0)
+            except Exception:
+                cand_level = 0
+
+            sig = _campaign_encounter_signature(cand, cand_level)
+            if sig is None:
+                continue
+            if sig in used:
+                continue
+            if sig in pool_sigs:
+                continue
+
+            pool.append(cand)
+            pool_sigs.add(sig)
+
+        campaign["v2_extra_pool"] = pool
+        # keep a debug log list for UI inspection as well
+        try:
+            campaign["v2_debug_log"] = [f"Starting pool generation: target_size={pool_size}, total_spaces={total_spaces}"]
+            campaign["v2_debug_log"].append(f"Available levels: {sorted(set(avail_levels))}")
+            campaign["v2_debug_log"].append(f"Finished pool generation: attempts={attempts}, final_pool_size={len(pool)}")
+        except Exception:
+            pass
+    except Exception as exc:
+        # Do not fail campaign generation for pool generation errors.
+        try:
+            campaign["v2_debug_log"] = [f"pool generation error: {exc}"]
+        except Exception:
+            pass
 
     return campaign
 
