@@ -316,6 +316,7 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+@st.cache_data(show_spinner=False)
 def load_custom_event_decks() -> Dict[str, dict]:
     """
     Returns mapping: deck_name -> {"cards": {image_path: copies}, ...}

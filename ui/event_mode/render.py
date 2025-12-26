@@ -24,6 +24,9 @@ from ui.event_mode.logic import (
     shuffle_current_into_deck,
 )
 
+# cached image helper (use at module level to avoid repeated dynamic imports)
+from core.image_cache import get_image_data_uri_cached
+
 
 _BUILDER_KEY = "event_mode_builder"
 _BUILDER_SYNC_KEY = "event_mode_builder_sync"
@@ -278,22 +281,17 @@ def render(settings: Dict[str, Any]) -> None:
             with r_img:
                 p = Path(img_path)
                 try:
-                    src = __import__(
-                        "core.image_cache", fromlist=["get_image_data_uri_cached"]
-                    ).get_image_data_uri_cached(str(p))
+                    src = get_image_data_uri_cached(str(p))
                     if not src:
                         raise Exception("empty data uri")
                 except Exception:
                     src = str(p)
 
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                # Use Streamlit's image renderer so users can click/zoom
+                try:
+                    st.image(src, width="stretch")
+                except Exception:
+                    st.image(str(p), width="stretch")
 
                 st.markdown(
                     "<div style='height:0.05rem'></div>", unsafe_allow_html=True
@@ -463,22 +461,17 @@ def render(settings: Dict[str, Any]) -> None:
                     card_name = Path(str(current_card)).stem
                     p = Path(str(current_card))
                     try:
-                        src = __import__(
-                            "core.image_cache", fromlist=["get_image_data_uri_cached"]
-                        ).get_image_data_uri_cached(str(p))
+                        src = get_image_data_uri_cached(str(p))
                         if not src:
                             raise Exception("empty data uri")
                     except Exception:
                         src = str(p)
 
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:100%">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    # show current card with st.image for zooming
+                    try:
+                        st.image(src, width="stretch")
+                    except Exception:
+                        st.image(str(p), width="stretch")
                 else:
                     st.markdown("### Current card")
                     st.caption("—")
@@ -550,22 +543,16 @@ def render(settings: Dict[str, Any]) -> None:
             if current_card:
                 p = Path(str(current_card))
                 try:
-                    src = __import__(
-                        "core.image_cache", fromlist=["get_image_data_uri_cached"]
-                    ).get_image_data_uri_cached(str(p))
+                    src = get_image_data_uri_cached(str(p))
                     if not src:
                         raise Exception("empty data uri")
                 except Exception:
                     src = str(p)
 
-                st.markdown(
-                    f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:100%">
-                        </div>
-                        """,
-                    unsafe_allow_html=True,
-                )
+                try:
+                    st.image(src, width="stretch")
+                except Exception:
+                    st.image(str(p), width="stretch")
             else:
                 st.markdown("### Current card")
                 st.caption("—")
