@@ -3,12 +3,13 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 from typing import Any, Dict, List, Set
+import itertools
 from ui.character_mode.build import _build_stats, _validate_build
 from ui.character_mode.constants import CLASS_TIERS, HAND_CONDITION_OPTIONS, HAND_FEATURE_OPTIONS, TIERS
 from ui.character_mode.data_io import _find_data_file, _load_json_list
-from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg
+from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _dodge_icons
 from ui.character_mode.filters import _apply_armor_filters, _apply_hand_item_filters, _filter_items
-from ui.character_mode.item_fields import _armor_dodge_int, _armor_upgrade_slots_int, _extra_upgrade_slots, _hand_dodge_int, _hand_hands_required_int, _hand_range_str, _hand_upgrade_slots_int, _hands_required, _id, _immunities_set, _item_expansions, _name, _slot_cost, _sorted_with_none_first, _src_str, _upgrade_slots
+from ui.character_mode.item_fields import _armor_dodge_int, _armor_upgrade_slots_int, _extra_upgrade_slots, _hand_dodge_int, _hand_hands_required_int, _hand_range_str, _hand_upgrade_slots_int, _hands_required, _id, _immunities_set, _item_expansions, _name, _slot_cost, _sorted_with_none_first, _src_str, _upgrade_slots, _is_twohand_compatible_shield
 from ui.character_mode.selection import _merge_visible_selection, _normalize_hand_selection, _ordered_unique
 from ui.character_mode.tables import _rows_for_armor_table, _rows_for_hand_table
 from ui.character_mode.aggregates import (
@@ -131,6 +132,7 @@ def render(settings: Dict[str, Any]) -> None:
         # reserve vertical space (rendered inside container instead)
 
     with right:
+        build_slot = st.empty()
         summary_slot = st.empty()
 
     st.markdown("---")
@@ -155,6 +157,69 @@ def render(settings: Dict[str, Any]) -> None:
     armor_upgrades = _load_json_list(str(paths["armor_upgrades.json"]))
 
     all_items = hand_items + armor_items + weapon_upgrades + armor_upgrades
+
+    # Build helpers (store builds in session state)
+    ss.setdefault("cm_builds", {})
+
+    def _current_build():
+        return {
+            "class_name": class_name,
+            "tier_indices": tier_indices,
+            "selected_armor_id": ss.get("cm_selected_armor_id") or "",
+            "selected_armor_upgrade_ids": list(ss.get("cm_selected_armor_upgrade_ids") or []),
+            "selected_hand_ids": list(ss.get("cm_selected_hand_ids") or []),
+            "selected_weapon_upgrade_ids_by_hand": dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}),
+        }
+
+    def _apply_build(data: dict):
+        if not data:
+            return
+        ss["cm_persist_class"] = data.get("class_name", ss.get("cm_persist_class"))
+        ss["character_mode_class"] = ss["cm_persist_class"]
+        tiers = data.get("tier_indices", {}) or {}
+        ss.setdefault("cm_persist_tiers", {"str": 0, "dex": 0, "itl": 0, "fth": 0})
+        for stat, key in [("str", "cm_tier_str_i"), ("dex", "cm_tier_dex_i"), ("itl", "cm_tier_itl_i"), ("fth", "cm_tier_fth_i")]:
+            val = int(tiers.get(stat, int(ss.get(key, 0))))
+            ss[key] = val
+            ss["cm_persist_tiers"][stat] = val
+        ss["cm_selected_armor_id"] = data.get("selected_armor_id", "")
+        ss["cm_selected_armor_upgrade_ids"] = list(data.get("selected_armor_upgrade_ids") or [])
+        ss["cm_selected_hand_ids"] = list(data.get("selected_hand_ids") or [])
+        ss["cm_selected_weapon_upgrade_ids_by_hand"] = dict(data.get("selected_weapon_upgrade_ids_by_hand") or {})
+
+    # Build UI (save / load / delete / export)
+    with build_slot.container():
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            _ = st.text_input("Build name", key="cm_build_name")
+        with c2:
+            if st.button("Save build", key="cm_build_save"):
+                name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
+                ss["cm_builds"][name] = _current_build()
+                st.success(f"Saved build {name}")
+
+        snaps = list(ss.get("cm_builds", {}).keys())
+        sel = st.selectbox("Saved builds", options=[""] + snaps, key="cm_build_select")
+        c3, c4, c5 = st.columns([1, 1, 1])
+        with c3:
+            if st.button("Load", key="cm_build_load"):
+                name = ss.get("cm_build_select")
+                if name:
+                    _apply_build(ss["cm_builds"][name])
+                    st.experimental_rerun()
+        with c4:
+            if st.button("Delete", key="cm_build_delete"):
+                name = ss.get("cm_build_select")
+                if name and name in ss.get("cm_builds", {}):
+                    ss["cm_builds"].pop(name, None)
+                    st.experimental_rerun()
+        with c5:
+            if st.button("Export", key="cm_build_export"):
+                name = ss.get("cm_build_select")
+                if name:
+                    import json
+
+                    st.code(json.dumps(ss["cm_builds"][name], ensure_ascii=False, indent=2), language="json")
 
     enabled_items = []
     present_exps: Set[str] = set()
@@ -499,36 +564,85 @@ def render(settings: Dict[str, Any]) -> None:
                 return
 
             df = df.set_index("RowId", drop=True)
+
+            # Prepare display columns (keep underlying df but present named columns)
+            disp = df.copy()
+            # Totals that include gear modifications are provided in Tot* columns; fallback to base columns
+            disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
+            disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
+            disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("TotMin")
+            disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("TotMax")
+            disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("TotAvg")
+            # Avg per stamina
+            def _avg_per_stam(row):
+                s = row.get("Stamina") or 0
+                a = row.get("Avg") or 0
+                try:
+                    return float(a) / float(s) if float(s) != 0 else 0.0
+                except Exception:
+                    return 0.0
+
+            disp["Avg/Stam"] = disp.apply(_avg_per_stam, axis=1)
+            disp["Range"] = disp.get("Range")
+            disp["Shaft"] = disp.get("Shaft")
+            disp["Magic"] = disp.get("Magic")
+            # Coerce Repeat to numeric so missing/invalid values render blank
+            try:
+                disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
+            except Exception:
+                disp["Repeat"] = pd.Series([pd.NA] * len(disp), index=disp.index)
+            disp["Node"] = disp.get("Node")
+            # 'Ignore Block' column (may be 'Ign Blk')
+            if "Ign Blk" in disp.columns:
+                disp["Ignore Block"] = disp["Ign Blk"]
+            elif "IgnBlk" in disp.columns:
+                disp["Ignore Block"] = disp["IgnBlk"]
+            else:
+                disp["Ignore Block"] = False
+            # Condition/Cond
+            if "Cond" in disp.columns:
+                disp["Condition"] = disp["Cond"]
+            elif "TotCond" in disp.columns:
+                disp["Condition"] = disp["TotCond"]
+            else:
+                disp["Condition"] = ""
+            disp["Text"] = disp.get("Text")
+
             att_cfg = {
                 "Select": st.column_config.CheckboxColumn("Select", width="small"),
                 "Item": st.column_config.TextColumn("Item", width="medium"),
+                "Stamina": st.column_config.NumberColumn("Stamina", width=80),
                 "Dice": st.column_config.TextColumn("Dice", width=150),
-                "TotDice": st.column_config.TextColumn("Tot Dice", width=170),
-                "TotMin": st.column_config.NumberColumn("Tot Min", width=70),
-                "TotMax": st.column_config.NumberColumn("Tot Max", width=70),
-                "TotAvg": st.column_config.NumberColumn("Tot Avg", width=80, format="%.2f"),
-                "TotCond": st.column_config.TextColumn("Tot Cond", width=140),
-                "TotStam": st.column_config.NumberColumn("Tot Stam", width=80),
+                "Min": st.column_config.NumberColumn("Min", width=70),
+                "Max": st.column_config.NumberColumn("Max", width=70),
+                "Avg": st.column_config.NumberColumn("Avg", width=80, format="%.2f"),
+                "Avg/Stam": st.column_config.NumberColumn("Avg/Stam", width=80, format="%.3f"),
                 "Range": st.column_config.TextColumn("Range", width=70),
-                "Magic": st.column_config.CheckboxColumn("Magic", disabled=True, width=70),
-                "Node": st.column_config.CheckboxColumn("Node", disabled=True, width=70),
                 "Shaft": st.column_config.CheckboxColumn("Shaft", disabled=True, width=70),
-                "Ign Blk": st.column_config.CheckboxColumn("Ign Blk", disabled=True, width=75),
-                "Cond": st.column_config.TextColumn("Cond", width=90),
+                "Magic": st.column_config.CheckboxColumn("Magic", disabled=True, width=70),
+                "Repeat": st.column_config.NumberColumn("Repeat", disabled=True, width=70),
+                "Node": st.column_config.CheckboxColumn("Node", disabled=True, width=70),
+                "Ignore Block": st.column_config.CheckboxColumn("Ignore Block", disabled=True, width=80),
+                "Condition": st.column_config.TextColumn("Condition", width=140),
                 "Text": st.column_config.TextColumn("Text", width="large"),
             }
+
             att_order = [
-                "Select", "Item", "Atk#",
-                "TotDice", "TotStam", "TotMin", "TotMax", "TotAvg", "TotCond",
-                "Dice", "Stam", "Cond", "Text",
-                "Magic", "Node", "Ign Blk", "Push", "Range", "Shaft", "Repeat",
+                "Select", "Item", "Stamina", "Dice", "Min", "Max", "Avg", "Avg/Stam",
+                "Range", "Shaft", "Magic", "Repeat", "Node", "Ignore Block", "Condition", "Text",
             ]
+
+            # Show data editor using the display frame; ensure Select column exists in disp
+            if "Select" not in disp.columns:
+                disp["Select"] = [False] * len(disp)
+
+            # Keep index (RowId) and pass display frame to editor
             edited = st.data_editor(
-                df,
+                disp[att_order],
                 key="cm_table_attacks",
                 hide_index=True,
                 width="stretch",
-                disabled=[c for c in df.columns if c != "Select"],
+                disabled=[c for c in att_order if c != "Select"],
                 column_config=att_cfg,
                 column_order=att_order,
                 num_rows="fixed",
@@ -789,6 +903,139 @@ def render(settings: Dict[str, Any]) -> None:
             if uid in wu_by_id:
                 selected_weapon_upgrade_objs.append(wu_by_id[uid])
 
+    # --- Side-by-side compare UI ---
+    snap_names = ["<Current>"] + list(ss.get("cm_builds", {}).keys())
+    st.markdown("#### Compare Builds")
+    cl, cr = st.columns(2)
+    with cl:
+        left_choice = st.selectbox("Left build", options=snap_names, key="cm_compare_left")
+    with cr:
+        right_choice = st.selectbox("Right build", options=snap_names, key="cm_compare_right")
+
+    if left_choice == right_choice:
+        st.warning("Select two different builds to compare.")
+        return
+    
+    def _build_preview_from_build(data: dict):
+        if not data:
+            return None
+        bclass = data.get("class_name")
+        btiers = data.get("tier_indices") or {}
+        bstats = _build_stats(bclass, btiers)
+        # lookup items
+        b_armor = (armor_by_id.get(data.get("selected_armor_id")) if data.get("selected_armor_id") else None)
+        b_armor_upgrades = [au_by_id[uid] for uid in (data.get("selected_armor_upgrade_ids") or []) if uid in au_by_id]
+        b_hand_ids = list(data.get("selected_hand_ids") or [])
+        b_hand_objs = [hand_by_id[hid] for hid in b_hand_ids if hid in hand_by_id]
+        b_wu_by_hand = {hid: [wu_by_id[uid] for uid in (data.get("selected_weapon_upgrade_ids_by_hand") or {}).get(hid, []) if uid in wu_by_id] for hid in b_hand_ids}
+        b_wu_list = [wu for lst in b_wu_by_hand.values() for wu in lst]
+
+        b_def = build_defense_totals_cached(
+            armor_obj=b_armor, armor_upgrade_objs=b_armor_upgrades, hand_objs=b_hand_objs, weapon_upgrade_objs=b_wu_list
+        )
+        b_atk_rows = build_attack_totals_rows_cached(
+            hand_items=b_hand_objs,
+            selected_hand_ids=set(b_hand_ids),
+            armor_obj=b_armor,
+            armor_upgrade_objs=b_armor_upgrades,
+            weapon_upgrades_by_hand=b_wu_by_hand,
+        )
+        return {
+            "class": bclass,
+            "tiers": btiers,
+            "stats": bstats,
+            "def": b_def,
+            "atk_rows": b_atk_rows,
+            "armor": b_armor,
+            "hands": b_hand_objs,
+            "wu_by_hand": b_wu_by_hand,
+            "armor_upgrades": b_armor_upgrades,
+        }
+
+    left_snap = _current_build() if left_choice == "<Current>" else ss.get("cm_builds", {}).get(left_choice)
+    right_snap = _current_build() if right_choice == "<Current>" else ss.get("cm_builds", {}).get(right_choice)
+
+    # Single defense simulator controls for comparison
+    st.markdown("#### Comparison Simulator")
+    comp_c1, comp_c2 = st.columns(2)
+    with comp_c1:
+        incoming_cmp = st.slider("Incoming damage", min_value=2, max_value=15, value=6, step=1, key="cm_compare_incoming")
+    with comp_c2:
+        dodge_diff_cmp = st.slider("Dodge difficulty", min_value=1, max_value=5, value=2, step=1, key="cm_compare_dodge_diff")
+
+    left_preview = _build_preview_from_build(left_snap)
+    right_preview = _build_preview_from_build(right_snap)
+
+    def _stats_str(sts: Dict[str, int]) -> str:
+        return f"Strength: {sts.get('str')}, Dexterity: {sts.get('dex')}, Intelligence: {sts.get('itl')}, Faith: {sts.get('fth')}"
+
+    def _render_preview_column(preview: dict, title: str):
+        if not preview:
+            st.markdown(f"**{title}**")
+            st.caption("No build selected")
+            return
+        st.markdown(f"**{title}**")
+        st.markdown(f"{_stats_str(preview.get('stats') or {})}")
+        if preview.get('armor'):
+            st.markdown(f"Armor: {preview['armor'].get('name')}")
+
+        # Show aggregate defenses per valid equip combination:
+        # - all pairs of 1-hand items
+        # - each 2-hand item on its own
+        hands = preview.get('hands') or []
+        wu_by_hand = preview.get('wu_by_hand') or {}
+        one_hands = [h for h in hands if _hands_required(h) == 1]
+        two_hands = [h for h in hands if _hands_required(h) == 2]
+        # shields usable with a 2-hander should be considered for 2H combos
+        twohand_compatible_shields = [h for h in hands if _is_twohand_compatible_shield(h)]
+
+        def _render_def_for(h_objs: List[dict], title_suffix: str):
+            # collect weapon upgrades for these hands
+            wus = [wu for hid in ([_id(h) for h in h_objs]) for wu in (wu_by_hand.get(hid) or [])]
+            dtot = build_defense_totals_cached(armor_obj=preview.get('armor'), armor_upgrade_objs=preview.get('armor_upgrades') or [], hand_objs=h_objs, weapon_upgrade_objs=wus)
+            # For combos, dodge is armor dodge plus the sum of the hands' dodge dice
+            sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
+            eff_dodge = int(dtot.dodge_armor) + int(sum_hand_dodge)
+            b_stats = _dice_min_max_avg(dtot.block)
+            r_stats = _dice_min_max_avg(dtot.resist)
+            st.markdown(f"**{title_suffix}**")
+            st.markdown(f"- Dodge: {_dodge_icons(eff_dodge)} (armor {dtot.dodge_armor} + hands {sum_hand_dodge})")
+            st.markdown(f"- Block: {_dice_icons(dtot.block)} (avg {b_stats['avg']:.2f})")
+            st.markdown(f"- Resist: {_dice_icons(dtot.resist)} (avg {r_stats['avg']:.2f})")
+            sim_block = expected_damage_taken(incoming_damage=incoming_cmp, dodge_dice=eff_dodge, dodge_difficulty=dodge_diff_cmp, defense_dice=dtot.block)
+            sim_resist = expected_damage_taken(incoming_damage=incoming_cmp, dodge_dice=eff_dodge, dodge_difficulty=dodge_diff_cmp, defense_dice=dtot.resist)
+            st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
+
+        # Pairs of one-hand items
+        if len(one_hands) >= 2:
+            st.markdown("**Two 1-hand combos:**")
+            for a, b in itertools.combinations(one_hands, 2):
+                _render_def_for([a, b], f"{a.get('name')} + {b.get('name')}")
+
+        # Single 2-hand items
+        if two_hands:
+            st.markdown("**2-hand items:**")
+            for h in two_hands:
+                _render_def_for([h], f"{h.get('name')}")
+
+        # Attacks summary
+        atk_rows = preview.get('atk_rows') or []
+        if atk_rows:
+            try:
+                vals = [float(r.get('TotAvg') or 0) for r in atk_rows]
+                avg_atk = sum(vals) / len(vals) if vals else 0.0
+            except Exception:
+                avg_atk = 0.0
+            st.markdown(f"**Attacks:** {len(atk_rows)} lines, avg damage per attack: {avg_atk:.2f}")
+
+    cL, cR = st.columns(2)
+    with cL:
+        _render_preview_column(left_preview, "Left build")
+    with cR:
+        _render_preview_column(right_preview, "Right build")
+
+    # (Preview UI removed) keep pandas tables as primary interaction
+
     def_tot = build_defense_totals_cached(
         armor_obj=armor_obj,
         armor_upgrade_objs=armor_upgrade_objs,
@@ -815,40 +1062,167 @@ def render(settings: Dict[str, Any]) -> None:
     )
 
     with left_summary_slot.container():
-        st.markdown("#### Totals")
-        st.markdown(f"**Dodge dice (effective):** {dodge_effective} (armor {def_tot.dodge_armor} + best hand {def_tot.dodge_hand_max})")
-        st.markdown(f"**Block (total):** {_dice_icons(def_tot.block)} | min {bstats['min']:.0f}, max {bstats['max']:.0f}, avg {bstats['avg']:.2f}")
-        st.markdown(f"**Resist (total):** {_dice_icons(def_tot.resist)} | min {rstats['min']:.0f}, max {rstats['max']:.0f}, avg {rstats['avg']:.2f}")
+        # Validate the current build and show warnings if any
+        validation_errors = _validate_build(
+            stats=stats,
+            active=active,
+            armor_id=ss.get("cm_selected_armor_id") or "",
+            armor_upgrade_ids=list(ss.get("cm_selected_armor_upgrade_ids") or []),
+            hand_ids=list(ss.get("cm_selected_hand_ids") or []),
+            weapon_upgrade_ids_by_hand=dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}),
+            hand_by_id=hand_by_id,
+            armor_by_id=armor_by_id,
+            wu_by_id=wu_by_id,
+            au_by_id=au_by_id,
+        )
+        if validation_errors:
+            st.warning("Build validation issues:\n- " + "\n- ".join(validation_errors))
 
-        if atk_rows:
-            df_atk = pd.DataFrame(atk_rows)
-            cols = [c for c in ["Item", "Atk#", "TotStam", "TotDice", "TotMin", "TotMax", "TotAvg", "TotCond", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"] if c in df_atk.columns]
-            st.dataframe(df_atk[cols], hide_index=True, width="stretch", height=260)
+        # List selected items under Totals
+        lines = []
+        armor_id = ss.get("cm_selected_armor_id") or ""
+        if armor_id and armor_id in armor_by_id:
+            a = armor_by_id[armor_id]
+            lines.append(f"Armor: {a.get('name')}")
+            for uid in (ss.get("cm_selected_armor_upgrade_ids") or []):
+                u = au_by_id.get(uid)
+                if u:
+                    lines.append(f"  - {u.get('name')}")
+
+        # Hands and weapon upgrades (annotate weapon upgrades with parent hand name)
+        for hid in list(ss.get("cm_selected_hand_ids") or []):
+            h = hand_by_id.get(hid)
+            if not h:
+                continue
+            lines.append(f"{h.get('name')}")
+            for uid in (ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}).get(hid, []):
+                wu = wu_by_id.get(uid)
+                if wu:
+                    lines.append(f"  - {wu.get('name')} ({h.get('name')})")
+
+        if lines:
+            st.markdown("#### Selected Items")
+            for l in lines:
+                st.markdown(f"- {l}")
+
+        df_atk = pd.DataFrame(atk_rows)
+        disp_atk = df_atk.copy()
+        disp_atk["Stamina"] = disp_atk.get("TotStam") if "TotStam" in disp_atk.columns else disp_atk.get("Stam")
+        disp_atk["Dice"] = disp_atk.get("TotDice") if "TotDice" in disp_atk.columns else disp_atk.get("Dice")
+        disp_atk["Min"] = disp_atk.get("TotMin") if "TotMin" in disp_atk.columns else disp_atk.get("TotMin")
+        disp_atk["Max"] = disp_atk.get("TotMax") if "TotMax" in disp_atk.columns else disp_atk.get("TotMax")
+        disp_atk["Avg"] = disp_atk.get("TotAvg") if "TotAvg" in disp_atk.columns else disp_atk.get("TotAvg")
+
+        def _avg_per_stam_row(r):
+            s = r.get("Stamina") or 0
+            a = r.get("Avg") or 0
+            try:
+                return float(a) / float(s) if float(s) != 0 else 0.0
+            except Exception:
+                return 0.0
+
+        disp_atk["Avg/Stam"] = disp_atk.apply(_avg_per_stam_row, axis=1)
+        disp_atk["Push"] = disp_atk.get("Push")
+        if "Ign Blk" in disp_atk.columns:
+            disp_atk["Ignore Block"] = disp_atk["Ign Blk"]
+        elif "IgnBlk" in disp_atk.columns:
+            disp_atk["Ignore Block"] = disp_atk["IgnBlk"]
         else:
-            st.caption("No attack lines on selected items.")
+            disp_atk["Ignore Block"] = False
 
-    # --- Selected Items + validation (right column) ---
-    validation_errors = _validate_build(
-        stats=stats,
-        active=active,
-        armor_id=ss.get("cm_selected_armor_id") or "",
-        armor_upgrade_ids=list(ss.get("cm_selected_armor_upgrade_ids") or []),
-        hand_ids=list(ss.get("cm_selected_hand_ids") or []),
-        weapon_upgrade_ids_by_hand=dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}),
-        hand_by_id=hand_by_id,
-        armor_by_id=armor_by_id,
-        wu_by_id=wu_by_id,
-        au_by_id=au_by_id,
-    )
+        if "Cond" in disp_atk.columns:
+            disp_atk["Conditions"] = disp_atk["Cond"]
+        elif "TotCond" in disp_atk.columns:
+            disp_atk["Conditions"] = disp_atk["TotCond"]
+        else:
+            disp_atk["Conditions"] = ""
+
+        # Coerce Repeat to numeric so missing/invalid values show blank
+        try:
+            disp_atk["Repeat"] = pd.to_numeric(disp_atk.get("Repeat"), errors="coerce")
+        except Exception:
+            disp_atk["Repeat"] = pd.Series([pd.NA] * len(disp_atk), index=disp_atk.index)
+
+            cols = [c for c in ["Item", "Stamina", "Dice", "Min", "Max", "Avg", "Avg/Stam", "Range", "Shaft", "Magic", "Push", "Repeat", "Node", "Ignore Block", "Conditions", "Text"] if c in disp_atk.columns]
+            st.dataframe(disp_atk[cols], hide_index=True, width="stretch", height=260)
+
+        # Also show combo-based defenses under Totals
+        st.markdown("#### Combos")
+        one_hands = [h for h in selected_hand_objs if _hands_required(h) == 1]
+        two_hands = [h for h in selected_hand_objs if _hands_required(h) == 2]
+        twohand_compatible_shields = [h for h in selected_hand_objs if _is_twohand_compatible_shield(h)]
+
+        def _render_def_combo(h_objs: List[dict], title: str):
+            # collect weapon upgrades attached to these hand items
+            wus = []
+            for h in h_objs:
+                hid = _id(h)
+                wus.extend(weapon_upgrades_by_hand.get(hid) or [])
+            dt = build_defense_totals_cached(armor_obj=armor_obj, armor_upgrade_objs=armor_upgrade_objs, hand_objs=h_objs, weapon_upgrade_objs=wus)
+            # For combos we sum hand dodge values (not the max)
+            sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
+            eff_dodge = int(dt.dodge_armor) + int(sum_hand_dodge)
+            b_stats = _dice_min_max_avg(dt.block)
+            r_stats = _dice_min_max_avg(dt.resist)
+            st.markdown(f"**{title}**")
+            st.markdown(f"- Dodge: {_dodge_icons(eff_dodge)} (armor {dt.dodge_armor} + hands {sum_hand_dodge})")
+            st.markdown(f"- Block: {_dice_icons(dt.block)} (avg {b_stats['avg']:.2f})")
+            st.markdown(f"- Resist: {_dice_icons(dt.resist)} (avg {r_stats['avg']:.2f})")
+            sim_incoming = ss.get("cm_sim_incoming", 6)
+            sim_diff = ss.get("cm_sim_dodge_diff", 2)
+            sim_block = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.block)
+            sim_resist = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.resist)
+            st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
+            # Attack info for this combo (dice icons and avg per attack)
+            try:
+                combo_atks = []
+                for h in h_objs:
+                    hid = _id(h)
+                    for r in (atk_rows or []):
+                        if isinstance(r, dict) and str(r.get('RowId') or '').startswith(f"{hid}::atk::"):
+                            combo_atks.append(r)
+                if combo_atks:
+                    df_combo = pd.DataFrame(combo_atks)
+                    # coerce Repeat to numeric so missing shows blank
+                    if 'Repeat' in df_combo.columns:
+                        try:
+                            df_combo['Repeat'] = pd.to_numeric(df_combo.get('Repeat'), errors='coerce')
+                        except Exception:
+                            pass
+                    pref = ["Item", "Atk#", "TotStam", "TotDice", "TotMin", "TotMax", "TotAvg", "TotCond", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
+                    disp_cols = [c for c in pref if c in df_combo.columns]
+                    st.dataframe(df_combo[disp_cols], hide_index=True, width="stretch", height=140)
+            except Exception:
+                pass
+
+        if len(one_hands) >= 2:
+            for a, b in itertools.combinations(one_hands, 2):
+                _render_def_combo([a, b], f"{a.get('name')} + {b.get('name')}")
+                st.markdown("---")
+
+        if two_hands or twohand_compatible_shields:
+            for h in two_hands:
+                # single 2-hand item
+                if not twohand_compatible_shields:
+                    _render_def_combo([h], f"{h.get('name')}")
+                    st.markdown("---")
+                # pair 2-hand item with any shields marked usable with 2-hander
+                for sh in twohand_compatible_shields:
+                    _render_def_combo([h, sh], f"{h.get('name')} + {sh.get('name')}")
+                    st.markdown("---")
+
+    # --- Selected Items + validation (handled above in Totals) ---
 
     # Damage simulator + effects live in the right column summary slot
     with summary_slot.container():
-        st.markdown("#### Damage Intake Simulator")
+        st.markdown("#### Defense Simulator")
         incoming = st.slider("Incoming damage", min_value=2, max_value=15, value=6, step=1, key="cm_sim_incoming")
         diff = st.slider("Dodge difficulty", min_value=1, max_value=5, value=2, step=1, key="cm_sim_dodge_diff")
 
-        sim_block = expected_damage_taken(incoming_damage=incoming, dodge_dice=dodge_effective, dodge_difficulty=diff, defense_dice=def_tot.block)
-        sim_resist = expected_damage_taken(incoming_damage=incoming, dodge_dice=dodge_effective, dodge_difficulty=diff, defense_dice=def_tot.resist)
+        sim_incoming = ss.get("cm_sim_incoming", 6)
+        sim_diff = ss.get("cm_sim_dodge_diff", 2)
+        sim_block = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=dodge_effective, dodge_difficulty=sim_diff, defense_dice=def_tot.block)
+        sim_resist = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=dodge_effective, dodge_difficulty=sim_diff, defense_dice=def_tot.resist)
 
         st.markdown(f"**Dodge success:** {sim_block['p_dodge']*100:.1f}%")
         st.markdown(f"**Expected damage taken (physical/block):** {sim_block['exp_taken']:.2f} (if dodge fails: {sim_block['exp_after_def']:.2f})")
