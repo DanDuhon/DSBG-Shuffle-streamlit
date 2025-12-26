@@ -1,172 +1,5 @@
 [
   {
-    "id": "blood_gem",
-    "name": "Blood Gem",
-    "source": {
-      "expansion": [
-        "Dark Souls The Board Game",
-        "Painted World of Ariamis",
-        "The Sunless City"
-      ]
-    },
-    "requirements": {
-      "str": 15
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain Bleed.",
-    "mods": {
-      "attack": {
-        "conditions": [
-          "bleed"
-        ]
-      }
-    }
-  },
-  {
-    "id": "poison_gem",
-    "name": "Poison Gem",
-    "source": {
-      "expansion": [
-        "Dark Souls The Board Game",
-        "Tomb of Giants"
-      ]
-    },
-    "requirements": {
-      "dex": 15
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain Poison.",
-    "mods": {
-      "attack": {
-        "conditions": [
-          "poison"
-        ]
-      }
-    }
-  },
-  {
-    "id": "simple_gem",
-    "name": "Simple Gem",
-    "source": {
-      "expansion": [
-        "Dark Souls The Board Game",
-        "Tomb of Giants",
-        "The Sunless City"
-      ]
-    },
-    "requirements": {
-      "fth": 15
-    },
-    "slot_cost": 1,
-    "text": "Reduce the cost of this weapon's highest-stamina attack by 1 stamina.",
-    "rules": [
-      {
-        "scope": "attack",
-        "select": {
-          "kind": "max",
-          "field": "stamina",
-          "tiebreak": "lowest_index"
-        },
-        "add": {
-          "stamina": -1
-        }
-      }
-    ]
-  },
-  {
-    "id": "hollow_gem",
-    "name": "Hollow Gem",
-    "source": {
-      "expansion": [
-        "Darkroot"
-      ]
-    },
-    "requirements": {
-      "itl": 15,
-      "fth": 15
-    },
-    "slot_cost": 1,
-    "text": "If this weapon's attack deals 0 damage, you may flip your Luck token to the ready side."
-  },
-  {
-    "id": "dragon_scale",
-    "name": "Dragon Scale",
-    "source": {
-      "expansion": [
-        "Tomb of Giants"
-      ]
-    },
-    "requirements": {
-      "str": 10,
-      "fth": 10
-    },
-    "slot_cost": 2,
-    "text": "This weapon's attacks gain +2 damage against bosses. This upgrade occupies 2 upgrade slots."
-  },
-  {
-    "id": "demon_titanite",
-    "name": "Demon Titanite",
-    "source": {
-      "expansion": [
-        "Painted World of Ariamis"
-      ]
-    },
-    "requirements": {
-      "itl": 10,
-      "fth": 10
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain +1 damage. If this weapon is a boss treasure, reduce the cost of its highest-stamina attack by 1 stamina.",
-    "mods": {
-      "attack": {
-        "dice": {
-          "flat_mod": 1
-        }
-      }
-    },
-    "rules": [
-      {
-        "scope": "attack",
-        "select": {
-          "kind": "max",
-          "field": "stamina",
-          "tiebreak": "lowest_index"
-        },
-        "when": {
-          "weapon": {
-            "source_type": "boss"
-          }
-        },
-        "add": {
-          "stamina": -1
-        }
-      }
-    ]
-  },
-  {
-    "id": "heavy_gem",
-    "name": "Heavy Gem",
-    "source": {
-      "expansion": [
-        "Dark Souls The Board Game",
-        "Painted World of Ariamis",
-        "The Sunless City"
-      ]
-    },
-    "requirements": {
-      "str": 25
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain 1 black die.",
-    "mods": {
-      "attack": {
-        "dice": {
-          "black": 1
-        }
-      }
-    }
-  },
-  {
     "id": "blessed_gem",
     "name": "Blessed Gem",
     "source": {
@@ -189,30 +22,8 @@
     }
   },
   {
-    "id": "sharp_gem",
-    "name": "Sharp Gem",
-    "source": {
-      "expansion": [
-        "Dark Souls The Board Game",
-        "Tomb of Giants"
-      ]
-    },
-    "requirements": {
-      "dex": 25
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain 1 black die.",
-    "mods": {
-      "attack": {
-        "dice": {
-          "black": 1
-        }
-      }
-    }
-  },
-  {
-    "id": "crystal_gem",
-    "name": "Crystal Gem",
+    "id": "blood_gem",
+    "name": "Blood Gem",
     "source": {
       "expansion": [
         "Dark Souls The Board Game",
@@ -221,64 +32,17 @@
       ]
     },
     "requirements": {
-      "itl": 25
+      "str": 15
     },
     "slot_cost": 1,
-    "text": "This weapon's attacks gain 1 black die.",
+    "text": "This weapon's attacks gain Bleed.",
     "mods": {
       "attack": {
-        "dice": {
-          "black": 1
-        }
+        "conditions": [
+          "bleed"
+        ]
       }
     }
-  },
-  {
-    "id": "raw_gem",
-    "name": "Raw Gem",
-    "source": {
-      "expansion": [
-        "Explorers",
-        "The Sunless City"
-      ]
-    },
-    "requirements": {},
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain +2 damage but cost +2 stamina.",
-    "mods": {
-      "attack": {
-        "dice": {
-          "flat_mod": 2
-        },
-        "stamina": 2
-      }
-    }
-  },
-  {
-    "id": "lightning_gem",
-    "name": "Lightning Gem",
-    "source": {
-      "expansion": [
-        "Dark Souls The Board Game",
-        "Painted World of Ariamis"
-      ]
-    },
-    "requirements": {
-      "itl": 15
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain Magic.",
-    "rules": [
-      {
-        "scope": "attack",
-        "select": {
-          "kind": "all"
-        },
-        "set": {
-          "magic": true
-        }
-      }
-    ]
   },
   {
     "id": "blue_titanite",
@@ -305,72 +69,6 @@
         "scope": "attack",
         "select": {
           "kind": "all"
-        },
-        "set": {
-          "magic": true
-        }
-      }
-    ]
-  },
-  {
-    "id": "faron_flashsword",
-    "name": "Faron Flashsword",
-    "source": {
-      "expansion": [
-        "Characters Expansion",
-        "Painted World of Ariamis"
-      ],
-      "entity": "Sorcerer",
-      "type": "class"
-    },
-    "requirements": {
-      "itl": 25,
-      "fth": 15
-    },
-    "slot_cost": 1,
-    "text": "This weapon's 0 range attacks gain 1 range and Magic.",
-    "rules": [
-      {
-        "scope": "attack",
-        "select": {
-          "kind": "range",
-          "value": 0
-        },
-        "add": {
-          "range": 1
-        },
-        "set": {
-          "magic": true
-        }
-      }
-    ]
-  },
-  {
-    "id": "crystal_magic_weapon",
-    "name": "Crystal Magic Weapon",
-    "source": {
-      "expansion": [
-        "Characters Expansion",
-        "Painted World of Ariamis"
-      ],
-      "entity": "Sorcerer",
-      "type": "transposed"
-    },
-    "requirements": {
-      "itl": 30
-    },
-    "slot_cost": 1,
-    "text": "This weapon's attacks gain +1 damage and Magic.",
-    "rules": [
-      {
-        "scope": "attack",
-        "select": {
-          "kind": "all"
-        },
-        "add": {
-          "dice": {
-            "flat_mod": 1
-          }
         },
         "set": {
           "magic": true
@@ -413,45 +111,306 @@
     ]
   },
   {
-    "id": "titanite_shard",
-    "name": "Titanite Shard",
+    "id": "crystal_gem",
+    "name": "Crystal Gem",
     "source": {
       "expansion": [
+        "Dark Souls The Board Game",
         "Painted World of Ariamis",
-        "Tomb of Giants",
-        "The Sunless City",
-        "Dark Souls The Board Game"
+        "The Sunless City"
       ]
     },
-    "requirements": {},
+    "requirements": {
+      "itl": 25
+    },
     "slot_cost": 1,
-    "text": "This weapon's attacks gain +1 damage.",
+    "text": "This weapon's attacks gain 1 black die.",
     "mods": {
       "attack": {
         "dice": {
-          "flat_mod": 1
+          "black": 1
         }
       }
     }
   },
   {
-    "id": "titanite_scale",
-    "name": "Titanite Scale",
+    "id": "crystal_magic_weapon",
+    "name": "Crystal Magic Weapon",
     "source": {
       "expansion": [
-        "Iron Keep"
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 30
+    },
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain +1 damage and Magic.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "all"
+        },
+        "add": {
+          "dice": {
+            "flat_mod": 1
+          }
+        },
+        "set": {
+          "magic": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "demon_titanite",
+    "name": "Demon Titanite",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
       ]
     },
-    "requirements": {},
+    "requirements": {
+      "itl": 10,
+      "fth": 10
+    },
     "slot_cost": 1,
-    "text": "This weapon's attacks gain +1 damage.",
+    "text": "This weapon's attacks gain +1 damage. If this weapon is a boss treasure, reduce the cost of its highest-stamina attack by 1 stamina.",
     "mods": {
       "attack": {
         "dice": {
           "flat_mod": 1
         }
       }
+    },
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "max",
+          "field": "stamina",
+          "tiebreak": "lowest_index"
+        },
+        "when": {
+          "weapon": {
+            "source_type": "boss"
+          }
+        },
+        "add": {
+          "stamina": -1
+        }
+      }
+    ]
+  },
+  {
+    "id": "dragon_scale",
+    "name": "Dragon Scale",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 10,
+      "fth": 10
+    },
+    "slot_cost": 2,
+    "text": "This weapon's attacks gain +2 damage against bosses. This upgrade occupies 2 upgrade slots."
+  },
+  {
+    "id": "faron_flashsword",
+    "name": "Faron Flashsword",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 25,
+      "fth": 15
+    },
+    "slot_cost": 1,
+    "text": "This weapon's 0 range attacks gain 1 range and Magic.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "range",
+          "value": 0
+        },
+        "add": {
+          "range": 1
+        },
+        "set": {
+          "magic": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "heavy_gem",
+    "name": "Heavy Gem",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 25
+    },
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain 1 black die.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "black": 1
+        }
+      }
     }
+  },
+  {
+    "id": "hollow_gem",
+    "name": "Hollow Gem",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "itl": 15,
+      "fth": 15
+    },
+    "slot_cost": 1,
+    "text": "If this weapon's attack deals 0 damage, you may flip your Luck token to the ready side."
+  },
+  {
+    "id": "lightning_gem",
+    "name": "Lightning Gem",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "itl": 15
+    },
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain Magic.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "all"
+        },
+        "set": {
+          "magic": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "poison_gem",
+    "name": "Poison Gem",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 15
+    },
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain Poison.",
+    "mods": {
+      "attack": {
+        "conditions": [
+          "poison"
+        ]
+      }
+    }
+  },
+  {
+    "id": "raw_gem",
+    "name": "Raw Gem",
+    "source": {
+      "expansion": [
+        "Explorers",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {},
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain +2 damage but cost +2 stamina.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "flat_mod": 2
+        },
+        "stamina": 2
+      }
+    }
+  },
+  {
+    "id": "sharp_gem",
+    "name": "Sharp Gem",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 25
+    },
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain 1 black die.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "black": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "simple_gem",
+    "name": "Simple Gem",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "fth": 15
+    },
+    "slot_cost": 1,
+    "text": "Reduce the cost of this weapon's highest-stamina attack by 1 stamina.",
+    "rules": [
+      {
+        "scope": "attack",
+        "select": {
+          "kind": "max",
+          "field": "stamina",
+          "tiebreak": "lowest_index"
+        },
+        "add": {
+          "stamina": -1
+        }
+      }
+    ]
   },
   {
     "id": "titanite_sd",
@@ -484,6 +443,47 @@
       ],
       "entity": "Titanite Demon",
       "type": "boss"
+    },
+    "requirements": {},
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain +1 damage.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "flat_mod": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "titanite_scale",
+    "name": "Titanite Scale",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {},
+    "slot_cost": 1,
+    "text": "This weapon's attacks gain +1 damage.",
+    "mods": {
+      "attack": {
+        "dice": {
+          "flat_mod": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "titanite_shard",
+    "name": "Titanite Shard",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis",
+        "Tomb of Giants",
+        "The Sunless City",
+        "Dark Souls The Board Game"
+      ]
     },
     "requirements": {},
     "slot_cost": 1,

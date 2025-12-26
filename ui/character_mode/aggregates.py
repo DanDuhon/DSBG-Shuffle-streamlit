@@ -5,6 +5,8 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _expected_remaining_damage, _dodge_success_prob
 from ui.character_mode.item_fields import _hand_dodge_int, _id, _name
+import json
+import streamlit as st
 
 
 DiceDict = Dict[str, int]  # keys: black, blue, orange, flat_mod
@@ -703,3 +705,92 @@ def expected_damage_taken(
         "exp_after_def": float(exp_after_def),
         "exp_taken": float(exp_taken),
     }
+
+
+# --- Cached wrappers (serialize inputs for stable cache keys) ---
+def _to_json(obj: Any) -> str:
+    try:
+        return json.dumps(obj, sort_keys=True, default=str)
+    except Exception:
+        return json.dumps(str(obj))
+
+
+@st.cache_data(show_spinner=False)
+def _build_attack_totals_rows_cached_key(hand_items_json: str, selected_hand_ids_tuple: Tuple[str, ...], armor_json: str, armor_upgrade_json: str, weapon_upgrades_by_hand_json: str) -> List[Dict[str, Any]]:
+    hand_items = json.loads(hand_items_json)
+    selected_hand_ids = set(list(selected_hand_ids_tuple))
+    armor_obj = json.loads(armor_json) if armor_json else None
+    armor_upgrade_objs = json.loads(armor_upgrade_json) if armor_upgrade_json else []
+    weapon_upgrades_by_hand = json.loads(weapon_upgrades_by_hand_json) if weapon_upgrades_by_hand_json else {}
+    return build_attack_totals_rows(
+        hand_items=hand_items,
+        selected_hand_ids=selected_hand_ids,
+        armor_obj=armor_obj,
+        armor_upgrade_objs=armor_upgrade_objs,
+        weapon_upgrades_by_hand=weapon_upgrades_by_hand,
+    )
+
+
+def build_attack_totals_rows_cached(
+    *,
+    hand_items: List[Dict[str, Any]],
+    selected_hand_ids: Set[str],
+    armor_obj: Optional[Dict[str, Any]],
+    armor_upgrade_objs: List[Dict[str, Any]],
+    weapon_upgrades_by_hand: Dict[str, List[Dict[str, Any]]],
+) -> List[Dict[str, Any]]:
+    return _build_attack_totals_rows_cached_key(
+        _to_json(hand_items),
+        tuple(sorted(list(selected_hand_ids or []))),
+        _to_json(armor_obj) if armor_obj is not None else "",
+        _to_json(armor_upgrade_objs),
+        _to_json(weapon_upgrades_by_hand),
+    )
+
+
+@st.cache_data(show_spinner=False)
+def _build_defense_totals_cached_key(armor_json: str, armor_upgrade_json: str, hand_objs_json: str, weapon_upgrades_json: str) -> Dict[str, Any]:
+    armor_obj = json.loads(armor_json) if armor_json else None
+    armor_upgrade_objs = json.loads(armor_upgrade_json) if armor_upgrade_json else []
+    hand_objs = json.loads(hand_objs_json) if hand_objs_json else []
+    weapon_upgrade_objs = json.loads(weapon_upgrades_json) if weapon_upgrades_json else []
+    dt = build_defense_totals(
+        armor_obj=armor_obj,
+        armor_upgrade_objs=armor_upgrade_objs,
+        hand_objs=hand_objs,
+        weapon_upgrade_objs=weapon_upgrade_objs,
+    )
+    # Return serializable dict
+    return {
+        "block": dt.block,
+        "resist": dt.resist,
+        "dodge_armor": dt.dodge_armor,
+        "dodge_hand_max": dt.dodge_hand_max,
+    }
+
+
+def build_defense_totals_cached(
+    *,
+    armor_obj: Optional[Dict[str, Any]],
+    armor_upgrade_objs: List[Dict[str, Any]],
+    hand_objs: List[Dict[str, Any]],
+    weapon_upgrade_objs: List[Dict[str, Any]],
+) -> DefenseTotals:
+    res = _build_defense_totals_cached_key(
+        _to_json(armor_obj) if armor_obj is not None else "",
+        _to_json(armor_upgrade_objs),
+        _to_json(hand_objs),
+        _to_json(weapon_upgrade_objs),
+    )
+    return DefenseTotals(block=res["block"], resist=res["resist"], dodge_armor=int(res["dodge_armor"]), dodge_hand_max=int(res["dodge_hand_max"]))
+
+
+@st.cache_data(show_spinner=False)
+def expected_damage_taken_cached(incoming_damage: int, dodge_dice: int, dodge_difficulty: int, defense_dice_json: str) -> Dict[str, float]:
+    defense_dice = json.loads(defense_dice_json) if defense_dice_json else {}
+    return expected_damage_taken(
+        incoming_damage=incoming_damage,
+        dodge_dice=dodge_dice,
+        dodge_difficulty=dodge_difficulty,
+        defense_dice=defense_dice,
+    )

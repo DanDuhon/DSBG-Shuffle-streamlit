@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Dict
+from functools import lru_cache
 
 from ui.character_mode.constants import DICE_ICON, DIE_FACES
 
@@ -103,25 +104,41 @@ def _convolve(a: Dict[int, float], b: Dict[int, float]) -> Dict[int, float]:
 
 def _pmf_sum(dice: Any) -> Dict[int, float]:
     dd = _norm_dice(dice)
+    return _pmf_sum_cached(dd["black"], dd["blue"], dd["orange"], dd["flat_mod"])
+
+
+@lru_cache(maxsize=4096)
+def _pmf_sum_cached(black: int, blue: int, orange: int, flat: int) -> Dict[int, float]:
+    """Compute PMF for given dice counts; cached for repeated combinations.
+
+    Keys are small integers (counts), so cache is safe and yields large savings
+    when the same dice combinations are used repeatedly in UI aggregates.
+    """
     dist: Dict[int, float] = {0: 1.0}
 
-    for _ in range(dd["black"]):
+    for _ in range(int(black or 0)):
         dist = _convolve(dist, _PMF_BLACK)
-    for _ in range(dd["blue"]):
+    for _ in range(int(blue or 0)):
         dist = _convolve(dist, _PMF_BLUE)
-    for _ in range(dd["orange"]):
+    for _ in range(int(orange or 0)):
         dist = _convolve(dist, _PMF_ORANGE)
 
-    flat = dd["flat_mod"]
-    if flat:
-        dist = {k + flat: p for k, p in dist.items()}
+    if int(flat or 0):
+        f = int(flat or 0)
+        dist = {k + f: p for k, p in dist.items()}
 
     return dist
 
 
 def _expected_remaining_damage(incoming_damage: int, defense_dice: Any) -> float:
+    dd = _norm_dice(defense_dice)
+    return _expected_remaining_damage_cached(int(incoming_damage), int(dd["black"]), int(dd["blue"]), int(dd["orange"]), int(dd["flat_mod"]))
+
+
+@lru_cache(maxsize=8192)
+def _expected_remaining_damage_cached(incoming_damage: int, black: int, blue: int, orange: int, flat: int) -> float:
     dmg = int(incoming_damage)
-    dist = _pmf_sum(defense_dice)
+    dist = _pmf_sum_cached(black, blue, orange, flat)
     exp = 0.0
     for defense, p in dist.items():
         exp += p * float(max(0, dmg - int(defense)))

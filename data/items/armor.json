@@ -1,1606 +1,1894 @@
-[{
-        "id": "cleric_armour",
-        "name": "Cleric Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Tomb of Giants"]
-        },
-        "requirements": {
-            "fth": 24
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "upgrade_slots": 1,
-        "text": "When one of your equipment cards allows a character to gain health, they gain +1 health."
-    }, {
-        "id": "adventurers_armour",
-        "name": "Adventurer's Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 14,
-            "dex": 22,
-            "itl": 14
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You gain +1 dodge against traps."
-    }, {
-        "id": "adventurers_armour_legendary",
-        "name": "Adventurer's Armour (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 22,
-            "dex": 32,
-            "itl": 22
-        },
-        "block_dice": {
-            "blue": 2
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You gain +1 dodge against traps."
-    }, {
-        "id": "xanthous_robes",
-        "name": "Xanthous Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Painted World of Ariamis"]
-        },
-        "requirements": {
-            "itl": 23,
-            "fth": 20
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "When you make a magical attack, reduce the stamina cost by 1."
-    }, {
-        "id": "sunless_armour",
-        "name": "Sunless Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Tomb of Giants", "The Sunless City"]
-        },
-        "requirements": {
-            "str": 13,
-            "fth": 13
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "black_knight_armour",
-        "name": "Black Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 26,
-            "dex": 16,
-            "fth": 16
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "Reduce the stat requirements of your armour upgrades by 2."
-    }, {
-        "id": "black_knight_armour_legendary",
-        "name": "Black Knight Armour (Legendary)",
-        "item_type": "armor",
-        "legendary": true,
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 32,
-            "dex": 22,
-            "fth": 22
-        },
-        "block_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "Reduce the stat requirements of your armour upgrades by 2."
-    }, {
-        "id": "mask_child",
-        "name": "Mask of the Child",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Tomb of Giants"]
-        },
-        "requirements": {
-            "itl": 19,
-            "fth": 13
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You gain 4 stamina at the start of your activation (instead of 3)."
-    }, {
-        "id": "stone_knight_armour",
-        "name": "Stone Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Darkroot"]
-        },
-        "requirements": {
-            "str": 30
-        },
-        "block_dice": {
-            "orange": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        }
-    }, {
-        "id": "old_ironclad_armour",
-        "name": "Old Ironclad Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Iron Keep"]
-        },
-        "requirements": {
-            "str": 34
-        },
-        "block_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "court_sorcerer_robes",
-        "name": "Court Sorcerer Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Painted World of Ariamis", "The Sunless City"]
-        },
-        "requirements": {
-            "dex": 17,
-            "itl": 22
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "paladin_armour",
-        "name": "Paladin Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Painted World of Ariamis"]
-        },
-        "requirements": {
-            "str": 24,
-            "dex": 24,
-            "fth": 24
-        },
-        "block_dice": {
-            "orange": 1
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "upgrade_slots": 1
-    }, {
-        "id": "black_hand_armour",
-        "name": "Black Hand Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Painted World of Ariamis"]
-        },
-        "requirements": {
-            "dex": 20,
-            "itl": 20
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "drang_armour",
-        "name": "Drang Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Painted World of Ariamis"]
-        },
-        "requirements": {
-            "str": 18,
-            "dex": 14
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {},
-        "dodge_dice": 1,
-        "upgrade_slots": 1
-    }, {
-        "id": "sunset_armour",
-        "name": "Sunset Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Tomb of Giants"]
-        },
-        "requirements": {
-            "str": 20,
-            "fth": 24
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "havels_armour",
-        "name": "Havel's Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 23,
-            "itl": 23
-        },
-        "block_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "upgrade_slots": 1,
-        "text": "You cannot dodge or walk."
-    }, {
-        "id": "havels_armour_legendary",
-        "name": "Havel's Armour (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 27,
-            "itl": 27
-        },
-        "block_dice": {
-            "black": 1,
-            "orange": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "orange": 1
-        },
-        "upgrade_slots": 1,
-        "text": "You cannot dodge or walk."
-    }, {
-        "id": "antiquated_robes",
-        "name": "Antiquated Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Darkroot"]
-        },
-        "requirements": {
-            "itl": 15,
-            "fth": 20
-        },
-        "block_dice": {
-            "black": 2,
-            "flat_mod": -1
-        },
-        "resist_dice": {
-            "black": 2,
-            "flat_mod": -1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "hunter_armour",
-        "name": "Hunter Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Darkroot"]
-        },
-        "requirements": {
-            "dex": 34,
-            "itl": 17
-        },
-        "block_dice": {},
-        "resist_dice": {},
-        "dodge_dice": 2,
-        "upgrade_slots": 1,
-        "text": "You gain +1 dodge against arc attacks."
-    }, {
-        "id": "hard_leather_armour",
-        "name": "Hard Leather Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Tomb of Giants", "The Sunless City"]
-        },
-        "requirements": {
-            "str": 26,
-            "dex": 26,
-            "itl": 26
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 1
-    }, {
-        "id": "alonne_captain_armour",
-        "name": "Alonne Captain Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Iron Keep"]
-        },
-        "requirements": {
-            "str": 25,
-            "itl": 25
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "You can move after dodging attacks from Alonne Knights without spending stamina."
-    }, {
-        "id": "gold_hemmed_black_robes",
-        "name": "Gold Hemmed Black Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 14,
-            "itl": 14,
-            "fth": 14
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "When you use your heroic ability, gain 1 stamina."
-    }, {
-        "id": "gold_hemmed_black_robes_legendary",
-        "name": "Gold Hemmed Black Robes (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 28,
-            "itl": 28,
-            "fth": 28
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 2
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 1,
-        "text": "When you use your heroic ability, gain 1 stamina."
-    }, {
-        "id": "masters_attire",
-        "name": "Master's Attire",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Tomb of Giants"]
-        },
-        "requirements": {
-            "dex": 30,
-            "itl": 18
-        },
-        "block_dice": {},
-        "resist_dice": {},
-        "dodge_dice": 2,
-        "upgrade_slots": 2
-    }, {
-        "id": "worker_armour",
-        "name": "Worker Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Painted World of Ariamis", "The Sunless City"]
-        },
-        "requirements": {
-            "str": 12,
-            "dex": 12,
-            "itl": 12,
-            "fth": 12
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "black_iron_armour",
-        "name": "Black Iron Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 18,
-            "fth": 12
-        },
-        "block_dice": {
-            "orange": 1,
-            "flat_mod": -1
-        },
-        "resist_dice": {
-            "orange": 1,
-            "flat_mod": -1
-        },
-        "upgrade_slots": 2,
-        "text": "When you make a node attack, reduce the stamina cost by 1."
-    }, {
-        "id": "black_iron_armour_legendary",
-        "name": "Black Iron Armour (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 32,
-            "fth": 22
-        },
-        "block_dice": {
-            "orange": 2,
-            "flat_mod": -2
-        },
-        "resist_dice": {
-            "orange": 2,
-            "flat_mod": -2
-        },
-        "upgrade_slots": 2,
-        "text": "When you make a node attack, reduce the stamina cost by 1."
-    }, {
-        "id": "firelink_armour",
-        "name": "Firelink Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Tomb of Giants"]
-        },
-        "requirements": {
-            "str": 20,
-            "itl": 15
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "embraced_armour_of_favor",
-        "name": "Embraced Armour of Favour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 13,
-            "fth": 23
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "upgrade_slots": 2,
-        "text": "When you use your heroic ability, gain 1 health."
-    }, {
-        "id": "embraced_armour_of_favor_legendary",
-        "name": "Embraced Armour of Favour (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 23,
-            "fth": 33
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 2
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "When you use your heroic ability, gain 1 health."
-    }, {
-        "id": "silver_knight_armour",
-        "name": "Silver Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Explorers"]
-        },
-        "requirements": {
-            "str": 26,
-            "dex": 26
-        },
-        "block_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "resist_dice": {},
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "catarina_armour",
-        "name": "Catarina Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 22
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "upgrade_slots": 2,
-        "text": "When you run, it costs 2 stamina per node (instead of 1)."
-    }, {
-        "id": "catarina_armour_legendary",
-        "name": "Catarina Armour (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "str": 33
-        },
-        "block_dice": {
-            "blue": 2
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "upgrade_slots": 2,
-        "text": "When you run, it costs 2 stamina per node (instead of 1)."
-    }, {
-        "id": "royal_swordsman_armour",
-        "name": "Royal Swordsman Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Phantoms", "The Sunless City"],
-            "entity": "Maldron the Assassin",
-            "type": "invader"
-        },
-        "requirements": {
-            "str": 24,
-            "itl": 14,
-            "fth": 14
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "upgrade_slots": 1,
-        "text": "Your highest-stamina one-handed attack costs -1 stamina."
-    }, {
-        "id": "armour_of_thorns",
-        "name": "Armour of Thorns",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Phantoms"],
-            "entity": "Longfinger Kirk",
-            "type": "invader"
-        },
-        "requirements": {
-            "str": 32,
-            "dex": 18
-        },
-        "block_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "upgrade_slots": 2,
-        "text": "After you block or resist damage from an enemy in your node, it suffers 1 damage."
-    }, {
-        "id": "chesters_set",
-        "name": "Chester's Set",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Phantoms"],
-            "entity": "Marvelous Chester",
-            "type": "invader"
-        },
-        "requirements": {
-            "dex": 20,
-            "itl": 30
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You are immune to Bleed.",
-        "immunities": ["bleed"]
-    }, {
-        "id": "dark_armour",
-        "name": "Dark Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 20,
-            "itl": 20
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You gain +1 dodge against Hollows."
-    }, {
-        "id": "dark_armour_legendary",
-        "name": "Dark Armour (Legendary)",
-        "item_type": "armor",
-        "legendary": true,
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 28,
-            "itl": 28
-        },
-        "block_dice": {
-            "orange": 1
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You gain +1 dodge against Hollows."
-    }, {
-        "id": "crimson_robes",
-        "name": "Crimson Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 12,
-            "itl": 22,
-            "fth": 12
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "When you use your heroic ability, you may remove one condition token from a character."
-    }, {
-        "id": "crimson_robes_legendary",
-        "name": "Crimson Robes (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 22,
-            "itl": 32,
-            "fth": 22
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 1,
-        "text": "When you use your heroic ability, you may remove one condition token from a character."
-    }, {
-        "id": "guardian_armour",
-        "name": "Guardian Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 22,
-            "itl": 22
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "upgrade_slots": 1,
-        "text": "You are immune to Bleed.",
-        "immunities": ["bleed"]
-    }, {
-        "id": "guardian_armour_legendary",
-        "name": "Guardian Armour (Legendary)",
-        "legendary": true,
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion"]
-        },
-        "requirements": {
-            "dex": 28,
-            "itl": 28
-        },
-        "block_dice": {
-            "black": 2,
-            "flat_mod": 1
-        },
-        "resist_dice": {
-            "black": 2,
-            "flat_mod": 1
-        },
-        "upgrade_slots": 1,
-        "text": "You are immune to Bleed.",
-        "immunities": ["bleed"]
-    }, {
-        "id": "cornyxs_robes",
-        "name": "Cornyx's Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants", "The Sunless City"],
-            "entity": "Pyromancer",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 21,
-            "itl": 21
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "black_armour",
-        "name": "Black Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"]
-        },
-        "requirements": {
-            "dex": 20,
-            "itl": 20
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "exile_armour",
-        "name": "Exile Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "Painted World of Ariamis", "The Sunless City"]
-        },
-        "requirements": {
-            "str": 26,
-            "fth": 16
-        },
-        "block_dice": {
-            "blue": 2
-        },
-        "resist_dice": {},
-        "upgrade_slots": 2
-    }, {
-        "id": "alonne_knight_armour",
-        "name": "Alonne Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Iron Keep"]
-        },
-        "requirements": {
-            "str": 20,
-            "itl": 20
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1,
-        "text": "You can move after dodging attacks from Alonne Knights without spending stamina."
-    }, {
-        "id": "shadow_armour",
-        "name": "Shadow Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"]
-        },
-        "requirements": {
-            "dex": 34,
-            "fth": 17
-        },
-        "block_dice": {},
-        "resist_dice": {},
-        "dodge_dice": 2,
-        "upgrade_slots": 2,
-        "text": "When you dodge, you may move 2 nodes (instead of 1)."
-    }, {
-        "id": "painting_guardian_armour",
-        "name": "Painting Guardian Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Painted World of Ariamis"]
-        },
-        "requirements": {
-            "dex": 32,
-            "itl": 14
-        },
-        "block_dice": {},
-        "resist_dice": {},
-        "dodge_dice": 2,
-        "upgrade_slots": 1,
-        "text": "When you attack an enemy's weak arc, instead of gaining an additional black die, gain an additional blue die."
-    }, {
-        "id": "deacon_robes",
-        "name": "Deacon Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"]
-        },
-        "requirements": {
-            "fth": 24
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1
-    }, {
-        "id": "assassin_armour",
-        "name": "Assassin Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Assassin",
-            "type": "starter"
-        },
-        "requirements": {
-            "str": 10,
-            "dex": 14
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1
-    }, {
-        "id": "alva_armour",
-        "name": "Alva Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Assassin",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 24,
-            "dex": 38,
-            "itl": 24
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 1
-    }, {
-        "id": "herald_armour",
-        "name": "Herald Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Herald",
-            "type": "starter"
-        },
-        "requirements": {
-            "str": 10,
-            "fth": 10
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1
-    }, {
-        "id": "cathedral_knight_armour",
-        "name": "Cathedral Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Herald",
-            "type": "class"
-        },
-        "requirements": {
-            "itl": 18,
-            "fth": 22
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "pyromancer_garb",
-        "name": "Pyromancer Garb",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants", "The Sunless City"],
-            "entity": "Pyromancer",
-            "type": "starter"
-        },
-        "requirements": {
-            "itl": 12
-        },
-        "block_dice": {},
-        "resist_dice": {
-            "black": 2
-        },
-        "dodge_dice": 1
-    }, {
-        "id": "sorcerer_robes",
-        "name": "Sorcerer Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Sorcerer",
-            "type": "starter"
-        },
-        "requirements": {
-            "itl": 12
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        }
-    }, {
-        "id": "dragonscale_armour",
-        "name": "Dragonscale Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Sorcerer",
-            "type": "class"
-        },
-        "requirements": {
-            "dex": 23,
-            "itl": 23
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1
-    }, {
-        "id": "northern_armour",
-        "name": "Northern Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Warrior",
-            "type": "starter"
-        },
-        "requirements": {
-            "str": 16,
-            "dex": 8
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1
-    }, {
-        "id": "fallen_knight_armour",
-        "name": "Fallen Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Warrior",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 30,
-            "itl": 22
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "deserter_armour",
-        "name": "Deserter Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Thief",
-            "type": "starter"
-        },
-        "requirements": {
-            "dex": 13,
-            "itl": 10
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1
-    }, {
-        "id": "black_hand_armour_thief",
-        "name": "Black Hand Armour (Thief)",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Thief",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 20,
-            "dex": 20
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "When you dodge, you may move 2 nodes (instead of 1)."
-    }, {
-        "id": "sellsword_armour",
-        "name": "Sellsword Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Mercenary",
-            "type": "starter"
-        },
-        "requirements": {
-            "dex": 16,
-            "itl": 8
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1
-    }, {
-        "id": "black_leather_armour",
-        "name": "Black Leather Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Mercenary",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 24,
-            "dex": 30
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 1
-    }, {
-        "id": "eastern_armour",
-        "name": "Eastern Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Mercenary",
-            "type": "transposed"
-        },
-        "requirements": {
-            "dex": 36,
-            "itl": 26
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2
-    }, {
-        "id": "cleric_robes",
-        "name": "Cleric Robes",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Cleric",
-            "type": "starter"
-        },
-        "requirements": {
-            "fth": 12
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        }
-    }, {
-        "id": "archdeacon_robe",
-        "name": "Archdeacon Robe",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Tomb of Giants"],
-            "entity": "Cleric",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 17,
-            "fth": 35
-        },
-        "block_dice": {
-            "orange": 1
-        },
-        "resist_dice": {
-            "black": 1,
-            "orange": 1
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "knight_armour",
-        "name": "Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Knight",
-            "type": "starter"
-        },
-        "requirements": {
-            "str": 12
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "black": 1
-        }
-    }, {
-        "id": "lothric_knight_armour",
-        "name": "Lothric Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Knight",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 21,
-            "fth": 15
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "upgrade_slots": 2,
-        "text": "When you end your activation, gain 1 health for each enemy on your node."
-    }, {
-        "id": "elite_knight_armour",
-        "name": "Elite Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Knight",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 35,
-            "fth": 15
-        },
-        "block_dice": {
-            "blue": 2
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "upgrade_slots": 2
-    }, {
-        "id": "faraam_armour",
-        "name": "Faraam Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Knight",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 29,
-            "itl": 19
-        },
-        "block_dice": {
-            "orange": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "upgrade_slots": 2,
-        "text": "Once per encounter, at the end of another character's activation, you may take the Aggro token."
-    }, {
-        "id": "loincloth",
-        "name": "Loincloth",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Deprived",
-            "type": "starter"
-        },
-		"requirements": {},
-		"block_dice":{},
-        "resist_dice": {
-            "black": 1
-        }
-    }, {
-        "id": "brass_armour",
-        "name": "Brass Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Deprived",
-            "type": "class"
-        },
-        "requirements": {
-            "str": 25,
-            "fth": 20
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "black": 2
-        },
-        "upgrade_slots": 1
-    }, {
-        "id": "mirrah_armour",
-        "name": "Mirrah Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Characters Expansion", "Painted World of Ariamis"],
-            "entity": "Deprived",
-            "type": "transposed"
-        },
-        "requirements": {
-            "str": 27,
-            "fth": 27
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 1
-    }, {
-        "id": "winged_knight_armour",
-        "name": "Winged Knight Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Winged Knight",
-            "type": "boss"
-        },
-        "requirements": {
-            "str": 24,
-            "fth": 24
-        },
-        "block_dice": {
-            "orange": 1
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "dodge_dice": 0,
-        "upgrade_slots": 2
-    }, {
-        "id": "outrider_armour",
-        "name": "Outrider Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Boreal Outrider Knight",
-            "type": "boss"
-        },
-        "requirements": {
-            "dex": 24,
-            "fth": 24
-        },
-        "block_dice": {
-            "black": 2
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 1,
-        "upgrade_slots": 2,
-        "text": "You are immune to Frostbite.",
-        "immunities": ["frostbite"]
-    }, {
-        "id": "steel_armour",
-        "name": "Steel Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Painted World of Ariamis"],
-            "entity": "Heavy Knight",
-            "type": "boss"
-        },
-        "requirements": {
-            "str": 21,
-            "dex": 21,
-            "itl": 20,
-            "fth": 20
-        },
-        "block_dice": {
-            "blue": 1
-        },
-        "resist_dice": {
-            "blue": 1
-        },
-        "dodge_dice": 0,
-        "upgrade_slots": 1,
-        "text": "This armour gains 1 black die for block and 1 black die for resist if it has an equipped upgrade."
-    }, {
-        "id": "dancer_armour",
-        "name": "Dancer Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game"],
-            "entity": "Dancer of the Boreal Valley",
-            "type": "boss"
-        },
-        "requirements": {
-            "dex": 35,
-            "itl": 25,
-            "fth": 25
-        },
-        "block_dice": {
-            "black": 1
-        },
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 1,
-        "text": "When you walk, you may move 2 nodes (instead of 1)."
-    }, {
-        "id": "smelter_demon_armour",
-        "name": "Smelter Demon Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Iron Keep"],
-            "entity": "Smelter Demon",
-            "type": "boss"
-        },
-        "requirements": {
-            "str": 35,
-            "fth": 21
-        },
-        "block_dice": {
-            "blue": 2
-        },
-        "resist_dice": {
-            "orange": 1
-        },
-        "dodge_dice": 0,
-        "upgrade_slots": 2
-    }, {
-        "id": "dragonslayer_armour",
-        "name": "Dragonslayer Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Ornstein & Smough",
-            "type": "boss"
-        },
-        "requirements": {
-            "str": 21,
-            "fth": 31
-        },
-        "block_dice": {
-            "blue": 1,
-            "black": 1
-        },
-        "resist_dice": {
-            "blue": 1,
-            "black": 1
-        },
-        "dodge_dice": 0,
-        "upgrade_slots": 1,
-        "text": "You are immune to Bleed.",
-        "immunities": ["bleed"]
-    }, {
-        "id": "smoughs_armour",
-        "name": "Smough's Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Dark Souls The Board Game", "The Sunless City"],
-            "entity": "Ornstein & Smough",
-            "type": "boss"
-        },
-        "requirements": {
-            "str": 37
-        },
-        "block_dice": {
-            "blue": 2
-        },
-        "resist_dice": {
-            "blue": 2
-        },
-        "dodge_dice": 0,
-        "upgrade_slots": 1,
-        "no_dodge": true,
-        "no_run": true,
-        "text": "You cannot dodge or run."
-    }, {
-        "id": "alonne_armour",
-        "name": "Alonne Armour",
-        "item_type": "armor",
-        "source": {
-            "expansion": ["Iron Keep"],
-            "entity": "Sir Alonne",
-            "type": "boss"
-        },
-        "requirements": {
-            "dex": 21,
-            "itl": 35
-        },
-        "block_dice": {},
-        "resist_dice": {
-            "black": 1
-        },
-        "dodge_dice": 2,
-        "upgrade_slots": 2
+[
+  {
+    "id": "adventurers_armour",
+    "name": "Adventurer's Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 14,
+      "dex": 22,
+      "itl": 14
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You gain +1 dodge against traps."
+  },
+  {
+    "id": "adventurers_armour_legendary",
+    "name": "Adventurer's Armour (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 22,
+      "dex": 32,
+      "itl": 22
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You gain +1 dodge against traps."
+  },
+  {
+    "id": "alonne_armour",
+    "name": "Alonne Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ],
+      "entity": "Sir Alonne",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 21,
+      "itl": 35
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "alonne_captain_armour",
+    "name": "Alonne Captain Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "str": 25,
+      "itl": 25
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "You can move after dodging attacks from Alonne Knights without spending stamina."
+  },
+  {
+    "id": "alonne_knight_armour",
+    "name": "Alonne Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "itl": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "You can move after dodging attacks from Alonne Knights without spending stamina."
+  },
+  {
+    "id": "alva_armour",
+    "name": "Alva Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 38,
+      "itl": 24
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "antiquated_robes",
+    "name": "Antiquated Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "itl": 15,
+      "fth": 20
+    },
+    "block_dice": {
+      "black": 2,
+      "flat_mod": -1
+    },
+    "resist_dice": {
+      "black": 2,
+      "flat_mod": -1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "archdeacon_robe",
+    "name": "Archdeacon Robe",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 17,
+      "fth": 35
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "orange": 1
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "armour_of_thorns",
+    "name": "Armour of Thorns",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Longfinger Kirk",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 32,
+      "dex": 18
+    },
+    "block_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "upgrade_slots": 2,
+    "text": "After you block or resist damage from an enemy in your node, it suffers 1 damage."
+  },
+  {
+    "id": "assassin_armour",
+    "name": "Assassin Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 10,
+      "dex": 14
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1
+  },
+  {
+    "id": "black_armour",
+    "name": "Black Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ]
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "black_hand_armour",
+    "name": "Black Hand Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "black_hand_armour_thief",
+    "name": "Black Hand Armour (Thief)",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 20,
+      "dex": 20
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "When you dodge, you may move 2 nodes (instead of 1)."
+  },
+  {
+    "id": "black_iron_armour",
+    "name": "Black Iron Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 18,
+      "fth": 12
+    },
+    "block_dice": {
+      "orange": 1,
+      "flat_mod": -1
+    },
+    "resist_dice": {
+      "orange": 1,
+      "flat_mod": -1
+    },
+    "upgrade_slots": 2,
+    "text": "When you make a node attack, reduce the stamina cost by 1."
+  },
+  {
+    "id": "black_iron_armour_legendary",
+    "name": "Black Iron Armour (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 32,
+      "fth": 22
+    },
+    "block_dice": {
+      "orange": 2,
+      "flat_mod": -2
+    },
+    "resist_dice": {
+      "orange": 2,
+      "flat_mod": -2
+    },
+    "upgrade_slots": 2,
+    "text": "When you make a node attack, reduce the stamina cost by 1."
+  },
+  {
+    "id": "black_knight_armour",
+    "name": "Black Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 26,
+      "dex": 16,
+      "fth": 16
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "Reduce the stat requirements of your armour upgrades by 2."
+  },
+  {
+    "id": "black_knight_armour_legendary",
+    "name": "Black Knight Armour (Legendary)",
+    "item_type": "armor",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 32,
+      "dex": 22,
+      "fth": 22
+    },
+    "block_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "Reduce the stat requirements of your armour upgrades by 2."
+  },
+  {
+    "id": "black_leather_armour",
+    "name": "Black Leather Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 30
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "brass_armour",
+    "name": "Brass Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 25,
+      "fth": 20
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "upgrade_slots": 1
+  },
+  {
+    "id": "catarina_armour",
+    "name": "Catarina Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 22
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "upgrade_slots": 2,
+    "text": "When you run, it costs 2 stamina per node (instead of 1)."
+  },
+  {
+    "id": "catarina_armour_legendary",
+    "name": "Catarina Armour (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 33
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "upgrade_slots": 2,
+    "text": "When you run, it costs 2 stamina per node (instead of 1)."
+  },
+  {
+    "id": "cathedral_knight_armour",
+    "name": "Cathedral Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 18,
+      "fth": 22
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "chesters_set",
+    "name": "Chester's Set",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Marvelous Chester",
+      "type": "invader"
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 30
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You are immune to Bleed.",
+    "immunities": [
+      "bleed"
+    ]
+  },
+  {
+    "id": "cleric_armour",
+    "name": "Cleric Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "fth": 24
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "upgrade_slots": 1,
+    "text": "When one of your equipment cards allows a character to gain health, they gain +1 health."
+  },
+  {
+    "id": "cleric_robes",
+    "name": "Cleric Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "starter"
+    },
+    "requirements": {
+      "fth": 12
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
     }
+  },
+  {
+    "id": "cornyxs_robes",
+    "name": "Cornyx's Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 21,
+      "itl": 21
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "court_sorcerer_robes",
+    "name": "Court Sorcerer Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "dex": 17,
+      "itl": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "crimson_robes",
+    "name": "Crimson Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 12,
+      "itl": 22,
+      "fth": 12
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "When you use your heroic ability, you may remove one condition token from a character."
+  },
+  {
+    "id": "crimson_robes_legendary",
+    "name": "Crimson Robes (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 22,
+      "itl": 32,
+      "fth": 22
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 1,
+    "text": "When you use your heroic ability, you may remove one condition token from a character."
+  },
+  {
+    "id": "dancer_armour",
+    "name": "Dancer Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Dancer of the Boreal Valley",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 35,
+      "itl": 25,
+      "fth": 25
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 1,
+    "text": "When you walk, you may move 2 nodes (instead of 1)."
+  },
+  {
+    "id": "dark_armour",
+    "name": "Dark Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 20
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You gain +1 dodge against Hollows."
+  },
+  {
+    "id": "dark_armour_legendary",
+    "name": "Dark Armour (Legendary)",
+    "item_type": "armor",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 28,
+      "itl": 28
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You gain +1 dodge against Hollows."
+  },
+  {
+    "id": "deacon_robes",
+    "name": "Deacon Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "fth": 24
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "deserter_armour",
+    "name": "Deserter Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 13,
+      "itl": 10
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1
+  },
+  {
+    "id": "dragonscale_armour",
+    "name": "Dragonscale Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 23,
+      "itl": 23
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "dragonslayer_armour",
+    "name": "Dragonslayer Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Ornstein & Smough",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 21,
+      "fth": 31
+    },
+    "block_dice": {
+      "blue": 1,
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1,
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "text": "You are immune to Bleed.",
+    "immunities": [
+      "bleed"
+    ]
+  },
+  {
+    "id": "drang_armour",
+    "name": "Drang Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 18,
+      "dex": 14
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "eastern_armour",
+    "name": "Eastern Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 36,
+      "itl": 26
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "elite_knight_armour",
+    "name": "Elite Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35,
+      "fth": 15
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "embraced_armour_of_favor",
+    "name": "Embraced Armour of Favour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 13,
+      "fth": 23
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "upgrade_slots": 2,
+    "text": "When you use your heroic ability, gain 1 health."
+  },
+  {
+    "id": "embraced_armour_of_favor_legendary",
+    "name": "Embraced Armour of Favour (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 23,
+      "fth": 33
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 2
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "When you use your heroic ability, gain 1 health."
+  },
+  {
+    "id": "exile_armour",
+    "name": "Exile Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 26,
+      "fth": 16
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {},
+    "upgrade_slots": 2
+  },
+  {
+    "id": "fallen_knight_armour",
+    "name": "Fallen Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 30,
+      "itl": 22
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "faraam_armour",
+    "name": "Faraam Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 29,
+      "itl": 19
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "upgrade_slots": 2,
+    "text": "Once per encounter, at the end of another character's activation, you may take the Aggro token."
+  },
+  {
+    "id": "firelink_armour",
+    "name": "Firelink Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "itl": 15
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "gold_hemmed_black_robes",
+    "name": "Gold Hemmed Black Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 14,
+      "itl": 14,
+      "fth": 14
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "When you use your heroic ability, gain 1 stamina."
+  },
+  {
+    "id": "gold_hemmed_black_robes_legendary",
+    "name": "Gold Hemmed Black Robes (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 28,
+      "itl": 28,
+      "fth": 28
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 2
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 1,
+    "text": "When you use your heroic ability, gain 1 stamina."
+  },
+  {
+    "id": "guardian_armour",
+    "name": "Guardian Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 22,
+      "itl": 22
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "upgrade_slots": 1,
+    "text": "You are immune to Bleed.",
+    "immunities": [
+      "bleed"
+    ]
+  },
+  {
+    "id": "guardian_armour_legendary",
+    "name": "Guardian Armour (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "dex": 28,
+      "itl": 28
+    },
+    "block_dice": {
+      "black": 2,
+      "flat_mod": 1
+    },
+    "resist_dice": {
+      "black": 2,
+      "flat_mod": 1
+    },
+    "upgrade_slots": 1,
+    "text": "You are immune to Bleed.",
+    "immunities": [
+      "bleed"
+    ]
+  },
+  {
+    "id": "hard_leather_armour",
+    "name": "Hard Leather Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 26,
+      "dex": 26,
+      "itl": 26
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 2,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "havels_armour",
+    "name": "Havel's Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 23,
+      "itl": 23
+    },
+    "block_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "upgrade_slots": 1,
+    "text": "You cannot dodge or walk."
+  },
+  {
+    "id": "havels_armour_legendary",
+    "name": "Havel's Armour (Legendary)",
+    "legendary": true,
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion"
+      ]
+    },
+    "requirements": {
+      "str": 27,
+      "itl": 27
+    },
+    "block_dice": {
+      "black": 1,
+      "orange": 1
+    },
+    "resist_dice": {
+      "black": 1,
+      "orange": 1
+    },
+    "upgrade_slots": 1,
+    "text": "You cannot dodge or walk."
+  },
+  {
+    "id": "herald_armour",
+    "name": "Herald Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 10,
+      "fth": 10
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1
+  },
+  {
+    "id": "hunter_armour",
+    "name": "Hunter Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "dex": 34,
+      "itl": 17
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 2,
+    "upgrade_slots": 1,
+    "text": "You gain +1 dodge against arc attacks."
+  },
+  {
+    "id": "knight_armour",
+    "name": "Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 12
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    }
+  },
+  {
+    "id": "loincloth",
+    "name": "Loincloth",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    }
+  },
+  {
+    "id": "lothric_knight_armour",
+    "name": "Lothric Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 21,
+      "fth": 15
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "upgrade_slots": 2,
+    "text": "When you end your activation, gain 1 health for each enemy on your node."
+  },
+  {
+    "id": "mask_child",
+    "name": "Mask of the Child",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "itl": 19,
+      "fth": 13
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You gain 4 stamina at the start of your activation (instead of 3)."
+  },
+  {
+    "id": "masters_attire",
+    "name": "Master's Attire",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 30,
+      "itl": 18
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 2,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "mirrah_armour",
+    "name": "Mirrah Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 27,
+      "fth": 27
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1
+  },
+  {
+    "id": "northern_armour",
+    "name": "Northern Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 16,
+      "dex": 8
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1
+  },
+  {
+    "id": "old_ironclad_armour",
+    "name": "Old Ironclad Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "str": 34
+    },
+    "block_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "outrider_armour",
+    "name": "Outrider Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Boreal Outrider Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 24,
+      "fth": 24
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "text": "You are immune to Frostbite.",
+    "immunities": [
+      "frostbite"
+    ]
+  },
+  {
+    "id": "painting_guardian_armour",
+    "name": "Painting Guardian Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "dex": 32,
+      "itl": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 2,
+    "upgrade_slots": 1,
+    "text": "When you attack an enemy's weak arc, instead of gaining an additional black die, gain an additional blue die."
+  },
+  {
+    "id": "paladin_armour",
+    "name": "Paladin Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 24,
+      "fth": 24
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "upgrade_slots": 1
+  },
+  {
+    "id": "pyromancer_garb",
+    "name": "Pyromancer Garb",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "starter"
+    },
+    "requirements": {
+      "itl": 12
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 1
+  },
+  {
+    "id": "royal_swordsman_armour",
+    "name": "Royal Swordsman Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Phantoms",
+        "The Sunless City"
+      ],
+      "entity": "Maldron the Assassin",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 24,
+      "itl": 14,
+      "fth": 14
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "upgrade_slots": 1,
+    "text": "Your highest-stamina one-handed attack costs -1 stamina."
+  },
+  {
+    "id": "sellsword_armour",
+    "name": "Sellsword Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 16,
+      "itl": 8
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1
+  },
+  {
+    "id": "shadow_armour",
+    "name": "Shadow Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ]
+    },
+    "requirements": {
+      "dex": 34,
+      "fth": 17
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 2,
+    "upgrade_slots": 2,
+    "text": "When you dodge, you may move 2 nodes (instead of 1)."
+  },
+  {
+    "id": "silver_knight_armour",
+    "name": "Silver Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ]
+    },
+    "requirements": {
+      "str": 26,
+      "dex": 26
+    },
+    "block_dice": {
+      "black": 1,
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "smelter_demon_armour",
+    "name": "Smelter Demon Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ],
+      "entity": "Smelter Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 35,
+      "fth": 21
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "smoughs_armour",
+    "name": "Smough's Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Ornstein & Smough",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 37
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {
+      "blue": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "no_dodge": true,
+    "no_run": true,
+    "text": "You cannot dodge or run."
+  },
+  {
+    "id": "sorcerer_robes",
+    "name": "Sorcerer Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "starter"
+    },
+    "requirements": {
+      "itl": 12
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    }
+  },
+  {
+    "id": "steel_armour",
+    "name": "Steel Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ],
+      "entity": "Heavy Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 21,
+      "dex": 21,
+      "itl": 20,
+      "fth": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "text": "This armour gains 1 black die for block and 1 black die for resist if it has an equipped upgrade."
+  },
+  {
+    "id": "stone_knight_armour",
+    "name": "Stone Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "str": 30
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    }
+  },
+  {
+    "id": "sunless_armour",
+    "name": "Sunless Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 13,
+      "fth": 13
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "upgrade_slots": 2
+  },
+  {
+    "id": "sunset_armour",
+    "name": "Sunset Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "fth": 24
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "winged_knight_armour",
+    "name": "Winged Knight Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Winged Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 24,
+      "fth": 24
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "worker_armour",
+    "name": "Worker Armour",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 12,
+      "dex": 12,
+      "itl": 12,
+      "fth": 12
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2
+  },
+  {
+    "id": "xanthous_robes",
+    "name": "Xanthous Robes",
+    "item_type": "armor",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "itl": 23,
+      "fth": 20
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "text": "When you make a magical attack, reduce the stamina cost by 1."
+  }
 ]

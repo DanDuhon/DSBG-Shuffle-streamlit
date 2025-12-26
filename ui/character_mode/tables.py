@@ -20,6 +20,7 @@ def _rows_for_table(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         rows.append(
             {
                 "Name": it.get("name") or it.get("id"),
+                "Text": str(it.get("text") or ""),
                 "Type": it.get("item_type") or it.get("hand_category") or "",
                 "STR": req.get("str", 0),
                 "DEX": req.get("dex", 0),
