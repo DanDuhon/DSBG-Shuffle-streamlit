@@ -3,12 +3,12 @@ import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, Optional
 from core.settings_manager import save_settings
-from ui.campaign_mode.core import (
-    _describe_v1_node_label,
-    _describe_v2_node_label,
-    _reset_all_encounters_on_bonfire_return,
-    _record_dropped_souls,
-    _campaign_find_next_encounter_node,
+from ui.campaign_mode.api import (
+    describe_v1_node_label,
+    describe_v2_node_label,
+    reset_all_encounters_on_bonfire_return,
+    record_dropped_souls,
+    campaign_find_next_encounter_node,
 )
 from ui.campaign_mode.state import _get_player_count, _get_settings, _ensure_v1_state, _ensure_v2_state
 from ui.encounter_mode import play_tab as encounter_play_tab
@@ -178,7 +178,7 @@ def _draw_and_apply_campaign_events(
             state["souls"] = int(state.get("souls") or 0) + souls_delta
 
         if kind == "rendezvous":
-            target = _campaign_find_next_encounter_node(campaign, from_node_id)
+            target = campaign_find_next_encounter_node(campaign, from_node_id)
             if target is None:
                 state.setdefault("orphaned_rendezvous_events", [])
                 state["orphaned_rendezvous_events"].append(ev)
@@ -283,11 +283,11 @@ def _sync_current_encounter_from_campaign_for_play(*_args, **_kwargs) -> bool:
 
     # Maintain last_encounter metadata so timers / labels behave as expected.
     settings = _get_settings()
-    selected_chars = settings.get("selected_characters") or []
+    # Use centralized helper to determine player count
+    from ui.campaign_mode.helpers import get_player_count_from_settings
+
     try:
-        character_count = int(
-            len(selected_chars) or st.session_state.get("player_count", 1)
-        )
+        character_count = int(get_player_count_from_settings(settings))
     except Exception:
         character_count = 1
 
@@ -369,11 +369,11 @@ def _render_campaign_play_tab(
     # Only the encounter spaces have something to play here.
     if kind != "encounter":
         label = (
-            _describe_v2_node_label(campaign, current_node)
-            if active_version == "V2"
-            else _describe_v1_node_label(campaign, current_node)
-        )
-        st.info(f"Current space is {label}. There is no regular encounter to play here.")
+                describe_v2_node_label(campaign, current_node)
+                if active_version == "V2"
+                else describe_v1_node_label(campaign, current_node)
+            )
+        st.info(f"There is no regular encounter to play here.")
         return
 
     # Ensure Encounter Mode's current_encounter matches this campaign node.
@@ -383,10 +383,9 @@ def _render_campaign_play_tab(
     # In V2, an encounter space with no choice selected yet is not playable.
     if not has_valid_encounter:
         if active_version == "V2":
-            label = _describe_v2_node_label(campaign, current_node)
+            label = describe_v2_node_label(campaign, current_node)
             st.info(
-                f"Current space is {label}. "
-                "Choose an encounter for this space on the Campaign tab before playing it."
+                f"Choose an encounter for this space on the Campaign tab before playing it."
             )
         else:
             # Defensive fallback for V1; should basically never trigger.
@@ -604,7 +603,7 @@ def _render_campaign_play_tab(
             current_souls = int(state.get("souls") or 0)
 
             # Record dropped souls for this encounter; overwrite any previous data.
-            _record_dropped_souls(state, failed_node_id, current_souls)
+            record_dropped_souls(state, failed_node_id, current_souls)
 
             # Reset soul cache to 0 on failure (dropped souls stay on the map instead)
             state["souls"] = 0
@@ -626,7 +625,7 @@ def _render_campaign_play_tab(
 
             # When the party returns to the bonfire, all encounters that
             # were marked complete become incomplete again. Shortcuts remain.
-            _reset_all_encounters_on_bonfire_return(campaign)
+            reset_all_encounters_on_bonfire_return(campaign)
 
             # Move the party back to the bonfire
             campaign["current_node_id"] = "bonfire"

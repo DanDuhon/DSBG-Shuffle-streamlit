@@ -1,6 +1,6 @@
 #ui/campaign_mode/render.py
 import streamlit as st
-from ui.campaign_mode.core import _load_json_object, BOSSES_PATH, INVADERS_PATH
+from ui.campaign_mode.core import get_bosses, get_invaders
 from ui.campaign_mode.state import _get_settings
 from ui.campaign_mode.setup_tab import _render_setup_header, _render_v1_setup, _render_v2_setup, _render_save_load_section
 from ui.campaign_mode.manage_tab import _render_campaign_tab
@@ -8,8 +8,8 @@ from ui.campaign_mode.play_tab import _render_campaign_play_tab
 
 
 def render() -> None:
-    bosses = _load_json_object(BOSSES_PATH)
-    invaders = _load_json_object(INVADERS_PATH)
+    bosses = get_bosses()
+    invaders = get_invaders()
 
     setup_tab, campaign_tab, play_tab = st.tabs(
         ["Setup", "Manage Campaign", "Play Encounter"]

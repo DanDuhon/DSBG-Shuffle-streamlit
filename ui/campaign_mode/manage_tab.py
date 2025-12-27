@@ -11,18 +11,18 @@ from core.behavior.generation import (
     render_dual_boss_data_cards,
 )
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
-from ui.campaign_mode.core import (
+from ui.campaign_mode.api import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
     SOULS_TOKEN_PATH,
-    _default_sparks_max,
-    _describe_v1_node_label,
-    _describe_v2_node_label,
-    _v2_compute_allowed_destinations,
-    _reset_all_encounters_on_bonfire_return,
-    _record_dropped_souls,
-    _card_w,
-    _v2_pick_scout_ahead_alt_frozen,
+    default_sparks_max,
+    describe_v1_node_label,
+    describe_v2_node_label,
+    v2_compute_allowed_destinations,
+    reset_all_encounters_on_bonfire_return,
+    record_dropped_souls,
+    card_w,
+    v2_pick_scout_ahead_alt_frozen,
 )
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
@@ -364,7 +364,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
             # Sparks: editable numeric input
             player_count = _get_player_count(settings)
-            sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+            sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
 
             sparks_key = "campaign_v1_sparks_campaign"
             # Seed the widget from state only once, when the key does not exist yet.
@@ -396,7 +396,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         st.markdown("---")
         st.markdown(
             f"**Current location:** "
-            f"{_describe_v1_node_label(campaign, current_node)}"
+            f"{describe_v1_node_label(campaign, current_node)}"
         )
 
         st.markdown("#### Path")
@@ -525,7 +525,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             _render_party_icons(settings)
 
             player_count = _get_player_count(settings)
-            sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+            sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
 
             sparks_key = "campaign_v2_sparks_campaign"
             if sparks_key not in st.session_state:
@@ -555,11 +555,11 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         st.markdown("---")
         st.markdown(
             f"**Current location:** "
-            f"{_describe_v2_node_label(campaign, current_node)}"
+            f"{describe_v2_node_label(campaign, current_node)}"
         )
 
         # When standing on an encounter space, restrict legal destinations.
-        allowed_destinations = _v2_compute_allowed_destinations(campaign)
+        allowed_destinations = v2_compute_allowed_destinations(campaign)
 
         # If the party is currently on an encounter space that has not yet had a
         # choice made (choice_index is None), disable all other travel/return
@@ -676,7 +676,7 @@ def _render_v1_campaign_compact(
     _render_party_icons(settings)
 
     player_count = _get_player_count(settings)
-    sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+    sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
 
     sparks_key = "campaign_v1_sparks_campaign"
     if sparks_key not in st.session_state:
@@ -703,7 +703,7 @@ def _render_v1_campaign_compact(
     state["souls"] = int(souls_value)
 
     st.markdown(
-        f"**Current location:** " f"{_describe_v1_node_label(campaign, current_node)}"
+            f"**Current location:** " f"{describe_v1_node_label(campaign, current_node)}"
     )
 
     # Path is still available, but collapsed to avoid dominating the scroll.
@@ -762,7 +762,7 @@ def _render_v2_campaign_compact(
     current_node: Dict[str, Any],
 ) -> None:
     player_count = _get_player_count(settings)
-    sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+    sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
 
     sparks_key = "campaign_v2_sparks_campaign"
     if sparks_key not in st.session_state:
@@ -792,13 +792,13 @@ def _render_v2_campaign_compact(
     _render_party_events_panel(state)
 
     st.markdown(
-        f"**Current location:** " f"{_describe_v2_node_label(campaign, current_node)}"
+            f"**Current location:** " f"{describe_v2_node_label(campaign, current_node)}"
     )
 
-    allowed_destinations = _v2_compute_allowed_destinations(campaign)
+    allowed_destinations = v2_compute_allowed_destinations(campaign)
 
     def _label_for_node(node: Dict[str, Any]) -> str:
-        base = _describe_v2_node_label(campaign, node)
+        base = describe_v2_node_label(campaign, node)
         rv = node.get("rendezvous_event")
         if node.get("kind") == "encounter" and isinstance(rv, dict):
             rv_name = str(rv.get("name") or rv.get("id") or "").strip()
@@ -882,7 +882,7 @@ def _render_v2_campaign_compact(
                 node_id = dest_node.get("id")
 
                 if k == "bonfire":
-                    _reset_all_encounters_on_bonfire_return(campaign)
+                    reset_all_encounters_on_bonfire_return(campaign)
 
                     sparks_cur = int(state.get("sparks") or 0)
                     state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
@@ -982,7 +982,7 @@ def _render_v1_path_row(
     campaign: Dict[str, Any],
     state: Dict[str, Any],
 ) -> None:
-    label = _describe_v1_node_label(campaign, node)
+    label = describe_v1_node_label(campaign, node)
     row_cols = st.columns([3, 1])
 
     with row_cols[0]:
@@ -1045,7 +1045,7 @@ def _render_v1_path_row(
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain.
-                _reset_all_encounters_on_bonfire_return(campaign)
+                reset_all_encounters_on_bonfire_return(campaign)
 
                 # Spend a Spark, but not below zero
                 sparks_cur = int(state.get("sparks") or 0)
@@ -1108,7 +1108,7 @@ def _render_v2_path_row(
     allowed_destinations: Optional[Set[str]] = None,
     disable_travel: bool = False,
 ) -> None:
-    label = _describe_v2_node_label(campaign, node)
+    label = describe_v2_node_label(campaign, node)
     rv = node.get("rendezvous_event")
     if node.get("kind") == "encounter" and isinstance(rv, dict):
         rv_name = str(rv.get("name") or rv.get("id") or "").strip()
@@ -1168,7 +1168,7 @@ def _render_v2_path_row(
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain valid.
-                _reset_all_encounters_on_bonfire_return(campaign)
+                reset_all_encounters_on_bonfire_return(campaign)
 
                 # Spend a Spark, but not below zero
                 sparks_cur = int(state.get("sparks") or 0)
@@ -1270,15 +1270,15 @@ def _render_v1_current_panel(
         if boss_name:
             st.markdown(f"**{prefix}: {boss_name}**")
 
-            # Load raw behavior JSON directly
+            # Load raw behavior JSON directly (cache-aware)
             json_path = Path("data") / "behaviors" / f"{boss_name}.json"
             raw_data = None
-            if json_path.is_file():
-                try:
-                    with json_path.open("r", encoding="utf-8") as f:
-                        raw_data = json.load(f)
-                except Exception as exc:
-                    st.warning(f"Failed to load behavior JSON for '{boss_name}': {exc}")
+            try:
+                from ui.campaign_mode.persistence import load_json_file
+
+                raw_data = load_json_file(json_path)
+            except Exception as exc:
+                st.warning(f"Failed to load behavior JSON for '{boss_name}': {exc}")
 
             if raw_data is None:
                 # Fallback: show static base data card
@@ -1702,7 +1702,7 @@ def _apply_boss_defeated(
 
     # 4) When the party returns to the bonfire, clear completion on all encounters.
     # This applies to both V1 and V2; shortcuts remain valid.
-    _reset_all_encounters_on_bonfire_return(campaign)
+    reset_all_encounters_on_bonfire_return(campaign)
 
     # 5) Party returns to the bonfire, without spending a Spark here
     campaign["current_node_id"] = "bonfire"

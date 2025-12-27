@@ -474,7 +474,112 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
 
 @st.cache_data(show_spinner=False)
 def _list_encounters_cached():
-    return list_encounters()
+    # Build and return the human-friendly expansion->encounter list using
+    # the pre-index so callers benefit from a single cached filesystem scan.
+    idx = _build_encounter_index_cached()
+
+    # Reconstruct encounters grouped by expansion in the same sorted order
+    # that the legacy `list_encounters()` produced.
+    expansions = {}
+    for key, ent in idx.items():
+        exp = ent.get("expansion")
+        lvl = ent.get("level")
+        name = ent.get("name")
+        expansions.setdefault(exp, []).append({"name": name, "expansion": exp, "level": lvl, "version": ent.get("version")})
+
+    # --- Custom expansion sorting (keep parity with previous implementation) ---
+    def expansion_sort_key(exp):
+        exp_lower = exp.lower()
+        if any(x in exp_lower for x in ["tomb of giants", "painted world of ariamis", "the sunless city"]):
+            return (0, exp_lower)
+        elif "dark souls the board game" in exp_lower:
+            return (1, exp_lower)
+        elif any(x in exp_lower for x in ["darkroot", "explorers", "iron keep"]):
+            return (2, exp_lower)
+        elif "executioner" in exp_lower:
+            return (3, exp_lower)
+        else:
+            return (4, exp_lower)
+
+    sorted_expansions = sorted(expansions.keys(), key=expansion_sort_key)
+
+    sorted_data = {}
+    for exp in sorted_expansions:
+        sorted_encounters = sorted(
+            expansions[exp],
+            key=lambda e: (e["level"], e["name"].lower()),
+        )
+        sorted_data[exp] = sorted_encounters
+
+    return sorted_data
+
+
+@st.cache_data(show_spinner=False)
+def _build_encounter_index_cached():
+    """Scan `data/encounters` and build a pre-index mapping a base slug
+    (`{expansion}_{level}_{name}`) to available character-count variants and
+    metadata. Returns a dict keyed by base slug.
+
+    Example entry:
+      {
+        'Painted World of Ariamis_1_Frozen Sentries': {
+            'expansion': 'Painted World of Ariamis',
+            'level': 1,
+            'name': 'Frozen Sentries',
+            'counts': [1,2,3],
+            'filenames': {1: 'data/encounters/..._1.json', 2: '..._2.json', ...},
+            'version': 'V1'
+        }
+      }
+    """
+    index = {}
+    pattern = re.compile(r"(.+?)_(\d+)_(.+?)_(\d+)\.json")
+    data_dir = Path("data/encounters")
+    if not data_dir.exists():
+        return index
+
+    for f in os.listdir(data_dir):
+        if not f.endswith(".json"):
+            continue
+        m = pattern.match(f)
+        if not m:
+            continue
+        expansion, level_s, enc_name, count_s = m.groups()
+        try:
+            lvl = int(level_s)
+            cnt = int(count_s)
+        except Exception:
+            continue
+
+        base_key = f"{expansion}_{lvl}_{enc_name}"
+        ent = index.setdefault(base_key, {"expansion": expansion, "level": lvl, "name": enc_name, "counts": [], "filenames": {}, "version": None})
+        ent["counts"].append(cnt)
+        ent["filenames"][cnt] = str(data_dir / f)
+
+        # Determine approximate version parity used elsewhere in the codebase
+        if lvl == 4:
+            ent["version"] = "V2"
+        else:
+            exp_lower = expansion.lower()
+            if exp_lower in {"dark souls the board game", "darkroot", "explorers", "iron keep", "executioner's chariot"}:
+                ent["version"] = "V1"
+            else:
+                ent["version"] = "V2"
+
+    return index
+
+
+def get_encounter_file(expansion: str, level: int, name: str, character_count: int) -> str:
+    """Return the filesystem path for the specified encounter variant, or raise FileNotFoundError."""
+    idx = _build_encounter_index_cached()
+    base_key = f"{expansion}_{level}_{name}"
+    ent = idx.get(base_key)
+    if not ent:
+        raise FileNotFoundError(f"No encounter '{name}' @ {expansion} level {level} found in data/encounters")
+    fp = ent.get("filenames", {}).get(int(character_count))
+    if not fp:
+        raise FileNotFoundError(f"Encounter '{name}' @ {expansion} level {level} has no variant for character_count={character_count}")
+    return fp
 
 
 @st.cache_data(show_spinner=False)
@@ -718,7 +823,7 @@ def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: t
 
 
 def shuffle_encounter(selected_encounter, character_count, active_expansions,
-                      selected_expansion, use_edited, use_original_enemies: bool = False):
+                      selected_expansion, use_edited, use_original_enemies: bool = False, settings: dict | None = None):
     """Shuffle and generate a randomized encounter (respects invader limit setting).
 
     If `use_original_enemies` is True, the encounter will be generated with the
@@ -748,7 +853,10 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                             "message": f"Original enemy list violates invader limit (level {level} max invaders = {limit}).",
                         }
         # Respect user's enemy inclusion toggles and authoritative mapping
-        settings = st.session_state.get("user_settings") or {}
+        # Prefer caller-provided `settings` snapshot when available so callers
+        # (including background threads) can avoid touching Streamlit runtime.
+        if settings is None:
+            settings = st.session_state.get("user_settings") or {}
         legacy_enemy_included = settings.get("enemy_included", {}) or {}
         campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
         # merge legacy then campaign so campaign overrides
@@ -813,7 +921,7 @@ def get_alternatives(data, active_expansions):
     return valid_alts
 
 
-def analyze_encounter_availability(selected_encounter: dict, character_count: int, active_expansions) -> dict:
+def analyze_encounter_availability(selected_encounter: dict, character_count: int, active_expansions, settings=None) -> dict:
     """Return availability info for the given encounter.
 
     Returns a dict with:
@@ -830,7 +938,10 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
         return {"num_viable_alternatives": 0, "original_viable": False}
 
     # build merged effective toggles
-    settings = st.session_state.get("user_settings") or {}
+    # Prefer caller-provided `settings` snapshot when available so callers
+    # (including background threads) can avoid touching Streamlit runtime.
+    if settings is None:
+        settings = st.session_state.get("user_settings") or {}
     legacy_enemy_included = settings.get("enemy_included", {}) or {}
     campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
     effective_enemy_included = {}

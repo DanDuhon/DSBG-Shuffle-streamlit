@@ -1,7 +1,8 @@
 #ui/campaign_mode/state.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.core import _default_sparks_max
+from ui.campaign_mode.api import default_sparks_max
+from ui.campaign_mode.helpers import get_player_count_from_settings
 
 
 def _get_settings() -> Dict[str, Any]:
@@ -13,11 +14,7 @@ def _get_settings() -> Dict[str, Any]:
 
 
 def _get_player_count(settings: Dict[str, Any]) -> int:
-    selected_chars = settings.get("selected_characters")
-    if isinstance(selected_chars, list) and selected_chars:
-        return max(1, len(selected_chars))
-    raw = st.session_state.get("player_count", 1)
-    return max(1, int(raw))
+    return get_player_count_from_settings(settings)
 
 
 def _ensure_campaign_event_state(state: Dict[str, Any]) -> None:
@@ -51,7 +48,7 @@ def _ensure_v1_state(player_count: int) -> Dict[str, Any]:
 
     state.setdefault("souls", 0)
 
-    sparks_max = _default_sparks_max(player_count)
+    sparks_max = default_sparks_max(player_count)
     prev_max = state.get("sparks_max")
     prev_current = state.get("sparks")
 
@@ -87,7 +84,7 @@ def _ensure_v2_state(player_count: int) -> Dict[str, Any]:
 
     state.setdefault("souls", 0)
 
-    sparks_max = _default_sparks_max(player_count)
+    sparks_max = default_sparks_max(player_count)
     prev_max = state.get("sparks_max")
     prev_current = state.get("sparks")
 

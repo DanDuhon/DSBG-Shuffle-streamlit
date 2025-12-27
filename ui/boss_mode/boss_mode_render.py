@@ -7,6 +7,7 @@ from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from pathlib import Path
 
 from ui.encounter_mode.generation import generate_encounter_image
+from ui.campaign_mode.helpers import get_player_count_from_settings
 from core.ngplus import get_current_ngplus_level
 from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,
@@ -145,8 +146,7 @@ def render():
         #   - settings["selected_characters"]
         #   - st.session_state["player_count"]
         settings = st.session_state.get("user_settings", {})
-        selected_chars = settings.get("selected_characters", [])
-        character_count = len(selected_chars) or st.session_state.get("player_count", 1)
+        character_count = get_player_count_from_settings(settings)
 
         try:
             n = int(character_count)

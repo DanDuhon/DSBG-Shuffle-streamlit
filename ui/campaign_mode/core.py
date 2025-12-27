@@ -1,5 +1,6 @@
 #ui/campaign_mode/core.py
 import streamlit as st
+import os
 import json
 import random
 from pathlib import Path
@@ -13,11 +14,33 @@ from ui.encounter_mode.logic import (
 )
 from ui.event_mode.logic import V2_EXPANSIONS
 
-
-DATA_DIR = Path("data")
-BOSSES_PATH = DATA_DIR / "bosses.json"
-INVADERS_PATH = DATA_DIR / "invaders.json"
-CAMPAIGNS_PATH = DATA_DIR / "campaigns.json"
+from ui.campaign_mode.persistence import (
+    DATA_DIR,
+    BOSSES_PATH,
+    INVADERS_PATH,
+    CAMPAIGNS_PATH,
+    _load_json_object,
+    _load_campaigns,
+    _save_campaigns,
+    get_bosses,
+    get_invaders,
+    get_campaigns,
+    clear_json_cache,
+)
+from ui.campaign_mode.generation import (
+    _filter_bosses,
+    _resolve_v1_bosses_for_campaign,
+    _pick_random_campaign_encounter,
+    _campaign_encounter_signature,
+    _v2_pick_scout_ahead_alt_frozen,
+    _generate_v1_campaign,
+    _generate_v2_campaign,
+)
+from ui.campaign_mode.rules import (
+    _is_v1_campaign_eligible,
+    _is_v2_campaign_eligible,
+    V2_EXPANSIONS_SET,
+)
 ASSETS_DIR = Path("assets")
 PARTY_TOKEN_PATH = ASSETS_DIR / "party_token.png"
 SOULS_TOKEN_PATH = ASSETS_DIR / "souls_token.png"
@@ -83,40 +106,13 @@ def _get_player_count_from_settings(settings: Dict[str, Any]) -> int:
     Local copy of the player-count logic to avoid importing ui.campaign_mode.state
     and creating a circular import.
     """
-    selected_chars = settings.get("selected_characters")
-    if isinstance(selected_chars, list) and selected_chars:
-        return max(1, len(selected_chars))
+    from ui.campaign_mode.helpers import get_player_count_from_settings
 
-    raw = st.session_state.get("player_count", 1)
-    return max(1, int(raw))
+    return get_player_count_from_settings(settings)
 
 
-def _load_json_object(path: Path) -> Dict[str, Any]:
-    """Load a JSON object from path. Raise if malformed; return {} if missing."""
-    if not path.exists():
-        return {}
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    if not isinstance(data, dict):
-        raise ValueError(f"Expected JSON object in {path}, got {type(data).__name__}")
-    return data
-
-
-def _load_campaigns() -> Dict[str, Any]:
-    """Load all saved campaigns as a mapping name -> payload."""
-    if not CAMPAIGNS_PATH.exists():
-        return {}
-    with CAMPAIGNS_PATH.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    if isinstance(data, dict):
-        return data
-    raise ValueError(f"Expected JSON object in {CAMPAIGNS_PATH}, got {type(data).__name__}")
-
-
-def _save_campaigns(campaigns: Dict[str, Any]) -> None:
-    CAMPAIGNS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with CAMPAIGNS_PATH.open("w", encoding="utf-8") as f:
-        json.dump(campaigns, f, indent=2, sort_keys=True)
+# Persistence helpers (load/save paths) are provided by
+# `ui.campaign_mode.persistence` and imported at module top.
 
 
 def _default_sparks_max(player_count: int) -> int:

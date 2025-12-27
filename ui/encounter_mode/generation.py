@@ -1,5 +1,6 @@
 #ui/encounter_mode/generation.py
 import streamlit as st
+from functools import lru_cache
 import os
 import base64
 from dataclasses import dataclass
@@ -250,12 +251,49 @@ def build_encounter_keywords(encounter_name, expansion, use_edited=False):
     return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
 
 
+@lru_cache(maxsize=1024)
 def load_encounter(encounter_slug: str, character_count: int):
-    """Load encounter JSON by name (e.g., 'Altar of Bones1.json')."""
+    """Load encounter JSON by slug and character count.
+
+    Prefer the exact `{encounter_slug}_{character_count}.json` filename; if
+    that file is missing, scan the `data/encounters` directory for a matching
+    base slug and character-count variant and return it if found.
+    """
+    # Fast path: exact filename
     file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = load(f)
-    return data
+    if file_path.exists():
+        with open(file_path, "r", encoding="utf-8") as f:
+            return load(f)
+
+    # Fallback: scan directory for matching base slug and character count
+    base_prefix = f"{encounter_slug}_"
+    if not ENCOUNTER_DATA_DIR.exists():
+        raise FileNotFoundError(f"Encounter data directory not found: {ENCOUNTER_DATA_DIR}")
+
+    for fname in os.listdir(ENCOUNTER_DATA_DIR):
+        if not fname.endswith(".json"):
+            continue
+        if not fname.startswith(base_prefix):
+            continue
+        # filename format: <slug>_<character_count>.json
+        parts = fname.rsplit("_", 1)
+        if len(parts) != 2:
+            continue
+        cnt_part = parts[1]
+        if not cnt_part.endswith(".json"):
+            continue
+        try:
+            cnt = int(cnt_part[:-5])
+        except Exception:
+            continue
+        if cnt != int(character_count):
+            continue
+        # Found matching file
+        fp = ENCOUNTER_DATA_DIR / fname
+        with open(fp, "r", encoding="utf-8") as f:
+            return load(f)
+
+    raise FileNotFoundError(f"No encounter file found for '{encounter_slug}' with character_count={character_count}")
 
 
 def generate_encounter_image(

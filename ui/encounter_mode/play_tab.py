@@ -16,7 +16,7 @@ from ui.encounter_mode.setup_tab import render_original_encounter
 from ui.encounter_mode.assets import encounterKeywords, editedEncounterKeywords, keywordText
 from core.image_cache import get_image_bytes_cached, get_image_data_uri_cached, bytes_to_data_uri
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
-from ui.campaign_mode.core import ENCOUNTER_GRAVESTONES, _v2_pick_scout_ahead_alt_frozen
+from ui.campaign_mode.api import ENCOUNTER_GRAVESTONES, v2_pick_scout_ahead_alt_frozen
 
 
 

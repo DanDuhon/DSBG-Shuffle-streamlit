@@ -3,7 +3,7 @@ import streamlit as st
 import base64
 from pathlib import Path
 from typing import Any, Dict, Optional
-from ui.campaign_mode.core import CHARACTERS_DIR
+from ui.campaign_mode.api import CHARACTERS_DIR
 from core.image_cache import get_image_data_uri_cached
 
 

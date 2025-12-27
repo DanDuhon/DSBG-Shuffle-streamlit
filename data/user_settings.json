@@ -127,7 +127,6 @@
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Fleeting Glory.jpg",
       "assets\\events\\Skeletal Reforging.jpg",
       "assets\\events\\Trustworthy Promise.jpg",
       "assets\\events\\Skeletal Reforging.jpg",
@@ -167,7 +166,7 @@
       "assets\\events\\Alluring Skull.jpg"
     ],
     "discard_pile": [],
-    "current_card": null,
+    "current_card": "assets\\events\\Fleeting Glory.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",
