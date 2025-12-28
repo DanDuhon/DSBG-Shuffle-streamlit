@@ -7,6 +7,7 @@ from ui.boss_mode.boss_mode_render import render as boss_mode_render
 from ui.campaign_mode.render import render as campaign_mode_render
 from ui.event_mode.render import render as event_mode_render
 from ui.character_mode.render import render as character_mode_render
+from ui.behavior_viewer.render import render as behavior_viewer_render
 from core.settings_manager import load_settings, save_settings
 
 st.set_page_config(
@@ -162,7 +163,7 @@ if pending_boss:
 
 mode = st.sidebar.radio(
     "Mode",
-    ["Encounter Mode", "Event Mode", "Boss Mode", "Campaign Mode", "Character Mode"],
+    ["Encounter Mode", "Event Mode", "Boss Mode", "Campaign Mode", "Character Mode", "Behavior Card Viewer"],
     key="mode",
 )
 
@@ -176,3 +177,5 @@ elif mode == "Campaign Mode":
     campaign_mode_render()
 elif mode == "Character Mode":
     character_mode_render(settings)
+elif mode == "Behavior Card Viewer":
+    behavior_viewer_render()
