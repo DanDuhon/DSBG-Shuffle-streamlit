@@ -33,6 +33,7 @@ from core.behavior.generation import (
     render_behavior_card_cached,
     render_dual_boss_behavior_card,
 )
+from core.behavior.priscilla_overlay import overlay_priscilla_arcs
 from core.behavior.render import render_health_tracker
 from ui.boss_mode.guardian_dragon_fiery_breath import (
     GUARDIAN_DRAGON_NAME,
@@ -83,6 +84,9 @@ def _ensure_boss_state(entry):
     if not state:
         state, cfg = _new_state_from_file(entry.path)
         state["ngplus_level"] = current_ng
+        # Ensure Priscilla starts invisible in boss mode state as well
+        if cfg.name == "Crossbreed Priscilla":
+            state["priscilla_invisible"] = True
         st.session_state[key] = state
         # also keep "current" pointers for functions that expect behavior_deck
         st.session_state["behavior_deck"] = state
@@ -639,6 +643,12 @@ def render():
                         with c2:
                             w = _card_w()
 
+                            # If Priscilla is invisible, overlay arcs onto the behavior card
+                            if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                                try:
+                                    frost_img = overlay_priscilla_arcs(frost_img, frost_key, cfg.behaviors.get(frost_key, {}))
+                                except Exception:
+                                    pass
                             src = bytes_to_data_uri(frost_img, mime="image/png")
 
                             st.markdown(
@@ -768,7 +778,17 @@ def render():
                     move_path = _behavior_image_path(cfg, move_card)
                     w = _card_w()
 
-                    src = get_image_data_uri_cached(move_path)
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        move_img = render_behavior_card_cached(
+                            move_path, cfg.behaviors.get(move_card, {}), is_boss=True
+                        )
+                        try:
+                            move_img = overlay_priscilla_arcs(move_img, move_card, cfg.behaviors.get(move_card, {}))
+                        except Exception:
+                            pass
+                        src = bytes_to_data_uri(move_img, mime="image/png")
+                    else:
+                        src = get_image_data_uri_cached(move_path)
 
                     st.markdown(
                         f"""
@@ -782,7 +802,17 @@ def render():
                     atk_path = _behavior_image_path(cfg, atk_card)
                     w = _card_w()
 
-                    src = get_image_data_uri_cached(atk_path)
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        atk_img = render_behavior_card_cached(
+                            atk_path, cfg.behaviors.get(atk_card, {}), is_boss=True
+                        )
+                        try:
+                            atk_img = overlay_priscilla_arcs(atk_img, atk_card, cfg.behaviors.get(atk_card, {}))
+                        except Exception:
+                            pass
+                        src = bytes_to_data_uri(atk_img, mime="image/png")
+                    else:
+                        src = get_image_data_uri_cached(atk_path)
 
                     st.markdown(
                         f"""
@@ -823,6 +853,11 @@ def render():
                     with c1:
                         w = _card_w()
 
+                        if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                            try:
+                                stomach_img = overlay_priscilla_arcs(stomach_img, current, cfg.behaviors.get(current, {}))
+                            except Exception:
+                                pass
                         src = bytes_to_data_uri(stomach_img, mime="image/png")
 
                         st.markdown(
@@ -836,6 +871,11 @@ def render():
                     with c2:
                         w = _card_w()
 
+                        if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                            try:
+                                crawl_img = overlay_priscilla_arcs(crawl_img, crawl_key, cfg.behaviors.get(crawl_key, {}))
+                            except Exception:
+                                pass
                         src = bytes_to_data_uri(crawl_img, mime="image/png")
 
                         st.markdown(
@@ -851,6 +891,11 @@ def render():
                     # at least show Stomach Slam
                     w = _card_w()
 
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        try:
+                            stomach_img = overlay_priscilla_arcs(stomach_img, current, cfg.behaviors.get(current, {}))
+                        except Exception:
+                            pass
                     src = bytes_to_data_uri(stomach_img, mime="image/png")
 
                     st.markdown(
@@ -907,6 +952,11 @@ def render():
                 with c1:
                     w = _card_w()
 
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        try:
+                            cage_img = overlay_priscilla_arcs(cage_img, current, cfg.behaviors.get(current, {}))
+                        except Exception:
+                            pass
                     src = bytes_to_data_uri(cage_img, mime="image/png")
 
                     st.markdown(
@@ -976,6 +1026,11 @@ def render():
                 with c1:
                     w = _card_w()
 
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        try:
+                            hellfire_img = overlay_priscilla_arcs(hellfire_img, current, cfg.behaviors.get(current, {}))
+                        except Exception:
+                            pass
                     src = bytes_to_data_uri(hellfire_img, mime="image/png")
 
                     st.markdown(
@@ -1044,6 +1099,11 @@ def render():
                 with c1:
                     w = _card_w()
 
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        try:
+                            beam_img = overlay_priscilla_arcs(beam_img, current, cfg.behaviors.get(current, {}))
+                        except Exception:
+                            pass
                     src = bytes_to_data_uri(beam_img, mime="image/png")
 
                     st.markdown(
@@ -1115,6 +1175,11 @@ def render():
                 with c1:
                     w = _card_w()
 
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        try:
+                            death_race_img = overlay_priscilla_arcs(death_race_img, current, cfg.behaviors.get(current, {}))
+                        except Exception:
+                            pass
                     src = bytes_to_data_uri(death_race_img, mime="image/png")
 
                     st.markdown(
@@ -1149,6 +1214,11 @@ def render():
                 )
                 w = _card_w()
 
+                if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                    try:
+                        img = overlay_priscilla_arcs(img, current, cfg.behaviors.get(current, {}))
+                    except Exception:
+                        pass
                 src = bytes_to_data_uri(img, mime="image/png")
 
                 st.markdown(

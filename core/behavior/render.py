@@ -15,6 +15,7 @@ from core.behavior.persistance import _save_slot_ui
 from core.behavior.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
     , render_behavior_card_cached, build_behavior_catalog)
+from core.behavior.priscilla_overlay import overlay_priscilla_arcs
 from core.behavior.models import BehaviorEntry
 from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
 
@@ -238,6 +239,12 @@ def render():
                 edited_img = render_behavior_card_cached(
                     data_path, cfg.raw[card_name], is_boss=True
                 )
+                # If Priscilla is invisible, overlay arc indicators
+                if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                    try:
+                        edited_img = overlay_priscilla_arcs(edited_img, card_name, cfg.raw[card_name])
+                    except Exception:
+                        pass
             with cols[i if i < len(cols) else -1]:
                 st.markdown(
                     f"""
@@ -421,6 +428,11 @@ def render():
                         cfg.behaviors.get(current_name, {}),
                         is_boss=True,
                     )
+                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                        try:
+                            edited_behavior = overlay_priscilla_arcs(edited_behavior, current_name, cfg.behaviors.get(current_name, {}))
+                        except Exception:
+                            pass
 
                 st.markdown(
                     f"""
@@ -442,6 +454,11 @@ def render():
             edited_behavior = render_behavior_card_cached(
                 current_path, beh_json, is_boss=True
             )
+            if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
+                try:
+                    edited_behavior = overlay_priscilla_arcs(edited_behavior, beh_key, beh_json)
+                except Exception:
+                    pass
             st.markdown(
                 f"""
                 <div class="card-image">

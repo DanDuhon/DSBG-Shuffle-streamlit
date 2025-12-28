@@ -1,0 +1,15 @@
+{
+  "Icy Blast": {"up": [399,990]},
+  "Flanking Slash": {"right": [423,1017]},
+  "Scything Withdrawal": {"down": [144,1045]},
+  "Blizzard": {"down": [399,1045]},
+  "Scythe Strike": {"left": [371,1016], "right": [423,1017]},
+  "Scythe Slash": {"down": [399,1045]},
+  "Snowstorm": {"down": [399,1045]},
+  "Backslash": {"left": [371,1016]},
+  "Mournful Gaze": {"down": [399,1045]},
+  "Scything Lunge": {"down": [399,1045]},
+  "Double Lunge": {"down": [399,1045]},
+  "Double Strike": {"left": [371,1016], "right": [423,1017]},
+  "Double Slash": {"down": [399,1045]}
+}
