@@ -38,12 +38,9 @@ def _frozen_sig(
     """(expansion, level, encounter_name) signature for a frozen encounter."""
     if not isinstance(frozen, dict):
         return None
-    try:
-        exp = str(frozen.get("expansion") or "")
-        lvl = int(frozen.get("encounter_level", default_level))
-        name = str(frozen.get("encounter_name") or "")
-    except Exception:
-        return None
+    exp = str(frozen.get("expansion") or "")
+    lvl = int(frozen.get("encounter_level", default_level))
+    name = str(frozen.get("encounter_name") or "")
     if not exp or not name:
         return None
     return (exp, lvl, name)
@@ -110,10 +107,7 @@ def _v2_ensure_scout_ahead_alt_option(
         return None
 
     level = node.get("level")
-    try:
-        lvl_int = int(level)
-    except Exception:
-        lvl_int = 1
+    lvl_int = int(level)
 
     sa = node.get("scout_ahead")
     if not isinstance(sa, dict):
@@ -152,7 +146,7 @@ def _v2_ensure_scout_ahead_alt_option(
         if sig is not None:
             exclude.add(sig)
 
-    cand = _v2_pick_scout_ahead_alt_frozen(
+    cand = v2_pick_scout_ahead_alt_frozen(
         settings=settings,
         level=lvl_int,
         exclude_signatures=exclude,
@@ -196,79 +190,46 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
     if not instants and not consumables and not orphans:
         return
 
-    # 4-column grid:
-    # - Immediate events in left two columns
-    # - Consumable events in right two columns
-    c0, c1, c2, c3 = st.columns(4)
+    # Unified 4-column grid for both Immediate and Consumable events.
+    cols = st.columns(4)
 
-    if instants:
-        with c0:
-            st.markdown("**Immediate**")
-    if consumables:
-        with c2:
-            st.markdown("**Consumable**")
-
-    if isinstance(instants, list) and instants:
-        cols = [c0, c1]
-        for i, ev in enumerate(instants):
+    # Build a typed list of events so we can render them into the 4-column
+    # grid while still labeling each card with its type above the image.
+    typed_events: list[tuple[dict, str]] = []
+    if isinstance(instants, list):
+        for ev in instants:
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
-            with cols[i % 2]:
-                path_str = str(ev.get("path") or "")
-                # Prefer embedding the file as a base64 data URI so the
-                # image renders reliably across platforms/browsers.
-                img_src = path_str
-                try:
-                    from core.image_cache import get_image_data_uri_cached
-
-                    src = get_image_data_uri_cached(path_str)
-                    if src:
-                        img_src = src
-                    else:
-                        img_src = path_str
-                except Exception:
-                    img_src = path_str
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{img_src}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                nm = str(ev.get("name") or ev.get("id") or "").strip()
-                if nm:
-                    st.caption(nm)
-
-    if isinstance(consumables, list) and consumables:
-        cols = [c2, c3]
-        for i, ev in enumerate(consumables):
+            typed_events.append((ev, "Immediate"))
+    if isinstance(consumables, list):
+        for ev in consumables:
             if not isinstance(ev, dict) or not ev.get("path"):
                 continue
-            with cols[i % 2]:
-                path_str = str(ev.get("path") or "")
+            typed_events.append((ev, "Consumable"))
+
+    for i, (ev, ev_type) in enumerate(typed_events):
+        col = cols[i % 4]
+        with col:
+            st.markdown(f"**{ev_type}**")
+            path_str = str(ev.get("path") or "")
+            img_src = path_str
+            try:
+                src = get_image_data_uri_cached(path_str)
+                if src:
+                    img_src = src
+            except Exception:
                 img_src = path_str
-                try:
-                    from core.image_cache import get_image_data_uri_cached
 
-                    src = get_image_data_uri_cached(path_str)
-                    if src:
-                        img_src = src
-                    else:
-                        img_src = path_str
-                except Exception:
-                    img_src = path_str
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{img_src}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                nm = str(ev.get("name") or ev.get("id") or "Consumable").strip()
+            st.markdown(
+                f"""
+                <div class="card-image">
+                    <img src="{img_src}" style="width:100%">
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            nm = str(ev.get("name") or ev.get("id") or ev_type).strip()
+            if nm:
                 st.caption(nm)
 
     # Controls
@@ -1055,9 +1016,9 @@ def _render_v1_path_row(
                 state["campaign"] = campaign
 
                 # Force widget to re-seed on rerun
-                st.session_state.pop("campaign_v2_sparks_campaign", None)
+                st.session_state.pop("campaign_v1_sparks_campaign", None)
 
-                st.session_state["campaign_v2_state"] = state
+                st.session_state["campaign_v1_state"] = state
                 st.rerun()
             return
 
@@ -1471,7 +1432,7 @@ def _render_v2_current_panel(
 
             # Always show attached rendezvous card under the encounter card(s)
             if isinstance(rv, dict) and rv.get("path"):
-                w = _card_w()
+                w = card_w()
                 p = Path(rv["path"])
                 try:
                     src = get_image_data_uri_cached(str(p))
@@ -1569,12 +1530,16 @@ def _render_v2_current_panel(
 
                     # Scout Ahead card under the encounter card(s)
                     if isinstance(rv, dict) and rv.get("path"):
-                        w = _card_w()
+                        w = card_w()
+                        img_src = rv["path"]
+                        src = get_image_data_uri_cached(img_src)
+                        if src:
+                            img_src = src
 
                         st.markdown(
                             f"""
                             <div class="card-image" style="width:{w}px">
-                                <img src="{rv['path']}" style="width:100%">
+                                <img src="{img_src}" style="width:100%">
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -1587,12 +1552,16 @@ def _render_v2_current_panel(
 
         # Always show attached rendezvous card under the encounter card
         if isinstance(rv, dict) and rv.get("path"):
-            w = _card_w()
+            w = card_w()
+            img_src = rv["path"]
+            src = get_image_data_uri_cached(img_src)
+            if src:
+                img_src = src
 
             st.markdown(
                 f"""
                 <div class="card-image" style="width:{w}px">
-                    <img src="{rv['path']}" style="width:100%">
+                    <img src="{img_src}" style="width:100%">
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1639,13 +1608,29 @@ def _apply_boss_defeated(
     sparks_max = int(state.get("sparks_max") or sparks_cur)
     current_souls = int(state.get("souls") or 0)
 
-    # 1) Pick up any dropped souls token that is sitting on this boss
+    # 1) Pick up any dropped souls token that is sitting on this boss.
+    # Support both the canonical `souls_token_*` fields and the older
+    # `dropped_souls` fallback to ensure previously-recorded failures
+    # are reclaimed when the space is completed.
     token_node_id = state.get("souls_token_node_id")
     token_amount = int(state.get("souls_token_amount") or 0)
-    if token_node_id == node_id and token_amount > 0:
-        current_souls += token_amount
+    dropped_amount = int(state.get("dropped_souls") or 0)
+
+    try:
+        tid = None if token_node_id is None else str(token_node_id)
+        nid = None if node_id is None else str(node_id)
+    except Exception:
+        tid = token_node_id
+        nid = node_id
+
+    if tid is not None and nid is not None and tid == nid and (token_amount > 0 or dropped_amount > 0):
+        # Use the larger of the two amounts to avoid double-counting when
+        # both fields exist (they represent the same dropped amount).
+        pickup = max(token_amount, dropped_amount)
+        current_souls += pickup
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
+        state.pop("dropped_souls", None)
 
     # 2) Apply version-specific boss soul rewards
     if version == "V2":
@@ -1711,6 +1696,12 @@ def _apply_boss_defeated(
     # Clear any stale "dropped_souls" trackers if you use them elsewhere
     state.pop("dropped_souls", None)
 
+    # Force the Sparks widget to re-seed from updated state on rerun
+    if version == "V2":
+        st.session_state.pop("campaign_v2_sparks_campaign", None)
+    else:
+        st.session_state.pop("campaign_v1_sparks_campaign", None)
+
     st.session_state[state_key] = state
 
     st.success(
@@ -1742,7 +1733,8 @@ def _apply_boss_failure(
 
     # Drop souls on the boss, if any
     current_souls = int(state.get("souls") or 0)
-    _record_dropped_souls(state, failed_node_id, current_souls)
+    # Use public API re-export from ui.campaign_mode.api
+    record_dropped_souls(state, failed_node_id, current_souls)
 
     # Soul cache goes to 0
     state["souls"] = 0
@@ -1757,11 +1749,19 @@ def _apply_boss_failure(
 
     # When the party returns to the bonfire, all completed encounters
     # are reset to incomplete across the whole campaign. Shortcuts stay valid.
-    _reset_all_encounters_on_bonfire_return(campaign)
+    reset_all_encounters_on_bonfire_return(campaign)
 
     # Party returns to the bonfire
     campaign["current_node_id"] = "bonfire"
     state["campaign"] = campaign
+    # Force the Sparks and Soul cache widgets to re-seed on rerun
+    if version == "V2":
+        st.session_state.pop("campaign_v2_sparks_campaign", None)
+        st.session_state.pop("campaign_v2_souls_campaign", None)
+    else:
+        st.session_state.pop("campaign_v1_sparks_campaign", None)
+        st.session_state.pop("campaign_v1_souls_campaign", None)
+
     st.session_state[state_key] = state
 
     # Clear encounter-specific session data

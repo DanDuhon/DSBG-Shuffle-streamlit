@@ -11,10 +11,7 @@ def _is_v1_campaign_eligible(encounter: Dict[str, Any]) -> bool:
     - Only V1 encounters (by the 'version' field coming from _list_encounters_cached)
     - Level 4 encounters are treated as both V1 and V2, so they are always allowed.
     """
-    try:
-        level = int(encounter["level"])
-    except Exception:
-        return False
+    level = int(encounter["level"])
 
     # Level 4 is allowed for both V1 and V2 campaigns
     if level == 4:
@@ -42,10 +39,7 @@ def _is_v2_campaign_eligible(encounter: Dict[str, Any]) -> bool:
     """
     version = str(encounter.get("version", "")).upper()
     expansion = encounter.get("expansion")
-    try:
-        level = int(encounter.get("level"))
-    except Exception:
-        return False
+    level = int(encounter.get("level"))
 
     # Explicit version tags win.
     if version.startswith("V2") or level == 4:

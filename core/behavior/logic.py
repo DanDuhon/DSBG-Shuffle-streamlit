@@ -968,10 +968,7 @@ def recycle_deck(state: Dict[str, Any]) -> None:
     # Try to identify the current boss name from the loaded file
     boss_name = None
     if "selected_file" in state:
-        try:
-            boss_name = Path(state["selected_file"]).stem
-        except Exception:
-            boss_name = None
+        boss_name = Path(state["selected_file"]).stem
 
     # --- Crossbreed Priscilla: invisibility flag
     if boss_name == "Crossbreed Priscilla":

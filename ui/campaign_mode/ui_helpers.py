@@ -15,10 +15,7 @@ def _img_tag_from_path(
 ) -> Optional[str]:
     if not path.is_file():
         return None
-    try:
-        src = get_image_data_uri_cached(str(path))
-    except Exception:
-        return None
+    src = get_image_data_uri_cached(str(path))
     if not src:
         return None
     style = f"height:{height_px}px; {extra_css}".strip()

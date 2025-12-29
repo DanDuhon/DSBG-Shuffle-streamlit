@@ -199,13 +199,10 @@ text_styles = {
 
 
 def _load_fonts():
-    try:
-        return {
-            name: ImageFont.truetype(str(style["font"]), style["size"])
-            for name, style in text_styles.items()
-        }
-    except Exception:
-        return {name: ImageFont.load_default() for name in text_styles}
+    return {
+        name: ImageFont.truetype(str(style["font"]), style["size"])
+        for name, style in text_styles.items()
+    }
     
 
 FONTS = _load_fonts()

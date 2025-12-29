@@ -104,10 +104,7 @@ def _format_enemy_list_from_indices(indices_str: str, enemy_names: List[str]) ->
         part = part.strip()
         if not part:
             continue
-        try:
-            idxs.append(int(part))
-        except ValueError:
-            continue
+        idxs.append(int(part))
 
     # Map indices to names (1-based indices)
     names: list[str] = []

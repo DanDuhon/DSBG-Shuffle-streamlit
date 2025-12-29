@@ -4,10 +4,7 @@ from ui.character_mode.item_fields import _item_expansions, _item_requirements, 
 
 
 def _tier_index(label: str) -> int:
-    try:
-        return TIERS.index(label)
-    except ValueError:
-        return 0
+    return TIERS.index(label)
 
 
 def _build_stats(class_name: str, tier_indices: Dict[str, int]) -> Dict[str, int]:

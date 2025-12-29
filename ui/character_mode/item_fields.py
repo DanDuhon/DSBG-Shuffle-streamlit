@@ -3,17 +3,11 @@ from ui.character_mode.constants import STAT_KEYS
 
 
 def _armor_dodge_int(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("dodge_dice") or 0)
-    except Exception:
-        return 0
+    return int(item.get("dodge_dice") or 0)
 
 
 def _armor_upgrade_slots_int(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("upgrade_slots") or 0)
-    except Exception:
-        return 0
+    return int(item.get("upgrade_slots") or 0)
 
 
 def _armor_has_special_rules(item: Dict[str, Any]) -> bool:
@@ -34,24 +28,15 @@ def _hand_range_str(item: Dict[str, Any]) -> str:
 
 
 def _hand_upgrade_slots_int(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("upgrade_slots") or 0)
-    except Exception:
-        return 0
+    return int(item.get("upgrade_slots") or 0)
 
 
 def _hand_dodge_int(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("dodge_dice") or 0)
-    except Exception:
-        return 0
+    return int(item.get("dodge_dice") or 0)
 
 
 def _hand_hands_required_int(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("hands_required") or 1)
-    except Exception:
-        return 1
+    return int(item.get("hands_required") or 1)
     
 
 def _id(item: Dict[str, Any]) -> str:
@@ -63,18 +48,12 @@ def _name(item: Dict[str, Any]) -> str:
 
 
 def _slot_cost(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("slot_cost") or 1)
-    except Exception:
-        return 1
+    return int(item.get("slot_cost") or 1)
 
 
 def _extra_upgrade_slots(item: Dict[str, Any]) -> int:
     # Legacy v1 field
-    try:
-        v1 = int(item.get("upgrade_slot_mod") or 0)
-    except Exception:
-        v1 = 0
+    v1 = int(item.get("upgrade_slot_mod") or 0)
 
     # v2 canonical field: mods.meta.upgrade_slots
     v2 = 0
@@ -82,26 +61,17 @@ def _extra_upgrade_slots(item: Dict[str, Any]) -> int:
     if isinstance(mods, dict):
         meta = mods.get("meta") or {}
         if isinstance(meta, dict):
-            try:
-                v2 = int(meta.get("upgrade_slots") or 0)
-            except Exception:
-                v2 = 0
+            v2 = int(meta.get("upgrade_slots") or 0)
 
     return int(v1) + int(v2)
 
 
 def _upgrade_slots(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("upgrade_slots") or 0)
-    except Exception:
-        return 0
+    return int(item.get("upgrade_slots") or 0)
 
 
 def _hands_required(item: Dict[str, Any]) -> int:
-    try:
-        return int(item.get("hands_required") or 1)
-    except Exception:
-        return 1
+    return int(item.get("hands_required") or 1)
 
 
 def _is_twohand_compatible_shield(item: Dict[str, Any]) -> bool:
@@ -189,10 +159,7 @@ def _item_requirements(item: Dict[str, Any]) -> Dict[str, int]:
             kk = "fth"
         if kk not in out:
             continue
-        try:
-            out[kk] = int(v)
-        except Exception:
-            out[kk] = 0
+        out[kk] = int(v)
     return out
 
 

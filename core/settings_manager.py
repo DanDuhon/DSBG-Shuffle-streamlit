@@ -42,14 +42,9 @@ DEFAULT_SETTINGS = {
 def load_settings():
     """Load saved user settings, merged with defaults."""
     merged = deepcopy(DEFAULT_SETTINGS)
-    if not SETTINGS_FILE.exists():
-        return merged
 
-    try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            loaded = json.load(f)
-    except Exception:
-        return merged
+    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+        loaded = json.load(f)
 
     if not isinstance(loaded, dict):
         return merged
@@ -70,10 +65,7 @@ def load_settings():
     out = {}
     for lvl, mx in clamps.items():
         raw = mip.get(lvl, mx)
-        try:
-            val = int(raw)
-        except Exception:
-            val = mx
+        val = int(raw)
         out[lvl] = max(0, min(val, mx))
     merged["max_invaders_per_level"] = out
 

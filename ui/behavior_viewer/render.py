@@ -55,11 +55,7 @@ def render():
         return
 
     # Load the behavior config
-    try:
-        cfg = load_behavior(entry.path)
-    except Exception as e:
-        st.error(f"Failed to load behavior data: {e}")
-        return
+    cfg = load_behavior(entry.path)
 
     # Present cards as radio options on the left; show image on the right
     # Build behavior option ordering. Special-case Ornstein & Smough grouping.
@@ -132,22 +128,19 @@ def render():
 
     # Try to preserve previous selection across mode changes
     prev = st.session_state.get("behavior_viewer_card_choice") or st.session_state.get("behavior_viewer_card_choice_compact")
-    try:
-        if compact:
-            default_index = options_compact.index(prev) if prev in options_compact else 0
+    if compact:
+        default_index = options_compact.index(prev) if prev in options_compact else 0
+    else:
+        if prev in options:
+            default_index = options.index(prev)
         else:
-            if prev in options:
-                default_index = options.index(prev)
-            else:
-                # If previous was stored as the original behavior name, find its display label
-                found_label = None
-                for lbl, orig in display_map.items():
-                    if orig == prev:
-                        found_label = lbl
-                        break
-                default_index = options.index(found_label) if found_label and found_label in options else 0
-    except Exception:
-        default_index = 0
+            # If previous was stored as the original behavior name, find its display label
+            found_label = None
+            for lbl, orig in display_map.items():
+                if orig == prev:
+                    found_label = lbl
+                    break
+            default_index = options.index(found_label) if found_label and found_label in options else 0
 
     with left_col:
         if compact:
@@ -165,24 +158,19 @@ def render():
     with right_col:
         if choice == "(Data Card)":
             if entry.name == "Ornstein & Smough":
-                try:
-                    o_img, s_img = render_dual_boss_data_cards(cfg.raw)
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        src_o = bytes_to_data_uri(o_img)
-                        st.markdown(f"<div class=\"card-image\"><img src=\"{src_o}\" style=\"width:100%\"></div>", unsafe_allow_html=True)
-                    with c2:
-                        src_s = bytes_to_data_uri(s_img)
-                        st.markdown(f"<div class=\"card-image\"><img src=\"{src_s}\" style=\"width:100%\"></div>", unsafe_allow_html=True)
-                except Exception:
-                    st.warning("Unable to render Ornstein & Smough data cards.")
+                o_img, s_img = render_dual_boss_data_cards(cfg.raw)
+                c1, c2 = st.columns(2)
+                with c1:
+                    src_o = bytes_to_data_uri(o_img)
+                    st.markdown(f"<div class=\"card-image\"><img src=\"{src_o}\" style=\"width:100%\"></div>", unsafe_allow_html=True)
+                with c2:
+                    src_s = bytes_to_data_uri(s_img)
+                    st.markdown(f"<div class=\"card-image\"><img src=\"{src_s}\" style=\"width:100%\"></div>", unsafe_allow_html=True)
             else:
                 if cfg.display_cards:
                     img_bytes = render_data_card_cached(cfg.display_cards[0], cfg.raw, is_boss=(entry.tier != "enemy"))
                     src = bytes_to_data_uri(img_bytes)
                     st.markdown(f"<div class=\"card-image\"><img src=\"{src}\" style=\"width:360px\"></div>", unsafe_allow_html=True)
-                else:
-                    st.warning("No data card image available for this entity.")
         else:
             # Map display label back to original behavior name for non-compact mode
             if compact:
@@ -195,16 +183,10 @@ def render():
                 st.info("Select a behavior card — header rows are labels in compact mode.")
             else:
                 beh = cfg.behaviors.get(sel, {})
-                try:
-                    img_path = _behavior_image_path(cfg, sel)
-                    img_bytes = render_behavior_card_cached(img_path, beh, is_boss=(entry.tier != "enemy"))
-                    # Apply Priscilla overlay when requested
-                    if entry.name == "Crossbreed Priscilla" and st.session_state.get(priscilla_invis_key, True):
-                        try:
-                            img_bytes = overlay_priscilla_arcs(img_bytes, sel, beh)
-                        except Exception:
-                            pass
-                    src = bytes_to_data_uri(img_bytes)
-                    st.markdown(f"<div class=\"card-image\"><img src=\"{src}\" style=\"width:360px\"></div>", unsafe_allow_html=True)
-                except Exception:
-                    st.warning("Unable to render behavior image; the image file may be missing.")
+                img_path = _behavior_image_path(cfg, sel)
+                img_bytes = render_behavior_card_cached(img_path, beh, is_boss=(entry.tier != "enemy"))
+                # Apply Priscilla overlay when requested
+                if entry.name == "Crossbreed Priscilla" and st.session_state.get(priscilla_invis_key, True):
+                    img_bytes = overlay_priscilla_arcs(img_bytes, sel, beh)
+                src = bytes_to_data_uri(img_bytes)
+                st.markdown(f"<div class=\"card-image\"><img src=\"{src}\" style=\"width:360px\"></div>", unsafe_allow_html=True)

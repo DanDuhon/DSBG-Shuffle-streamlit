@@ -120,10 +120,7 @@ if pending:
 
     snap_ng = snap_sidebar.get("ngplus_level")
     if snap_ng is not None:
-        try:
-            snap_ng_int = int(snap_ng)
-        except Exception:
-            snap_ng_int = 0
+        snap_ng_int = int(snap_ng)
         current_ng = int(st.session_state.get("ngplus_level", 0))
         if snap_ng_int != current_ng:
             st.session_state["ngplus_level"] = snap_ng_int

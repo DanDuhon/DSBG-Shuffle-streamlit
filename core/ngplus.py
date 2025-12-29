@@ -27,10 +27,7 @@ def get_current_ngplus_level() -> int:
     Return the currently selected NG+ level from Streamlit state.
     Defaults to 0 (base game).
     """
-    try:
-        level = int(st.session_state.get("ngplus_level", 0))
-    except (TypeError, ValueError):
-        level = 0
+    level = int(st.session_state.get("ngplus_level", 0))
     return max(0, min(MAX_NGPLUS_LEVEL, level))
 
 

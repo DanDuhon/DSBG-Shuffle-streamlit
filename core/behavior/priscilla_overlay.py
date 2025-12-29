@@ -16,30 +16,24 @@ def _load_map() -> None:
     p = Path("data/behaviors/priscilla_arcs.json")
     if not p.exists():
         return
-    try:
-        with p.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict):
-                for k, v in data.items():
-                    # Accept either a list of directions (old format)
-                    # or a mapping {direction: [x,y], ...}
-                    if isinstance(v, list):
-                        PRISCILLA_ARC_MAP[k] = v
-                    elif isinstance(v, dict):
-                        # validate coord lists
-                        coords = {}
-                        for dir_k, coord_v in v.items():
-                            if isinstance(coord_v, (list, tuple)) and len(coord_v) >= 2:
-                                try:
-                                    x = int(coord_v[0])
-                                    y = int(coord_v[1])
-                                    coords[dir_k] = (x, y)
-                                except Exception:
-                                    continue
-                        if coords:
-                            PRISCILLA_ARC_MAP[k] = coords
-    except Exception:
-        return
+    with p.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+        if isinstance(data, dict):
+            for k, v in data.items():
+                # Accept either a list of directions (old format)
+                # or a mapping {direction: [x,y], ...}
+                if isinstance(v, list):
+                    PRISCILLA_ARC_MAP[k] = v
+                elif isinstance(v, dict):
+                    # validate coord lists
+                    coords = {}
+                    for dir_k, coord_v in v.items():
+                        if isinstance(coord_v, (list, tuple)) and len(coord_v) >= 2:
+                            x = int(coord_v[0])
+                            y = int(coord_v[1])
+                            coords[dir_k] = (x, y)
+                    if coords:
+                        PRISCILLA_ARC_MAP[k] = coords
 
 
 _load_map()
@@ -65,11 +59,8 @@ def overlay_priscilla_arcs(image_input, behavior_name: str, behavior_json: dict 
     mime = "image/png"
 
     if isinstance(image_input, str) and image_input.startswith("data:"):
-        try:
-            img_bytes, mime = _decode_data_uri(image_input)
-            returned_as_data_uri = True
-        except Exception:
-            return image_input
+        img_bytes, mime = _decode_data_uri(image_input)
+        returned_as_data_uri = True
     elif isinstance(image_input, (bytes, bytearray)):
         img_bytes = bytes(image_input)
     else:
@@ -79,10 +70,7 @@ def overlay_priscilla_arcs(image_input, behavior_name: str, behavior_json: dict 
     if not mapping:
         return image_input
 
-    try:
-        base = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-    except Exception:
-        return image_input
+    base = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
 
     # Two supported mapping shapes:
     #  - list of directions (e.g. ["left"])
@@ -96,10 +84,7 @@ def overlay_priscilla_arcs(image_input, behavior_name: str, behavior_json: dict 
             icon_path = ICONS_DIR / arc_name
             if not icon_path.exists():
                 continue
-            try:
-                icon = Image.open(icon_path).convert("RGBA")
-            except Exception:
-                continue
+            icon = Image.open(icon_path).convert("RGBA")
 
             # choose placement coordinate from coords_map as a fallback
             coord = None
@@ -127,20 +112,12 @@ def overlay_priscilla_arcs(image_input, behavior_name: str, behavior_json: dict 
                 continue
             if not coord or len(coord) < 2:
                 continue
-            try:
-                x = int(coord[0])
-                y = int(coord[1])
-            except Exception:
-                continue
+            x = int(coord[0])
+            y = int(coord[1])
 
             arc_name = f"arc_normal_{d}.png"
             icon_path = ICONS_DIR / arc_name
-            if not icon_path.exists():
-                continue
-            try:
-                icon = Image.open(icon_path).convert("RGBA")
-            except Exception:
-                continue
+            icon = Image.open(icon_path).convert("RGBA")
 
             ix, iy = icon.size
             paste_xy = (int(x - ix / 2), int(y - iy / 2))

@@ -12,11 +12,8 @@ def _hand_has_attacks_with_dice(item: Dict[str, Any]) -> bool:
 
 def _hand_any_attack_pred(item: Dict[str, Any], pred) -> bool:
     for atk in (item.get("attacks") or []):
-        try:
-            if pred(atk):
-                return True
-        except Exception:
-            continue
+        if pred(atk):
+            return True
     return False
 
 

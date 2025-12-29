@@ -74,14 +74,7 @@ def _render_selection_table(
             cfg.update(column_config_override)
         kwargs["column_config"] = cfg
 
-    try:
-        edited = _dynamic_data_editor(df, key=key, **kwargs)
-    except TypeError:
-        # Backstop if any arg name differs across minor versions
-        kwargs.pop("num_rows", None)
-        kwargs.pop("column_config", None)
-        kwargs.pop("column_order", None)
-        edited = _dynamic_data_editor(df, key=key, **kwargs)
+    edited = _dynamic_data_editor(df, key=key, **kwargs)
 
     chosen = [_id(items[i]) for i, v in enumerate(list(edited["Select"])) if bool(v)]
     return chosen[:1] if single_select else chosen

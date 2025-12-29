@@ -11,22 +11,16 @@ DiceDict = Dict[str, int]  # keys: black, blue, orange, flat_mod
 
 
 def _dice_count(d: Dict[str, Any], key: str) -> int:
-    try:
-        return int((d or {}).get(key) or 0)
-    except Exception:
-        return 0
+    return int((d or {}).get(key) or 0)
 
 
 def _flat_mod(d: Dict[str, Any]) -> int:
-    try:
-        v = (d or {}).get("flat_mod")
-        if v is None:
-            v = (d or {}).get("mod")
-        if v is None:
-            v = (d or {}).get("modifier")
-        return int(v or 0)
-    except Exception:
-        return 0
+    v = (d or {}).get("flat_mod")
+    if v is None:
+        v = (d or {}).get("mod")
+    if v is None:
+        v = (d or {}).get("modifier")
+    return int(v or 0)
 
 def _dice_icons(block_or_resist: Dict[str, Any]) -> str:
     b = _dice_count(block_or_resist, "black")

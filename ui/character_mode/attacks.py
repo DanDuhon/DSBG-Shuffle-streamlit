@@ -6,10 +6,7 @@ from ui.character_mode.item_fields import _id, _name
 
 
 def _attack_int(atk: Dict[str, Any], k: str, default: int = 0) -> int:
-    try:
-        return int((atk or {}).get(k) or default)
-    except Exception:
-        return default
+    return int((atk or {}).get(k) or default)
 
 
 def _attack_bool(atk: Dict[str, Any], k: str) -> bool:
@@ -58,11 +55,7 @@ def _attack_has_dice(atk: Dict[str, Any]) -> bool:
     if not isinstance(d, dict) or not d:
         return False
     for v in d.values():
-        try:
-            if int(v) != 0:
-                return True
-        except Exception:
-            # non-numeric but present counts as dice
+        if int(v) != 0:
             return True
     return False
 

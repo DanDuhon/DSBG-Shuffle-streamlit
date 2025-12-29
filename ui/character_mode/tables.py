@@ -73,11 +73,7 @@ def _rows_for_armor_table(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
         block = it.get("block_dice") or {}
         resist = it.get("resist_dice") or {}
-        dodge_n = 0
-        try:
-            dodge_n = int(it.get("dodge_dice") or 0)
-        except Exception:
-            dodge_n = 0
+        dodge_n = int(it.get("dodge_dice") or 0)
 
         rows.append(
             {

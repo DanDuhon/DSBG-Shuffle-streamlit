@@ -510,7 +510,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                             if s is not None:
                                 exclude.add(s)
 
-                        cand = _v2_pick_scout_ahead_alt_frozen(
+                        cand = v2_pick_scout_ahead_alt_frozen(
                             settings=settings,
                             level=lvl_int,
                             exclude_signatures=exclude,

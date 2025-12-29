@@ -116,11 +116,7 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
 
 
 def _hash_json(obj: Any) -> str:
-    try:
-        s = json.dumps(obj, sort_keys=True, separators=(",", ":"))
-    except TypeError:
-        # Fallback for non-JSON-serializable objects: use repr
-        s = repr(obj)
+    s = json.dumps(obj, sort_keys=True, separators=(",", ":"))
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 

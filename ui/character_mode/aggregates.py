@@ -13,10 +13,7 @@ DiceDict = Dict[str, int]  # keys: black, blue, orange, flat_mod
 
 
 def _int(v: Any, default: int = 0) -> int:
-    try:
-        return int(v)
-    except Exception:
-        return default
+    return int(v)
 
 
 def _as_dice_dict(obj: Any) -> DiceDict:
@@ -85,10 +82,7 @@ def _first_present_int(obj: Dict[str, Any], keys: Iterable[str]) -> Optional[int
         v = _get_nested(obj, k)
         if v is None:
             continue
-        try:
-            return int(v)
-        except Exception:
-            continue
+        return int(v)
     return None
 
 
@@ -229,10 +223,7 @@ def _extract_attack_mods(obj: Dict[str, Any]) -> AttackMods:
             continue
         if isinstance(v, dict) or isinstance(v, (list, tuple, set)):
             continue
-        try:
-            flat_total += int(v)
-        except Exception:
-            continue
+        flat_total += int(v)
 
     if flat_total:
         dice_total = dict(dice_total)
@@ -297,10 +288,7 @@ def _range_to_int(r: str) -> Optional[int]:
         return None
     if s == "∞":
         return None
-    try:
-        return int(s)
-    except Exception:
-        return None
+    return int(s)
 
 
 def _collapse_conditions(*parts: Iterable[str]) -> str:
@@ -387,10 +375,7 @@ def _rule_targets(
         return list(range(len(base_stamina)))
 
     if kind == "range":
-        try:
-            want = int(sel.get("value"))
-        except Exception:
-            return []
+        want = int(sel.get("value"))
         return [i for i, r in enumerate(base_range_int) if r is not None and int(r) == want]
 
     if kind == "max":
@@ -470,10 +455,7 @@ def build_attack_totals_rows(
             v = _get_nested(src, "mods.attack.range")
             if v is None:
                 continue
-            try:
-                global_range_delta += int(v)
-            except Exception:
-                continue
+            global_range_delta += int(v)
 
         # Base arrays used for v2 rule targeting (stable, order-independent).
         base_stamina: List[int] = []
@@ -586,18 +568,12 @@ def build_attack_totals_rows(
                     continue
 
                 if "stamina" in add_eff:
-                    try:
-                        st.stamina += int(add_eff.get("stamina"))
-                    except Exception:
-                        pass
+                    st.stamina += int(add_eff.get("stamina"))
 
                 if "range" in add_eff:
                     if st.range_int is not None:
-                        try:
-                            st.range_int = max(int(st.range_int) + int(add_eff.get("range")), 0)
-                            st.range_str = str(st.range_int)
-                        except Exception:
-                            pass
+                        st.range_int = max(int(st.range_int) + int(add_eff.get("range")), 0)
+                        st.range_str = str(st.range_int)
 
                 dice_eff = add_eff.get("dice")
                 if isinstance(dice_eff, dict):
@@ -709,10 +685,7 @@ def expected_damage_taken(
 
 # --- Cached wrappers (serialize inputs for stable cache keys) ---
 def _to_json(obj: Any) -> str:
-    try:
-        return json.dumps(obj, sort_keys=True, default=str)
-    except Exception:
-        return json.dumps(str(obj))
+    return json.dumps(obj, sort_keys=True, default=str)
 
 
 @st.cache_data(show_spinner=False)

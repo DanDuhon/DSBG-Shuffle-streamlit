@@ -241,10 +241,8 @@ def render():
                 )
                 # If Priscilla is invisible, overlay arc indicators
                 if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                    try:
-                        edited_img = overlay_priscilla_arcs(edited_img, card_name, cfg.raw[card_name])
-                    except Exception:
-                        pass
+                    edited_img = overlay_priscilla_arcs(edited_img, card_name, cfg.raw[card_name])
+
             with cols[i if i < len(cols) else -1]:
                 st.markdown(
                     f"""
@@ -429,10 +427,7 @@ def render():
                         is_boss=True,
                     )
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                        try:
-                            edited_behavior = overlay_priscilla_arcs(edited_behavior, current_name, cfg.behaviors.get(current_name, {}))
-                        except Exception:
-                            pass
+                        edited_behavior = overlay_priscilla_arcs(edited_behavior, current_name, cfg.behaviors.get(current_name, {}))
 
                 st.markdown(
                     f"""
@@ -455,10 +450,7 @@ def render():
                 current_path, beh_json, is_boss=True
             )
             if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                try:
-                    edited_behavior = overlay_priscilla_arcs(edited_behavior, beh_key, beh_json)
-                except Exception:
-                    pass
+                edited_behavior = overlay_priscilla_arcs(edited_behavior, beh_key, beh_json)
             st.markdown(
                 f"""
                 <div class="card-image">
@@ -630,10 +622,7 @@ def render_health_tracker(cfg, state):
             st.session_state["enabled_kings"] = enabled_count  # keep in sync
 
             # e.label is "King 1", "King 2", etc.
-            try:
-                king_num = int(e.label.split()[-1])
-            except Exception:
-                king_num = 1
+            king_num = int(e.label.split()[-1])
 
             # If this king hasn't been summoned yet, don't render a slider for it
             if king_num > enabled_count:

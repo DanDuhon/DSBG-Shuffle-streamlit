@@ -40,10 +40,7 @@ def _load_jpg_cached(src_path: Path, cache_dir: Path) -> Image.Image:
     """Load a JPG image from assets or disk cache."""
     dst = cache_dir / src_path.name
     if dst.exists():
-        try:
-            return Image.open(dst).convert("RGB")
-        except Exception:
-            dst.unlink(missing_ok=True)
+        return Image.open(dst).convert("RGB")
     if src_path.exists():
         img = Image.open(src_path).convert("RGB")
         img.save(dst, format="JPEG")
@@ -56,10 +53,7 @@ def _load_png_cached(src_path: Path, cache_dir: Path) -> Image.Image:
     """Load a PNG image from assets or disk cache."""
     dst = cache_dir / src_path.name
     if dst.exists():
-        try:
-            return Image.open(dst).convert("RGBA")
-        except Exception:
-            dst.unlink(missing_ok=True)
+        return Image.open(dst).convert("RGBA")
     if src_path.exists():
         img = Image.open(src_path).convert("RGBA")
         img.save(dst, format="PNG")
@@ -100,10 +94,7 @@ def load_expansion_icon(name: str) -> Image.Image:
 # Bytes helper (cached by file mtime)
 # -------------------------------------------------------------
 def _stat_mtime_ns(path: Path) -> int:
-    try:
-        return int(path.stat().st_mtime_ns)
-    except Exception:
-        return 0
+    return int(path.stat().st_mtime_ns)
 
 
 @st.cache_data(show_spinner=False)
@@ -140,10 +131,7 @@ def bytes_to_data_uri(data: bytes, mime: str = "image/png") -> str:
 def get_image_data_uri_cached(path: str) -> str:
     """Return a `data:<mime>;base64,...` URI for `path`, cached and invalidated on file change."""
     p = Path(path)
-    try:
-        data = get_image_bytes_cached(str(p))
-    except Exception:
-        return ""
+    data = get_image_bytes_cached(str(p))
     suffix = p.suffix.lower()
     mime = "image/png" if suffix == ".png" else "image/jpeg"
     return bytes_to_data_uri(data, mime=mime)
@@ -163,10 +151,7 @@ def _load_pil_image_cached_raw(
     data = _get_image_bytes_cached(path_str, mtime_ns)
     img = Image.open(io.BytesIO(data))
     if convert:
-        try:
-            img = img.convert(convert)
-        except Exception:
-            pass
+        img = img.convert(convert)
     return img
 
 

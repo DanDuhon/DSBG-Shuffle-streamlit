@@ -66,10 +66,7 @@ BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
 
 def _card_w() -> int:
     s = st.session_state.get("user_settings") or {}
-    try:
-        w = int(s.get("ui_card_width", 360))
-    except Exception:
-        w = 360
+    w = int(s.get("ui_card_width", 360))
     return max(240, min(560, w))
 
 
@@ -152,10 +149,7 @@ def render():
         settings = st.session_state.get("user_settings", {})
         character_count = get_player_count_from_settings(settings)
 
-        try:
-            n = int(character_count)
-        except (TypeError, ValueError):
-            n = 1
+        n = int(character_count)
 
         # Mega boss setup only defines 1–4 character variants.
         n = max(1, min(n, 4))
@@ -294,9 +288,6 @@ def render():
             )
 
             entries = catalog.get(category, [])
-            if not entries:
-                st.info("No bosses found in this category.")
-                return
 
             names = [e.name for e in entries]
             last_choice = st.session_state.get("boss_mode_choice_name")
@@ -645,10 +636,7 @@ def render():
 
                             # If Priscilla is invisible, overlay arcs onto the behavior card
                             if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                                try:
-                                    frost_img = overlay_priscilla_arcs(frost_img, frost_key, cfg.behaviors.get(frost_key, {}))
-                                except Exception:
-                                    pass
+                                frost_img = overlay_priscilla_arcs(frost_img, frost_key, cfg.behaviors.get(frost_key, {}))
                             src = bytes_to_data_uri(frost_img, mime="image/png")
 
                             st.markdown(
@@ -659,20 +647,6 @@ def render():
                                 """,
                                 unsafe_allow_html=True,
                             )
-                    else:
-                        # Safety fallback: just show data card
-                        w = _card_w()
-
-                        src = bytes_to_data_uri(data_img, mime="image/png")
-
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="{src}" style="width:{w}px">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
                 else:
                     # Normal Vordt display, no Frostbreath this draw
                     w = _card_w()
@@ -717,12 +691,9 @@ def render():
             w = _card_w()
 
             p = Path(CARD_BACK)
-            try:
-                src = get_image_data_uri_cached(str(p))
-                if not src:
-                    raise Exception("empty data uri")
-            except Exception:
-                src = str(p)
+            src = get_image_data_uri_cached(str(p))
+            if not src:
+                raise Exception("empty data uri")
 
             st.markdown(
                 f"""
@@ -782,11 +753,9 @@ def render():
                         move_img = render_behavior_card_cached(
                             move_path, cfg.behaviors.get(move_card, {}), is_boss=True
                         )
-                        try:
-                            move_img = overlay_priscilla_arcs(move_img, move_card, cfg.behaviors.get(move_card, {}))
-                        except Exception:
-                            pass
+                        move_img = overlay_priscilla_arcs(move_img, move_card, cfg.behaviors.get(move_card, {}))
                         src = bytes_to_data_uri(move_img, mime="image/png")
+                    
                     else:
                         src = get_image_data_uri_cached(move_path)
 
@@ -806,10 +775,7 @@ def render():
                         atk_img = render_behavior_card_cached(
                             atk_path, cfg.behaviors.get(atk_card, {}), is_boss=True
                         )
-                        try:
-                            atk_img = overlay_priscilla_arcs(atk_img, atk_card, cfg.behaviors.get(atk_card, {}))
-                        except Exception:
-                            pass
+                        atk_img = overlay_priscilla_arcs(atk_img, atk_card, cfg.behaviors.get(atk_card, {}))
                         src = bytes_to_data_uri(atk_img, mime="image/png")
                     else:
                         src = get_image_data_uri_cached(atk_path)
@@ -854,10 +820,7 @@ def render():
                         w = _card_w()
 
                         if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                            try:
-                                stomach_img = overlay_priscilla_arcs(stomach_img, current, cfg.behaviors.get(current, {}))
-                            except Exception:
-                                pass
+                            stomach_img = overlay_priscilla_arcs(stomach_img, current, cfg.behaviors.get(current, {}))
                         src = bytes_to_data_uri(stomach_img, mime="image/png")
 
                         st.markdown(
@@ -872,10 +835,7 @@ def render():
                         w = _card_w()
 
                         if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                            try:
-                                crawl_img = overlay_priscilla_arcs(crawl_img, crawl_key, cfg.behaviors.get(crawl_key, {}))
-                            except Exception:
-                                pass
+                            crawl_img = overlay_priscilla_arcs(crawl_img, crawl_key, cfg.behaviors.get(crawl_key, {}))
                         src = bytes_to_data_uri(crawl_img, mime="image/png")
 
                         st.markdown(
@@ -886,26 +846,6 @@ def render():
                             """,
                             unsafe_allow_html=True,
                         )
-                else:
-                    # Fallback: if Crawling Charge isn't found for some reason,
-                    # at least show Stomach Slam
-                    w = _card_w()
-
-                    if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                        try:
-                            stomach_img = overlay_priscilla_arcs(stomach_img, current, cfg.behaviors.get(current, {}))
-                        except Exception:
-                            pass
-                    src = bytes_to_data_uri(stomach_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
 
             # --- Guardian Dragon: Cage Grasp Inferno shows Fiery Breath alongside ---
             elif (
@@ -953,10 +893,7 @@ def render():
                     w = _card_w()
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                        try:
-                            cage_img = overlay_priscilla_arcs(cage_img, current, cfg.behaviors.get(current, {}))
-                        except Exception:
-                            pass
+                        cage_img = overlay_priscilla_arcs(cage_img, current, cfg.behaviors.get(current, {}))
                     src = bytes_to_data_uri(cage_img, mime="image/png")
 
                     st.markdown(
@@ -1027,10 +964,7 @@ def render():
                     w = _card_w()
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                        try:
-                            hellfire_img = overlay_priscilla_arcs(hellfire_img, current, cfg.behaviors.get(current, {}))
-                        except Exception:
-                            pass
+                        hellfire_img = overlay_priscilla_arcs(hellfire_img, current, cfg.behaviors.get(current, {}))
                     src = bytes_to_data_uri(hellfire_img, mime="image/png")
 
                     st.markdown(
@@ -1100,10 +1034,7 @@ def render():
                     w = _card_w()
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                        try:
-                            beam_img = overlay_priscilla_arcs(beam_img, current, cfg.behaviors.get(current, {}))
-                        except Exception:
-                            pass
+                        beam_img = overlay_priscilla_arcs(beam_img, current, cfg.behaviors.get(current, {}))
                     src = bytes_to_data_uri(beam_img, mime="image/png")
 
                     st.markdown(
@@ -1176,10 +1107,7 @@ def render():
                     w = _card_w()
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                        try:
-                            death_race_img = overlay_priscilla_arcs(death_race_img, current, cfg.behaviors.get(current, {}))
-                        except Exception:
-                            pass
+                        death_race_img = overlay_priscilla_arcs(death_race_img, current, cfg.behaviors.get(current, {}))
                     src = bytes_to_data_uri(death_race_img, mime="image/png")
 
                     st.markdown(
@@ -1215,10 +1143,7 @@ def render():
                 w = _card_w()
 
                 if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
-                    try:
-                        img = overlay_priscilla_arcs(img, current, cfg.behaviors.get(current, {}))
-                    except Exception:
-                        pass
+                    img = overlay_priscilla_arcs(img, current, cfg.behaviors.get(current, {}))
                 src = bytes_to_data_uri(img, mime="image/png")
 
                 st.markdown(

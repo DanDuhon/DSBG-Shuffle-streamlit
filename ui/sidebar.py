@@ -162,10 +162,7 @@ def render_sidebar(settings: dict):
     with st.sidebar.expander("⚔️ Encounter Invader Cap", expanded=False):
         for lvl, mx in INVADER_CAP_CLAMP.items():
             cur = caps.get(str(lvl), mx)
-            try:
-                cur = int(cur)
-            except Exception:
-                cur = mx
+            cur = int(cur)
             cur = max(0, min(cur, mx))
             st.slider(
                 f"Level {lvl}",
@@ -222,10 +219,7 @@ def render_sidebar(settings: dict):
 
     # One-time init for the widget key (must happen BEFORE st.slider is created)
     if "ui_card_width" not in st.session_state:
-        try:
-            st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
-        except Exception:
-            st.session_state["ui_card_width"] = 360
+        st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
 
     with st.sidebar.expander("🖼️ Card Display", expanded=False):
         st.slider(

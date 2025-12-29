@@ -261,10 +261,7 @@ def _sync_current_encounter_from_campaign_for_play(*_args, **_kwargs) -> bool:
 
     # Best-effort slug; Encounter Mode play_state falls back to name anyway
     if expansion and level is not None and name:
-        try:
-            level_int = int(level)
-        except Exception:
-            level_int = level
+        level_int = int(level)
         slug = f"{expansion}_{level_int}_{name}"
     else:
         slug = (
@@ -286,10 +283,7 @@ def _sync_current_encounter_from_campaign_for_play(*_args, **_kwargs) -> bool:
     # Use centralized helper to determine player count
     from ui.campaign_mode.helpers import get_player_count_from_settings
 
-    try:
-        character_count = int(get_player_count_from_settings(settings))
-    except Exception:
-        character_count = 1
+    character_count = int(get_player_count_from_settings(settings))
 
     st.session_state["last_encounter"] = {
         "label": name or slug,
@@ -417,16 +411,10 @@ def _render_campaign_play_tab(
     if not reward_totals or not current_slug or rewards_slug != current_slug:
         reward_totals = {}
 
-    try:
-        reward_souls = int(reward_totals.get("souls") or 0)
-    except Exception:
-        reward_souls = 0
+    reward_souls = int(reward_totals.get("souls") or 0)
 
     # Shortcut rewards can come from the encounter or attached events
-    try:
-        reward_shortcuts = int(reward_totals.get("shortcut") or 0)
-    except Exception:
-        reward_shortcuts = 0
+    reward_shortcuts = int(reward_totals.get("shortcut") or 0)
 
     current_souls = int(state.get("souls", 0))
 
@@ -438,10 +426,7 @@ def _render_campaign_play_tab(
         and current_node is not None
         and current_node.get("id") == souls_token_node_id
     ):
-        try:
-            dropped_souls = int(state.get("souls_token_amount") or 0)
-        except Exception:
-            dropped_souls = 0
+        dropped_souls = int(state.get("souls_token_amount") or 0)
 
     # Event rewards only make sense for V2 campaigns
     reward_events = 0

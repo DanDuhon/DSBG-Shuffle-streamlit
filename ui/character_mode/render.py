@@ -577,20 +577,14 @@ def render(settings: Dict[str, Any]) -> None:
             def _avg_per_stam(row):
                 s = row.get("Stamina") or 0
                 a = row.get("Avg") or 0
-                try:
-                    return float(a) / float(s) if float(s) != 0 else 0.0
-                except Exception:
-                    return 0.0
+                return float(a) / float(s) if float(s) != 0 else 0.0
 
             disp["Avg/Stam"] = disp.apply(_avg_per_stam, axis=1)
             disp["Range"] = disp.get("Range")
             disp["Shaft"] = disp.get("Shaft")
             disp["Magic"] = disp.get("Magic")
             # Coerce Repeat to numeric so missing/invalid values render blank
-            try:
-                disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
-            except Exception:
-                disp["Repeat"] = pd.Series([pd.NA] * len(disp), index=disp.index)
+            disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
             disp["Node"] = disp.get("Node")
             # 'Ignore Block' column (may be 'Ign Blk')
             if "Ign Blk" in disp.columns:
@@ -1021,11 +1015,8 @@ def render(settings: Dict[str, Any]) -> None:
         # Attacks summary
         atk_rows = preview.get('atk_rows') or []
         if atk_rows:
-            try:
-                vals = [float(r.get('TotAvg') or 0) for r in atk_rows]
-                avg_atk = sum(vals) / len(vals) if vals else 0.0
-            except Exception:
-                avg_atk = 0.0
+            vals = [float(r.get('TotAvg') or 0) for r in atk_rows]
+            avg_atk = sum(vals) / len(vals) if vals else 0.0
             st.markdown(f"**Attacks:** {len(atk_rows)} lines, avg damage per attack: {avg_atk:.2f}")
 
     cL, cR = st.columns(2)
@@ -1116,10 +1107,7 @@ def render(settings: Dict[str, Any]) -> None:
         def _avg_per_stam_row(r):
             s = r.get("Stamina") or 0
             a = r.get("Avg") or 0
-            try:
-                return float(a) / float(s) if float(s) != 0 else 0.0
-            except Exception:
-                return 0.0
+            return float(a) / float(s) if float(s) != 0 else 0.0
 
         disp_atk["Avg/Stam"] = disp_atk.apply(_avg_per_stam_row, axis=1)
         disp_atk["Push"] = disp_atk.get("Push")
@@ -1138,13 +1126,7 @@ def render(settings: Dict[str, Any]) -> None:
             disp_atk["Conditions"] = ""
 
         # Coerce Repeat to numeric so missing/invalid values show blank
-        try:
-            disp_atk["Repeat"] = pd.to_numeric(disp_atk.get("Repeat"), errors="coerce")
-        except Exception:
-            disp_atk["Repeat"] = pd.Series([pd.NA] * len(disp_atk), index=disp_atk.index)
-
-            cols = [c for c in ["Item", "Stamina", "Dice", "Min", "Max", "Avg", "Avg/Stam", "Range", "Shaft", "Magic", "Push", "Repeat", "Node", "Ignore Block", "Conditions", "Text"] if c in disp_atk.columns]
-            st.dataframe(disp_atk[cols], hide_index=True, width="stretch", height=260)
+        disp_atk["Repeat"] = pd.to_numeric(disp_atk.get("Repeat"), errors="coerce")
 
         # Also show combo-based defenses under Totals
         st.markdown("#### Combos")
@@ -1174,26 +1156,20 @@ def render(settings: Dict[str, Any]) -> None:
             sim_resist = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.resist)
             st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
             # Attack info for this combo (dice icons and avg per attack)
-            try:
-                combo_atks = []
-                for h in h_objs:
-                    hid = _id(h)
-                    for r in (atk_rows or []):
-                        if isinstance(r, dict) and str(r.get('RowId') or '').startswith(f"{hid}::atk::"):
-                            combo_atks.append(r)
-                if combo_atks:
-                    df_combo = pd.DataFrame(combo_atks)
-                    # coerce Repeat to numeric so missing shows blank
-                    if 'Repeat' in df_combo.columns:
-                        try:
-                            df_combo['Repeat'] = pd.to_numeric(df_combo.get('Repeat'), errors='coerce')
-                        except Exception:
-                            pass
-                    pref = ["Item", "Atk#", "TotStam", "TotDice", "TotMin", "TotMax", "TotAvg", "TotCond", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
-                    disp_cols = [c for c in pref if c in df_combo.columns]
-                    st.dataframe(df_combo[disp_cols], hide_index=True, width="stretch", height=140)
-            except Exception:
-                pass
+            combo_atks = []
+            for h in h_objs:
+                hid = _id(h)
+                for r in (atk_rows or []):
+                    if isinstance(r, dict) and str(r.get('RowId') or '').startswith(f"{hid}::atk::"):
+                        combo_atks.append(r)
+            if combo_atks:
+                df_combo = pd.DataFrame(combo_atks)
+                # coerce Repeat to numeric so missing shows blank
+                if 'Repeat' in df_combo.columns:
+                    df_combo['Repeat'] = pd.to_numeric(df_combo.get('Repeat'), errors='coerce')
+                pref = ["Item", "Atk#", "TotStam", "TotDice", "TotMin", "TotMax", "TotAvg", "TotCond", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
+                disp_cols = [c for c in pref if c in df_combo.columns]
+                st.dataframe(df_combo[disp_cols], hide_index=True, width="stretch", height=140)
 
         if len(one_hands) >= 2:
             for a, b in itertools.combinations(one_hands, 2):
