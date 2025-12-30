@@ -69,6 +69,12 @@ def _consume_scout_ahead(current_node: Dict[str, Any]) -> None:
 
 def _v2_cleanup_scout_ahead_if_unpicked(node: Dict[str, Any]) -> None:
     """
+    settings = _get_settings()
+
+    campaign = state.get("campaign")
+    if not isinstance(campaign, dict):
+        st.info("Generate a V2 campaign in the Setup tab to begin.")
+        return
     If Scout Ahead was attached and we already appended an extra option, but the
     node still has no choice selected (choice_index is None), and the Scout Ahead
     rendezvous is no longer present, remove the extra option so the user can't
@@ -214,12 +220,9 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             st.markdown(f"**{ev_type}**")
             path_str = str(ev.get("path") or "")
             img_src = path_str
-            try:
-                src = get_image_data_uri_cached(path_str)
-                if src:
-                    img_src = src
-            except Exception:
-                img_src = path_str
+            src = get_image_data_uri_cached(path_str)
+            if src:
+                img_src = src
 
             st.markdown(
                 f"""
@@ -497,10 +500,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                     if isinstance(node.get("frozen"), dict):
                         lv = node.get("frozen", {}).get("encounter_level")
                     lv = lv or node.get("encounter_level") or node.get("level")
-                    try:
-                        return int(lv)
-                    except Exception:
-                        return 1
+                    return int(lv)
 
                 ascii_tiles: Dict[str, Dict[str, Any]] = {}
                 for tid, tile in tiles_for_render.items():
@@ -527,15 +527,12 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                             name = name or node.get("encounter_name") or node.get("label") or "Encounter"
                             tile["label"] = f"{e} {name}"
                         souls_token_node_id = state.get("souls_token_node_id")
-                        try:
-                            if souls_token_node_id is not None and tid == souls_token_node_id:
-                                token = f"__SOULS_IMG_{tid}__"
-                                tile["label"] = f"{tile.get('label')} {token}"
-                                if "_soul_img_tokens" not in locals():
-                                    _soul_img_tokens = {}
-                                _soul_img_tokens[tid] = token
-                        except Exception:
-                            pass
+                        if souls_token_node_id is not None and tid == souls_token_node_id:
+                            token = f"__SOULS_IMG_{tid}__"
+                            tile["label"] = f"{tile.get('label')} {token}"
+                            if "_soul_img_tokens" not in locals():
+                                _soul_img_tokens = {}
+                            _soul_img_tokens[tid] = token
                         continue
                     if kind == "boss":
                         stage = node.get("stage")
@@ -548,15 +545,12 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                         else:
                             tile["label"] = f"{em} {boss_label_map.get(stage, tile.get('label') or 'Boss')}"
                         souls_token_node_id = state.get("souls_token_node_id")
-                        try:
-                            if souls_token_node_id is not None and tid == souls_token_node_id:
-                                token = f"__SOULS_IMG_{tid}__"
-                                tile["label"] = f"{tile.get('label')} {token}"
-                                if "_soul_img_tokens" not in locals():
-                                    _soul_img_tokens = {}
-                                _soul_img_tokens[tid] = token
-                        except Exception:
-                            pass
+                        if souls_token_node_id is not None and tid == souls_token_node_id:
+                            token = f"__SOULS_IMG_{tid}__"
+                            tile["label"] = f"{tile.get('label')} {token}"
+                            if "_soul_img_tokens" not in locals():
+                                _soul_img_tokens = {}
+                            _soul_img_tokens[tid] = token
 
                 map_html = _render_ascii_map(ascii_tiles, current_id, visited=set(state.get("visited_nodes") or []), completed={n.get("id") for n in nodes if n.get("status")=="complete"})
                 lines = map_html.split("\n")
@@ -568,34 +562,18 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                     + "</div></div>"
                 )
 
-                try:
-                    tokens = globals().get("_soul_img_tokens") or locals().get("_soul_img_tokens") or {}
-                    if tokens:
-                        src = None
-                        try:
-                            src = get_image_data_uri_cached(str(SOULS_TOKEN_PATH))
-                        except Exception:
-                            src = None
-                        if not src:
-                            try:
-                                p = Path(SOULS_TOKEN_PATH)
-                                if p.exists():
-                                    data = p.read_bytes()
-                                    src = bytes_to_data_uri(data, content_type="image/png")
-                            except Exception:
-                                src = None
-                        if src:
-                            img_html = f'<img src="{src}" style="width:16px;height:16px;vertical-align:middle"/>'
-                        else:
-                            img_html = "[souls]"
-                        for tid, token in tokens.items():
-                            html = html.replace(token, img_html)
-                        try:
-                            html = html.replace("◈", img_html)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
+                tokens = globals().get("_soul_img_tokens") or locals().get("_soul_img_tokens") or {}
+                if tokens:
+                    src = get_image_data_uri_cached(str(SOULS_TOKEN_PATH))
+                    if not src:
+                        p = Path(SOULS_TOKEN_PATH)
+                        if p.exists():
+                            data = p.read_bytes()
+                            src = bytes_to_data_uri(data, content_type="image/png")
+                    img_html = f'<img src="{src}" style="width:16px;height:16px;vertical-align:middle"/>'
+                    for tid, token in tokens.items():
+                        html = html.replace(token, img_html)
+                    html = html.replace("◈", img_html)
 
                 st.markdown(html, unsafe_allow_html=True)
 
@@ -737,32 +715,28 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                 else:
                     label = f"{em} {boss_label_map.get(stage, node.get('label') or t.get('label') or nid)}"
             # Directional hint: compute full path arrows (always shown)
-            arrow_text = ""
-            try:
-                path = reachable_paths.get(nid)
-                if path:
-                    # path is like [cur, n1, n2, ..., nid]
-                    arrows: List[str] = []
-                    for i in range(len(path) - 1):
-                        a = path[i]
-                        b = path[i + 1]
-                        ta = tiles.get(a) or {}
-                        tb = tiles.get(b) or {}
-                        ax, ay = ta.get("x"), ta.get("y")
-                        bx, by = tb.get("x"), tb.get("y")
-                        if not all(isinstance(v, int) for v in (ax, ay, bx, by)):
-                            continue
-                        dx = bx - ax
-                        dy = by - ay
-                        if abs(dx) >= abs(dy):
-                            arrow = "→" if dx > 0 else "←"
-                        else:
-                            arrow = "↓" if dy > 0 else "↑"
-                        arrows.append(arrow)
-                    if arrows:
-                        arrow_text = " " + " ".join(arrows)
-            except Exception:
-                arrow_text = ""
+            path = reachable_paths.get(nid)
+            if path:
+                # path is like [cur, n1, n2, ..., nid]
+                arrows: List[str] = []
+                for i in range(len(path) - 1):
+                    a = path[i]
+                    b = path[i + 1]
+                    ta = tiles.get(a) or {}
+                    tb = tiles.get(b) or {}
+                    ax, ay = ta.get("x"), ta.get("y")
+                    bx, by = tb.get("x"), tb.get("y")
+                    if not all(isinstance(v, int) for v in (ax, ay, bx, by)):
+                        continue
+                    dx = bx - ax
+                    dy = by - ay
+                    if abs(dx) >= abs(dy):
+                        arrow = "→" if dx > 0 else "←"
+                    else:
+                        arrow = "↓" if dy > 0 else "↑"
+                    arrows.append(arrow)
+                if arrows:
+                    arrow_text = " " + " ".join(arrows)
 
             # Build button text and respect unresolved-encounter disabling
             btn_text = f"{btn_label}{arrow_text} to {label}"
@@ -788,8 +762,8 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     V2 Campaign tab:
 
     - Same high-level layout as V1 (party, sparks, souls, path, current space).
-    - Encounter spaces present a choice between two frozen encounters once you
-      travel there for the first time.
+        - Encounter spaces present a choice between two frozen encounters once you
+            travel there for the first time.
     """
     settings = _get_settings()
 
@@ -873,15 +847,10 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         # If the party is currently on an encounter space that has not yet had a
         # choice made (choice_index is None), disable all other travel/return
         # controls until a choice is applied.
-        disable_travel = False
-        try:
-            if (
-                current_node.get("kind") == "encounter"
-                and current_node.get("choice_index") is None
-            ):
-                disable_travel = True
-        except Exception:
-            disable_travel = False
+        disable_travel = (
+            current_node.get("kind") == "encounter"
+            and current_node.get("choice_index") is None
+        )
 
         st.markdown("#### Path")
 
@@ -1171,14 +1140,10 @@ def _render_v2_campaign_compact(
 
         # Disable the compact travel button if choices must be resolved on the
         # current encounter space.
-        disable_travel_compact = False
-        try:
-            disable_travel_compact = (
-                current_node.get("kind") == "encounter"
-                and current_node.get("choice_index") is None
-            )
-        except Exception:
-            disable_travel_compact = False
+        disable_travel_compact = (
+            current_node.get("kind") == "encounter"
+            and current_node.get("choice_index") is None
+        )
 
         if st.button(
             btn_label,
@@ -1582,93 +1547,57 @@ def _render_v1_current_panel(
 
             # Load raw behavior JSON directly (cache-aware)
             json_path = Path("data") / "behaviors" / f"{boss_name}.json"
-            raw_data = None
-            try:
-                from ui.campaign_mode.persistence import load_json_file
-
-                raw_data = load_json_file(json_path)
-            except Exception as exc:
-                st.warning(f"Failed to load behavior JSON for '{boss_name}': {exc}")
-
+            from ui.campaign_mode.persistence import load_json_file
+            raw_data = load_json_file(json_path)
             if raw_data is None:
-                # Fallback: show static base data card
-                data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
+                raise RuntimeError(f"Failed to load behavior JSON for '{boss_name}'")
+
+            # Special case: Ornstein & Smough dual-boss card
+            if "Ornstein" in boss_name and "Smough" in boss_name:
+                o_img, s_img = render_dual_boss_data_cards(raw_data)
+                o_col, s_col = st.columns(2)
+                with o_col:
+                    src_o = bytes_to_data_uri(o_img, mime="image/png")
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="{src_o}" style="width:100%">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                with s_col:
+                    src_s = bytes_to_data_uri(s_img, mime="image/png")
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="{src_s}" style="width:100%">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+            else:
+                if boss_name == "Executioner's Chariot":
+                    data_path = (
+                        BEHAVIOR_CARDS_PATH
+                        + "Executioner's Chariot - Skeletal Horse.jpg"
+                    )
+                else:
+                    data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
+                img = render_data_card_cached(
+                    data_path,
+                    raw_data,
+                    is_boss=True,
+                )
+                src = bytes_to_data_uri(img, mime="image/png")
                 st.markdown(
                     f"""
                     <div class="card-image">
-                        <img src="{data_path}" style="width:100%">
+                        <img src="{src}" style="width:100%">
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-            else:
-                # Special case: Ornstein & Smough dual-boss card
-                if "Ornstein" in boss_name and "Smough" in boss_name:
-                    try:
-                        o_img, s_img = render_dual_boss_data_cards(raw_data)
-                        o_col, s_col = st.columns(2)
-                        with o_col:
-                            try:
-                                src_o = bytes_to_data_uri(o_img, mime="image/png")
-                                if not src_o:
-                                    raise Exception("empty data uri")
-                            except Exception:
-                                src_o = o_img
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{src_o}" style="width:100%">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-                        with s_col:
-                            try:
-                                src_s = bytes_to_data_uri(s_img, mime="image/png")
-                                if not src_s:
-                                    raise Exception("empty data uri")
-                            except Exception:
-                                src_s = s_img
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{src_s}" style="width:100%">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-                    except Exception as exc:
-                        st.warning(f"Failed to render Ornstein & Smough data cards: {exc}")
-                else:
-                    if boss_name == "Executioner's Chariot":
-                        data_path = (
-                            BEHAVIOR_CARDS_PATH
-                            + "Executioner's Chariot - Skeletal Horse.jpg"
-                        )
-                    else:
-                        data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
-                    try:
-                        img = render_data_card_cached(
-                            data_path,
-                            raw_data,
-                            is_boss=True,
-                        )
-                        try:
-                            src = bytes_to_data_uri(img, mime="image/png")
-                            if not src:
-                                raise Exception("empty data uri")
-                        except Exception:
-                            src = img
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="{src}" style="width:100%">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    except Exception as exc:
-                        st.warning(f"Failed to render boss data card: {exc}")
         else:
             st.markdown(f"**{prefix}: Unknown**")
             st.caption("No boss selected for this space.")
@@ -2272,17 +2201,14 @@ def _generate_v1_layout(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]
         t["connected"] = connected
 
     # Attach a compact generator trace to help debug placement and assignments
-    try:
-        tiles["__gen_trace__"] = {
-            "sampled": list(sampled),
-            "type_map": dict(type_map),
-            "required_threes": int(required_threes),
-            "placed_order": list(placed_order),
-            "allowed_count": {k: int(v) for k, v in allowed_count.items()},
-            "occupied_positions": {k: (v["x"], v["y"]) for k, v in tiles.items() if isinstance(v, dict) and "x" in v},
-        }
-    except Exception:
-        pass
+    tiles["__gen_trace__"] = {
+        "sampled": list(sampled),
+        "type_map": dict(type_map),
+        "required_threes": int(required_threes),
+        "placed_order": list(placed_order),
+        "allowed_count": {k: int(v) for k, v in allowed_count.items()},
+        "occupied_positions": {k: (v["x"], v["y"]) for k, v in tiles.items() if isinstance(v, dict) and "x" in v},
+    }
 
     return tiles
 
