@@ -518,15 +518,14 @@ def _render_campaign_play_tab(
                     souls_key = "campaign_v2_souls_campaign"
                     st.session_state[souls_key] = new_souls
 
-                # For V2, mark this encounter node as completed so movement to the
-                # next encounter/boss becomes legal, and record shortcut unlocks
-                if active_version == "V2" and current_node is not None:
-                    if current_node.get("kind") == "encounter":
-                        current_node["status"] = "complete"
-                        if reward_shortcuts > 0:
-                            # Persistent shortcut unlocked for this encounter node
-                            current_node["shortcut_unlocked"] = True
-                    state["campaign"] = campaign
+                # Mark this encounter node as completed so movement to the
+                # next encounter/boss becomes legal. For V2, also record shortcut unlocks.
+                if current_node is not None and current_node.get("kind") == "encounter":
+                    current_node["status"] = "complete"
+                    if active_version == "V2" and reward_shortcuts > 0:
+                        # Persistent shortcut unlocked for this encounter node
+                        current_node["shortcut_unlocked"] = True
+                state["campaign"] = campaign
 
                 # If this encounter had dropped souls, consume them now
                 if (
