@@ -578,6 +578,1003 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
             ],
         },
     },
+    "Aged Sentinel|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 1
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "search",
+                    "trial_trigger_id": "aged_sentinel_trial",
+                },
+            ],
+        },
+    },
+    "Broken Passageway|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 1,
+                    "counter_trigger_id": "broken_passageway_kills"
+                },
+                {
+                    "type": "treasure",
+                    "flat": 1
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                }
+            ],
+        },
+    },
+    "Dark Alleyway|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 1,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                }
+            ],
+        },
+    },
+    "Illusionary Doorway|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                }
+            ],
+        },
+    },
+    "Kingdom's Messengers|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "luck",
+                    "per_player": 1,
+                },
+                {
+                    "type": "shortcut"
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "souls",
+                    "flat": 3,
+                    "trial_trigger_id": "kingdoms_messengers_trial",
+                },
+            ],
+        },
+    },
+    "Shattered Keep|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 2,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "luck",
+                    "per_player": 1,
+                },
+                {
+                    "type": "search"
+                }
+            ],
+        },
+    },
+    "Tempting Maw|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+            ],
+            "trial_rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                    "trial_trigger_id": "tempting_maw_trial",
+                },
+            ]
+        },
+    },
+    "The Bell Tower|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 1,
+                    "counter_trigger_id": "the_bell_tower_kills"
+                },
+                {
+                    "type": "shortcut"
+                }
+            ],
+        },
+    },
+    "Undead Sanctum|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "search"
+                }
+            ],
+        },
+    },
+    "Deathly Tolls|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 2,
+                },
+                {
+                    "type": "souls",
+                    "per_counter": 1,
+                    "counter_trigger_id": "deathly_tolls_kills"
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "shortcut"
+                }
+            ],
+        },
+    },
+    "Flooded Fortress|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "search",
+                    "trial_trigger_id": "flooded_fortress_trial",
+                },
+            ]
+        },
+    },
+    "Gleaming Silver|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 1,
+                    "counter_trigger_id": "abandoned_and_forgotten_flipped_trap"
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "heroic",
+                    "per_player": 1,
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "trial_trigger_id": "flooded_fortress_trial",
+                },
+            ]
+        },
+    },
+    "Parish Church|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 4,
+                },
+                {
+                    "type": "search"
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "souls",
+                    "flat": 4,
+                },
+            ]
+        },
+    },
+    "Parish Gates|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                }
+            ],
+        },
+    },
+    "The Fountainhead|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 5,
+                },
+                {
+                    "type": "shortcut"
+                }
+            ],
+        },
+    },
+    "The Hellkite Bridge|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "search"
+                },
+                {
+                    "type": "search"
+                }
+            ],
+        },
+    },
+    "The Iron Golem|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 4,
+                },
+                {
+                    "type": "search"
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "estus",
+                    "per_player": 1,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "heroic",
+                    "per_player": 1,
+                }
+            ],
+        },
+    },
+    "The Shine of Gold|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "luck",
+                    "per_player": 1,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 3
+                }
+            ],
+        },
+    },
+    "Archive Entrance|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 3,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                    "trial_trigger_id": "archive_entrance_trial",
+                },
+            ]
+        },
+    },
+    "Castle Break In|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 7,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "luck",
+                    "per_player": 1,
+                },
+                {
+                    "type": "search"
+                }
+            ],
+        },
+    },
+    "Central Plaza|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 8,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "shortcut"
+                }
+            ],
+        },
+    },
+    "Depths of the Cathedral|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 5,
+                    "counter_trigger_id": "depths_of_the_cathedral_tiles_cleared"
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "estus",
+                    "per_player": 1,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 1
+                }
+            ],
+        },
+    },
+    "Grim Reunion|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 5,
+                },
+                {
+                    "type": "shortcut"
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "treasure",
+                    "flat": 2,
+                    "trial_trigger_id": "grim_reunion_trial",
+                },
+            ]
+        },
+    },
+    "Hanging Rafters|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 6,
+                },
+                {
+                    "type": "event",
+                    "flat": 2
+                },
+                {
+                    "type": "search"
+                }
+            ],
+        },
+    },
+    "The Grand Hall|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 9,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                }
+            ],
+            "trial_rewards": [
+                {
+                    "type": "treasure",
+                    "flat": 2,
+                    "trial_trigger_id": "grim_reunion_trial",
+                },
+            ]
+        },
+    },
+    "Trophy Room|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 10,
+                },
+                {
+                    "type": "search"
+                }
+            ],
+        },
+    },
+    "Twilight Falls|The Sunless City": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "shortcut"
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "heroic",
+                    "per_player": 1,
+                },
+            ],
+        },
+    },
+    "Abandoned Storeroom|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "refresh",
+                    "refresh_resource": "luck",
+                    "per_player": 1,
+                },
+            ],
+        },
+    },
+    "Bridge Too Far|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 1,
+                    "counter_trigger_id": "bridge_too_far_kills"
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
+    "Dark Resurrection|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 1,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 1
+                },
+                {
+                    "type": "search"
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
+    "Deathly Magic|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 1,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "estus",
+                    "per_player": 1,
+                },
+            ],
+        },
+    },
+    "Grave Matters|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "Last Rites|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 4,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+            ],
+        },
+    },
+    "Puppet Master|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 1,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "heroic",
+                    "per_player": 1,
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "Rain of Filth|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "The Beast From the Depths|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 1,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 1
+                },
+            ],
+            "trial_rewards": [
+                {
+                    "type": "search",
+                    "trial_trigger_id": "the_beast_from_the_depths_trial",
+                },
+            ]
+        },
+    },
+    "Altar of Bones|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 4,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+            ],
+        },
+    },
+    "Far From the Sun|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 1,
+                    "counter_trigger_id": "far_from_the_sun_kills"
+                },
+                {
+                    "type": "treasure",
+                    "flat": 1
+                },
+                {
+                    "type": "event",
+                    "flat": 2
+                },
+            ],
+        },
+    },
+    "In Deep Water|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 8,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "Lost Chapel|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "event",
+                    "flat": 2
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
+    "Maze of the Dead|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
+    "Pitch Black|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "estus",
+                    "per_player": 1,
+                },
+            ],
+        },
+    },
+    "The Abandoned Chest|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 4,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "The Mass Grave|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 2,
+                    "counter_trigger_id": "the_mass_grave_respawns"
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
+    "Urns of the Fallen|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 2,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "A Trusty Ally|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 4,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+            ],
+        },
+    },
+    "Death's Precipice|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 8,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+                {
+                    "type": "search"
+                },
+            ],
+        },
+    },
+    "Giant's Coffin|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+            ],
+            "trial_rewards": [
+                {
+                    "type": "search",
+                    "trial_trigger_id": "giants_coffin_trial",
+                },
+            ]
+        },
+    },
+    "Honour Guard|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 5,
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "luck",
+                    "per_player": 1,
+                },
+            ],
+        },
+    },
+    "Lakeview Refuge|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 8,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+            ],
+            "trial_rewards": [
+                {
+                    "type": "souls",
+                    "flat": 6,
+                    "trial_trigger_id": "lakeview_refuge_trial",
+                },
+            ]
+        },
+    },
+    "Last Shred of Light|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "flat": 10,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
+    "Skeleton Overlord|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 3,
+                },
+                {
+                    "type": "treasure",
+                    "flat": 2
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+            ],
+        },
+    },
+    "The Locked Grave|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_counter": 2,
+                    "counter_trigger_id": "the_locked_grave_kills"
+                },
+                {
+                    "type": "event",
+                    "flat": 1
+                },
+                {
+                    "type": "refresh",
+                    "refresh_resource": "estus",
+                    "per_player": 1,
+                },
+            ],
+            "trial_rewards": [
+                {
+                    "type": "search",
+                    "trial_trigger_id": "_trial",
+                },
+            ]
+        },
+    },
+    "The Skeleton Ball|Tomb of Giants": {
+        "default": {
+            "rewards": [
+                {
+                    "type": "souls",
+                    "per_player": 1,
+                    "flat": 8,
+                },
+                {
+                    "type": "search"
+                },
+                {
+                    "type": "shortcut"
+                },
+            ],
+        },
+    },
 }
 
 # Number of chests printed on each V1 encounter card.
