@@ -286,7 +286,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 prev_state = False
 
             use_edited = st.checkbox(
-                "Use Edited Encounter",
+                "Use lenlendan's edits",
                 value=prev_state,
                 key=f"edited_toggle_{encounter_name}_{selected_expansion}",
                 disabled=not has_edited,
@@ -317,27 +317,53 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             # Shuffle
             if shuffle_clicked and selected_label:
                 selected_encounter = filtered_encounters[display_names.index(selected_label)]
-                res = shuffle_encounter(
-                    selected_encounter,
-                    character_count,
-                    active_expansions,
-                    selected_expansion,
-                    use_edited,
+
+                # Try shuffling until we get a different enemy set than the
+                # currently-displayed/last one. Cap attempts to avoid infinite loops.
+                prev_enemies = (
+                    st.session_state.get("current_encounter", {}).get("enemies")
+                    or st.session_state.get("last_encounter", {}).get("enemies")
                 )
-                if res.get("ok"):
-                    st.session_state.current_encounter = res
+                max_attempts = 20
+                attempt = 0
+                final_res = None
+                while attempt < max_attempts:
+                    res = shuffle_encounter(
+                        selected_encounter,
+                        character_count,
+                        active_expansions,
+                        selected_expansion,
+                        use_edited,
+                    )
+                    if not res.get("ok"):
+                        final_res = res
+                        break
+                    # If there is no previous enemies to compare to, accept first result
+                    if not prev_enemies:
+                        final_res = res
+                        break
+                    # Accept when enemies differ from previous
+                    if res.get("enemies") != prev_enemies:
+                        final_res = res
+                        break
+                    attempt += 1
+
+                if final_res and final_res.get("ok"):
+                    st.session_state.current_encounter = final_res
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
                         "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
                         "expansion": selected_expansion,
                         "character_count": character_count,
                         "edited": use_edited,
-                        "enemies": res["enemies"],
-                        "expansions_used": res["expansions_used"],
+                        "enemies": final_res["enemies"],
+                        "expansions_used": final_res["expansions_used"],
                     }
                     _apply_added_invaders_to_current_encounter()
+                    if attempt and attempt >= max_attempts:
+                        st.warning("Shuffle produced the same enemy list repeatedly; showing last result.")
                 else:
-                    st.warning(res.get("message", "Unable to shuffle encounter."))
+                    st.warning((final_res or {}).get("message", "Unable to shuffle encounter."))
 
             # Original
             if original_clicked and selected_label and "current_encounter" in st.session_state:
@@ -746,27 +772,53 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         # Shuffle
         if shuffle_clicked and selected_label:
             selected_encounter = filtered_encounters[display_names.index(selected_label)]
-            res = shuffle_encounter(
-                selected_encounter,
-                character_count,
-                active_expansions,
-                selected_expansion,
-                use_edited,
+
+            # Try shuffling until we get a different enemy set than the
+            # currently-displayed/last one. Cap attempts to avoid infinite loops.
+            prev_enemies = (
+                st.session_state.get("current_encounter", {}).get("enemies")
+                or st.session_state.get("last_encounter", {}).get("enemies")
             )
-            if res.get("ok"):
-                st.session_state.current_encounter = res
+            max_attempts = 20
+            attempt = 0
+            final_res = None
+            while attempt < max_attempts:
+                res = shuffle_encounter(
+                    selected_encounter,
+                    character_count,
+                    active_expansions,
+                    selected_expansion,
+                    use_edited,
+                )
+                if not res.get("ok"):
+                    final_res = res
+                    break
+                # If there is no previous enemies to compare to, accept first result
+                if not prev_enemies:
+                    final_res = res
+                    break
+                # Accept when enemies differ from previous
+                if res.get("enemies") != prev_enemies:
+                    final_res = res
+                    break
+                attempt += 1
+
+            if final_res and final_res.get("ok"):
+                st.session_state.current_encounter = final_res
                 st.session_state["last_encounter"] = {
                     "label": selected_label,
                     "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
                     "expansion": selected_expansion,
                     "character_count": character_count,
                     "edited": use_edited,
-                    "enemies": res["enemies"],
-                    "expansions_used": res["expansions_used"],
+                    "enemies": final_res["enemies"],
+                    "expansions_used": final_res["expansions_used"],
                 }
                 _apply_added_invaders_to_current_encounter()
+                if attempt and attempt >= max_attempts:
+                    st.warning("Shuffle produced the same enemy list repeatedly; showing last result.")
             else:
-                st.warning(res.get("message", "Unable to shuffle encounter."))
+                st.warning((final_res or {}).get("message", "Unable to shuffle encounter."))
 
         # Original
         if original_clicked and selected_label and "current_encounter" in st.session_state:

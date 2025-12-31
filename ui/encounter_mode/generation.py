@@ -8,7 +8,18 @@ from json import load
 from pathlib import Path
 from PIL import Image
 
-from ui.encounter_mode.assets import (get_enemy_image_by_id, encounterKeywords, editedEncounterKeywords, keywordSize, keywordText, v1Expansions, v1Level4s, positions, ENCOUNTER_CARDS_DIR, EDITED_ENCOUNTER_CARDS_DIR)
+from ui.encounter_mode.assets import (
+    get_enemy_image_by_id,
+    encounterKeywords,
+    editedEncounterKeywords,
+    keywordSize,
+    keywordText,
+    v1Expansions,
+    v1Level4s,
+    positions,
+    ENCOUNTER_CARDS_DIR,
+    EDITED_ENCOUNTER_CARDS_DIR
+)
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 
 
@@ -353,7 +364,7 @@ def generate_encounter_image(
             else:
                 lookup = "V2"
 
-            size = 40 if "V2" in lookup else 150
+            size = 45 if "V2" in lookup else 145 if lookup == "V1" else 100
             s = size / max_side
             icon_size = (int(round(width * s)), int(round(height * s)))
             icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
