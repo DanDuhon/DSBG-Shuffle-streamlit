@@ -1,6 +1,5 @@
 # ui/campaign_mode/ui_helpers.py
 import streamlit as st
-import base64
 from pathlib import Path
 from typing import Any, Dict, Optional
 from ui.campaign_mode.api import CHARACTERS_DIR

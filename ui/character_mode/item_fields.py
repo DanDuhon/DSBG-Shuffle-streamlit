@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Set
-from ui.character_mode.constants import STAT_KEYS
 
 
 def _armor_dodge_int(item: Dict[str, Any]) -> int:

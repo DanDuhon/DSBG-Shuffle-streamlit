@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 from copy import deepcopy
-import base64
 import streamlit as st
 
 from core.encounter import templates, objectives as obj_mod
@@ -27,11 +26,16 @@ from core.behavior.generation import render_data_card_cached, build_behavior_cat
 from core.behavior.logic import load_behavior
 from core.behavior.models import BehaviorEntry
 from ui.encounter_mode import invader_panel
-from ui.encounter_mode.assets import enemyNames, encounterKeywords, editedEncounterKeywords, keywordText
+from ui.encounter_mode.assets import (
+    enemyNames,
+    encounterKeywords,
+    editedEncounterKeywords,
+    keywordText
+)
 from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
 from ui.encounter_mode.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
-from core.image_cache import get_image_bytes_cached, get_image_data_uri_cached, bytes_to_data_uri
+from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 
 
 # ---------------------------------------------------------------------

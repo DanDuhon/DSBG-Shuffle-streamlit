@@ -2,7 +2,6 @@
 import streamlit as st
 from functools import lru_cache
 import os
-import base64
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 from json import load

@@ -1,7 +1,6 @@
 #ui/encounter_mode/setup_tab.py
 import streamlit as st
 import os
-import base64
 from pathlib import Path
 from io import BytesIO
 

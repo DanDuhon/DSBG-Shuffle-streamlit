@@ -1,6 +1,6 @@
 #ui/campaign_mode/render.py
 import streamlit as st
-from ui.campaign_mode.core import get_bosses, get_invaders
+from ui.campaign_mode.api import get_bosses, get_invaders
 from ui.campaign_mode.state import _get_settings
 from ui.campaign_mode.setup_tab import _render_setup_header, _render_v1_setup, _render_v2_setup, _render_save_load_section
 from ui.campaign_mode.manage_tab import _render_campaign_tab

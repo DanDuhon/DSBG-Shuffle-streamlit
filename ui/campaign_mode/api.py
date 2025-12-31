@@ -3,9 +3,6 @@
 This module re-exports pure logic, persistence and constants for use by UI
 modules so they don't import internal `_`-prefixed symbols from `core.py`.
 """
-from typing import Any, Dict, List, Optional, Set
-from pathlib import Path
-
 from ui.campaign_mode.persistence import (
     get_bosses,
     get_invaders,

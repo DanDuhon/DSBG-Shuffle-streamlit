@@ -8,7 +8,12 @@ from io import BytesIO
 from random import choice
 from collections import defaultdict
 
-from ui.encounter_mode.generation import generate_encounter_image, load_encounter, load_valid_sets, ENCOUNTER_DATA_DIR
+from ui.encounter_mode.generation import (
+    generate_encounter_image,
+    load_encounter,
+    load_valid_sets,
+    ENCOUNTER_DATA_DIR
+)
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
 from ui.encounter_mode.assets import enemyNames
 

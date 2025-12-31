@@ -57,17 +57,6 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     state["campaign"] = campaign
     souls_token_node_id = state.get("souls_token_node_id")
 
-    # if bool(st.session_state.get("ui_compact")):
-    #     _render_v1_campaign_compact(
-    #         settings=settings,
-    #         state=state,
-    #         campaign=campaign,
-    #         nodes=nodes,
-    #         current_node=current_node,
-    #     )
-    #     st.session_state["campaign_v1_state"] = state
-    #     return
-
     col_overview, col_detail = st.columns([2, 1])
 
     with col_overview:

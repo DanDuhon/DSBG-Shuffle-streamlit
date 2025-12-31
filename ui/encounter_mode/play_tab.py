@@ -4,7 +4,6 @@ from __future__ import annotations
 import re
 import streamlit as st
 import random
-import base64
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -14,7 +13,7 @@ from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state, play_panels, invader_panel
 from ui.encounter_mode.setup_tab import render_original_encounter
 from ui.encounter_mode.assets import encounterKeywords, editedEncounterKeywords, keywordText
-from core.image_cache import get_image_bytes_cached, get_image_data_uri_cached, bytes_to_data_uri
+from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
 from ui.campaign_mode.api import ENCOUNTER_GRAVESTONES, v2_pick_scout_ahead_alt_frozen
 

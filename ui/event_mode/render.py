@@ -1,7 +1,5 @@
 # ui/event_mode/render.py
 import os
-import base64
-from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict
 

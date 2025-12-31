@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import streamlit as st
-import base64
 
 from core.settings_manager import save_settings
 from ui.encounter_mode.play_panels import _is_v1_encounter

@@ -5,20 +5,47 @@ import streamlit as st
 from typing import Any, Dict, List, Set
 import itertools
 from ui.character_mode.build import _build_stats, _validate_build
-from ui.character_mode.constants import CLASS_TIERS, HAND_CONDITION_OPTIONS, HAND_FEATURE_OPTIONS, TIERS
+from ui.character_mode.constants import (
+    CLASS_TIERS,
+    HAND_CONDITION_OPTIONS,
+    HAND_FEATURE_OPTIONS,
+    TIERS
+)
 from ui.character_mode.data_io import _find_data_file, _load_json_list
 from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _dodge_icons
-from ui.character_mode.filters import _apply_armor_filters, _apply_hand_item_filters, _filter_items
-from ui.character_mode.item_fields import _armor_dodge_int, _armor_upgrade_slots_int, _extra_upgrade_slots, _hand_dodge_int, _hand_hands_required_int, _hand_range_str, _hand_upgrade_slots_int, _hands_required, _id, _immunities_set, _item_expansions, _name, _slot_cost, _sorted_with_none_first, _src_str, _upgrade_slots, _is_twohand_compatible_shield
-from ui.character_mode.selection import _merge_visible_selection, _normalize_hand_selection, _ordered_unique
+from ui.character_mode.filters import (
+    _apply_armor_filters,
+    _apply_hand_item_filters,
+    _filter_items
+)
+from ui.character_mode.item_fields import (
+    _armor_dodge_int,
+    _armor_upgrade_slots_int,
+    _extra_upgrade_slots,
+    _hand_dodge_int,
+    _hand_hands_required_int,
+    _hand_range_str,
+    _hand_upgrade_slots_int,
+    _hands_required,
+    _id,
+    _immunities_set,
+    _item_expansions,
+    _name,
+    _sorted_with_none_first,
+    _src_str,
+    _upgrade_slots,
+    _is_twohand_compatible_shield
+)
+from ui.character_mode.selection import (
+    _merge_visible_selection,
+    _normalize_hand_selection,
+    _ordered_unique
+)
 from ui.character_mode.tables import _rows_for_armor_table, _rows_for_hand_table
 from ui.character_mode.aggregates import (
-    build_attack_totals_rows,
-    build_defense_totals,
     expected_damage_taken,
     build_attack_totals_rows_cached,
     build_defense_totals_cached,
-    expected_damage_taken_cached,
 )
 from ui.character_mode.widgets import _render_selection_table
 

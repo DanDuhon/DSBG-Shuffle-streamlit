@@ -2,7 +2,6 @@
 import random
 import json
 import streamlit as st
-import base64
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from pathlib import Path
 

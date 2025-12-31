@@ -10,7 +10,12 @@ from ui.campaign_mode.api import (
     record_dropped_souls,
     campaign_find_next_encounter_node,
 )
-from ui.campaign_mode.state import _get_player_count, _get_settings, _ensure_v1_state, _ensure_v2_state
+from ui.campaign_mode.state import (
+    _get_player_count,
+    _get_settings,
+    _ensure_v1_state,
+    _ensure_v2_state
+)
 from ui.encounter_mode import play_tab as encounter_play_tab
 from ui.event_mode.logic import (
     load_event_configs,
