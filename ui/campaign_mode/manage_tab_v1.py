@@ -74,7 +74,12 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         col_bonfire, col_info = st.columns([1, 2])
 
         with col_bonfire:
-            st.image(str(BONFIRE_ICON_PATH), width="stretch")
+            # In compact UI, wrap the bonfire image in a collapsed expander to save space.
+            if bool(st.session_state.get("ui_compact")):
+                with st.expander("Bonfire", expanded=False):
+                    st.image(str(BONFIRE_ICON_PATH), width="stretch")
+            else:
+                st.image(str(BONFIRE_ICON_PATH), width="stretch")
 
         with col_info:
             # Party icons above everything
