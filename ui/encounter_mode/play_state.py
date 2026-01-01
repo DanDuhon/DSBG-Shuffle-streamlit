@@ -35,6 +35,8 @@ def ensure_play_state(encounter_id):
             "log": [],
         }
         st.session_state["encounter_play"] = state
+        # Clear any transient trigger messages when switching encounters.
+        st.session_state["encounter_last_trigger_messages"] = []
 
     return state
 
@@ -81,6 +83,9 @@ def advance_turn(play_state: dict, disable_auto_timer: bool = False) -> None:
     - Enemy → Player (no timer change).
     - Player → Enemy and **timer +1**, unless disable_auto_timer is True.
     """
+    # Clear transient trigger messages when the turn advances.
+    st.session_state["encounter_last_trigger_messages"] = []
+
     if play_state["phase"] == "enemy":
         play_state["phase"] = "player"
         log_entry(play_state, "Advanced to Player Phase")
@@ -104,6 +109,9 @@ def previous_turn(play_state: dict) -> None:
     - Player → Enemy (no timer change).
     - Enemy → Player and **timer -1**, but never below 0.
     """
+    # Clear transient trigger messages when moving turns backward.
+    st.session_state["encounter_last_trigger_messages"] = []
+
     if play_state["phase"] == "player":
         play_state["phase"] = "enemy"
         log_entry(play_state, "Reverted to Enemy Phase")
@@ -124,4 +132,6 @@ def reset_play_state(play_state: dict) -> None:
     play_state["phase"] = "enemy"
     play_state["timer"] = 0
     play_state["log"] = []
+    # Clear transient trigger messages when resetting.
+    st.session_state["encounter_last_trigger_messages"] = []
     log_entry(play_state, "Play state reset (Timer 0, Enemy Phase)")

@@ -34,6 +34,23 @@ _SPECIAL_TIMER_BEHAVIORS = {
             "reset_button_log": "Timer reset to 0 because a tile was made active.",
         }
     },
+    "The Bell Tower|The Sunless City": {
+        "default": {
+            # Don't auto-increase the Timer on Player→Enemy transitions.
+            "manual_increment": True,
+            # Hide the generic manual-increment button — Timer increases only
+            # when the lever trigger is activated.
+            "hide_manual_increment_button": True,
+            "manual_increment_label": "Increase Timer (lever pulled)",
+            "manual_increment_help": (
+                "The Timer increases only when the lever is pulled. "
+                "Do not increment the Timer manually."
+            ),
+            "manual_increment_log": "Timer increased due to lever activation.",
+            # When this trigger id steps, increment the Timer automatically.
+            "increment_on_trigger": "bell_tower_lever",
+        }
+    },
 }
 
 

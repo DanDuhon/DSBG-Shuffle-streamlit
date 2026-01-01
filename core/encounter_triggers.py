@@ -321,6 +321,26 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
+    "The Bell Tower|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="bell_tower_lever",
+                label="Lever activations",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                default_value=0,
+                phase="player",
+                step_effects={
+                    1: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
+                    2: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
+                    3: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
+                    4: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
+                },
+            ),
+        ],
+    },
     "Kingdom's Messengers|The Sunless City": {
         "default": [
             EncounterTrigger(

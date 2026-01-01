@@ -20,6 +20,8 @@ from core.encounter_triggers import (
     get_triggers_for_event,
 )
 
+from core.encounter import timer as timer_mod
+
 from core.behavior import render as behavior_decks_render
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
 from core.behavior.generation import render_data_card_cached, build_behavior_catalog
@@ -803,24 +805,27 @@ def _render_turn_controls(
         st.caption("Time has run out; Next Turn is disabled for this encounter.")
 
     has_manual_inc = bool(timer_behavior.get("manual_increment"))
+    # Optionally hide the generic manual-increment button when the encounter
+    # manages Timer advancement via triggers (e.g. lever pulls).
+    show_manual_button = has_manual_inc and not bool(timer_behavior.get("hide_manual_increment_button", False))
     has_reset_btn = bool(timer_behavior.get("reset_button"))
     if not (has_manual_inc or has_reset_btn):
         return
 
     st.markdown("##### Special Timer Actions")
 
-    if has_manual_inc:
-        label = timer_behavior.get("manual_increment_label", "Increase Timer")
-        help_text = timer_behavior.get("manual_increment_help")
-        log_text = timer_behavior.get("manual_increment_log", "Timer manually increased.")
+    # Define labels/help text/log text with safe defaults so they exist
+    # even if the button is hidden. Actual rendering uses `show_manual_button`.
+    label = timer_behavior.get("manual_increment_label", "Increase Timer") if has_manual_inc else None
+    help_text = timer_behavior.get("manual_increment_help") if has_manual_inc else None
+    log_text = timer_behavior.get("manual_increment_log", "Timer manually increased.") if has_manual_inc else None
 
-    if has_reset_btn:
-        label2 = timer_behavior.get("reset_button_label", "Reset Timer (special rule)")
-        help_text2 = timer_behavior.get("reset_button_help")
-        log_text2 = timer_behavior.get("reset_button_log", "Timer reset due to special rule.")
+    label2 = timer_behavior.get("reset_button_label", "Reset Timer (special rule)") if has_reset_btn else None
+    help_text2 = timer_behavior.get("reset_button_help") if has_reset_btn else None
+    log_text2 = timer_behavior.get("reset_button_log", "Timer reset due to special rule.") if has_reset_btn else None
 
     if compact:
-        if has_manual_inc:
+        if show_manual_button:
             if st.button(label, key="encounter_play_manual_timer_increase", width="stretch"):
                 play_state["timer"] += 1
                 log_entry(play_state, log_text)
@@ -840,7 +845,7 @@ def _render_turn_controls(
 
     cols = st.columns((1 if has_manual_inc else 0) + (1 if has_reset_btn else 0))
     col_idx = 0
-    if has_manual_inc:
+    if show_manual_button:
         with cols[col_idx]:
             if st.button(label, key="encounter_play_manual_timer_increase", width="stretch"):
                 play_state["timer"] += 1
@@ -909,12 +914,20 @@ def _render_encounter_triggers(
     encounter_key = make_encounter_key(name=name, expansion=expansion)
 
     edited = _detect_edited_flag(encounter_key, encounter, settings)
+    timer_behavior = timer_mod.get_timer_behavior(encounter, edited=edited)
 
     # --- Gather all trigger sources: encounter + attached events ---
     encounter_triggers = get_triggers_for_encounter(
         encounter_key=encounter_key,
         edited=edited,
     )
+
+    # Render any recent trigger messages (persisted across reruns).
+    recent_msgs = st.session_state.get("encounter_last_trigger_messages", []) or []
+    if recent_msgs:
+        with st.container():
+            for m in recent_msgs[-6:]:
+                st.info(m)
 
     enemy_names = _get_enemy_display_names(encounter)
 
@@ -1008,9 +1021,22 @@ def _render_encounter_triggers(
                         trig.effect_template,
                         enemy_names,
                     )
+                    # Persist the effect in the turn log so it survives a rerun.
+                    log_entry(play_state, effect_text)
+                    # Also persist for immediate display across reruns.
+                    st.session_state.setdefault("encounter_last_trigger_messages", []).append(effect_text)
                     st.info(effect_text)
 
                 state[trig.id] = new_val
+                # If this trigger is configured to advance the Timer, do so now.
+                inc_on = timer_behavior.get("increment_on_trigger")
+                if inc_on and new_val and not prev and inc_on == trig.id:
+                    play_state["timer"] += 1
+                    # Use configured log text if available
+                    log_text = timer_behavior.get("manual_increment_log", "Timer increased.")
+                    log_entry(play_state, log_text)
+                    # Re-run so the UI reflects the timer change immediately
+                    st.rerun()
 
             # ----- COUNTER -----
             elif trig.kind == "counter":
@@ -1039,7 +1065,9 @@ def _render_encounter_triggers(
                     key=f"trigger_num_{widget_scope}_{trig.id}",
                 )
 
-                # Show per-step effects as the counter increases
+                # Show per-step effects as the counter increases. Log them
+                # so they persist across the immediate rerun performed when
+                # the Timer advances.
                 if trig.step_effects and new_val > value_int:
                     for step in range(value_int + 1, new_val + 1):
                         tmpl = trig.step_effects.get(step)
@@ -1048,9 +1076,18 @@ def _render_encounter_triggers(
                                 tmpl,
                                 enemy_names,
                             )
+                            log_entry(play_state, effect_text)
+                            st.session_state.setdefault("encounter_last_trigger_messages", []).append(effect_text)
                             st.info(effect_text)
 
                 state[trig.id] = new_val
+                # If this counter trigger is configured to advance the Timer, do so now.
+                inc_on = timer_behavior.get("increment_on_trigger")
+                if inc_on and new_val > value_int and inc_on == trig.id:
+                    play_state["timer"] += 1
+                    log_text = timer_behavior.get("manual_increment_log", "Timer increased.")
+                    log_entry(play_state, log_text)
+                    st.rerun()
 
             # ----- NUMERIC (plain number) -----
             elif trig.kind == "numeric":
