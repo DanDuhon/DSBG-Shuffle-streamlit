@@ -16,7 +16,7 @@ from core.behavior.assets import (
     CATEGORY_ORDER,
     BOSS_CATEGORY_MAP,
 )
-from core.image_cache import load_pil_image_cached, get_icon_image
+from core.image_cache import load_pil_image_cached
 from core.behavior.models import BehaviorEntry
 from core.behavior.logic import load_behavior, list_behavior_files
 

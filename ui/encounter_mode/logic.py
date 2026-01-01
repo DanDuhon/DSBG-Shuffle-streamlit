@@ -451,7 +451,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "dodge_difficulty",
             "op": "add",
             "value": 1,
-            "description": "1+ dodge difficulty from special rules.",
+            "description": "+1 dodge difficulty from special rules.",
         },
         {
             "id": "pw_last_bastion_damage",
@@ -461,7 +461,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "damage",
             "op": "add",
             "value": 1,
-            "description": "1+ damage from special rules.",
+            "description": "+1 damage from special rules.",
         },
         {
             "id": "pw_last_bastion_push",
@@ -473,6 +473,28 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "value": True,
             "description": "Push from special rules.",
         }
+    ],
+    "The Sunless City_1_Aged Sentinel": [
+        {
+            "id": "tsc_aged_sentinel_health",
+            "source": "encounter",
+            "source_id": "The Sunless City_1_Aged Sentinel",
+            "target_alt_indices": [0],
+            "stat": "health",
+            "op": "add",
+            "value": -2,
+            "description": "-2 base HP from special rules.",
+        },
+        {
+            "id": "tsc_aged_sentinel_damage",
+            "source": "encounter",
+            "source_id": "The Sunless City_1_Aged Sentinel",
+            "target_alt_indices": [0],
+            "stat": "damage",
+            "op": "add",
+            "value": -2,
+            "description": "-2 damage from special rules.",
+        },
     ],
 }
 
@@ -757,12 +779,8 @@ def _encounter_has_viable_alternative(expansion: str, level: int, name: str, cha
         inv_limit = _get_invader_limit_for_level(level)
         invader_ids = _load_invader_enemy_ids()
         inv_count = 0
-        if name == "Cloak and Feathers":
-            pass
         for e in orig:
             eid = _coerce_enemy_id(e)
-            if name == "Cloak and Feathers":
-                pass
             if eid not in ENEMY_EXPANSIONS_BY_ID:
                 return False
             name_display = enemyNames.get(eid)
@@ -781,8 +799,6 @@ def _encounter_has_viable_alternative(expansion: str, level: int, name: str, cha
 
     inv_limit = _get_invader_limit_for_level(level)
     invader_ids = _load_invader_enemy_ids()
-    if name == "Cloak and Feathers":
-        pass
 
     for combo, alt_sets in valid_alts.items():
         for enemies in alt_sets or []:

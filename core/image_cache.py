@@ -62,35 +62,6 @@ def _load_png_cached(src_path: Path, cache_dir: Path) -> Image.Image:
 
 
 # -------------------------------------------------------------
-# Public cached loaders
-# -------------------------------------------------------------
-def load_base_card(encounter_name: str, use_edited: bool) -> Image.Image:
-    """Load base encounter card (JPG)."""
-    folder = "edited encounter cards" if use_edited else "encounter cards"
-    src_path = ASSETS / folder / f"{encounter_name}.jpg"
-    cache_dir = CACHE_DIRS["edited_cards" if use_edited else "base_cards"]
-    return _load_jpg_cached(src_path, cache_dir)
-
-
-def load_enemy_icon(enemy_name: str) -> Image.Image:
-    """Load enemy icon (PNG)."""
-    src_path = ASSETS / "enemy icons" / f"{enemy_name}.png"
-    return _load_png_cached(src_path, CACHE_DIRS["icons"])
-
-
-def load_character_icon(name: str) -> Image.Image:
-    """Load character icon (PNG)."""
-    src_path = ASSETS / "characters" / f"{name}.png"
-    return _load_png_cached(src_path, CACHE_DIRS["characters"])
-
-
-def load_expansion_icon(name: str) -> Image.Image:
-    """Load expansion icon (PNG)."""
-    src_path = ASSETS / "expansions" / f"{name}.png"
-    return _load_png_cached(src_path, CACHE_DIRS["expansions"])
-
-
-# -------------------------------------------------------------
 # Bytes helper (cached by file mtime)
 # -------------------------------------------------------------
 def _stat_mtime_ns(path: Path) -> int:
@@ -162,9 +133,3 @@ def load_pil_image_cached(path: str, convert: str | None = "RGBA") -> Image.Imag
     """
     p = Path(path)
     return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert)
-
-
-def get_icon_image(name: str) -> Image.Image:
-    """Load an icon from `assets/behavior icons` as a cached PIL Image."""
-    icon_path = ASSETS / "behavior icons" / name
-    return load_pil_image_cached(str(icon_path), convert="RGBA")

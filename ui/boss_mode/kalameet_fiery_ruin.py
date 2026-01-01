@@ -198,20 +198,6 @@ def _kalameet_generate_random_aoe_for_slot(
 #   Returns {"dest": (x, y), "aoe": [(x, y), ...]}
 #   Destination node is always a randomly chosen AoE node.
 # ---------------------------------------------------------------------------
-
-def _kalameet_init_sequence(state: dict) -> None:
-    """
-    Choose and freeze a shuffled order of the 8 standard patterns.
-    This order loops but never changes until the fight is reset.
-    """
-    rng = random.Random()
-    indices = list(range(len(KALAMEET_STANDARD_PATTERNS)))
-    rng.shuffle(indices)
-
-    state["kalameet_aoe_sequence"] = indices
-    state["kalameet_aoe_index"] = 0
-
-
 def _kalameet_build_patterns(
     state: dict,
     mode: str,

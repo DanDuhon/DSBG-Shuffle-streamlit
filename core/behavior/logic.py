@@ -668,7 +668,7 @@ def setup_kalameet(cfg, rng):
 
 
 @register_deck_rule("Old Iron King")
-def setup_kalameet(cfg, rng):
+def setup_old_iron_king(cfg, rng):
     """
     Mark of Calamity and Hellfire Blast are always included.
     """
@@ -1169,7 +1169,7 @@ def _apply_pursuer_heatup(cfg, state, rng):
 
 
 def _apply_old_iron_king_heatup(cfg, state, rng):
-    """The Pursuer: buff all damage by +1."""
+    """Old Iron King: buff all Fire Beam damage by +1."""
     # Increase all Fire Beam dodge and damage values by +1
     for b in [b for b in cfg.behaviors if "Fire Beam" in b]:
         cfg.behaviors[b]["dodge"] = int(cfg.behaviors[b]["dodge"]) + 1

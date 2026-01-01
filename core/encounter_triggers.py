@@ -1,7 +1,6 @@
 # core/encounter_triggers.py
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Literal, Optional, Dict, List
 
@@ -41,42 +40,6 @@ class EncounterTrigger:
 # list value  -> EncounterTrigger definitions for that variant
 EncounterTriggersMap = Dict[str, Dict[str, List[EncounterTrigger]]]
 EventTriggersMap = Dict[str, List[EncounterTrigger]]
-
-
-def render_trigger_template(
-    template: str,
-    enemy_pattern,
-    players_plus_pattern,
-    enemy_names: List[str],
-    value: Optional[int] = None,
-    player_count: Optional[int] = None,
-) -> str:
-    """Render a trigger template with {enemyN}, {players}, {players+N}, and optional {value}."""
-
-    def _sub_enemy(match: re.Match) -> str:
-        idx_1_based = int(match.group(1))
-        idx = idx_1_based - 1
-        if 0 <= idx < len(enemy_names):
-            return enemy_names[idx]
-        return f"[enemy{idx_1_based}?]"
-
-    text = enemy_pattern.sub(_sub_enemy, template)
-
-    if player_count is not None:
-        def _sub_players_plus(m: re.Match) -> str:
-            offset = int(m.group(1))
-            return str(player_count + offset)
-
-        # {players+3}, {players+1}, etc.
-        text = players_plus_pattern.sub(_sub_players_plus, text)
-
-        # plain {players}
-        text = text.replace("{players}", str(player_count))
-
-    if value is not None:
-        text = text.replace("{value}", str(value))
-
-    return text
 
 
 def get_triggers_for_encounter(
@@ -131,7 +94,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_first_bastion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial complete - kill the {enemy4}.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -140,7 +103,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_first_bastion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial complete - kill a {enemy4}.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -247,7 +210,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="corrupted_hovel_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial complete - kill all enemies within {players+3} turns.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -338,6 +301,148 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
         ],
     },
     "The Last Bastion|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Broken Passageway|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="broken_passageway_kills",
+                label="Enemies killed",
+                kind="counter",
+                phase="player",
+            ),
+        ],
+    },
+    "Kingdom's Messengers|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="kingdoms_messengers_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|The Sunless City": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",

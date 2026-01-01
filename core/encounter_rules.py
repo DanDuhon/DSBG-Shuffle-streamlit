@@ -404,6 +404,283 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             ),
         ],
     },
+    "Aged Sentinel|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="The enemy skips its starting turn.",
+                phase="enemy",
+                timer_eq=0
+            ),
+        ],
+    },
+    "Broken Passageway|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Respawn all enemies.",
+                phase="enemy",
+                timer_eq=2
+            ),
+            EncounterRule(
+                template="Respawn all enemies.",
+                phase="enemy",
+                timer_eq=4
+            ),
+        ],
+    },
+    "Dark Alleyway|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+        ],
+    },
+    "Illusionary Doorway|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Illusion — If a character moves onto a node with a token, flip the token. If the token has a damage value, resolve the effects normally. If the token is the doorway/blank, discard all face down trap tokens, and place the next sequential tile as shown on the encounter card. Then, place the character on a doorway node on the new tile. Once a doorway token has been revealed, it counts as the doorway node that connects to the next sequential tile.",
+            ),
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
+    "|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="{enemy7_plural} ignore barrels during movement.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="",
+                phase="player"
+            )
+        ],
+    },
 }
 
 # Event-level rules.

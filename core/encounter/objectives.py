@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Optional
-from core.encounter_rules import make_encounter_key
 
 
 # ---------------------------------------------------------------------------
@@ -287,26 +286,3 @@ def get_objective_config_for_key(
         return variants["edited"]
 
     return variants.get("default")
-
-
-def get_objective_config_for_encounter(
-    encounter: dict,
-    *,
-    edited: bool = False,
-) -> Optional[dict]:
-    """
-    Convenience wrapper that builds the encounter key from an encounter dict
-    (using the same logic as the old _get_objective_config helper), then
-    returns the matching objective config.
-
-    This function is UI-agnostic; callers are responsible for deciding
-    whether `edited` should be True or False based on settings/session state.
-    """
-    name = (
-        encounter.get("encounter_name")
-        or encounter.get("name")
-        or "Unknown Encounter"
-    )
-    expansion = encounter.get("expansion", "Unknown Expansion")
-    encounter_key = make_encounter_key(name=name, expansion=expansion)
-    return get_objective_config_for_key(encounter_key, edited=edited)
