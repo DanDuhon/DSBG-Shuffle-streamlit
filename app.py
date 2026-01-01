@@ -140,8 +140,6 @@ if pending:
     del st.session_state["pending_campaign_snapshot"]
 
 # Sidebar: expansions + party + NG+
-render_sidebar(settings)
-save_settings(settings)
 
 selected_characters = settings.get("selected_characters", [])
 character_count = len(selected_characters)
@@ -157,12 +155,14 @@ if pending_boss:
         st.session_state["mode"] = "Boss Mode"
         st.session_state["boss_mode_pending_name"] = boss_name
     del st.session_state["pending_boss_mode_from_campaign"]
-
 mode = st.sidebar.radio(
     "Mode",
     ["Encounter Mode", "Event Mode", "Boss Mode", "Campaign Mode", "Character Mode", "Behavior Card Viewer"],
     key="mode",
 )
+
+render_sidebar(settings)
+save_settings(settings)
 
 if mode == "Encounter Mode":
     encounter_mode_render(settings, valid_party, character_count)
