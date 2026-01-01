@@ -94,7 +94,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_first_bastion_trial",
                 label="",
-                template="Trial complete - kill the {enemy4}.",
+                template="Trial complete.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -103,7 +103,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_first_bastion_trial",
                 label="",
-                template="Trial complete - kill a {enemy4}.",
+                template="Trial complete.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -210,7 +210,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="corrupted_hovel_trial",
                 label="",
-                template="Trial complete - kill all enemies within {players+3} turns.",
+                template="Trial complete.",
                 kind="checkbox",
                 phase="player",
             ),

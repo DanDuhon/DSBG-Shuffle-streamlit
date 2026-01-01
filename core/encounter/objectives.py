@@ -26,6 +26,69 @@ ENCOUNTER_OBJECTIVES = {
     "No Safe Haven|Painted World of Ariamis": {
         "default": {
             "objectives": [
+                "Kill the {enemy3}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Painted Passage|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Promised Respite|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Roll Out|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Skittering Frenzy|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Survive for {players+2} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The First Bastion|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Activate the lever three times. Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy4}."
+            ],
+        },
+        "edited": {
+            "objectives": [
+                "Activate the lever three times. Reach the exit node.",
+            ],
+            "trials": [
+                "Kill a {enemy4}."
+            ],
+        },
+    },
+    "Unseen Scurrying|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
                 "Kill all enemies.",
             ],
             "trials": [
@@ -35,67 +98,62 @@ ENCOUNTER_OBJECTIVES = {
     "Abandoned and Forgotten|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Activate the lever 3 times. All players must reach the exit node.",
+                "Reveal three blank trap tokens.",
             ],
             "trials": [
             ],
         },
     },
-    "Buried in Bone|Painted World of Ariamis": {
+    "Cold Snap|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy3} and the {enemy4}.",
+                "Reach the exit node.",
             ],
             "trials": [
+                "Kill the {enemy4}."
             ],
         },
     },
-    "Dead of Night|Painted World of Ariamis": {
+    "Corrupted Hovel|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy1}. The {enemy1} must be the last enemy on the board.",
+                "Kill all enemies",
             ],
             "trials": [
+                "Kill all enemies within {players+3} turns."
             ],
         },
     },
-    "Defiled Altar|Painted World of Ariamis": {
+    "Distant Tower|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy4}.",
+                "Reach the exit node.",
             ],
             "trials": [
+                "Kill the {enemy6}."
             ],
         },
     },
-    "Through the Fog|Painted World of Ariamis": {
+    "Gnashing Beaks|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy3}.",
+                "Open the chest. Reach the exit node.",
             ],
             "trials": [
+                "Open the chest within {players+3} turns."
             ],
         },
     },
-    "Beyond the Bridge|Painted World of Ariamis": {
+    "Inhospitable Ground|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy1}. The {enemy1} must be the last enemy on the board.",
+                "Kill all enemies.",
             ],
             "trials": [
             ],
         },
     },
-    "Avenge the Fallen|Painted World of Ariamis": {
-        "default": {
-            "objectives": [
-                "Kill the {enemy2}.",
-            ],
-            "trials": [
-            ],
-        },
-    },
-    "The Dregs of War|Painted World of Ariamis": {
+    "Monstrous Maw|Painted World of Ariamis": {
         "default": {
             "objectives": [
                 "Kill the {enemy1}.",
@@ -104,44 +162,16 @@ ENCOUNTER_OBJECTIVES = {
             ],
         },
     },
-    "A Cold Reception|Painted World of Ariamis": {
+    "Skeletal Spokes|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Keep the {enemy2_plural} at least 3 nodes away from the {enemy1}. Kill all enemies.",
+                "Survive for {players+2} turns.",
             ],
             "trials": [
-            ],
-        },
-        "edited": {
-            "objectives": [
-                "Keep the {enemy2_plural} at least 3 nodes away from the {enemy1}. Kill all enemies.",
-            ],
-            "trials": [
-                (
-                    "Each time the {enemy1} moves closer to the {enemy2_plural}, "
-                    "decrease the timer value by 1."
-                ),
             ],
         },
     },
-    "The Deep Dark|Painted World of Ariamis": {
-        "default": {
-            "objectives": [
-                "Survive {players+1} rounds. Kill all enemies.",
-            ],
-            "trials": [
-            ],
-        },
-        "edited": {
-            "objectives": [
-                "Survive {players+1} rounds. Kill all enemies.",
-            ],
-            "trials": [
-                "The {enemy2} is immune to all damage unless the {enemy1} is at least 3 nodes away.",
-            ],
-        },
-    },
-    "Moonlit Vigil|Painted World of Ariamis": {
+    "Snowblind|Painted World of Ariamis": {
         "default": {
             "objectives": [
                 "Kill all enemies.",
@@ -150,61 +180,25 @@ ENCOUNTER_OBJECTIVES = {
             ],
         },
     },
-    "Forsaken Encampment|Painted World of Ariamis": {
+    "Central Plaza|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy3}.",
+                "Kill all enemies on {players} tiles. Reach the exit node.",
             ],
             "trials": [
             ],
         },
     },
-    "Frozen Guardian|Painted World of Ariamis": {
+    "Corvian Host|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy3}.",
+                "Defeat all enemies within {players+5} turns.",
             ],
             "trials": [
             ],
         },
     },
-    "Remnants of War|Painted World of Ariamis": {
-        "default": {
-            "objectives": [
-                "Kill the {enemy3}.",
-            ],
-            "trials": [
-            ],
-        },
-    },
-    "Rotten Spire|Painted World of Ariamis": {
-        "default": {
-            "objectives": [
-                "Kill the {enemy3}.",
-            ],
-            "trials": [
-            ],
-        },
-    },
-    "Spires of the Damned|Painted World of Ariamis": {
-        "default": {
-            "objectives": [
-                "Kill the {enemy3}. The {enemy3} must be the last enemy on the board.",
-            ],
-            "trials": [
-            ],
-        },
-    },
-    "The Frozen King|Painted World of Ariamis": {
-        "default": {
-            "objectives": [
-                "Kill the {enemy3}.",
-            ],
-            "trials": [
-            ],
-        },
-    },
-    "The Gauntlet|Painted World of Ariamis": {
+    "Deathly Freeze|Painted World of Ariamis": {
         "default": {
             "objectives": [
                 "Kill all enemies.",
@@ -212,30 +206,32 @@ ENCOUNTER_OBJECTIVES = {
             "trials": [
             ],
         },
-        "edited": {
-            "objectives": [
-                "Kill all enemies.",
-            ],
-            "trials": [
-                "If a player starts their activation on a barrel, increase the timer by 1.",
-            ],
-        },
     },
-    "The Hanging Cage|Painted World of Ariamis": {
+    "Draconic Decay|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy3}.",
+                "Reach the exit node.",
             ],
             "trials": [
             ],
         },
     },
-    "The Huddled Masses|Painted World of Ariamis": {
+    "Eye of the Storm|Painted World of Ariamis": {
         "default": {
             "objectives": [
-                "Kill the {enemy2}.",
+                "Kill the {enemy6}.",
             ],
             "trials": [
+            ],
+        },
+    },
+    "Frozen Revolutions|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Activate both levers. Reach the exit node.",
+            ],
+            "trials": [
+                "No barrels are discarded."
             ],
         },
     },
@@ -249,10 +245,518 @@ ENCOUNTER_OBJECTIVES = {
             ],
         },
     },
+    "Trecherous Tower|Painted World of Ariamis": {
+        "default": {
+            "objectives": [
+                "Reveal four blank trap tokens.",
+            ],
+            "trials": [
+            ],
+        },
+    },
     "Velka's Chosen|Painted World of Ariamis": {
         "default": {
             "objectives": [
                 "Kill the {enemy3}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Aged Sentinel|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+            "trials": [
+                "Use both gravestones."
+            ],
+        },
+    },
+    "Broken Passageway|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Survive for {players+2} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Dark Alleyway|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Illusionary Doorway|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Kingdom's Messengers|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+                "Kill all enemies."
+            ],
+        },
+    },
+    "Shattered Keep|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Tempting Maw|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies within {players+3} turns (the {enemy5} does not count as an enemy if the chest hasn't been opened).",
+            ],
+            "trials": [
+                "Kill the {enemy5}."
+            ],
+        },
+    },
+    "The Bell Tower|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Activate the lever {players+1} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Undead Sanctum|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Deathly Tolls|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Survive for {players+3} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Flooded Fortress|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+                "Kill {players+2} enemies."
+            ],
+        },
+    },
+    "Gleaming Silver|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Complete the encounter within {players+3} turns."
+            ],
+        },
+    },
+    "Parish Church|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Flip all trap tokens."
+            ],
+        },
+    },
+    "Parish Gates|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Activate the lever. Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Fountainhead|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Hellkite Bridge|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Iron Golem|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Shine of Gold|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy3}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Archive Entrance|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Don't discard the lever token."
+            ],
+        },
+    },
+    "Castle Break In|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Central Plaza|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Activate the lever {players} times. Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Depths of the Cathedral|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies on a number of tiles equal to {players} (if there are four players, kill all enemies).",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Grim Reunion|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Activate the lever. Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy11}."
+            ],
+        },
+    },
+    "Hanging Rafters|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+                "Kill {players+3} enemies."
+            ],
+        },
+    },
+    "The Grand Hall|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Activate the lever.",
+            ],
+            "trials": [
+                "Kill all enemies."
+            ],
+        },
+    },
+    "Trophy Room|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill {enemy_list:5,6}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Twilight Falls|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Abandoned Storeroom|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Break all barrels.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Bridge Too Far|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Activate the lever three times.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Dark Resurrection|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Place the torch on the shrine node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Deathly Magic|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy3}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Grave Matters|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Last Rites|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Survive for {players+2} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Puppet Master|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy2}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Rain of Filth|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Beast From the Depths|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Altar of Bones|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Occupy the shrine for {players+2} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Far From the Sun|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "In Deep Water|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Survive for {players+3} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Lost Chapel|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Maze of the Dead|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Activate all levers.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Pitch Black|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill {enemy_list:2,6}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Abandoned Chest|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Open the chest. Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Mass Grave|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Activate the lever. Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Urns of the Fallen|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "A Trusty Ally|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Survive for {players+4} turns.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Death's Precipice|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Giant's Coffin|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Complete the encounter within 7 turns."
+            ],
+        },
+    },
+    "Honour Guard|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Lakeview Refuge|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Place the torch on the shrine node.",
+            ],
+            "trials": [
+                "Kill the {enemy9}."
+            ],
+        },
+    },
+    "Last Shred of Light|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Activate the lever three times.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "Skeleton Overlord|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill the {enemy1}.",
+            ],
+            "trials": [
+            ],
+        },
+    },
+    "The Locked Grave|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Open all chests.",
+            ],
+            "trials": [
+                "Kill the {enemy8}."
+            ],
+        },
+    },
+    "The Skeleton Ball|Tomb of Giants": {
+        "default": {
+            "objectives": [
+                "Kill {enemy_list:1,6}.",
             ],
             "trials": [
             ],
