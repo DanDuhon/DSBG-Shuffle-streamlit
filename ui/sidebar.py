@@ -235,9 +235,14 @@ def render_sidebar(settings: dict):
     # Sync widget -> persisted settings (mutate IN PLACE, do not replace settings dict)
     settings["ui_card_width"] = int(st.session_state["ui_card_width"])
 
-    # Session-only UI controls (do not persist across devices)
+    # Session + persisted UI controls
+    # Initialize from settings if present so the choice persists across runs
     if "ui_compact" not in st.session_state:
-        st.session_state["ui_compact"] = False
+        st.session_state["ui_compact"] = bool(settings.get("ui_compact", False))
 
     with st.sidebar.expander("📱 UI", expanded=False):
         st.checkbox("Compact layout (mobile)", key="ui_compact")
+
+    # Persist the compact toggle into the settings dict (and session_state)
+    settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
+    st.session_state["user_settings"] = settings
