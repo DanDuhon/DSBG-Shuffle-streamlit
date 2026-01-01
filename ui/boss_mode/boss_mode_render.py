@@ -4,6 +4,7 @@ import json
 import streamlit as st
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from pathlib import Path
+from ui.encounter_mode.assets import ENCOUNTER_CARDS_DIR
 
 from ui.encounter_mode.generation import generate_encounter_image
 from ui.campaign_mode.helpers import get_player_count_from_settings
@@ -137,6 +138,99 @@ def _render_combat_controls(*, where: str) -> None:
 
 
 def render():
+    def _load_nito_setup_data():
+        """
+        Load the Gravelord Nito Setup encounter JSON for the current party size (1–4 characters).
+        """
+        settings = st.session_state.get("user_settings", {})
+        character_count = get_player_count_from_settings(settings)
+
+        n = int(character_count)
+
+        # Nito setup defines 1–4 character variants.
+        n = max(1, min(n, 4))
+
+        json_path = f"data/encounters/Tomb of Giants_3_Gravelord Nito Setup_{n}.json"
+
+        cache_key = f"nito_setup_data::{n}"
+        if cache_key not in st.session_state:
+            with open(json_path, "r", encoding="utf-8") as f:
+                st.session_state[cache_key] = json.load(f)
+
+        return st.session_state[cache_key]
+
+    def _render_nito_setup_panel():
+        """
+        Show the Gravelord Nito Setup encounter card with Shuffle / Original buttons.
+        The card is displayed persistently.
+        """
+        encounter_data = _load_nito_setup_data()
+
+        enemies_key = "nito_setup_enemies"
+        mode_key = "nito_setup_mode"
+
+        if enemies_key not in st.session_state:
+            st.session_state[enemies_key] = encounter_data.get("original")
+            st.session_state[mode_key] = "original"
+
+        # Controls: Shuffle / Original
+        col_shuffle, col_original = st.columns(2)
+        with col_shuffle:
+            if st.button("Shuffle Setup", key="nito_shuffle", width="stretch"):
+                alts = encounter_data.get("alternatives") or {}
+                candidates = []
+
+                if isinstance(alts, dict):
+                    settings = st.session_state.get("user_settings", {})
+                    active = set(settings.get("active_expansions", []))
+
+                    for exp_combo, combos in alts.items():
+                        exp_set = (
+                            {e.strip() for e in exp_combo.split(",")} if exp_combo else set()
+                        )
+                        if not exp_set or exp_set.issubset(active):
+                            candidates.extend(combos)
+                elif isinstance(alts, list):
+                    candidates = alts
+
+                if candidates:
+                    st.session_state[enemies_key] = random.choice(candidates)
+                    st.session_state[mode_key] = "shuffled"
+        with col_original:
+            if st.button("Original Setup", key="nito_original", width="stretch"):
+                st.session_state[enemies_key] = encounter_data.get("original")
+                st.session_state[mode_key] = "original"
+
+        enemies = st.session_state[enemies_key]
+
+        # Ensure the base encounter card file exists (fail loudly if missing)
+        card_filename = "Tomb of Giants_Gravelord Nito Setup.jpg"
+        card_path = ENCOUNTER_CARDS_DIR / card_filename
+        if not card_path.exists():
+            raise FileNotFoundError(f"Required encounter card missing: {card_path}")
+
+        # Generate the encounter image composited with the selected enemy icons
+        card_img = generate_encounter_image(
+            "Tomb of Giants",
+            3,
+            "Gravelord Nito Setup",
+            encounter_data,
+            enemies,
+            use_edited=False,
+        )
+
+        w = _card_w()
+        src = bytes_to_data_uri(card_img, mime="image/png")
+
+        st.markdown(
+            f"""
+            <div class="card-image">
+                <img src="{src}" style="width:{w}px">
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     def _load_ec_mega_boss_setup_data():
         """
         Load the Executioner's Chariot Mega Boss Setup encounter JSON for the
@@ -528,6 +622,29 @@ def render():
             if not st.session_state.get("chariot_heatup_done", False):
                 with setup_col:
                     _render_ec_mega_boss_setup_panel()
+
+        elif cfg.name == "Gravelord Nito":
+            # Two columns: data card | Gravelord Nito Setup (persistent)
+            data_col, setup_col = st.columns([1, 1])
+
+            with data_col:
+                data_path = cfg.display_cards[0] if cfg.display_cards else None
+                if data_path:
+                    img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
+                    w = _card_w()
+                    src = bytes_to_data_uri(img, mime="image/png")
+
+                    st.markdown(
+                        f"""
+                        <div class="card-image">
+                            <img src="{src}" style="width:{w}px">
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+            with setup_col:
+                _render_nito_setup_panel()
 
         elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
             o_img, s_img = render_dual_boss_data_cards(cfg.raw)

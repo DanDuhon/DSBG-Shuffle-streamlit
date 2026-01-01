@@ -87,15 +87,41 @@ def get_image_bytes_cached(path: str) -> bytes:
 
 
 @st.cache_data(show_spinner=False)
-def bytes_to_data_uri(data: bytes, mime: str = "image/png") -> str:
-    """Convert raw bytes to a data URI (cached by content hash).
+def bytes_to_data_uri(data: object, mime: str = "image/png") -> str:
+    """Convert raw bytes or a PIL Image to a data URI (cached by content hash).
 
-    `data` can be any image bytes; `mime` should be set to the correct
-    content-type (e.g., 'image/png' or 'image/jpeg').
+    Accepts:
+      - raw `bytes` or `bytearray`
+      - a `PIL.Image.Image` instance
+      - a file-like object with a `getvalue()` method (e.g., `io.BytesIO`)
+
+    `mime` should be the desired content type (e.g., 'image/png' or 'image/jpeg').
     """
     if not data:
         return ""
-    b64 = base64.b64encode(data).decode("ascii")
+
+    # If caller passed a PIL Image, serialize it to bytes using the mime/format
+    if isinstance(data, Image.Image):
+        buf = io.BytesIO()
+        fmt = "PNG" if mime == "image/png" else "JPEG"
+        img = data
+        if fmt == "JPEG" and img.mode in ("RGBA", "LA"):
+            img = img.convert("RGB")
+        img.save(buf, format=fmt)
+        bytes_data = buf.getvalue()
+    # Bytes-like objects
+    elif isinstance(data, (bytes, bytearray)):
+        bytes_data = bytes(data)
+    # file-like buffer
+    elif hasattr(data, "getvalue"):
+        try:
+            bytes_data = data.getvalue()
+        except Exception:
+            raise TypeError("Unsupported buffer-like object for image conversion")
+    else:
+        raise TypeError("bytes_to_data_uri expects bytes, PIL.Image, or a buffer with getvalue()")
+
+    b64 = base64.b64encode(bytes_data).decode("ascii")
     return f"data:{mime};base64,{b64}"
 
 

@@ -315,7 +315,7 @@ def generate_encounter_image(
     use_edited=False,
 ):
     """Render the encounter card with enemy icons based on enemySlots layout."""
-    card_path = ENCOUNTER_CARDS_DIR / f"{expansion_name}_{level}_{encounter_name}.jpg"
+    card_path = ENCOUNTER_CARDS_DIR / f"{expansion_name}{"" if encounter_name == "Gravelord Nito Setup" else"_" + level}_{encounter_name}.jpg"
 
     if use_edited:
         edited_path = EDITED_ENCOUNTER_CARDS_DIR / f"{expansion_name}_{level}_{encounter_name}.jpg"
