@@ -352,10 +352,10 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "Tempting Maw|The Sunless City": {
         "default": [
             EncounterTrigger(
-                id="the_last_bastion_trial",
+                id="tempting_maw_trial",
                 label="",
                 template="Trial complete.",
                 kind="checkbox",
