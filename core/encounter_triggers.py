@@ -339,6 +339,15 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                     4: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
                 },
             ),
+            EncounterTrigger(
+                id="the_bell_tower_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
         ],
     },
     "Kingdom's Messengers|The Sunless City": {
@@ -363,7 +372,137 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "Deathly Tolls|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="deathly_tolls_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Gleaming Silver|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="gleaming_silver_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Parish Church|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="parish_church_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Parish Gates|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="parish_gates_trial",
+                label="Remove Tile 1 from play. Any models on Tile 1 when it's removed are killed. Then, place, {enemy4} on enemy spawn node 1 and {enemy5} on enemy spawn node 2 on Tile 2.",
+                template="Lever activated.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Archive Entrance|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="archive_entrance_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Central Plaza|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="central_plaza_lever",
+                label="Lever activations",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                default_value=0,
+                phase="player",
+                step_effects={
+                    1: "Respawn all enemies.",
+                    2: "Respawn all enemies. Spawn {enemy5} on enemy spawn node 1.",
+                    3: "Respawn all enemies.",
+                    4: "Respawn all enemies.",
+                },
+            ),
+        ],
+    },
+    "Depths of the Cathedral|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="depths_of_the_cathedral_tiles_cleared",
+                label="Tiles cleared of enemies",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+                phase="player",
+            ),
+        ],
+    },
+    "Grim Reunion|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="grim_reunion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="grim_reunion_chest",
+                label="",
+                template="Instead of drawing a card from the treasure deck, replace the chest token with the {enemy11} model.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Hanging Rafters|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="hanging_rafters_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Grand Hall|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_grand_hall_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -374,7 +513,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -385,7 +524,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -396,7 +535,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -407,7 +546,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -418,7 +557,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -429,7 +568,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -440,7 +579,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -451,7 +590,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -462,7 +601,150 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|The Sunless City": {
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
