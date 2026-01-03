@@ -502,7 +502,86 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|Tomb of Giants": {
+    "Bridge Too Far|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_lever",
+                label="Lever activated.",
+                template="Respawn all enemies.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Beast From the Depths|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_beast_from_the_depths_trial",
+                label="",
+                template="Trial complete.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Far From the Sun|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="far_from_the_sun_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "The Abandoned Chest|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_abandoned_chest_chest",
+                label="Chest opened",
+                template="Spawn {enemy_list:5,6} on the enemy spawn node closest to the chest.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Mass Grave|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_mass_grave_lever",
+                label="Lever activated.",
+                template="Remove Tile 2.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Urns of the Fallen|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="urns_of_the_fallen_barrels_tile1",
+                label="Tile 1 barrels",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=2,
+                default_value=2,
+            ),
+            EncounterTrigger(
+                id="urns_of_the_fallen_barrels_tile2",
+                label="Tile 2 barrels",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=2,
+                default_value=2,
+            ),
+        ],
+    },
+    "Giant's Coffin|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_last_bastion_trial",
@@ -513,242 +592,40 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "|Tomb of Giants": {
+    "Lakeview Refuge|Tomb of Giants": {
         "default": [
             EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
+                id="lakeview_refuge_torch",
+                label="Character placed on the same node as the torch token for the first time.",
+                template="Spawn a {enemy10} on enemy spawn node 1 on Tile 3. Spawn {enemy_list:11,12,13,14} on enemy spawn node 2 on Tile 2",
                 kind="checkbox",
                 phase="player",
             ),
         ],
     },
-    "|Tomb of Giants": {
+    "Last Shred of Light|Tomb of Giants": {
         "default": [
             EncounterTrigger(
-                id="the_last_bastion_trial",
+                id="last_shred_of_light_lever",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+            ),
+        ],
+    },
+    "The Locked Grave|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_locked_grave_trial",
                 label="",
                 template="Trial complete.",
                 kind="checkbox",
                 phase="player",
             ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
             EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
-                template="Trial complete.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_last_bastion_trial",
-                label="",
+                id="the_locked_grave_lever",
+                label="Spawn a {enemy8} on the closest enemy spawn node to the character on Tile 3.",
                 template="Trial complete.",
                 kind="checkbox",
                 phase="player",

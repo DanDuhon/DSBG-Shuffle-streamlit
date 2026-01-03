@@ -31,6 +31,11 @@ class RewardConfig(TypedDict, total=False):
     # Link to encounter triggers
     counter_trigger_id: str      # for counters / kill-tracking, etc.
     trial_trigger_id: str        # for trial-completion checkboxes
+    # Timer-based thresholds (optional): list of Timer values at which
+    # a single respawn is considered to have occurred. Respawns are
+    # counted cumulatively (e.g. Timer >= 6 => two respawns for
+    # thresholds [3,6,9]).
+    timer_thresholds: List[int]
 
     # Refresh-specific
     refresh_resource: Literal["heroic", "luck", "estus"]
@@ -1374,8 +1379,11 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
             "rewards": [
                 {
                     "type": "souls",
+                    # Souls: 1 per player + 2 per respawn
+                    "per_player": 1,
                     "per_counter": 2,
-                    "counter_trigger_id": "the_mass_grave_respawns"
+                    # Use Timer thresholds instead of a manual counter.
+                    "timer_thresholds": [3, 6, 9],
                 },
                 {
                     "type": "event",

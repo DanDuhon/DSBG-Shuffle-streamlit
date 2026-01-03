@@ -253,7 +253,7 @@ def _render_objectives(encounter: dict, settings: dict) -> None:
 # ---------------------------------------------------------------------
 
 
-def _render_rewards(encounter: dict, settings: dict) -> None:
+def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     """
     Render a Rewards section for the encounter, combining:
     - Encounter-level rewards from ENCOUNTER_REWARDS
@@ -315,6 +315,7 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
             trigger_state=trigger_state,
             player_count=player_count,
             enemy_names=enemy_names,
+            timer=play_state["timer"],
         )
 
     # ---- Event-level rewards ----
@@ -341,6 +342,7 @@ def _render_rewards(encounter: dict, settings: dict) -> None:
                 trigger_state=trigger_state,
                 player_count=player_count,
                 enemy_names=enemy_names,
+                timer=play_state["timer"],
             )
 
     # ---- Apply souls multipliers after everything else ----
@@ -396,6 +398,7 @@ def _apply_rewards_from_config(
     trigger_state: dict,
     player_count: int,
     enemy_names: list[str],
+    timer: int,
 ) -> None:
     """
     Apply rewards from a single EncounterRewardsConfig-like dict into the
@@ -422,13 +425,18 @@ def _apply_rewards_from_config(
         if not rtype:
             continue
 
+        # Determine counter_val. Priority:
+        # 1) If reward defines `timer_thresholds`, compute respawns
+        #    cumulatively from the provided `timer` value.
+        # 2) Otherwise, fall back to explicit counter_trigger_id in trigger_state.
         counter_val = 0
-        counter_id = r.get("counter_trigger_id")
-        if counter_id:
-            try:
+        if r.get("timer_thresholds") is not None:
+            thresholds = r["timer_thresholds"]
+            counter_val = sum(1 for t in thresholds if timer >= int(t))
+        else:
+            counter_id = r.get("counter_trigger_id")
+            if counter_id:
                 counter_val = int(trigger_state.get(counter_id, 0) or 0)
-            except Exception:
-                counter_val = 0
 
         flat = int(r.get("flat", 0) or 0)
         per_player = int(r.get("per_player", 0) or 0)

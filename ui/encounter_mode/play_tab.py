@@ -599,7 +599,7 @@ def render(settings: dict, campaign: bool=False) -> None:
         )
 
         with tab_enemies:
-            play_panels._render_enemy_behaviors(encounter, columns=1)
+            play_panels._render_rewards(encounter, settings, play)
 
         with tab_invaders:
             invader_panel.render_invaders_tab(encounter)
@@ -609,7 +609,7 @@ def render(settings: dict, campaign: bool=False) -> None:
 
         with tab_other:
             play_panels._render_objectives(encounter, settings)
-            play_panels._render_rewards(encounter, settings)
+            play_panels._render_rewards(encounter, settings, play)
             play_panels._render_attached_events(encounter)
             play_panels._render_log(play)
 
