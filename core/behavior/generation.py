@@ -376,6 +376,18 @@ def render_behavior_card(
         x, y = slot_coords[slot]
         base.alpha_composite(icon, (x, y))
 
+    # --- Special-case overlay for The Fountainhead enemy behavior cards ---
+    try:
+        if not is_boss and behavior_json.get("_fountainhead_icon"):
+            icon_path = ICONS_DIR / "move_away_closest_1.png"
+            if icon_path.exists():
+                fh_icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+                x, y = 565, 755
+                base.alpha_composite(fh_icon, (x, y))
+    except Exception:
+        # Don't fail rendering the whole card if overlay fails
+        pass
+
     buf = io.BytesIO()
     base.save(buf, format="PNG")
     return buf.getvalue()

@@ -1400,6 +1400,19 @@ def _apply_behavior_mods_to_raw(
         if not stat or not op:
             continue
 
+        # Support dynamic value sources (e.g., use the current play Timer)
+        value_from = mod.get("value_from")
+        if value_from == "timer":
+            # Read current timer from play state if available
+            play = st.session_state.get("encounter_play") or {}
+            timer_val = int(play.get("timer", 0) or 0)
+            # If mod.value is numeric, treat it as a multiplier; otherwise default 1
+            try:
+                multiplier = float(mod.get("value", 1) or 1)
+            except Exception:
+                multiplier = 1
+            val = int(timer_val * multiplier)
+
         # Scaling based on number of characters
         if val is None:
             base = mod.get("base")
@@ -1482,6 +1495,22 @@ def _apply_behavior_mods_to_raw(
                         patched["dodge_difficulty"] = val
             continue
 
+        # --- Set per-attack 'type' specially (e.g., convert attacks to magic) ---
+        if op == "set" and stat == "type":
+            for node in _iter_attack_nodes():
+                # Only touch nodes that are actual attacks.
+                if (
+                    "damage" not in node
+                    and "effect" not in node
+                    and "type" not in node
+                ):
+                    continue
+                try:
+                    node["type"] = val
+                except Exception:
+                    node["type"] = str(val)
+            continue
+
         if op == "set":
             patched[stat] = val
             continue
@@ -1508,13 +1537,81 @@ def _describe_behavior_mod(mod: Dict[str, Any]) -> str:
     """
     Turn a behavior-modifier dict into a short human-readable sentence.
     """
+    # If the mod explicitly provides a description, allow dynamic
+    # substitution for some value sources (e.g., Timer) so the UI shows
+    # the actual numeric bonus applied right now.
     desc = mod.get("description")
-    if desc:
-        return desc
+    value_from = mod.get("value_from")
+    if value_from == "timer":
+        play = st.session_state.get("encounter_play") or {}
+        timer_val = int(play.get("timer", 0) or 0)
+        try:
+            multiplier = float(mod.get("value", 1) or 1)
+        except Exception:
+            multiplier = 1
+        applied = int(timer_val * multiplier)
+
+        # If the mod supplies an explicit description string, try to
+        # substitute a value placeholder or sensible keywords so the
+        # text reads naturally (e.g. "+3 damage from special rules").
+        if isinstance(desc, str) and desc:
+            # Preferred templating: use {value} if present
+            if "{value}" in desc or "{applied}" in desc or "{timer}" in desc:
+                try:
+                    return desc.format(value=applied, applied=applied, timer=timer_val)
+                except Exception:
+                    # Fall back to naive replacements below
+                    pass
+
+            # Backwards-compatible replacements for common phrasings
+            if "Timer value" in desc:
+                return desc.replace("Timer value", str(applied))
+            if "Timer" in desc:
+                return desc.replace("Timer", str(timer_val))
+
+        # If there's no explicit description, for common ops return a
+        # short numeric summary like "+N stat" for add operations.
+        if mod.get("op") == "add":
+            stat = mod.get("stat", "stat")
+            sign = "+" if applied >= 0 else ""
+            return f"{sign}{applied} {stat}"
 
     stat = mod.get("stat", "stat")
     op = mod.get("op", "")
     value = mod.get("value")
+
+    # If modifier uses per-player scaling (base + per_player * player_count),
+    # compute the applied value for descriptions and substitute into any
+    # provided description placeholders before falling back to the raw text.
+    if (mod.get("per_player") is not None) or (mod.get("base") is not None and mod.get("per_player") is not None):
+        try:
+            base = int(mod.get("base", 0) or 0)
+        except Exception:
+            base = 0
+        try:
+            per_player = int(mod.get("per_player", 0) or 0)
+        except Exception:
+            per_player = 0
+        applied = base + per_player * get_player_count()
+        # If an explicit description exists, try to format it with the applied value
+        if isinstance(desc, str) and desc:
+            if "{value}" in desc or "{applied}" in desc or "{player_num}" in desc:
+                try:
+                    return desc.format(value=applied, applied=applied, player_num=applied)
+                except Exception:
+                    pass
+            # Backwards-compatible literal replacements
+            if "[player_num]" in desc:
+                return desc.replace("[player_num]", str(applied))
+
+        if mod.get("op") == "add":
+            sign = "+" if applied >= 0 else ""
+            return f"{sign}{applied} {mod.get('stat', 'stat')}"
+
+    # If a description exists but didn't match any dynamic placeholders,
+    # return it as-is.
+    if desc:
+        return desc
 
     if op == "flag":
         if value is True or value is None:
@@ -1596,7 +1693,65 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
             mod_dicts = [m for (m, _, _) in mod_tuples]
             raw_for_render = _apply_behavior_mods_to_raw(cfg.raw, mod_dicts)
 
-            data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
+            # Special-case: for The Fountainhead, mark behavior JSON so
+            # behavior-card renderer can add the extra icon to enemy cards.
+            fountainhead_flagged = False
+            if (encounter.get("encounter_name") == "The Fountainhead" or encounter.get("name") == "The Fountainhead"):
+                beh = raw_for_render.get("behavior")
+                if isinstance(beh, dict):
+                    beh["_fountainhead_icon"] = True
+                    fountainhead_flagged = True
+
+            # Special-case: Hanging Rafters — add 'stagger' to all enemy
+            # move-type cards and to any attack slots that have push.
+            hanging_rafters_changed = False
+            if (encounter.get("encounter_name") == "Hanging Rafters" or encounter.get("name") == "Hanging Rafters"):
+                # Find behavior card dicts: either under 'behavior' or top-level
+                candidates = []
+                root_beh = raw_for_render.get("behavior")
+                if isinstance(root_beh, dict):
+                    candidates.append(root_beh)
+                else:
+                    # Top-level behavior entries (common format)
+                    for k, v in list(raw_for_render.items()):
+                        if not isinstance(v, dict):
+                            continue
+                        # Heuristic: behavior entries have 'left'/'middle'/'right' or 'dodge'
+                        if any(x in v for x in ("left", "middle", "right", "dodge")):
+                            candidates.append(v)
+
+                for beh in candidates:
+                    try:
+                        top_type = str(beh.get("type", "")).lower()
+                    except Exception:
+                        top_type = ""
+
+                    for slot in ("left", "middle", "right"):
+                        spec = beh.get(slot)
+                        if not isinstance(spec, dict):
+                            continue
+
+                        # If the card is a move-type, add stagger to any attack node
+                        if top_type == "move":
+                            effects = spec.setdefault("effect", [])
+                            if isinstance(effects, list) and "stagger" not in effects:
+                                effects.append("stagger")
+                                hanging_rafters_changed = True
+
+                        # Also add stagger to any attack that has push (flag or type)
+                        has_push = bool(spec.get("push")) or (spec.get("type") == "push")
+                        if has_push:
+                            effects = spec.setdefault("effect", [])
+                            if isinstance(effects, list) and "stagger" not in effects:
+                                effects.append("stagger")
+                                hanging_rafters_changed = True
+                
+
+            # Special-case: use alternate data card for certain enemies in The Shine of Gold
+            if cfg.name in ("Mimic", "Phalanx") and (encounter.get("encounter_name") == "The Shine of Gold" or encounter.get("name") == "The Shine of Gold"):
+                data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data_The Shine of Gold.jpg"
+            else:
+                data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
             data_bytes = render_data_card_cached(
                 data_card_path,
                 raw_for_render,
@@ -1614,6 +1769,34 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                     unsafe_allow_html=True,
                 )
                 st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
+
+        # If we made any special-case changes (Fountainhead / Hanging Rafters),
+        # add synthetic modifier tuples so they appear in the global summary.
+        enc_label = encounter.get("encounter_name") or encounter.get("name") or ""
+        if fountainhead_flagged:
+            mod_tuples.append((
+                {
+                    "id": "fountainhead_icon",
+                    "stat": "icon",
+                    "op": "flag",
+                    "value": True,
+                    "description": "Adds an extra move away from closest icon to enemy behavior cards (The Fountainhead).",
+                },
+                "encounter",
+                enc_label,
+            ))
+        if hanging_rafters_changed:
+            mod_tuples.append((
+                {
+                    "id": "hanging_rafters_stagger",
+                    "stat": "stagger",
+                    "op": "flag",
+                    "value": True,
+                    "description": "Adds Stagger to all move-attacks and attacks with push (Hanging Rafters).",
+                },
+                "encounter",
+                enc_label,
+            ))
 
         # Aggregate mods for global summary (needs enemy_name + mod_tuples)
         for mod, source_kind, source_label in mod_tuples:

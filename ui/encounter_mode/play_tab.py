@@ -651,7 +651,7 @@ def render(settings: dict, campaign: bool=False) -> None:
             play_panels._render_rules(encounter, settings, play)
 
         with rewards_container:
-            play_panels._render_rewards(encounter, settings)
+            play_panels._render_rewards(encounter, settings, play)
 
     with col_right.container():
         tab_enemies, tab_invaders = st.tabs(["Encounter Enemies", "Invaders"])

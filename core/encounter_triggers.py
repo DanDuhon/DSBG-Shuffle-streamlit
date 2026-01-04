@@ -607,6 +607,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
         "default": [
             EncounterTrigger(
                 id="last_shred_of_light_lever",
+                label="",
                 kind="counter",
                 template="",
                 min_value=0,
