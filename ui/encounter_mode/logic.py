@@ -751,6 +751,18 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "+1 dodge difficulty from special rules.",
         },
     ],
+    "Tomb of Giants_2_The Mass Grave": [
+        {
+            "id": "tog_mass_grave_move",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_2_The Mass Grave",
+            "target": "all_enemies",
+            "stat": "move",
+            "op": "add",
+            "value": 1,
+            "description": "+1 movement from special rules.",
+        },
+    ],
 }
 
 
