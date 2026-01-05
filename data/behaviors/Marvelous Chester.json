@@ -2,6 +2,7 @@
     "Crossbow Volley": {
         "dodge": 1,
         "repeat": 2,
+		"left": {"type": "move", "direction": "away", "distance": 1}
         "middle": {
             "type": "physical",
             "damage": 5
@@ -16,6 +17,7 @@
     "resist": 2,
     "Crossbow Snipe": {
         "dodge": 4,
+		"left": {"type": "move", "direction": "away", "distance": 1}
         "middle": {
             "type": "physical",
             "damage": 5
@@ -30,7 +32,7 @@
             "damage": 4,
             "effect": ["bleed"]
         },
-        "middle": {}
+		"middle": {"type": "move", "direction": "away", "distance": 1}
     },
     "Throwing Knife Flurry": {
         "dodge": 1,
@@ -40,14 +42,16 @@
             "damage": 3,
             "effect": ["bleed"]
         },
-        "middle": {}
+		"middle": {"type": "move", "direction": "away", "distance": 1}
     },
     "Spinning Low Kick": {
         "dodge": 3,
+		"left": {"type": "move", "direction": "towards", "distance": 1}
         "middle": {
             "type": "physical",
             "damage": 5,
 			"node": true
         }
+		"right": {"type": "move", "direction": "away", "distance": 1}
     }
 }

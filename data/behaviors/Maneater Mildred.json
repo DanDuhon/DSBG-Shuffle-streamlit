@@ -1,6 +1,7 @@
 {
     "Death Blow": {
         "dodge": 1,
+		"left": {"type": "move", "direction": "towards", "distance": 1}
         "middle": {
             "type": "physical",
             "damage": 5,
@@ -17,6 +18,7 @@
     "resist": 0,
     "Executioner Strike": {
         "dodge": 2,
+		"left": {"type": "move", "direction": "towards", "distance": 2}
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -28,8 +30,10 @@
     "Guillotine": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 5,
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 5,
             "effect": ["stagger"]
         },
         "middle": {},
@@ -37,6 +41,7 @@
     },
     "Butcher Chop": {
         "dodge": 2,
+		"left": {"type": "move", "direction": "towards", "distance": 1}
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -47,6 +52,7 @@
     },
     "Butchery": {
         "dodge": 2,
+		"left": {"type": "move", "direction": "towards", "distance": 2}
         "middle": {
             "type": "physical",
             "damage": 4,

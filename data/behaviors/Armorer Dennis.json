@@ -1,6 +1,7 @@
 {
     "Soul Spear Launch": {
         "dodge": 1,
+		"left": {"type": "move", "direction": "away", "distance": 1}
         "middle": {
             "type": "magic",
             "damage": 5
@@ -27,6 +28,7 @@
     "Soul Vortex": {
         "dodge": 1,
         "repeat": 2,
+		"left": {"type": "move", "direction": "away", "distance": 1}
         "middle": {
             "type": "magic",
             "damage": 4,
@@ -36,6 +38,7 @@
     },
     "Soul Flash": {
         "dodge": 2,
+		"left": {"type": "move", "direction": "towards", "distance": 2}
         "middle": {
             "type": "magic",
             "damage": 4,
@@ -46,6 +49,7 @@
     },
     "Upward Slash": {
         "dodge": 1,
+		"left": {"type": "move", "direction": "towards", "distance": 1}
         "middle": {
             "type": "physical",
             "damage": 6,
