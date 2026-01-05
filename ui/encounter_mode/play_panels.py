@@ -140,6 +140,14 @@ def _render_keywords_summary(encounter: dict, settings: dict) -> None:
     st.caption(f"Keywords: {labels}")
 
 
+def _render_rule_block(rendered_text: str, *, prefix: str = "", key_hint: Optional[str] = None) -> None:
+    if ":" not in rendered_text:
+        if prefix:
+            st.markdown(f"- {prefix}{rendered_text}", unsafe_allow_html=True)
+        else:
+            st.markdown(f"- {rendered_text}", unsafe_allow_html=True)
+
+
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
     """
     Best-effort way to figure out whether this encounter is using the
@@ -679,32 +687,79 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
     # ------------------------------------------------------------------
     # Render current rules
     # ------------------------------------------------------------------
-    if not current_encounter_rules and not event_rule_groups and not gang_shown:
-        st.caption("No rules to show for this encounter in the current state.")
+    # Collect rules that look like "Keyword: description" (contain ':')
+    keyword_rules: list[tuple[str, str]] = []  # (label_or_none, rendered_text)
+
+    # Encounter-level keyword rules
+    remaining_enc_rules = []
+    for rule in current_encounter_rules:
+        if ":" in (rule.template or ""):
+            text = templates.render_text_template(
+                rule.template,
+                enemy_names,
+                player_count=player_count,
+            )
+            keyword_rules.append((None, text))
+        else:
+            remaining_enc_rules.append(rule)
+
+    # Event-level keyword rules
+    remaining_event_groups = []
+    for label, rules_for_event in event_rule_groups:
+        remaining = []
+        for rule in rules_for_event:
+            if ":" in (rule.template or ""):
+                text = templates.render_text_template(
+                    rule.template,
+                    enemy_names,
+                    player_count=player_count,
+                )
+                keyword_rules.append((label, text))
+            else:
+                remaining.append(rule)
+        if remaining:
+            remaining_event_groups.append((label, remaining))
+
+    # If no rules at all, show caption
+    if not remaining_enc_rules and not remaining_event_groups and not keyword_rules and not gang_shown:
+        st.caption("No relevant rules right now.")
     else:
         # Encounter-level rules first
         # Inject computed gang rule first if present (skip if already shown)
         if not gang_shown:
             _render_gang_rule(encounter, settings)
 
-        # Then render any rules defined in ENCOUNTER_RULES
-        for rule in current_encounter_rules:
+        # Keywords subsection (top of Rules) — always visible expanders
+        if keyword_rules:
+            st.markdown("**Keywords**")
+            for label, text in keyword_rules:
+                head, _sep, tail = text.partition(":")
+                title = head.strip()
+                body = tail.strip()
+                with st.expander(title, expanded=False):
+                    if label:
+                        st.markdown(f"- [{label}] {body}", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"- {body}", unsafe_allow_html=True)
+
+        # Then render any non-keyword encounter rules
+        for i, rule in enumerate(remaining_enc_rules):
             text = templates.render_text_template(
                 rule.template,
                 enemy_names,
                 player_count=player_count,
             )
-            st.markdown(f"- {text}", unsafe_allow_html=True)
+            _render_rule_block(text, key_hint=f"enc_now_{i}")
 
         # Then per-event rules, grouped under headings
-        for label, rules_for_event in event_rule_groups:
-            for rule in rules_for_event:
+        for label, rules_for_event in remaining_event_groups:
+            for i, rule in enumerate(rules_for_event):
                 text = templates.render_text_template(
                     rule.template,
                     enemy_names,
                     player_count=player_count,
                 )
-                st.markdown(f"- {text}", unsafe_allow_html=True)
+                _render_rule_block(text, key_hint=f"ev_now_{label}_{i}")
 
     # ------------------------------------------------------------------
     # Upcoming rules: encounter + events
@@ -751,7 +806,7 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
 
         st.markdown("**Upcoming rules**")
 
-        for trigger_timer, source_label, rule in upcoming_combined:
+        for idx, (trigger_timer, source_label, rule) in enumerate(upcoming_combined):
             phase_label = {
                 "enemy": "Enemy Phase",
                 "player": "Player Phase",
@@ -765,15 +820,10 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
             )
 
             # Prefix with event label if this comes from an event
-            if source_label:
-                prefix = f"[{source_label}] "
-            else:
-                prefix = ""
+            ev_prefix = f"[{source_label}] " if source_label else ""
 
-            st.markdown(
-                f"- **Timer {trigger_timer} · {phase_label}** — {prefix}{text}",
-                unsafe_allow_html=True,
-            )
+            timer_prefix = f"**Timer {trigger_timer} · {phase_label}** — {ev_prefix}"
+            _render_rule_block(text, prefix=timer_prefix, key_hint=f"upcoming_{idx}")
 
 
 def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, show_header: bool = True) -> None:
@@ -833,14 +883,14 @@ def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, 
     # Inject computed gang rule first if present
     _render_gang_rule(encounter, settings)
 
-    for rule in current_encounter_rules:
+    for i, rule in enumerate(current_encounter_rules):
         text = templates.render_text_template(rule.template, enemy_names, player_count=player_count)
-        st.markdown(f"- {text}", unsafe_allow_html=True)
+        _render_rule_block(text, key_hint=f"cur_only_{i}")
 
     for label, rules_for_event in event_rule_groups:
-        for rule in rules_for_event:
+        for i, rule in enumerate(rules_for_event):
             text = templates.render_text_template(rule.template, enemy_names, player_count=player_count)
-            st.markdown(f"- {text}", unsafe_allow_html=True)
+            _render_rule_block(text, key_hint=f"cur_ev_{label}_{i}")
 
 
 # ---------------------------------------------------------------------

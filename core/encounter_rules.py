@@ -92,21 +92,17 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Poison Mist: If a character ends their turn on the same node as a poison cloud token, they suffer Poison.",
-                phase="player"
             )
         ],
         "edited": [
             EncounterRule(
                 template="Poison Mist: If a character ends their turn on the same node as a poison cloud token, they suffer Poison.",
-                phase="player"
             ),
             EncounterRule(
                 template="Snowstorm (tile 1 only): At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold (tile 1 only): If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             )
         ],
     },
@@ -114,7 +110,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             )
         ],
     },
@@ -122,7 +117,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             )
         ],
     },
@@ -130,17 +124,14 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             )
         ],
         "edited": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             )
         ],
     },
@@ -187,7 +178,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
-                phase="player"
             )
         ],
     },
@@ -195,11 +185,9 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             )
         ],
     },
@@ -207,7 +195,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Poison Mist: If a character ends their turn on the same node as a poison cloud token, they suffer Poison.",
-                phase="player"
             )
         ],
     },
@@ -215,7 +202,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Barrage: At the end of each character's turn, that character must make a defense roll using only their dodge dice. If no dodge symbols are rolled, the character suffers 2 damage and Stagger.",
-                phase="player"
             )
         ],
     },
@@ -223,17 +209,14 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             )
         ],
         "edited": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             )
         ],
     },
@@ -257,15 +240,12 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             ),
             EncounterRule(
                 template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
-                phase="player"
             ),
         ],
     },
@@ -273,7 +253,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Barrage: At the end of each character's turn, that character must make a defense roll using only their dodge dice. If no dodge symbols are rolled, the character suffers 2 damage and Stagger.",
-                phase="player"
             ),
             EncounterRule(
                 template="Characters can only leave a tile if there are no enemies on it.",
@@ -285,7 +264,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Poison Mist: If a character ends their turn on the same node as a poison cloud token, they suffer Poison.",
-                phase="player"
             ),
             EncounterRule(
                 template="Characters can only leave a tile if there are no {enemy1_plural} on it.",
@@ -297,11 +275,9 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             ),
         ],
     },
@@ -321,7 +297,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
-                phase="player"
             ),
             EncounterRule(
                 template="Characters can only leave a tile if there are no enemies on it.",
@@ -331,7 +306,6 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "edited": [
             EncounterRule(
                 template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
-                phase="player"
             ),
             EncounterRule(
                 template="Respawn all enemies.",
@@ -384,11 +358,9 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             ),
         ],
     },
@@ -396,11 +368,9 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Snowstorm: At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
-                phase="player"
             ),
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
-                phase="player"
             ),
         ],
     },
@@ -437,22 +407,42 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Illusionary Doorway|The Sunless City": {
         "default": [
             EncounterRule(
-                template="Illusion — If a character moves onto a node with a token, flip the token. If the token has a damage value, resolve the effects normally. If the token is the doorway/blank, discard all face down trap tokens, and place the next sequential tile as shown on the encounter card. Then, place the character on a doorway node on the new tile. Once a doorway token has been revealed, it counts as the doorway node that connects to the next sequential tile.",
+                template="Illusion: If a character moves onto a node with a token, flip the token. If the token has a damage value, resolve the effects normally. If the token is the doorway/blank, discard all face down trap tokens, and place the next sequential tile as shown on the encounter card. Then, place the character on a doorway node on the new tile. Once a doorway token has been revealed, it counts as the doorway node that connects to the next sequential tile.",
             ),
         ],
     },
     "Undead Sanctum|The Sunless City": {
         "default": [
             EncounterRule(
-                template="Onslaught — Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
             ),
         ],
     },
     "Deathly Tolls|The Sunless City": {
         "default": [
             EncounterRule(
-                template="Onslaught — Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
             ),
+            EncounterRule(
+                template="Mimic ({enemy8}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy8} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+            )
+        ],
+    },
+    "Flooded Fortress|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Characters must spend 1 stamina if they make their normal movement during their turn. Running is unaffected.",
+                phase="player"
+            ),
+        ],
+    },
+    "Gleaming Silver|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Mimic: If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with the listed model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+            )
         ],
     },
 }
