@@ -5,8 +5,7 @@
             "type": "magic",
             "damage": 3,
 			"node": true
-        },
-        "middle": {}
+        }
     },
     "health": 5,
     "armor": 1,

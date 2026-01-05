@@ -2,8 +2,10 @@
     "behavior": {
         "dodge": 2,
         "left": {
-            "type": "push",
-            "damage": 4
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 4
         },
         "middle": {
             "repeat": 2

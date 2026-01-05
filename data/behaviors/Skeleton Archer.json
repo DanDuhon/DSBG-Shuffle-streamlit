@@ -5,6 +5,7 @@
             "type": "physical",
             "damage": 4
         },
+		"middle": {"type": "move", "direction": "away", "distance": 2},
         "right": {}
     },
     "health": 1,

@@ -1,6 +1,7 @@
 {
     "behavior": {
         "dodge": 1,
+		"left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 3,

@@ -6,6 +6,7 @@
             "damage": 4,
 			"node": true
         },
+		"middle": {"type": "move", "direction": "away", "distance": 1},
         "right": {}
     },
     "health": 1,
