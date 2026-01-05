@@ -80,41 +80,6 @@ def _is_twohand_compatible_shield(item: Dict[str, Any]) -> bool:
     )
 
 
-def _clamp_by_slot_cost(
-    *,
-    desired_ids: List[str],
-    prev_ids: List[str],
-    capacity: int,
-    items_by_id: Dict[str, Dict[str, Any]],
-    stable_order: List[str],
-) -> List[str]:
-    """Keep as much of prev_ids as possible, then fill from desired_ids, without exceeding slot capacity."""
-
-    def _ordered(ids: List[str]) -> List[str]:
-        order = {iid: i for i, iid in enumerate(stable_order)}
-        return sorted(dict.fromkeys(ids), key=lambda x: order.get(x, 10**9))
-
-    desired = set(desired_ids)
-    kept: List[str] = []
-    used = 0
-
-    for iid in _ordered([x for x in prev_ids if x in desired]):
-        cost = _slot_cost(items_by_id.get(iid) or {})
-        if used + cost <= capacity:
-            kept.append(iid)
-            used += cost
-
-    for iid in _ordered(desired_ids):
-        if iid in kept:
-            continue
-        cost = _slot_cost(items_by_id.get(iid) or {})
-        if used + cost <= capacity:
-            kept.append(iid)
-            used += cost
-
-    return kept
-
-
 def _item_expansions(item: Dict[str, Any]) -> Set[str]:
     src = item.get("source") or {}
     exps = src.get("expansion") or []

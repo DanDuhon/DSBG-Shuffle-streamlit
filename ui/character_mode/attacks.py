@@ -9,16 +9,6 @@ def _attack_int(atk: Dict[str, Any], k: str, default: int = 0) -> int:
     return int((atk or {}).get(k) or default)
 
 
-def _attack_bool(atk: Dict[str, Any], k: str) -> bool:
-    return bool((atk or {}).get(k))
-
-
-def _attack_str(atk: Dict[str, Any], k: str) -> str:
-    v = (atk or {}).get(k)
-    s = "" if v is None else str(v).strip()
-    return s
-
-
 def _attack_dice_counts(atk: Dict[str, Any]) -> Dict[str, int]:
     d = (atk or {}).get("dice") or {}
     if not isinstance(d, dict):
@@ -34,22 +24,6 @@ def _attack_flat_mod(atk: Dict[str, Any]) -> int:
     return _attack_int(atk, "flat_mod", 0)
 
 
-def _attack_dice_string(atk: Dict[str, Any]) -> str:
-    c = _attack_dice_counts(atk)
-    s = (DICE_ICON["black"] * c["black"]) + (DICE_ICON["blue"] * c["blue"]) + (DICE_ICON["orange"] * c["orange"])
-    flat = _attack_flat_mod(atk)
-    if flat:
-        s = f"{s} {'+' if flat > 0 else ''}{flat}"
-    return s
-
-
-def _attack_range(it: Dict[str, Any], atk: Dict[str, Any]) -> str:
-    r = (atk or {}).get("range")
-    if r is None or str(r).strip() == "":
-        r = it.get("range")
-    return str(r) if r is not None else ""
-
-
 def _attack_has_dice(atk: Dict[str, Any]) -> bool:
     d = atk.get("dice") or {}
     if not isinstance(d, dict) or not d:
@@ -58,46 +32,3 @@ def _attack_has_dice(atk: Dict[str, Any]) -> bool:
         if int(v) != 0:
             return True
     return False
-
-
-def _attack_ignore_block(it: Dict[str, Any], atk: Dict[str, Any]) -> bool:
-    # allow item-level default, with attack-level override
-    if "ignore_block" in (atk or {}):
-        return bool((atk or {}).get("ignore_block"))
-    return bool((it or {}).get("ignore_block"))
-
-
-def _rows_for_attacks_table(items: List[Dict[str, Any]], selected_item_ids: Set[str]) -> List[Dict[str, Any]]:
-    rows: List[Dict[str, Any]] = []
-    for it in items:
-        iid = _id(it)
-        name = _name(it)
-        atks = it.get("attacks") or []
-        if not isinstance(atks, list):
-            continue
-        for idx, atk in enumerate(atks):
-            atk = atk or {}
-            rows.append(
-                {
-                    "RowId": f"{iid}::atk::{idx}",
-                    "Select": iid in selected_item_ids,
-                    "Item": name,
-                    "Atk#": idx + 1,
-                    "Stam": _attack_int(atk, "stamina", 0),
-                    "Dice": _attack_dice_string(atk),
-                    "Magic": _attack_bool(atk, "magic") or _attack_bool(it, "magic"),
-                    "Range": _attack_range(it, atk),
-                    "Shaft": _attack_bool(atk, "shaft") or _attack_bool(it, "shaft"),
-                    "Repeat": "" if _attack_int(atk, "repeat", 0) == 0 else _attack_int(atk, "repeat", 0),
-                    "Heal": _attack_int(atk, "heal", 0),
-                    "Stam Rec": _attack_int(atk, "stamina_recovery", 0),
-                    "Node": _attack_bool(atk, "node_attack") or _attack_bool(it, "node_attack"),
-                    "Cond": _attack_str(atk, "condition"),
-                    "Push": _attack_int(atk, "push", 0),
-                    "Ign Blk": _attack_ignore_block(it, atk),
-                    "Text": _attack_str(atk, "text"),
-                    "Shift Before": _attack_int(atk, "shift_before", 0),
-                    "Shift After": _attack_int(atk, "shift_after", 0),
-                }
-            )
-    return rows

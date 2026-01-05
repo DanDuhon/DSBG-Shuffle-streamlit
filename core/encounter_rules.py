@@ -441,6 +441,20 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             ),
         ],
     },
+    "Undead Sanctum|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Onslaught — Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+            ),
+        ],
+    },
+    "Deathly Tolls|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Onslaught — Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+            ),
+        ],
+    },
 }
 
 # Event-level rules.

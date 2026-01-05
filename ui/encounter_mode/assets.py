@@ -85,7 +85,7 @@ editedEncounterKeywords = {
     ("The First Bastion", "Painted World of Ariamis"): ["trial","timer","timer","timer"],
     ("Velka's Chosen", "Painted World of Ariamis"): ["barrage"],
     ("Depths of the Cathedral", "The Sunless City"): ["mimic"],
-    ("Flooded Fortress", "The Sunless City"): ["trial", "gang"],#, "difficultTerrain", "permanentTraps"],
+    ("Flooded Fortress", "The Sunless City"): ["trial"],#, "gang", "difficultTerrain", "permanentTraps"],
     ("Illusionary Doorway", "The Sunless City"): ["illusion","timer"],
     ("Parish Church", "The Sunless City"): ["mimic", "illusion", "trial","timer","timer"],
     ("Kingdom's Messengers", "The Sunless City"): ["trial"],
@@ -120,7 +120,7 @@ encounterKeywords = {
     ("Corvian Host", "Painted World of Ariamis"): ["poisonMist"],
     ("Dark Resurrection", "Tomb of Giants"): ["darkness"],
     ("Deathly Freeze", "Painted World of Ariamis"): ["snowstorm","bitterCold"],
-    ("Deathly Tolls", "The Sunless City"): ["timer","mimic","onslaught"],
+    ("Deathly Tolls", "The Sunless City"): ["timer","mimic","onslaught","gang"],
     ("Depths of the Cathedral", "The Sunless City"): ["mimic"],
     ("Distant Tower", "Painted World of Ariamis"): ["barrage","trial"],
     ("Eye of the Storm", "Painted World of Ariamis"): ["hidden"],
@@ -157,28 +157,8 @@ encounterKeywords = {
     ("The Shine of Gold", "The Sunless City"): ["timer"],
     ("Trecherous Tower", "Painted World of Ariamis"): ["snowstorm","bitterCold","eerie"],
     ("Twilight Falls", "The Sunless City"): ["illusion"],
-    ("Undead Sanctum", "The Sunless City"): ["onslaught"],
+    ("Undead Sanctum", "The Sunless City"): ["onslaught", "gang"],
     ("Unseen Scurrying", "Painted World of Ariamis"): ["hidden"]
-}
-
-keywordSize = {
-    "barrage": (89, 30),
-    "bitterCold": (124, 30),
-    "darkness": (103, 30),
-    "eerie": (61, 30),
-    "gangAlonne": (156, 30),
-    "gangHollow": (160, 30),
-    "gangScarecrow": (187, 30),
-    "gangSilverKnight": (222, 30),
-    "gangSkeleton": (168, 30),
-    "hidden": (84, 30),
-    "illusion": (84, 30),
-    "mimic": (77, 30),
-    "onslaught": (117, 30),
-    "poisonMist": (132, 30),
-    "snowstorm": (124, 30),
-    "trial": (61, 30),
-    "timer": (60, 30)
 }
 
 keywordText = {

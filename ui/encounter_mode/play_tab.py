@@ -63,25 +63,6 @@ def _get_encounter_keywords(name: str, expansion: str, edited: bool) -> list[str
     return out
 
 
-def _render_keywords_summary(encounter: dict, edited: bool) -> None:
-    # V1 cards typically have no keyword section; keep the UI quiet.
-    expansion = encounter.get("expansion")
-    if not expansion:
-        return
-
-    name = encounter.get("encounter_name") or encounter.get("name") or ""
-    if not name:
-        return
-
-    keys = _get_encounter_keywords(name, expansion, edited)
-    if not keys:
-        return
-
-    labels = ", ".join(_keyword_label(k) for k in keys)
-    st.markdown("#### Rules")
-    st.caption(f"Keywords: {labels}")
-
-
 def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict) -> None:
     name = str((encounter or {}).get("encounter_name") or (encounter or {}).get("name") or "").strip()
     n = int(ENCOUNTER_GRAVESTONES.get(name, 0) or 0)

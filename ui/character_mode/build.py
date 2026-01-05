@@ -3,10 +3,6 @@ from ui.character_mode.constants import TIERS, CLASS_TIERS, STAT_LABEL
 from ui.character_mode.item_fields import _item_expansions, _item_requirements, _name, _upgrade_slots, _slot_cost, _extra_upgrade_slots
 
 
-def _tier_index(label: str) -> int:
-    return TIERS.index(label)
-
-
 def _build_stats(class_name: str, tier_indices: Dict[str, int]) -> Dict[str, int]:
     cfg = CLASS_TIERS[class_name]
     out: Dict[str, int] = {}

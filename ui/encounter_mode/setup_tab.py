@@ -376,6 +376,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     use_edited,
                 )
                 if res:
+                    # Mark this encounter as an Original render so Play uses the Hollow gang
+                    res["force_gang"] = "Hollow"
                     st.session_state.current_encounter = res
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
@@ -831,6 +833,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 use_edited,
             )
             if res:
+                # Mark this encounter as an Original render so Play uses the Hollow gang
+                res["force_gang"] = "Hollow"
                 st.session_state.current_encounter = res
                 st.session_state["last_encounter"] = {
                     "label": selected_label,

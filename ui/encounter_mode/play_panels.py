@@ -178,6 +178,97 @@ def _get_enemy_display_names(encounter: dict) -> list[str]:
     return names
 
 
+def _detect_gang_name(encounter: dict) -> Optional[str]:
+    """Detect majority gang among shuffled enemies.
+
+    Gang membership rules:
+    - enemy printed name contains gang name (case-insensitive)
+    - enemy base health is 1 (from behavior JSON or embedded dict)
+
+    Returns one of: 'Hollow', 'Alonne', 'Skeleton', 'Silver Knight', or None.
+    """
+    gang_keys = ["Hollow", "Alonne", "Skeleton", "Silver Knight"]
+    counts: Dict[str, int] = {k: 0 for k in gang_keys}
+
+    # Honor explicit override (e.g., Original button in Setup)
+    force = encounter.get("force_gang")
+    if isinstance(force, str) and force in gang_keys:
+        return force
+
+    enemy_ids = encounter.get("enemies") or []
+    for eid in enemy_ids:
+        name = None
+        health = None
+
+        if isinstance(eid, dict):
+            name = eid.get("name") or eid.get("id")
+            if "health" in eid:
+                try:
+                    health = int(eid.get("health"))
+                except Exception:
+                    health = None
+        else:
+            if isinstance(eid, int):
+                name = enemyNames.get(eid)
+            else:
+                name = str(eid)
+
+            if name:
+                try:
+                    # load base behavior JSON to read default health
+                    cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+                    health = int(cfg.raw.get("health", 1))
+                except Exception:
+                    health = None
+
+        if not name:
+            continue
+
+        lname = name.lower()
+        for g in gang_keys:
+            if g.lower() in lname and health == 1:
+                counts[g] += 1
+                break
+
+    best = None
+    best_count = 0
+    for k, v in counts.items():
+        if v > best_count:
+            best = k
+            best_count = v
+
+    return best if best_count > 0 else None
+
+
+def _render_gang_rule(encounter: dict, settings: dict) -> bool:
+    """Render the Gang rule for this encounter if appropriate.
+
+    Returns True if the rule was rendered, False otherwise.
+    """
+    encounter_keywords = _get_encounter_keywords(encounter, settings)
+    if "gang" not in encounter_keywords:
+        return False
+
+    gang_name = _detect_gang_name(encounter)
+    if gang_name:
+        text = (
+            f"{gang_name} Gang — If a character is attacked by a {gang_name} "
+            f"enemy and another {gang_name} enemy is within one node of the character, "
+            "increase the attacking model’s damage and dodge difficulty values "
+            "by 1 when resolving the attack."
+        )
+    else:
+        text = (
+            "Gang — If a character is attacked by a gang enemy and another "
+            "gang enemy is within one node of the character, increase the "
+            "attacking model’s damage and dodge difficulty values by 1 when "
+            "resolving the attack."
+        )
+
+    st.markdown(f"- {text}", unsafe_allow_html=True)
+    return True
+
+
 # ---------------------------------------------------------------------
 # Objectives
 # ---------------------------------------------------------------------
@@ -551,6 +642,8 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
         timer=timer,
         phase=phase,
     )
+    # Precompute gang rule and render it early so it appears even when no other rules exist.
+    gang_shown = _render_gang_rule(encounter, settings)
 
     # ------------------------------------------------------------------
     # Event-level rules that apply *right now*
@@ -581,13 +674,20 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
         if rules_for_event:
             event_rule_groups.append((label, rules_for_event))
 
+    # (gang info already computed above)
+
     # ------------------------------------------------------------------
     # Render current rules
     # ------------------------------------------------------------------
-    if not current_encounter_rules and not event_rule_groups:
+    if not current_encounter_rules and not event_rule_groups and not gang_shown:
         st.caption("No rules to show for this encounter in the current state.")
     else:
         # Encounter-level rules first
+        # Inject computed gang rule first if present (skip if already shown)
+        if not gang_shown:
+            _render_gang_rule(encounter, settings)
+
+        # Then render any rules defined in ENCOUNTER_RULES
         for rule in current_encounter_rules:
             text = templates.render_text_template(
                 rule.template,
@@ -701,6 +801,12 @@ def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, 
         phase=phase,
     )
 
+    # Compute gang info early so Gang can be shown even when no other rules exist
+    encounter_keywords = _get_encounter_keywords(encounter, settings)
+    gang_name_preview = None
+    if "gang" in encounter_keywords:
+        gang_name_preview = _detect_gang_name(encounter)
+
     events = st.session_state.get("encounter_events", []) or []
     event_rule_groups: list[tuple[str, list]] = []
 
@@ -720,9 +826,12 @@ def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, 
         if rules_for_event:
             event_rule_groups.append((label, rules_for_event))
 
-    if not current_encounter_rules and not event_rule_groups:
+    if not current_encounter_rules and not event_rule_groups and not ("gang" in encounter_keywords):
         st.caption("No rules to show for this encounter in the current state.")
         return
+
+    # Inject computed gang rule first if present
+    _render_gang_rule(encounter, settings)
 
     for rule in current_encounter_rules:
         text = templates.render_text_template(rule.template, enemy_names, player_count=player_count)
@@ -1876,69 +1985,3 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                 f"- **{prefix}** — {desc}  \n"
                 f"  _Applies to: {applies_to}_"
             )
-
-
-def _render_invaders_and_bosses(encounter: dict) -> None:
-    """
-    Right-hand column: embed a trimmed Behavior Decks UI for
-    invaders and bosses only.
-
-    This reuses the full Behavior Decks implementation (deck
-    simulator + health tracker), but we temporarily filter the
-    behavior catalog so only invader/boss decks appear, and we
-    try to default to something from the current encounter.
-    """
-    # Build the full catalog once, then filter it
-    full_catalog = build_behavior_catalog()
-    trimmed: Dict[str, List[BehaviorEntry]] = {}
-    all_entries: List[BehaviorEntry] = []
-
-    for cat, entries in full_catalog.items():
-        filtered = [e for e in entries if getattr(e, "is_invader", False)]
-        if filtered:
-            trimmed[cat] = filtered
-            all_entries.extend(filtered)
-
-    if not all_entries:
-        st.caption("No invader decks found.")
-        return
-
-    # Try to default the selection to an invader/boss that actually appears
-    # in this encounter, if any.
-    enemy_names = _get_enemy_display_names(encounter)
-    available_names = {e.name for e in all_entries}
-
-    for name in enemy_names:
-        if name in available_names:
-            # Only set the default if nothing has been chosen yet
-            st.session_state.setdefault("behavior_choice", name)
-            break
-
-    # Temporarily override the catalog Behavior Decks uses so that its
-    # category radio + selector only see these invader/boss entries.
-    original_catalog = st.session_state.get("behavior_catalog")
-    st.session_state["behavior_catalog"] = trimmed
-
-    # Prefer the "Invaders" category if it exists; otherwise make sure the
-    # current category is valid for our trimmed catalog.
-    if "Invaders" in trimmed:
-        st.session_state.setdefault("behavior_category", "Invaders")
-    else:
-        current_cat = st.session_state.get("behavior_category")
-        if current_cat not in trimmed:
-            # Pick a deterministic first category for a stable UI
-            st.session_state["behavior_category"] = sorted(trimmed.keys())[0]
-
-    try:
-        # This renders:
-        # - Enemy/boss selector (now limited to invaders/bosses)
-        # - Behavior deck controls (draw, reshuffle, etc.)
-        # - Health tracker + heat-up logic
-        behavior_decks_render()
-    finally:
-        # Restore whatever catalog the Behavior Decks tab (or other code)
-        # was using before we overrode it.
-        if original_catalog is not None:
-            st.session_state["behavior_catalog"] = original_catalog
-        else:
-            st.session_state.pop("behavior_catalog", None)

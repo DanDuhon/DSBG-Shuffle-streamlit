@@ -96,11 +96,6 @@ def _convolve(a: Dict[int, float], b: Dict[int, float]) -> Dict[int, float]:
     return out
 
 
-def _pmf_sum(dice: Any) -> Dict[int, float]:
-    dd = _norm_dice(dice)
-    return _pmf_sum_cached(dd["black"], dd["blue"], dd["orange"], dd["flat_mod"])
-
-
 @lru_cache(maxsize=4096)
 def _pmf_sum_cached(black: int, blue: int, orange: int, flat: int) -> Dict[int, float]:
     """Compute PMF for given dice counts; cached for repeated combinations.

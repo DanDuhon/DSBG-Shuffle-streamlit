@@ -33,35 +33,6 @@ for d in CACHE_DIRS.values():
 
 
 # -------------------------------------------------------------
-# Generic cached loaders
-# -------------------------------------------------------------
-@st.cache_resource(show_spinner=False)
-def _load_jpg_cached(src_path: Path, cache_dir: Path) -> Image.Image:
-    """Load a JPG image from assets or disk cache."""
-    dst = cache_dir / src_path.name
-    if dst.exists():
-        return Image.open(dst).convert("RGB")
-    if src_path.exists():
-        img = Image.open(src_path).convert("RGB")
-        img.save(dst, format="JPEG")
-        return img
-    raise FileNotFoundError(f"Missing JPG image: {src_path}")
-
-
-@st.cache_resource(show_spinner=False)
-def _load_png_cached(src_path: Path, cache_dir: Path) -> Image.Image:
-    """Load a PNG image from assets or disk cache."""
-    dst = cache_dir / src_path.name
-    if dst.exists():
-        return Image.open(dst).convert("RGBA")
-    if src_path.exists():
-        img = Image.open(src_path).convert("RGBA")
-        img.save(dst, format="PNG")
-        return img
-    raise FileNotFoundError(f"Missing PNG image: {src_path}")
-
-
-# -------------------------------------------------------------
 # Bytes helper (cached by file mtime)
 # -------------------------------------------------------------
 def _stat_mtime_ns(path: Path) -> int:
