@@ -559,28 +559,6 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
-    "Urns of the Fallen|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="urns_of_the_fallen_barrels_tile1",
-                label="Tile 1 barrels",
-                kind="counter",
-                template="",
-                min_value=0,
-                max_value=2,
-                default_value=2,
-            ),
-            EncounterTrigger(
-                id="urns_of_the_fallen_barrels_tile2",
-                label="Tile 2 barrels",
-                kind="counter",
-                template="",
-                min_value=0,
-                max_value=2,
-                default_value=2,
-            ),
-        ],
-    },
     "Giant's Coffin|Tomb of Giants": {
         "default": [
             EncounterTrigger(

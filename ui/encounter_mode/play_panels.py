@@ -1495,6 +1495,32 @@ def _apply_behavior_mods_to_raw(
                         patched["dodge_difficulty"] = val
             continue
 
+        # --- Movement modifiers: adjust 'distance' on per-attack move nodes ---
+        if stat == "move" and op in {"add", "set"} and isinstance(val, (int, float)):
+            for node in _iter_attack_nodes():
+                try:
+                    if node.get("type") != "move":
+                        continue
+                    old = int(node.get("distance", 0) or 0)
+                except Exception:
+                    old = 0
+
+                if op == "add":
+                    new = old + int(val)
+                else:
+                    new = int(val)
+
+                # Clamp to available icon distances (1..4)
+                new = max(1, min(4, new))
+                node["distance"] = new
+
+            # Keep a top-level marker for convenience
+            try:
+                patched["move"] = int(val)
+            except Exception:
+                patched["move"] = val
+            continue
+
         # --- Set per-attack 'type' specially (e.g., convert attacks to magic) ---
         if op == "set" and stat == "type":
             for node in _iter_attack_nodes():

@@ -7,7 +7,7 @@
 			"distance": 1,
             "push": 4
         },
-		"middle": {"type": "move", "direction": "away", "distance": 1}
+        "middle": {"type": "move", "direction": "away", "distance": 1},
         "right": {}
     },
     "is_invader": true,
@@ -19,7 +19,7 @@
     "Double Lance Lunge": {
         "dodge": 2,
         "repeat": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -33,11 +33,11 @@
             "type": "push",
             "damage": 5
         },
-		"middle": {"type": "move", "direction": "away", "distance": 2}
+        "middle": {"type": "move", "direction": "away", "distance": 2}
     },
     "Jousting Charge": {
         "dodge": 3,
-		"left": {"type": "move", "direction": "towards", "distance": 2}
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 5
@@ -51,6 +51,6 @@
             "damage": 3,
             "effect": ["poison"]
         },
-		"middle": {"type": "move", "direction": "away", "distance": 1}
+        "middle": {"type": "move", "direction": "away", "distance": 1}
     }
 }

@@ -19,7 +19,7 @@
     "resist": 2,
     "Lunging Stab": {
         "dodge": 3,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 5,
@@ -29,7 +29,7 @@
     },
     "Cleave": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 6,

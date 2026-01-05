@@ -73,9 +73,9 @@ coords_map = {
     },
     # movement uses the same slot placements as physical attacks
     "attack_move": {
-        "left": (44, 714),
-        "middle": (291, 714),
-        "right": (440, 714),
+        "left": (57, 760),
+        "middle": (304, 760),
+        "right": (453, 760),
     },
     "attack_magic": {
         "left": (40, 735),

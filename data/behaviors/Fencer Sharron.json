@@ -1,7 +1,7 @@
 {
     "Puzzling Stone Sword Charge": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 2}
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 5
@@ -24,7 +24,7 @@
     },
     "Spider Fang Sword Strike": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 6
@@ -33,7 +33,7 @@
     },
     "Spider Fang Sword Charge": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 2}
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 5
@@ -46,12 +46,12 @@
             "type": "magic",
             "damage": 5
         },
-		"middle": {"type": "move", "direction": "away", "distance": 1}
+        "middle": {"type": "move", "direction": "away", "distance": 1}
     },
     "Dual Sword Assault": {
         "dodge": 1,
         "repeat": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 5,

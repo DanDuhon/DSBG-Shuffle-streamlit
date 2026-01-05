@@ -1,7 +1,7 @@
 {
     "Great Chaos Fireball": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "away", "distance": 1}
+        "left": {"type": "move", "direction": "away", "distance": 1},
         "middle": {
             "type": "magic",
             "damage": 5,
@@ -18,7 +18,7 @@
     "resist": 1,
     "Chaos Fire Whip": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "magic",
             "damage": 4
@@ -45,11 +45,11 @@
 			"push": true,
 			"node": true
         },
-		"middle": {"type": "move", "direction": "away", "distance": 1}
+        "middle": {"type": "move", "direction": "away", "distance": 1}
     },
     "Whiplash": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 2}
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 4,

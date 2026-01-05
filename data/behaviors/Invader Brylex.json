@@ -38,7 +38,7 @@
     },
     "Fire Surge": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "away", "distance": 1}
+        "left": {"type": "move", "direction": "away", "distance": 1},
         "middle": {
             "type": "magic",
             "damage": 5,
@@ -48,7 +48,7 @@
     },
     "Fire Whip": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 2}
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "magic",
             "damage": 6,

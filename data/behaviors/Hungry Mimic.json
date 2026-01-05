@@ -1,7 +1,7 @@
 {
     "Raking Slash": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -18,7 +18,7 @@
     "resist": 1,
     "Heavy Punch": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 5
@@ -47,7 +47,7 @@
     },
     "Charging Chomp": {
         "dodge": 3,
-		"left": {"type": "move", "direction": "towards", "distance": 3}
+        "left": {"type": "move", "direction": "towards", "distance": 3},
         "middle": {
             "type": "physical",
             "damage": 4
@@ -65,7 +65,7 @@
     },
     "Aggressive Grab": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 2}
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 5

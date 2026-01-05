@@ -763,6 +763,30 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "+1 movement from special rules.",
         },
     ],
+    "Tomb of Giants_3_Death's Precipice": [
+        {
+            "id": "tog_deaths_precipice_stagger",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_3_Death's Precipice",
+            "target": "all_enemies",
+            "stat": "stagger",
+            "op": "flag",
+            "value": True,
+            "description": "All enemy attacks gain Stagger from special rules.",
+        },
+    ],
+    "Tomb of Giants_3_Honour Guard": [
+        {
+            "id": "tog_honour_guard_damage",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_3_Death's Precipice",
+            "target": "all_enemies",
+            "stat": "damage",
+            "op": "add",
+            "value": 1,
+            "description": "+1 damage from special rules.",
+        },
+    ],
 }
 
 

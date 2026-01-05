@@ -18,7 +18,7 @@
     "resist": 1,
     "Shield Bash": {
         "dodge": 2,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -28,7 +28,7 @@
     },
     "Shield Charge": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -39,7 +39,7 @@
     },
     "Overhead Chop": {
         "dodge": 1,
-		"left": {"type": "move", "direction": "towards", "distance": 1}
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
