@@ -71,6 +71,12 @@ coords_map = {
         "middle": (291, 737),
         "right": (440, 737),
     },
+    # movement uses the same slot placements as physical attacks
+    "attack_move": {
+        "left": (44, 714),
+        "middle": (291, 714),
+        "right": (440, 714),
+    },
     "attack_magic": {
         "left": (40, 735),
         "middle": (287, 735),
@@ -261,6 +267,13 @@ def build_icon_filename(spec: dict) -> str | None:
 
     if t in ("physical", "magic", "push"):
         return f"attack_{t}_{dmg}.png"
-    else:
-        # status effects (bleed, stagger, etc.)
-        return f"{t}.png"
+
+    # movement: spec should include direction ("away" | "towards") and distance (1..3)
+    # e.g. in JSON slot: { "type": "move", "direction": "away", "distance": 2 }
+    if t == "move":
+        direction = spec.get("direction", "away")
+        distance = spec.get("distance", 1)
+        return f"move_{direction}_{distance}.png"
+
+    # status effects (bleed, stagger, etc.)
+    return f"{t}.png"

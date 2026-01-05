@@ -366,12 +366,25 @@ def render_behavior_card(
             _overlay_effect_icons(base, effects, slot, is_boss=is_boss)
 
         # --- Push / Node overlays ---
-        # Push: only for physical/magic attacks, never for type == "push"
-        if spec.get("push") and behavior_json[slot]["type"] in {"physical", "magic"}:
+        # Allow push/node markers for moves as well as physical/magic attacks.
+        # Movement specs may include `push` as either a boolean or an int damage value.
+        if spec.get("push") and spec.get("type") in {"physical", "magic", "move"}:
             _overlay_push_node_icon(base, slot, is_boss=is_boss, kind="push")
 
-        if spec.get("node") and behavior_json[slot]["type"] in {"physical", "magic"}:
+        if spec.get("node") and spec.get("type") in {"physical", "magic", "move"}:
             _overlay_push_node_icon(base, slot, is_boss=is_boss, kind="node")
+
+        # If this is a movement that also deals push damage (e.g. "push": 4),
+        # try to overlay the attack_push_{damage}.png icon as well so the damage
+        # value is visible. Place it using the attack_push coords.
+        if spec.get("type") == "move" and isinstance(spec.get("push"), int):
+            push_dmg = spec["push"]
+            push_icon_path = ICONS_DIR / f"attack_push_{push_dmg}.png"
+            push_coords_map = coords_map.get("attack_push", {})
+            if push_icon_path.exists() and slot in push_coords_map:
+                px, py = push_coords_map[slot]
+                push_icon = load_pil_image_cached(str(push_icon_path), convert="RGBA").copy()
+                base.alpha_composite(push_icon, (px, py))
 
         x, y = slot_coords[slot]
         base.alpha_composite(icon, (x, y))

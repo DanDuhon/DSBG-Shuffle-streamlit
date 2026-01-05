@@ -4,8 +4,7 @@
         "left": {
             "type": "magic",
             "damage": 4
-        },
-        "middle": {}
+        }
     },
     "health": 5,
     "armor": 2,
