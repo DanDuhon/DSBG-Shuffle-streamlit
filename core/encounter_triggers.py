@@ -86,15 +86,15 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 default_value=0,
                 phase="player",
                 step_effects={
-                    1: "Spawn a {enemy2} on enemy spawn node 1 on tile 1.",
-                    2: "Spawn a {enemy3} on enemy spawn node 2 on tile 1.",
-                    3: "Spawn a {enemy4} on enemy spawn node 1 on tile 1.",
+                    1: "Spawn a {enemy2} on Tile 1, Enemy Spawn Node 1.",
+                    2: "Spawn a {enemy3} on Tile 1, Enemy Spawn Node 2.",
+                    3: "Spawn a {enemy4} on Tile 1, Enemy Spawn Node 1.",
                 },
             ),
             EncounterTrigger(
                 id="the_first_bastion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -103,7 +103,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_first_bastion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -210,7 +210,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="corrupted_hovel_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -221,14 +221,14 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="gnashing_beaks_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
             EncounterTrigger(
                 id="gnashing_beaks_chest",
                 label="Chest opened",
-                effect_template="Spawn a {enemy_list:4,5} on enemy spawn 1 on tile 1, and a {enemy6} on enemy spawn 2 on tile 1.",
+                effect_template="Spawn a {enemy_list:4,5} on Tile 1, Enemy Spawn Node 1 and a {enemy6} on Tile 1, Enemy Spawn Node 2.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -239,7 +239,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="distant_tower_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -250,7 +250,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="cold_snap_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -261,8 +261,8 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="corvian_host_spawn",
                 label="",
-                template="Kill {enemy_list:3,3}.",
-                effect_template="Spawn a {enemy7} on both enemy spawn nodes on tile 3.",
+                template="Killed {enemy_list:3,3}",
+                effect_template="Spawn a {enemy7} on Tile 3, both Enemy Spawn Nodes.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -273,8 +273,8 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="eye_of_the_storm_spawn",
                 label="",
-                template="Kill {enemy_list:1,2,3,4}.",
-                effect_template="Spawn a {enemy6} on both enemy spawn nodes on tile 3.",
+                template="Killed {enemy_list:1,2,3,4}",
+                effect_template="Spawn a {enemy6} on Tile 3, Enemy Spawn Node 2.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -283,8 +283,8 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="eye_of_the_storm_spawn",
                 label="",
-                template="Kill {enemy_list:1,2,3,4}.",
-                effect_template="Spawn a {enemy6} on both enemy spawn nodes on tile 3.",
+                template="Killed {enemy_list:1,2,3,4}",
+                effect_template="Spawn a {enemy6} on Tile 3, Enemy Spawn Node 2.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -294,7 +294,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
         "default": [
             EncounterTrigger(
                 id="frozen_revolutions_trial",
-                label="Trial complete.",
+                label="Trial complete",
                 kind="checkbox",
                 phase="player",
             ),
@@ -305,7 +305,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_last_bastion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -333,10 +333,10 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 default_value=0,
                 phase="player",
                 step_effects={
-                    1: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
-                    2: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
-                    3: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
-                    4: "Spawn {enemy_list:3,4} on the closest enemy spawn node to the character that activated the lever.",
+                    1: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                    2: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                    3: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                    4: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
                 },
             ),
             EncounterTrigger(
@@ -355,7 +355,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="kingdoms_messengers_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -366,7 +366,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="tempting_maw_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -390,7 +390,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="gleaming_silver_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -401,7 +401,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="parish_church_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -411,8 +411,8 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
         "default": [
             EncounterTrigger(
                 id="parish_gates_trial",
-                label="Remove Tile 1 from play. Any models on Tile 1 when it's removed are killed. Then, place, {enemy4} on enemy spawn node 1 and {enemy5} on enemy spawn node 2 on Tile 2.",
-                template="Lever activated.",
+                label="Remove Tile 1 from play. Any models on Tile 1 when it's removed are killed. Then, spawn a {enemy4} on Tile 2, Enemy Spawn Node 1 and {enemy5} on Tile 2, Enemy Spawn Node 2.",
+                template="Lever activated",
                 kind="checkbox",
                 phase="player",
             ),
@@ -423,7 +423,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="archive_entrance_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -442,7 +442,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 phase="player",
                 step_effects={
                     1: "Respawn all enemies.",
-                    2: "Respawn all enemies. Spawn {enemy5} on enemy spawn node 1.",
+                    2: "Respawn all enemies. Spawn a {enemy5} on Enemy Spawn Node 1.",
                     3: "Respawn all enemies.",
                     4: "Respawn all enemies.",
                 },
@@ -467,7 +467,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="grim_reunion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -485,7 +485,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="hanging_rafters_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -496,7 +496,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_grand_hall_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -518,7 +518,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_beast_from_the_depths_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -542,7 +542,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_abandoned_chest_chest",
                 label="Chest opened",
-                template="Spawn {enemy_list:5,6} on the enemy spawn node closest to the chest.",
+                template="Spawn {enemy_list:5,6} on the Enemy Spawn Node closest to the chest.",
                 kind="checkbox",
                 phase="player",
             ),
@@ -564,7 +564,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_last_bastion_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial completed",
                 kind="checkbox",
                 phase="player",
             ),
@@ -575,7 +575,7 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="lakeview_refuge_torch",
                 label="Character placed on the same node as the torch token for the first time.",
-                template="Spawn a {enemy10} on enemy spawn node 1 on Tile 3. Spawn {enemy_list:11,12,13,14} on enemy spawn node 2 on Tile 2",
+                template="Spawn a {enemy10} on Tile 3, Enemy Spawn Node 1. Spawn {enemy_list:11,12,13,14} on Tile 2, Enemy Spawn Node 2",
                 kind="checkbox",
                 phase="player",
             ),
@@ -598,14 +598,14 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             EncounterTrigger(
                 id="the_locked_grave_trial",
                 label="",
-                template="Trial complete.",
+                template="Trial complete",
                 kind="checkbox",
                 phase="player",
             ),
             EncounterTrigger(
                 id="the_locked_grave_lever",
-                label="Spawn a {enemy8} on the closest enemy spawn node to the character on Tile 3.",
-                template="Trial complete.",
+                label="Spawn a {enemy8} on Tile 3, the closest Enemy Spawn Node to the character.",
+                template="Trial complete",
                 kind="checkbox",
                 phase="player",
             ),
@@ -618,7 +618,7 @@ EVENT_TRIGGERS: EventTriggersMap = {
         EncounterTrigger(
             id="blacksmiths_trial",
             label="",
-            template="Blacksmith's Trial event: Reroll an attack or defense roll.",
+            template="Blacksmith's Trial event: Rerolled an attack or defense roll",
             kind="checkbox",
             phase="player",
         ),
@@ -627,16 +627,16 @@ EVENT_TRIGGERS: EventTriggersMap = {
         EncounterTrigger(
             id="fleeting_glory",
             label="",
-            template="Fleeting Glory event: If a character would die, instead clear the endurance bar.",
+            template="Fleeting Glory event: Instead of dying, a character cleared their endurance bar",
             kind="checkbox",
             phase="player",
         ),
     ],
     "Princess Guard": [
         EncounterTrigger(
-            id="fleeting_glory",
+            id="princess_guard",
             label="",
-            template="Princess Guard event: If a character is attacked and would die, ignore the attack.",
+            template="Princess Guard event: A character ignored a fatal attack",
             kind="checkbox",
             phase="player",
         ),

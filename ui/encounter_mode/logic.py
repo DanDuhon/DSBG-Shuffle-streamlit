@@ -64,50 +64,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "value": 1,
             "description": "+1 damage from special rules.",
         },
-        {
-            "id": "pw_skittering_frenzy_respawn",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_1_Skittering Frenzy",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "When an enemy is killed, respawn it on the closest enemy spawn node to the character with the aggro token at the end of the next enemy turn.",
-        },
-    ],
-    "Painted World of Ariamis_1_Roll Out": [
-        {
-            "id": "pw_roll_out_barrels",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_1_Roll Out",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "Enemies ignore barrels during movement.",
-        },
-        {
-            "id": "pw_roll_out_push",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_1_Roll Out",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "If an enemy is pushed onto a node containing a barrel, it suffers Stagger, then discard the barrel.",
-        }
-    ],
-    "Painted World of Ariamis_1_Unseen Scurrying": [
-        {
-            "id": "pw_unseen_scurrying_hidden",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_1_Unseen Scurrying",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attacks only has a single die already, ignore this rule.",
-        }
     ],
     "Painted World of Ariamis_1_Cloak and Feathers": [
         {
@@ -153,38 +109,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "Attacks gain push from special rules.",
         }
     ],
-    "Painted World of Ariamis_2_Skeletal Spokes": [
-        {
-            "id": "pw_skeletal_spokes_barrels",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_2_Skeletal Spokes",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "Enemies ignore barrels during movement.",
-        },
-        {
-            "id": "pw_skeletal_spokes_push",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_2_Skeletal Spokes",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "If an enemy is pushed onto a node containing a barrel, it suffers Stagger, then discard the barrel.",
-        },
-        {
-            "id": "pw_skeletal_spokes_respawn",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_2_Skeletal Spokes",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "If an enemy is killed, respawn it on the closest enemy spawn node, then draw a treasure card and add it to the inventory.",
-        }
-    ],
     "Painted World of Ariamis_2_Corrupted Hovel": [
         {
             "id": "pw_corrupted_hovel_poison",
@@ -207,24 +131,12 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "Node attack from special rules.",
         }
     ],
-    "Painted World of Ariamis_2_Snowblind": [
-        {
-            "id": "pw_snowblind_hidden",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_2_Snowblind",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attacks only has a single die already, ignore this rule.",
-        }
-    ],
     "Painted World of Ariamis_2_Monstrous Maw": [
         {
             "id": "pw_monstrous_maw_health",
             "source": "encounter",
             "source_id": "Painted World of Ariamis_2_Monstrous Maw",
-            "target": "all_enemies",
+            "target_alt_indices": [0],
             "stat": "health",
             "op": "set",
             "value": 10,
@@ -234,7 +146,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "id": "pw_monstrous_maw_block",
             "source": "encounter",
             "source_id": "Painted World of Ariamis_2_Monstrous Maw",
-            "target": "all_enemies",
+            "target_alt_indices": [0],
             "stat": "armor",
             "op": "add",
             "value": 1,
@@ -244,7 +156,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "id": "pw_monstrous_maw_resist",
             "source": "encounter",
             "source_id": "Painted World of Ariamis_2_Monstrous Maw",
-            "target": "all_enemies",
+            "target_alt_indices": [0],
             "stat": "resist",
             "op": "add",
             "value": 1,
@@ -254,7 +166,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "id": "pw_monstrous_maw_dodge",
             "source": "encounter",
             "source_id": "Painted World of Ariamis_2_Monstrous Maw",
-            "target": "all_enemies",
+            "target_alt_indices": [0],
             "stat": "dodge_difficulty",
             "op": "add",
             "value": 1,
@@ -271,7 +183,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "op": "add",
             "base": 2,
             "per_player": 1,
-            "description": "+[player_num]+2 HP from special rules.",
+            "description": "+[player_num] HP from special rules.",
         },
         {
             "id": "pw_velkas_chosen_block",
@@ -389,16 +301,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "value": 1,
             "description": "+1 resist from special rules.",
         },
-        {
-            "id": "pw_eye_of_the_storm_hidden",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_3_Eye of the Storm",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attacks only has a single die already, ignore this rule.",
-        },
     ],
     "Painted World of Ariamis_3_Frozen Revolutions": [
         {
@@ -411,26 +313,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "value": 1,
             "description": "+1 repeat from special rules.",
         },
-        {
-            "id": "pw_frozen_revolutions_barrels",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_3_Frozen Revolutions",
-            "target_alt_indices": [6,7],
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "Ignore barrels during movement.",
-        },
-        {
-            "id": "pw_frozen_revolutions_push",
-            "source": "encounter",
-            "source_id": "Painted World of Ariamis_3_Frozen Revolutions",
-            "target_alt_indices": [6,7],
-            "stat": "damage",
-            "op": "add",
-            "value": 0,
-            "description": "If pushed onto a node containing a barrel, it suffers Stagger, then discard the barrel.",
-        }
     ],
     "Painted World of Ariamis_3_The Last Bastion": [
         {

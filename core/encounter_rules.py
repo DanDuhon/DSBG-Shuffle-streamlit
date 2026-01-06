@@ -154,7 +154,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Skittering Frenzy|Painted World of Ariamis": {
         "default": [
             EncounterRule(
-                template="If an enemy is killed, respawn it on the closest enemy spawn node to the character with the aggro token at the end of the next enemy turn.",
+                template="If an enemy is killed, respawn it on the closest Enemy Spawn Node to the character with the aggro token at the end of the next enemy turn.",
                 phase="player"
             )
         ],
@@ -162,17 +162,17 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "The First Bastion|Painted World of Ariamis": {
         "edited": [
             EncounterRule(
-                template="Spawn a {enemy2} on enemy spawn node 1.",
+                template="Spawn a {enemy2} on Enemy Spawn Node 1.",
                 phase="enemy",
                 timer_eq=1
             ),
             EncounterRule(
-                template="Spawn a {enemy3} on enemy spawn node 1.",
+                template="Spawn a {enemy3} on Enemy Spawn Node 1.",
                 phase="enemy",
                 timer_eq=2
             ),
             EncounterRule(
-                template="Spawn a {enemy4} on enemy spawn node 1.",
+                template="Spawn a {enemy4} on Enemy Spawn Node 1.",
                 phase="enemy",
                 timer_eq=4
             )
@@ -182,6 +182,13 @@ ENCOUNTER_RULES: EncounterRulesMap = {
         "default": [
             EncounterRule(
                 template="Hidden: After declaring an attack, players must discard a die of their choice before rolling. If the attack only has a single die already, ignore this rule.",
+            )
+        ],
+    },
+    "Abandoned and Forgotten|Painted World of Ariamis": {
+        "default": [
+            EncounterRule(
+                template="Eerie: If a character moves onto a node with a trap token, flip the token. If the token is blank, place it to one side. If the token has a damage value, instead of resolving it normally, spawn an enemy corresponding to the value shown, then discard the token.\n— 1 damage: {enemy1} on Enemy Spawn Node 1\n— 2 damage: {enemy2} on Enemy Spawn Node 2\n— 3 damage: {enemy3} on Enemy Spawn Node 1",
             )
         ],
     },
@@ -231,11 +238,11 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="enemy"
             ),
             EncounterRule(
-                template="If {enemy3} is pushed onto a node containing a barrel, it suffers Stagger, then discard the barrel.",
+                template="If a {enemy3} is pushed onto a node containing a barrel, it suffers Stagger, then discard the barrel.",
                 phase="player"
             ),
             EncounterRule(
-                template="If {enemy3} is killed, respawn it on the closest enemy node, then draw a treasure card and add it to the inventory.",
+                template="If a {enemy3} is killed, respawn it on the closest enemy node, then draw a treasure card and add it to the inventory.",
                 phase="player"
             )
         ],
@@ -270,7 +277,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 template="Poison Mist: If a character ends their turn on the same node as a poison cloud token, they suffer Poison.",
             ),
             EncounterRule(
-                template="Characters can only leave a tile if there are no {enemy1_plural} on it.",
+                template="Characters can only leave a tile if there are no {enemy3_plural} on it.",
                 phase="player"
             ),
         ],
@@ -321,7 +328,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="player"
             ),
             EncounterRule(
-                template="Once {enemy_list:1,2,3,4} have been killed, spawn a {enemy6} on Tile 3 on enemy spawn node 2.",
+                template="Once {enemy_list:1,2,3,4} have been killed, spawn a {enemy6} on Tile 3, Enemy Spawn Node 2.",
                 phase="player"
             ),
         ],
@@ -353,7 +360,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="player"
             ),
             EncounterRule(
-                template="If a {enemy7} is killed, it respawns on Tile 3 on enemy spawn node 1.",
+                template="If a {enemy7} is killed, it respawns on Tile 3, Enemy Spawn Node 1.",
                 phase="player"
             ),
         ],
@@ -376,6 +383,9 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             EncounterRule(
                 template="Bitter Cold: If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
             ),
+            EncounterRule(
+                template="Eerie: If a character moves onto a node with a trap token, flip the token. If the token is blank, place it to one side. If the token has a damage value, instead of resolving it normally, spawn an enemy corresponding to the value shown, then discard the token.\n— 1 damage: {enemy3} on Enemy Spawn Node 1\n— 2 damage: {enemy4} on Enemy Spawn Node 2\n— 3 damage: {enemy5} on Enemy Spawn Node 1",
+            )
         ],
     },
     "Aged Sentinel|The Sunless City": {
@@ -649,7 +659,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "In Deep Water|Tomb of Giants": {
         "default": [
             EncounterRule(
-                template="On Tile 3, spawn a {enemy5} on enemy spawn node 1 and a {enemy6} on enemy spawn node 2.",
+                template="On Tile 3, spawn a {enemy5} on Enemy Spawn Node 1 and a {enemy6} on Enemy Spawn Node 2.",
                 phase="enemy",
                 timer_eq=3
             ),
@@ -745,7 +755,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 timer_eq=0
             ),
             EncounterRule(
-                template="Spawn {enemy_list:5,6} on Tile 2 on enemy spawn node 1.",
+                template="Spawn {enemy_list:5,6} on Tile 2, Enemy Spawn Node 1.",
                 phase="enemy",
                 timer_eq=2
             ),
@@ -788,7 +798,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Skeleton Overlord|Tomb of Giants": {
         "default": [
             EncounterRule(
-                template="Spawn a {enemy2} on enemy spawn node 1 and a {enemy3} on enemy spawn node 2.",
+                template="Spawn a {enemy2} on Enemy Spawn Node 1 and a {enemy3} on Enemy Spawn Node 2.",
                 timer_eq=2,
                 phase="enemy"
             ),
@@ -954,6 +964,31 @@ def get_rules_for_event(
     """
     rules = EVENT_RULES.get(event_key, [])
     return [r for r in rules if r.matches(timer=timer, phase=phase)]
+
+
+def get_all_rules_for_encounter(*, encounter_key: str, edited: bool) -> List[EncounterRule]:
+    """
+    Return the full (unfiltered) list of rules for an encounter variant.
+
+    This is useful for UI code that wants to apply custom filtering
+    semantics (for example, showing phase-only rules regardless of
+    current phase when a user preference is enabled).
+    """
+    variants = ENCOUNTER_RULES.get(encounter_key)
+    if not variants:
+        return []
+
+    if edited and "edited" in variants:
+        return variants["edited"]
+
+    return variants.get("default", [])
+
+
+def get_all_rules_for_event(*, event_key: str) -> List[EncounterRule]:
+    """
+    Return the full (unfiltered) list of rules for an event.
+    """
+    return EVENT_RULES.get(event_key, [])
 
 
 def get_upcoming_rules_for_event(

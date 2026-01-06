@@ -26,7 +26,7 @@
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,
-    "No Safe Haven|Painted World of Ariamis": true,
+    "No Safe Haven|Painted World of Ariamis": false,
     "Aged Sentinel|The Sunless City": false,
     "The Grand Hall|The Sunless City": false,
     "Dark Alleyway|The Sunless City": false,
@@ -41,10 +41,10 @@
     "Bridge Too Far|Tomb of Giants": false,
     "Abandoned Storeroom|Tomb of Giants": false,
     "Far From the Sun|Tomb of Giants": false,
-    "The First Bastion|Painted World of Ariamis": true,
+    "The First Bastion|Painted World of Ariamis": false,
     "Cold Snap|Painted World of Ariamis": false,
     "Unseen Scurrying|Painted World of Ariamis": false,
-    "Depths of the Cathedral|The Sunless City": true,
+    "Depths of the Cathedral|The Sunless City": false,
     "Frozen Revolutions|Painted World of Ariamis": false,
     "Ash Gardens|Dark Souls The Board Game": false,
     "Ashen Hollow|Dark Souls The Board Game": false,
@@ -64,7 +64,7 @@
     "Draconic Decay|Painted World of Ariamis": false,
     "Skittering Frenzy|Painted World of Ariamis": false,
     "Roll Out|Painted World of Ariamis": false,
-    "Promised Respite|Painted World of Ariamis": true,
+    "Promised Respite|Painted World of Ariamis": false,
     "Painted Passage|Painted World of Ariamis": false,
     "Frozen Sentries|Painted World of Ariamis": false,
     "Abandoned and Forgotten|Painted World of Ariamis": false,
@@ -214,5 +214,7 @@
     "30": true,
     "10": true
   },
-  "ui_compact": false
+  "ui_compact": false,
+  "edited_encounters_global": false,
+  "rules_show_only_in_phase": false
 }

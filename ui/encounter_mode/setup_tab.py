@@ -350,6 +350,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                 if final_res and final_res.get("ok"):
                     st.session_state.current_encounter = final_res
+                    # Reset Play tab state so the Play UI starts fresh for this new encounter
+                    st.session_state["encounter_play"] = None
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
                         "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
@@ -379,6 +381,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     # Mark this encounter as an Original render so Play uses the Hollow gang
                     res["force_gang"] = "Hollow"
                     st.session_state.current_encounter = res
+                    # Reset Play tab state so the Play UI starts fresh for this original render
+                    st.session_state["encounter_play"] = None
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
                         "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
@@ -807,6 +811,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             if final_res and final_res.get("ok"):
                 st.session_state.current_encounter = final_res
+                # Reset Play tab state so the Play UI starts fresh for this new encounter
+                st.session_state["encounter_play"] = None
                 st.session_state["last_encounter"] = {
                     "label": selected_label,
                     "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
@@ -836,6 +842,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 # Mark this encounter as an Original render so Play uses the Hollow gang
                 res["force_gang"] = "Hollow"
                 st.session_state.current_encounter = res
+                # Reset Play tab state so the Play UI starts fresh for this original render
+                st.session_state["encounter_play"] = None
                 st.session_state["last_encounter"] = {
                     "label": selected_label,
                     "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",

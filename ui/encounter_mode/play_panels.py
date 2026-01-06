@@ -13,6 +13,8 @@ from core.encounter_rules import (
     get_upcoming_rules_for_encounter,
     get_rules_for_event,
     get_upcoming_rules_for_event,
+    get_all_rules_for_encounter,
+    get_all_rules_for_event,
 )
 from core.encounter_triggers import (
     EncounterTrigger,
@@ -642,14 +644,29 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
     phase = play_state["phase"]  # "enemy" or "player"
 
     # ------------------------------------------------------------------
-    # Encounter-level rules that apply *right now*
+    # Encounter-level rules that apply *right now* (honor user preference)
     # ------------------------------------------------------------------
-    current_encounter_rules = get_rules_for_encounter(
-        encounter_key=encounter_key,
-        edited=edited,
-        timer=timer,
-        phase=phase,
-    )
+    rules_only_in_phase = bool(settings.get("rules_show_only_in_phase", True))
+
+    if rules_only_in_phase:
+        current_encounter_rules = get_rules_for_encounter(
+            encounter_key=encounter_key,
+            edited=edited,
+            timer=timer,
+            phase=phase,
+        )
+    else:
+        # When the user requests broad visibility, include rules that have
+        # no timer constraints even if their `phase` doesn't match the
+        # current phase. Timer-constrained rules are still gated by timer.
+        all_rules = get_all_rules_for_encounter(encounter_key=encounter_key, edited=edited)
+        current_encounter_rules = []
+        for r in all_rules:
+            if r.timer_eq is not None or r.timer_min is not None or r.timer_max is not None:
+                if r.matches(timer=timer, phase=phase):
+                    current_encounter_rules.append(r)
+            else:
+                current_encounter_rules.append(r)
     # Precompute gang rule and render it early so it appears even when no other rules exist.
     gang_shown = _render_gang_rule(encounter, settings)
 
@@ -670,12 +687,21 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
         for key in (ev_id, ev_name):
             if not key:
                 continue
+            if rules_only_in_phase:
+                rules_for_event = get_rules_for_event(
+                    event_key=key,
+                    timer=timer,
+                    phase=phase,
+                )
+            else:
+                all_ev_rules = get_all_rules_for_event(event_key=key)
+                for r in all_ev_rules:
+                    if r.timer_eq is not None or r.timer_min is not None or r.timer_max is not None:
+                        if r.matches(timer=timer, phase=phase):
+                            rules_for_event.append(r)
+                    else:
+                        rules_for_event.append(r)
 
-            rules_for_event = get_rules_for_event(
-                event_key=key,
-                timer=timer,
-                phase=phase,
-            )
             if rules_for_event:
                 break
 
@@ -737,10 +763,14 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
                 title = head.strip()
                 body = tail.strip()
                 with st.expander(title, expanded=False):
+                    # Preserve explicit newlines in rule bodies by converting
+                    # them to HTML line breaks. Expanders' title is single-line
+                    # so multi-line content belongs in the body.
+                    safe_body = body.replace("\n", "<br>")
                     if label:
-                        st.markdown(f"- [{label}] {body}", unsafe_allow_html=True)
+                        st.markdown(f"- [{label}] {safe_body}", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"- {body}", unsafe_allow_html=True)
+                        st.markdown(f"- {safe_body}", unsafe_allow_html=True)
 
         # Then render any non-keyword encounter rules
         for i, rule in enumerate(remaining_enc_rules):
@@ -843,12 +873,24 @@ def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, 
     timer = play_state["timer"]
     phase = play_state["phase"]
 
-    current_encounter_rules = get_rules_for_encounter(
-        encounter_key=encounter_key,
-        edited=edited,
-        timer=timer,
-        phase=phase,
-    )
+    rules_only_in_phase = bool(settings.get("rules_show_only_in_phase", True))
+
+    if rules_only_in_phase:
+        current_encounter_rules = get_rules_for_encounter(
+            encounter_key=encounter_key,
+            edited=edited,
+            timer=timer,
+            phase=phase,
+        )
+    else:
+        all_rules = get_all_rules_for_encounter(encounter_key=encounter_key, edited=edited)
+        current_encounter_rules = []
+        for r in all_rules:
+            if r.timer_eq is not None or r.timer_min is not None or r.timer_max is not None:
+                if r.matches(timer=timer, phase=phase):
+                    current_encounter_rules.append(r)
+            else:
+                current_encounter_rules.append(r)
 
     # Compute gang info early so Gang can be shown even when no other rules exist
     encounter_keywords = _get_encounter_keywords(encounter, settings)
@@ -1155,9 +1197,19 @@ def _render_encounter_triggers(
         widget_scope = scope_key.replace("|", "_")
 
         for trig in triggers:
-            # Phase-gating: only show if it applies in the current phase
-            if trig.phase not in ("any", play_state["phase"]):
-                continue
+            # Phase-gating: only show if it applies in the current phase.
+            # Honor the user preference: when `rules_show_only_in_phase` is
+            # False, show phase-scoped triggers that have no timer target.
+            rules_only_in_phase = bool(settings.get("rules_show_only_in_phase", True))
+            current_phase = play_state["phase"]
+
+            if trig.phase not in ("any", current_phase):
+                if rules_only_in_phase:
+                    continue
+                # Allow showing phase-scoped triggers when the preference
+                # is disabled, but only for triggers that are not timer-based.
+                if getattr(trig, "timer_target", None) is not None:
+                    continue
 
             # ----- CHECKBOX -----
             if trig.kind == "checkbox":
@@ -1594,18 +1646,20 @@ def _apply_behavior_mods_to_raw(
         # Treat those as booleans on each real attack node (left/middle/right).
         if stat in {"push", "node"} and op in {"flag", "set"}:
             for node in _iter_attack_nodes():
+                # Only touch nodes that are actual attacks: require damage/effect
+                # to be present. This avoids applying 'node' to pure move slots.
+                if ("damage" not in node and "effect" not in node):
+                    continue
+
                 # Only apply push to physical/magic attacks; never to type=="push".
                 if stat == "push":
                     if node.get("type") not in ("physical", "magic"):
                         continue
 
-                # Only touch nodes that are actual attacks.
-                if (
-                    "damage" not in node
-                    and "effect" not in node
-                    and "type" not in node
-                ):
-                    continue
+                # 'node' should never be applied to move-type nodes.
+                if stat == "node":
+                    if node.get("type") == "move":
+                        continue
 
                 node[stat] = True if val is None else bool(val)
 
@@ -1684,16 +1738,102 @@ def _apply_behavior_mods_to_raw(
                 patched["move"] = val
             continue
 
+        # --- Repeat modifier: apply to per-attack nodes so the UI can render
+        # repeat icons on enemy cards. Supports 'add' and 'set'.
+        if stat == "repeat" and op in {"add", "set"}:
+            try:
+                add_val = int(val)
+            except Exception:
+                add_val = 0
+
+            behavior_dict = patched.get("behavior") or {}
+            slots = ["left", "middle", "right"]
+
+            # Find slots that already have an explicit repeat value
+            existing_slots: list[str] = []
+            for s in slots:
+                node = behavior_dict.get(s)
+                if isinstance(node, dict) and ("repeat" in node):
+                    existing_slots.append(s)
+
+            if existing_slots:
+                # Apply to existing repeat slots
+                for s in existing_slots:
+                    node = behavior_dict.get(s) or {}
+                    try:
+                        old = int(node.get("repeat", 0) or 0)
+                    except Exception:
+                        old = 0
+                    new = (old + add_val) if op == "add" else add_val
+                    try:
+                        node["repeat"] = max(0, int(new))
+                    except Exception:
+                        node["repeat"] = old
+                    behavior_dict[s] = node
+            else:
+                # No explicit repeat found. Prefer to place repeat on the
+                # next empty dict slot (left->middle->right). If none exist,
+                # fall back to applying to the first attack-like slot.
+                placed = False
+                for s in slots:
+                    node = behavior_dict.get(s)
+                    if isinstance(node, dict) and len(node) == 0:
+                        # Empty slot: interpret missing repeat as 1 when adding
+                        if op == "add":
+                            new = 1 + add_val
+                        else:
+                            new = add_val
+                        try:
+                            node["repeat"] = max(0, int(new))
+                        except Exception:
+                            node["repeat"] = new
+                        behavior_dict[s] = node
+                        placed = True
+                        break
+
+                if not placed:
+                    # No empty slot found — apply to first attack-like slot
+                    for s in slots:
+                        node = behavior_dict.get(s)
+                        if not isinstance(node, dict):
+                            continue
+                        # Treat lack of explicit repeat as 1
+                        try:
+                            old = int(node.get("repeat", 1) or 1)
+                        except Exception:
+                            old = 1
+                        new = (old + add_val) if op == "add" else add_val
+                        try:
+                            node["repeat"] = max(0, int(new))
+                        except Exception:
+                            node["repeat"] = new
+                        behavior_dict[s] = node
+                        break
+
+            patched["behavior"] = behavior_dict
+            # Also set a top-level marker for convenience
+            try:
+                patched["repeat"] = int(patched.get("repeat", 0) or 0) + add_val if op == "add" else add_val
+            except Exception:
+                patched["repeat"] = patched.get("repeat", add_val)
+
+            continue
+
         # --- Set per-attack 'type' specially (e.g., convert attacks to magic) ---
         if op == "set" and stat == "type":
             for node in _iter_attack_nodes():
-                # Only touch nodes that are actual attacks.
-                if (
-                    "damage" not in node
-                    and "effect" not in node
-                    and "type" not in node
-                ):
+                # Only touch nodes that are actual attacks. Do NOT change
+                # movement nodes (type == 'move') — modifiers should only
+                # affect attacks. Accept nodes that either already have
+                # damage/effect or are an explicit attack-type.
+                node_type = node.get("type")
+                # Skip explicit movement nodes
+                if node_type == "move":
                     continue
+
+                if ("damage" not in node and "effect" not in node and node_type not in ("physical", "magic", "push")):
+                    continue
+
                 try:
                     node["type"] = val
                 except Exception:

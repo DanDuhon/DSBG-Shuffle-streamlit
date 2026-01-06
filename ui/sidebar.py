@@ -5,6 +5,7 @@ from core.characters import CHARACTER_EXPANSIONS
 from core.ngplus import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
 from ui.encounter_mode.assets import enemyNames
+from ui.encounter_mode.generation import editedEncounterKeywords
 
 all_expansions = [
     "Painted World of Ariamis",
@@ -246,3 +247,51 @@ def render_sidebar(settings: dict):
     # Persist the compact toggle into the settings dict (and session_state)
     settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
     st.session_state["user_settings"] = settings
+
+    # Rules display preference: show phase-only rules/triggers only in their phase
+    prev_rules_pref = bool(settings.get("rules_show_only_in_phase", True))
+    with st.sidebar.expander("⚙️ Rule/Trigger Display", expanded=False):
+        rules_pref = st.checkbox(
+            "Only show rules/triggers when relevant (player or enemy phase). This only affects the Play tab.",
+            value=prev_rules_pref,
+            key="rules_show_only_in_phase",
+        )
+        settings["rules_show_only_in_phase"] = bool(rules_pref)
+        st.session_state["user_settings"] = settings
+
+    # Edited encounters: global toggle + per-encounter status
+    with st.sidebar.expander("✏️ Edited Encounters", expanded=False):
+        settings.setdefault("edited_toggles", {})
+
+        prev_global = bool(settings.get("edited_encounters_global", False))
+        # Checkbox is persisted in session state so it remains across reruns
+        global_val = st.checkbox(
+            "Enable edited encounters (global)",
+            value=prev_global,
+            key="edited_encounters_global",
+        )
+
+        # Update persisted settings when the widget value differs from saved
+        curr_global = bool(st.session_state.get("edited_encounters_global", False))
+        settings["edited_encounters_global"] = curr_global
+
+        if curr_global != prev_global:
+            # Apply the global setting to all known edited encounter toggles
+            for enc_name, enc_exp in sorted(editedEncounterKeywords):
+                k = f"{enc_name}|{enc_exp}"
+                settings["edited_toggles"][k] = curr_global
+            st.session_state["user_settings"] = settings
+            save_settings(settings)
+
+        st.markdown("**Edited encounters available:**")
+        if not editedEncounterKeywords:
+            st.caption("No edited encounters available.")
+        else:
+            # Show list with status emoji
+            edited_list = sorted(editedEncounterKeywords, key=lambda t: (t[1], t[0]))
+            toggles = settings.get("edited_toggles", {})
+            for enc_name, enc_exp in edited_list:
+                k = f"{enc_name}|{enc_exp}"
+                enabled = bool(toggles.get(k, False))
+                emoji = "✅" if enabled else "❌"
+                st.write(f"{emoji} {enc_name} ({enc_exp})")
