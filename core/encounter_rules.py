@@ -32,6 +32,10 @@ class EncounterRule:
     timer_min: Optional[int] = None
     timer_max: Optional[int] = None
     timer_eq: Optional[int] = None
+    # When True, applying this rule at the matching time/phase should
+    # reset the encounter Timer to 0. Default False so existing rules
+    # are unaffected.
+    reset_timer: bool = False
 
     def matches(self, *, timer: int, phase: str) -> bool:
         """Return True if this rule should be shown for the given state."""
@@ -99,10 +103,10 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 template="Poison Mist: If a character ends their turn on the same node as a poison cloud token, they suffer Poison.",
             ),
             EncounterRule(
-                template="Snowstorm (tile 1 only): At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
+                template="Snowstorm (Tile 1): At the start of each character's turn, that character suffers Frostbite unless they have the torch token on their dashboard or are on the same node as the torch token or a character with the torch token on their dashboard.",
             ),
             EncounterRule(
-                template="Bitter Cold (tile 1 only): If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
+                template="Bitter Cold (Tile 1): If a character has a Frostbite token at the end of their turn, they suffer 1 damage.",
             )
         ],
     },
@@ -317,7 +321,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="player"
             ),
             EncounterRule(
-                template="Once {enemy_list:1,2,3,4} have been killed, spawn a {enemy6} on enemy spawn node 2 on tile 3.",
+                template="Once {enemy_list:1,2,3,4} have been killed, spawn a {enemy6} on Tile 3 on enemy spawn node 2.",
                 phase="player"
             ),
         ],
@@ -349,7 +353,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="player"
             ),
             EncounterRule(
-                template="If a {enemy7} is killed, it respawns on enemy spawn node 1 on tile 3.",
+                template="If a {enemy7} is killed, it respawns on Tile 3 on enemy spawn node 1.",
                 phase="player"
             ),
         ],
@@ -427,6 +431,11 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             ),
             EncounterRule(
                 template="Mimic ({enemy8}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy8} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+            ),
+            EncounterRule(
+                template="Respawn Tile 2 enemies.",
+                phase="enemy",
+                timer_eq=4
             )
         ],
     },
@@ -441,8 +450,375 @@ ENCOUNTER_RULES: EncounterRulesMap = {
     "Gleaming Silver|The Sunless City": {
         "default": [
             EncounterRule(
-                template="Mimic: If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with the listed model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+                template="Mimic ({enemy6}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy6} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
             )
+        ],
+    },
+    "Parish Church|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Mimic ({enemy11}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy11} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+            ),
+            EncounterRule(
+                template="Illusion: If a character moves onto a node with a token, flip the token. If the token has a damage value, resolve the effects normally. If the token is the doorway/blank, discard all face down trap tokens, and place the next sequential tile as shown on the encounter card. Then, place the character on a doorway node on the new tile. Once a doorway token has been revealed, it counts as the doorway node that connects to the next sequential tile.",
+            ),
+        ],
+    },
+    "The Hellkite Bridge|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Models can't move between tiles until the lever has been activated.",
+            ),
+            EncounterRule(
+                template="If a character is damaged by a trap, they suffer Stagger.",
+            ),
+        ],
+    },
+    "The Iron Golem|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="If the {enemy1} cannot hit a target within its attack range, it attacks the character with the aggro token instead, ignoring range.",
+            ),
+        ],
+    },
+    "The Shine of Gold|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Respawn {enemy_list:1,2}.",
+                phase="enemy",
+                timer_eq=4
+            ),
+        ],
+    },
+    "Archive Entrance|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="If an enemy is within one node of the lever at the start of its turn, increase its damage and dodge difficulty values by 1 for the rest of the turn.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="If the lever is activated, discard the lever token from the board.",
+                phase="player"
+            ),
+        ],
+    },
+    "Castle Break In|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Each character on Tile 1 suffers 3 damage.",
+                timer_eq=3
+            ),
+            EncounterRule(
+                template="Each character on Tile 2 suffers 3 damage.",
+                timer_eq=6
+            ),
+            EncounterRule(
+                template="Timer resets.",
+                timer_eq=6,
+                reset_timer=True,
+                phase="enemy"
+            ),
+        ],
+    },
+    "Central Plaza|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="All enemies on the tile must be killed before the lever can be activated.",
+                phase="player"
+            ),
+        ],
+    },
+    "Parish Church|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Mimic ({enemy14}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy14} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+            ),
+            EncounterRule(
+                template="Characters can only leave a tile if there are no enemies on it.",
+            ),
+        ],
+    },
+    "Grim Reunion|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Models cannot use the doorway node between Tiles 1 and 2 until the lever has been activated.",
+            ),
+        ],
+    },
+    "Hanging Rafters|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="If a character is pushed, they are always pushed towards the closest trap node.",
+                phase="enemy"
+            ),
+        ],
+    },
+    "The Grand Hall|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Mimic ({enemy11}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy11} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",
+            ),
+            EncounterRule(
+                template="Characters can only leave a tile if there are no enemies on it.",
+                phase="player"
+            ),
+            EncounterRule(
+                template="Enemies that begin on Tile 3 gain +1 dodge difficulty and their attacks gain +1 damage.",
+                phase="enemy"
+            ),
+        ],
+    },
+    "Twilight Falls|The Sunless City": {
+        "default": [
+            EncounterRule(
+                template="Illusion: If a character moves onto a node with a token, flip the token. If the token has a damage value, resolve the effects normally. If the token is the doorway/blank, discard all face down trap tokens, and place the next sequential tile as shown on the encounter card. Then, place the character on a doorway node on the new tile. Once a doorway token has been revealed, it counts as the doorway node that connects to the next sequential tile.",
+            ),
+        ],
+    },
+    "Abandoned Storeroom|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="If a barrel is discarded on a node where a blank trap token was revealed, roll 1 black die, then add a number of souls equal to the number of pips to the soul cache.",
+            ),
+        ],
+    },
+    "Dark Resurrection|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Darkness: During this encounter, characters can only attack enemies on the same or an adjacent node.",
+            ),
+        ],
+    },
+    "Grave Matters|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Enemies skip their first turn.",
+                timer_eq=0,
+                phase="enemy"
+            ),
+        ],
+    },
+    "Last Rites|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Respawn all enemies.",
+                timer_eq=2,
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="If an enemy is adjacent to the node containing the shrine at the start of its turn, it will move onto the shrine. If an enemy moves onto the shrine, the party fails the encounter.",
+            ),
+        ],
+    },
+    "The Beast From the Depths|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="If {enemy0} attacks cause 0 damage, the target adds one stamina cube/token to their endurance bar.",
+                phase="enemy"
+            ),
+        ],
+    },
+    "Altar of Bones|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Respawn all enemies.",
+                phase="enemy",
+                timer_eq=2
+            ),
+            EncounterRule(
+                template="If a character ends their turn on the same node they began the turn on, they suffer 1 damage.",
+                phase="player"
+            ),
+        ],
+    },
+    "Far From the Sun|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Darkness: During this encounter, characters can only attack enemies on the same or an adjacent node.",
+            ),
+            EncounterRule(
+                template="If a character makes an attack and is not on the same or an adjacent node to the torch, subract 1 from the attack's damage total.",
+                phase="player"
+            ),
+        ],
+    },
+    "In Deep Water|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="On Tile 3, spawn a {enemy5} on enemy spawn node 1 and a {enemy6} on enemy spawn node 2.",
+                phase="enemy",
+                timer_eq=3
+            ),
+            EncounterRule(
+                template="Characters must spend 1 stamina if they make their normal movement during their turn. Running is unaffected.",
+                phase="player"
+            ),
+        ],
+    },
+    "Lost Chapel|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Characters can only leave a tile if there are no enemies on it.",
+                phase="player"
+            ),
+        ],
+    },
+    "Maze of the Dead|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+        ],
+    },
+    "Pitch Black|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Darkness: During this encounter, characters can only attack enemies on the same or an adjacent node.",
+            ),
+            EncounterRule(
+                template="At the end of each character turn, that character suffers 1 damage.",
+                phase="player"
+            ),
+        ],
+    },
+    "The Mass Grave|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="Respawn all enemies on Tile 2.",
+                timer_eq=3,
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="Respawn all enemies on Tile 2.",
+                timer_eq=6,
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="Respawn all enemies on Tile 2.",
+                timer_eq=9,
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="Characters cannot be placed on Tile 2. Remove Tile 2 when the lever is activated.",
+                phase="enemy"
+            ),
+        ],
+    },
+    "A Trusty Ally|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="Characters begin the encounter suffering Stagger.",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="Characters cannot move onto Tile 2.",
+                phase="enemy"
+            ),
+        ],
+    },
+    "Death's Precipice|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Reduce the node model limit to two.",
+            ),
+            EncounterRule(
+                template="Characters can only leave a tile if there are no enemies on it.",
+            ),
+        ],
+    },
+    "Giant's Coffin|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="Spawn {enemy_list:5,6} on Tile 2 on enemy spawn node 1.",
+                phase="enemy",
+                timer_eq=2
+            ),
+            EncounterRule(
+                template="If there are enemies on their tile, characters must spend 1 stamina if they move during their turn.",
+                phase="player"
+            ),
+        ],
+    },
+    "Honour Guard|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="When a character makes an attack, roll a dodge die before rolling for the attack. If the result is a dodge symbol, the attack misses, and the target is placed on an adjacent node.",
+                phase="player"
+            ),
+        ],
+    },
+    "Lakeview Refuge|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="Darkness: During this encounter, characters can only attack enemies on the same or an adjacent node.",
+            ),
+        ],
+    },
+    "Last Shred of Light|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Darkness: During this encounter, characters can only attack enemies on the same or an adjacent node.",
+            ),
+            EncounterRule(
+                template="The lever can only be activated when the torch is on the same node or an adjacent node.",
+                timer_eq=0
+            ),
+        ],
+    },
+    "Skeleton Overlord|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Spawn a {enemy2} on enemy spawn node 1 and a {enemy3} on enemy spawn node 2.",
+                timer_eq=2,
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="Timer resets.",
+                timer_eq=2,
+                reset_timer=True,
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="Each time a {enemy_or:2,3} is killed, the {enemy1} suffers 1 damage.",
+                timer_eq=2,
+                reset_timer=True,
+                phase="enemy"
+            ),
+        ],
+    },
+    "The Skeleton Ball|Tomb of Giants": {
+        "default": [
+            EncounterRule(
+                template="Models cannot move onto a node containing the skeleton ball token.",
+            ),
+            EncounterRule(
+                template="At the end of each enemy turn, move the skeleton ball token three nodes in the direction of the arrow. If the token hits a wall, flip the token so that the arrow faces the opposite direction.",
+                phase="enemy"
+            ),
+            EncounterRule(
+                template="If the skeleton ball token moves onto a node containing one or more models, each model is pushed to an adjacent node and suffers 2 damage.",
+                phase="enemy"
+            ),
         ],
     },
 }

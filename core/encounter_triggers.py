@@ -585,9 +585,9 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
         "default": [
             EncounterTrigger(
                 id="last_shred_of_light_lever",
-                label="",
+                label="Respawn Tile 2 enemies.",
                 kind="counter",
-                template="",
+                template="Lever activations",
                 min_value=0,
                 max_value=3,
             ),

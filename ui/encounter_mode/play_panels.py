@@ -810,8 +810,7 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
             phase_label = {
                 "enemy": "Enemy Phase",
                 "player": "Player Phase",
-                "any": "Any Phase",
-            }.get(rule.phase, "Any Phase")
+            }.get(rule.phase, "")
 
             text = templates.render_text_template(
                 rule.template,
@@ -822,7 +821,7 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
             # Prefix with event label if this comes from an event
             ev_prefix = f"[{source_label}] " if source_label else ""
 
-            timer_prefix = f"**Timer {trigger_timer} · {phase_label}** — {ev_prefix}"
+            timer_prefix = f"**Timer {trigger_timer}{' · ' + phase_label if phase_label else ''}** — {ev_prefix}"
             _render_rule_block(text, prefix=timer_prefix, key_hint=f"upcoming_{idx}")
 
 
@@ -1577,13 +1576,18 @@ def _apply_behavior_mods_to_raw(
             base = mod.get("base")
             per_player = mod.get("per_player")
 
-            amount = 0
-            if isinstance(base, (int, float)):
-                amount += base
-            if isinstance(per_player, (int, float)):
-                amount += per_player * get_player_count()
+            # If the modifier supplies a non-numeric base (e.g. "∞"),
+            # preserve that value directly rather than converting to 0.
+            if base is not None and not isinstance(base, (int, float)):
+                val = base
+            else:
+                amount = 0
+                if isinstance(base, (int, float)):
+                    amount += base
+                if isinstance(per_player, (int, float)):
+                    amount += per_player * get_player_count()
 
-            val = amount
+                val = amount
 
         # --- Push / node flags: per-attack booleans, not status effects ---
         # Encounter/event modifiers may say "push" or "node" with op "flag"/"set".

@@ -120,7 +120,8 @@
     "The Locked Grave|Tomb of Giants": false,
     "The Skeleton Ball|Tomb of Giants": false,
     "Cemetery of Ash|Dark Souls The Board Game": false,
-    "Broken Passageway|The Sunless City": false
+    "Broken Passageway|The Sunless City": false,
+    "Central Plaza|The Sunless City": false
   },
   "max_invaders_per_level": {
     "1": 2,

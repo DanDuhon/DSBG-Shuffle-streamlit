@@ -4,6 +4,7 @@ import json
 import hashlib
 import io
 from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
 from typing import Dict, Any, Optional
 from collections import defaultdict
 
@@ -12,6 +13,8 @@ from core.behavior.assets import (
     FONTS,
     coords_map,
     text_styles,
+    FONT_PATH_NUMBER,
+    FONT_PATH_DEJAVU,
     build_icon_filename,
     CATEGORY_ORDER,
     BOSS_CATEGORY_MAP,
@@ -125,12 +128,51 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     # choose coord key prefix
     prefix = "boss" if is_boss else "enemy"
     coord_key = f"{prefix}_{key}"
-    if coord_key == "enemy_health" and int(value) >= 10:
-        coord_key = "boss_health"
+    # If health is non-numeric (e.g. "∞") or >=10, use the larger/boss
+    # health coordinates so the text fits. Be defensive: try converting
+    # to int, but fall back to a large value for non-numeric strings.
+    is_non_numeric = False
+    if coord_key == "enemy_health":
+        try:
+            val_int = int(value)
+        except Exception:
+            val_int = 999
+            is_non_numeric = True
+        if val_int >= 10:
+            coord_key = "boss_health"
     if coord_key not in coords_map:
         return
     x, y = coords_map[coord_key]
-    style = text_styles.get(key, {"size": 40, "fill": "white"})
+    style = text_styles.get(key, {"size": 40, "fill": "white", "font": FONT_PATH_NUMBER})
+    # If this is a health value and non-numeric (e.g. "∞") render it larger
+    # and center it on the target coords so it sits visibly inside the heart icon.
+    try:
+        if key == "health" and is_non_numeric:
+                # If user provided a specific icon for infinite health, overlay it
+                # centered on the heart. Fall back to existing text rendering
+                # behaviour if the icon is missing or fails to load.
+                try:
+                    icon_path = ICONS_DIR / "infinite_health.png"
+                    if icon_path.exists():
+                        icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+                        # Limit icon size so it fits inside the heart
+                        max_dim = 96
+                        iw, ih = icon.size
+                        scale = min(1.0, max_dim / max(iw, ih))
+                        if scale < 1.0:
+                            icon = icon.resize((int(iw * scale), int(ih * scale)), resample=Image.LANCZOS)
+                        w, h = icon.size
+                        tx = int(x - w // 2) + 23
+                        ty = int(y - h // 2) + 27
+                        img.alpha_composite(icon, (tx, ty))
+                        return
+                except Exception:
+                    # ignore and fall through to text rendering
+                    pass
+    except Exception:
+        # Fall back to normal rendering if something goes wrong
+        pass
+
     font = FONTS.get(key, ImageFont.load_default())
     draw.text((x, y), value, font=font, fill=style["fill"])
 

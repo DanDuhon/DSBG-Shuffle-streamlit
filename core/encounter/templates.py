@@ -17,6 +17,8 @@ _ENEMY_S_PATTERN = re.compile(r"{enemy(\d+)}s\b")
 _PLAYERS_PLUS_PATTERN = re.compile(r"{players\+(\d+)}")
 # {enemy_list:1,2,3} -> grouped phrase from multiple enemy indices
 _ENEMY_LIST_PATTERN = re.compile(r"{enemy_list:([^}]+)}")
+# {enemy_or:2,3} -> 'X or Y' (collapses to 'X' if both indices point to same name)
+_ENEMY_OR_PATTERN = re.compile(r"{enemy_or:([^}]+)}")
 
 _VOWELS = set("AEIOUaeiou")
 
@@ -273,6 +275,30 @@ def render_text_template(
         return _format_enemy_list_from_indices(indices_str, enemy_names)
 
     text = _ENEMY_LIST_PATTERN.sub(_sub_enemy_list, text)
+
+    # 1b) {enemy_or:1,2} – render as 'X or Y', or collapse to 'X' if same
+    def _sub_enemy_or(m: re.Match) -> str:
+        indices_str = m.group(1)
+        parts = [p.strip() for p in indices_str.split(",") if p.strip()]
+        names: List[str] = []
+        for part in parts:
+            try:
+                idx = int(part)
+            except Exception:
+                continue
+            if 1 <= idx <= len(enemy_names):
+                n = enemy_names[idx - 1]
+                if n not in names:
+                    names.append(n)
+        if not names:
+            return ""
+        if len(names) == 1:
+            return names[0]
+        if len(names) == 2:
+            return f"{names[0]} or {names[1]}"
+        return ", ".join(names[:-1]) + ", or " + names[-1]
+
+    text = _ENEMY_OR_PATTERN.sub(_sub_enemy_or, text)
 
     # 2) Regular enemy placeholders ({enemyN}, {enemyN}s, {enemyN_plural})
     text = _apply_enemy_placeholders(text, enemy_names)

@@ -8,7 +8,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core.encounter_rules import make_encounter_key
+from core.encounter_rules import make_encounter_key, get_rules_for_encounter
 from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state, play_panels, invader_panel
 from ui.encounter_mode.setup_tab import render_original_encounter
@@ -547,6 +547,27 @@ def render(settings: dict, campaign: bool=False) -> None:
 
     timer_behavior = timer_mod.get_timer_behavior(encounter, edited=edited)
     action = play_state.apply_pending_action(play, timer_behavior)
+
+    # Apply any encounter rules that have side-effects when they become
+    # active. For example, some rules may reset the Timer to 0 when the
+    # Timer reaches a specific value during the Enemy Phase.
+    try:
+        active_rules = get_rules_for_encounter(
+            encounter_key=encounter_key,
+            edited=edited,
+            timer=play["timer"],
+            phase=play["phase"],
+        )
+        for r in active_rules:
+            if getattr(r, "reset_timer", False):
+                old = play.get("timer", 0)
+                play["timer"] = 0
+                play_state.log_entry(play, f"Timer reset to 0 due to rule: {r.template} (was {old})")
+                # Only reset once per cycle
+                break
+    except Exception:
+        # Be defensive: failure to apply rule effects should not break the UI.
+        pass
 
     if action == "reset":
         invader_panel.reset_invaders_for_encounter(encounter)

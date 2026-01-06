@@ -675,6 +675,18 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "+1 damage from special rules.",
         },
     ],
+    "Tomb of Giants_1_Puppet Master": [
+        {
+            "id": "tog_puppet_master_health",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_1_Puppet Master",
+            "target_alt_indices": [0],
+            "stat": "health",
+            "op": "set",
+            "base": "∞",
+            "description": "∞ HP from special rules.",
+        },
+    ],
     "Tomb of Giants_1_Rain of Filth": [
         {
             "id": "tog_rain_of_filth_poison",
