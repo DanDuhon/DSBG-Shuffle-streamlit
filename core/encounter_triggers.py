@@ -524,6 +524,19 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
+    "Altar of Bones|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="altar_of_bones_occupy",
+                label="Turns shrine occupied",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
     "Far From the Sun|Tomb of Giants": {
         "default": [
             EncounterTrigger(
