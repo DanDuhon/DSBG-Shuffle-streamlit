@@ -20,7 +20,6 @@ from ui.encounter_mode.assets import (
     EDITED_ENCOUNTER_CARDS_DIR
 )
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
-from core.encounter_overrides import apply_override_to_encounter
 
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
@@ -60,15 +59,217 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=2, x=380, y=480),
         SpecialRuleEnemyIcon(enemy_index=3, x=430, y=400),
         SpecialRuleEnemyIcon(enemy_index=3, x=500, y=505),
-    ]
-    # EXAMPLE ONLY – you’ll plug in real coordinates:
-    #
-    # ("Velka's Chosen", "Painted World of Ariamis"): [
-    #     # Put enemy1 icon in the special rules area
-    #     SpecialRuleEnemyIcon(enemy_index=0, x=320, y=460),
-    #     # Put enemy2 icon a bit to the right
-    #     SpecialRuleEnemyIcon(enemy_index=1, x=360, y=460),
-    # ],
+    ],
+    ("The Iron Golem", "The Sunless City"): [
+        # Coordinates estimated by affine fit from old app -> new app.
+        # Original tooltip coords: (65,147), (188,196), (174,219)
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295),
+        SpecialRuleEnemyIcon(enemy_index=0, x=375, y=394),
+        SpecialRuleEnemyIcon(enemy_index=0, x=346, y=442),
+    ],
+    ("The Last Bastion", "Painted World of Ariamis"): [
+        # Transformed from original tooltip coords (215,227), (316,250), (337,263)
+        SpecialRuleEnemyIcon(enemy_index=0, x=431, y=458),
+        SpecialRuleEnemyIcon(enemy_index=0, x=636, y=506),
+        SpecialRuleEnemyIcon(enemy_index=0, x=679, y=533),
+    ],
+    ("The Locked Grave", "Tomb of Giants"): [
+        # Transformed from original tooltip coords (217,197), (306,220)
+        SpecialRuleEnemyIcon(enemy_index=7, x=434, y=396),
+        SpecialRuleEnemyIcon(enemy_index=7, x=616, y=444),
+    ],
+    ("The Shine of Gold", "The Sunless City"): [
+        # Transformed from original tooltip coords (65,147), (207,219), (280,254), (250,268), (268,195)
+        SpecialRuleEnemyIcon(enemy_index=-1, x=125, y=295),
+        SpecialRuleEnemyIcon(enemy_index=-1, x=414, y=442),
+        SpecialRuleEnemyIcon(enemy_index=-1, x=563, y=514),
+        SpecialRuleEnemyIcon(enemy_index=-1, x=501, y=543),
+        SpecialRuleEnemyIcon(enemy_index=-1, x=539, y=392),
+    ],
+    ("The Skeleton Ball", "Tomb of Giants"): [
+        # Transformed from original tooltip coords (64,148), (222,148)
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295),
+        SpecialRuleEnemyIcon(enemy_index=5, x=455, y=295),
+    ],
+    ("Trecherous Tower", "Painted World of Ariamis"): [
+        # Transformed from original tooltip coords (285,218), (285,248), (285,280)
+        SpecialRuleEnemyIcon(enemy_index=2, x=573, y=445, size=45),
+        SpecialRuleEnemyIcon(enemy_index=3, x=573, y=505, size=45),
+        SpecialRuleEnemyIcon(enemy_index=4, x=573, y=569, size=45),
+    ],
+    ("Trophy Room", "The Sunless City"): [
+        # Transformed from original tooltip coords for two targets
+        # target A: (61,147), (210,197), (145,244)
+        SpecialRuleEnemyIcon(enemy_index=4, x=119, y=295),
+        SpecialRuleEnemyIcon(enemy_index=4, x=420, y=397),
+        SpecialRuleEnemyIcon(enemy_index=4, x=294, y=493),
+        # target B: (81,147), (230,197), (165,244)
+        SpecialRuleEnemyIcon(enemy_index=6, x=161, y=295),
+        SpecialRuleEnemyIcon(enemy_index=6, x=462, y=397),
+        SpecialRuleEnemyIcon(enemy_index=6, x=336, y=493),
+    ],
+    ("Velka's Chosen", "Painted World of Ariamis"): [
+        # Transformed from original tooltip coords (65,147), (298,195), (205,219)
+        SpecialRuleEnemyIcon(enemy_index=2, x=125, y=295),
+        SpecialRuleEnemyIcon(enemy_index=2, x=598, y=395),
+        SpecialRuleEnemyIcon(enemy_index=2, x=410, y=445),
+    ],
+    # Converted from data/encounter_overrides.json
+    ("Cloak and Feathers", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
+    ],
+    ("Aged Sentinel", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=280, y=465, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=410, y=515, size=28),
+    ],
+    ("Cold Snap", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=3, x=430, y=465, size=28),
+    ],
+    ("Corvian Host", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=323, y=480, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=523, y=480, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=533, y=505, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=382, y=560, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=295, y=585, size=28),
+    ],
+    ("Central Plaza", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=285, y=530, size=28),
+    ],
+    ("Corrupted Hovel", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=290, y=500, size=28),
+    ],
+    ("Gleaming Silver", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=280, y=550, size=28),
+        SpecialRuleEnemyIcon(enemy_index=1, x=320, y=550, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=360, y=550, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=400, y=550, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=360, y=425, size=28),
+    ],
+    ("Dark Alleyway", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
+    ],
+    ("Abandoned and Forgotten", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=573, y=445, size=45),
+        SpecialRuleEnemyIcon(enemy_index=1, x=573, y=505, size=45),
+        SpecialRuleEnemyIcon(enemy_index=2, x=573, y=569, size=45),
+    ],
+    ("Deathly Freeze", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=6, x=284, y=480, size=28),
+    ],
+    ("Deathly Magic", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=123, y=295, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=549, y=394, size=28),
+    ],
+    ("Deathly Tolls", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=7, x=362, y=455, size=28),
+    ],
+    ("Depths of the Cathedral", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=8, x=362, y=398, size=28),
+    ],
+    ("Distant Tower", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=5, x=434, y=429, size=28),
+    ],
+    ("Eye of the Storm", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=373, y=485, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=567, y=511, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=125, y=295, size=28),
+    ],
+    ("Frozen Revolutions", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=6, x=283, y=458, size=28),
+        SpecialRuleEnemyIcon(enemy_index=6, x=283, y=492, size=28),
+        SpecialRuleEnemyIcon(enemy_index=6, x=710, y=492, size=28),
+    ],
+    ("Giant's Coffin", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=483, y=468, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=571, y=468, size=28),
+    ],
+    ("Gnashing Beaks", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=634, y=469, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=681, y=469, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=476, y=494, size=28),
+    ],
+    ("Grim Reunion", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=10, x=438, y=394, size=28),
+        SpecialRuleEnemyIcon(enemy_index=10, x=540, y=517, size=28),
+    ],
+    ("In Deep Water", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=479, y=398, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=651, y=398, size=28),
+    ],
+    ("Lakeview Refuge", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=8, x=430, y=461, size=28),
+        SpecialRuleEnemyIcon(enemy_index=8, x=582, y=523, size=28),
+        SpecialRuleEnemyIcon(enemy_index=9, x=285, y=577, size=28),
+        SpecialRuleEnemyIcon(enemy_index=10, x=326, y=577, size=28),
+        SpecialRuleEnemyIcon(enemy_index=11, x=367, y=577, size=28),
+        SpecialRuleEnemyIcon(enemy_index=12, x=408, y=577, size=28),
+    ],
+    ("Monstrous Maw", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=124, y=293, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=420, y=394, size=28),
+    ],
+    ("No Safe Haven", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=125, y=295, size=28),
+    ],
+    ("Parish Church", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=10, x=359, y=398, size=28),
+    ],
+    ("Parish Gates", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=3, x=612, y=444, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=375, y=517, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=285, y=568, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=326, y=469, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=414, y=517, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=326, y=568, size=28),
+    ],
+    ("Pitch Black", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=1, x=126, y=295, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=453, y=295, size=28),
+    ],
+    ("Puppet Master", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=1, x=125, y=295, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=287, y=396, size=28),
+    ],
+    ("Shattered Keep", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=1, x=288, y=429, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=329, y=429, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=370, y=429, size=28),
+    ],
+    ("Skeletal Spokes", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=287, y=394, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=328, y=423, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=328, y=483, size=28),
+    ],
+    ("Skeleton Overlord", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=1, x=461, y=394, size=28),
+        SpecialRuleEnemyIcon(enemy_index=1, x=416, y=521, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=622, y=394, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=491, y=521, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=630, y=469, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=669, y=521, size=28),
+    ],
+    ("Tempting Maw", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=449, y=288, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=441, y=396, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=698, y=519, size=28),
+    ],
+    ("The Abandoned Chest", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=649, y=392, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=285, y=419, size=28),
+    ],
+    ("The Beast From the Depths", "Tomb of Giants"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=124, y=293, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=314, y=448, size=28),
+    ],
+    ("The Bell Tower", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=647, y=392, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=688, y=392, size=28),
+    ],
+    ("The Grand Hall", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=7, x=360, y=430, size=28),
+    ],
 }
 
 EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]] = {
@@ -387,9 +588,6 @@ def generate_encounter_image(
     # ---------------------------------------------------------
     # Example keys in data/encounter_overrides.json use the pattern
     # "{expansion}_{level}_{encounter_name}" or a filename-like key.
-    enc_key = f"{expansion_name}_{level}_{encounter_name}"
-    # Pass the existing enemy image resolver so integer IDs resolve to asset paths
-    data = apply_override_to_encounter(enc_key, data, enemies, enemy_icon_resolver=get_enemy_image_by_id)
 
     placements = data.get("_meta", {}).get("_override_placements", [])
     texts = data.get("_meta", {}).get("_override_texts", [])
