@@ -148,7 +148,28 @@ def _render_rule_block(rendered_text: str, *, prefix: str = "", key_hint: Option
             st.markdown(f"- {prefix}{rendered_text}", unsafe_allow_html=True)
         else:
             st.markdown(f"- {rendered_text}", unsafe_allow_html=True)
+    
 
+
+def _has_top_level_colon(template: str | None) -> bool:
+    """Return True if `template` contains a ':' that is not inside {...} placeholders.
+
+    Templates frequently use placeholder expressions like `{enemy_or:2,3}` which
+    contain a colon but should not be treated as a header separator. This helper
+    scans the string and ignores colons that occur while inside curly braces.
+    """
+    if not template:
+        return False
+    depth = 0
+    for ch in template:
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            if depth > 0:
+                depth -= 1
+        elif ch == ":" and depth == 0:
+            return True
+    return False
 
 def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
     """
@@ -719,7 +740,7 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
     # Encounter-level keyword rules
     remaining_enc_rules = []
     for rule in current_encounter_rules:
-        if ":" in (rule.template or ""):
+        if _has_top_level_colon(rule.template):
             text = templates.render_text_template(
                 rule.template,
                 enemy_names,
@@ -734,7 +755,7 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
     for label, rules_for_event in event_rule_groups:
         remaining = []
         for rule in rules_for_event:
-            if ":" in (rule.template or ""):
+            if _has_top_level_colon(rule.template):
                 text = templates.render_text_template(
                     rule.template,
                     enemy_names,
@@ -1842,6 +1863,35 @@ def _apply_behavior_mods_to_raw(
 
         if op == "set":
             patched[stat] = val
+            continue
+
+        # --- Multiplicative modifiers: multiply existing top-level stat ---
+        if op == "mul":
+            old = patched.get(stat)
+            # If no existing stat, treat this as a set-to-value
+            if old is None:
+                patched[stat] = val
+                continue
+
+            # Numeric * numeric works straightforwardly
+            if isinstance(old, (int, float)) and isinstance(val, (int, float)):
+                try:
+                    # Preserve integer type when possible
+                    if isinstance(old, int) and float(old * val).is_integer():
+                        patched[stat] = int(old * val)
+                    else:
+                        patched[stat] = old * val
+                except Exception:
+                    patched[stat] = old
+                continue
+
+            # Try to coerce to float for mixed-type cases (e.g., strings that parse)
+            try:
+                oldf = float(old)
+                patched[stat] = int(oldf * float(val)) if float(oldf * float(val)).is_integer() else oldf * float(val)
+            except Exception:
+                # Non-numeric existing value (e.g., "∞") — leave unchanged
+                pass
             continue
 
         # --- Fallback: old simple behavior ---

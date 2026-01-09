@@ -681,6 +681,38 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "+1 damage from special rules.",
         },
     ],
+    "Tomb of Giants_3_Skeleton Overlord": [
+        {
+            "id": "tog_skeleton_overlord_double_hp",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_3_Skeleton Overlord",
+            "target_alt_indices": [0],
+            "stat": "health",
+            "op": "mul",
+            "value": 2,
+            "description": "Double base HP from special rules.",
+        },
+        {
+            "id": "tog_skeleton_overlord_block",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_3_Skeleton Overlord",
+            "target_alt_indices": [0],
+            "stat": "armor",
+            "op": "add",
+            "value": 1,
+            "description": "+1 block from special rules.",
+        },
+        {
+            "id": "tog_skeleton_overlord_resist",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_3_Skeleton Overlord",
+            "target_alt_indices": [0],
+            "stat": "resist",
+            "op": "add",
+            "value": 1,
+            "description": "+1 resist from special rules.",
+        },
+    ],
 }
 
 
@@ -1179,10 +1211,11 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
                     original_viable = False
                     break
 
-    # count viable alternatives
+    # count viable alternatives (deduplicate identical enemy sets)
     total = 0
     valid_alts = get_alternatives(data, set(active_expansions))
     if valid_alts:
+        seen = set()
         for combo, alt_sets in valid_alts.items():
             for enemies in alt_sets or []:
                 if enemies is None:
@@ -1191,6 +1224,16 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
                     enemy_list = list(enemies)
                 except Exception:
                     continue
+
+                # Normalize enemy list into a canonical tuple of IDs for dedupe
+                try:
+                    normalized = tuple(sorted(_coerce_enemy_id(e) for e in enemy_list))
+                except Exception:
+                    continue
+
+                if normalized in seen:
+                    continue
+
                 skip = False
                 inv_count = 0
                 for e in enemy_list:
@@ -1207,6 +1250,7 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
                         skip = True
                         break
                 if not skip:
+                    seen.add(normalized)
                     total += 1
 
     return {"num_viable_alternatives": total, "original_viable": original_viable}

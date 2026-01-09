@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple
 from json import load
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from ui.encounter_mode.assets import (
     get_enemy_image_by_id,
@@ -20,6 +20,7 @@ from ui.encounter_mode.assets import (
     EDITED_ENCOUNTER_CARDS_DIR
 )
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
+from core.encounter_overrides import apply_override_to_encounter
 
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
@@ -286,6 +287,7 @@ def generate_encounter_image(
 
     for slot_idx, enemy_count in enumerate(enemy_slots):
         if enemy_count <= 0 or slot_idx in {4, 7, 10}:  # these slots are spawns, so don't place them
+            enemy_index += enemy_count
             continue
 
         for i in range(enemy_count):
@@ -379,6 +381,60 @@ def generate_encounter_image(
 
         dest = (cfg.x + xOffset, cfg.y + yOffset)
         card_img.alpha_composite(icon_img, dest=dest)
+
+    # ---------------------------------------------------------
+    # 4) Encounter-specific override placements & text
+    # ---------------------------------------------------------
+    # Example keys in data/encounter_overrides.json use the pattern
+    # "{expansion}_{level}_{encounter_name}" or a filename-like key.
+    enc_key = f"{expansion_name}_{level}_{encounter_name}"
+    # Pass the existing enemy image resolver so integer IDs resolve to asset paths
+    data = apply_override_to_encounter(enc_key, data, enemies, enemy_icon_resolver=get_enemy_image_by_id)
+
+    placements = data.get("_meta", {}).get("_override_placements", [])
+    texts = data.get("_meta", {}).get("_override_texts", [])
+
+    draw = ImageDraw.Draw(card_img)
+    # Use default bitmap font; let failures raise so caller can see them
+    font = ImageFont.load_default()
+
+    for p in placements:
+        asset = p.get("resolved_asset") or p.get("asset")
+        pos = p.get("pos")
+        size = int(p.get("size", 25)) if p.get("size") is not None else 25
+        if not asset or not pos:
+            continue
+
+        asset_path = Path(asset)
+        # normalize simple relative references
+        if not asset_path.exists():
+            if asset.startswith("assets/"):
+                asset_path = Path(asset)
+            else:
+                asset_path = Path("assets") / asset
+        if not asset_path.exists():
+            raise FileNotFoundError(f"Override asset not found: {asset} (resolved to {asset_path})")
+
+        icon = Image.open(asset_path).convert("RGBA")
+        w, h = icon.size
+        max_side = w if w > h else h
+        if max_side <= 0:
+            raise ValueError(f"Invalid override asset (zero size): {asset_path}")
+        s = size / max_side
+        icon = icon.resize((int(round(w * s)), int(round(h * s))), Image.Resampling.LANCZOS)
+
+        xOffset = int(round((size - icon.size[0]) / 2))
+        yOffset = int(round((size - icon.size[1]) / 2))
+        dest = (int(pos[0]) + xOffset, int(pos[1]) + yOffset)
+        card_img.alpha_composite(icon, dest=dest)
+
+    for t in texts:
+        txt = t.get("text")
+        pos = t.get("pos")
+        if not txt or not pos:
+            raise ValueError(f"Malformed override text directive: {t}")
+        fill = t.get("fill", (0, 0, 0))
+        draw.text((int(pos[0]), int(pos[1])), txt, fill=tuple(fill) if isinstance(fill, (list, tuple)) else fill, font=font)
 
     return card_img
 

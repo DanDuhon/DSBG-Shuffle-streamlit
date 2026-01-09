@@ -1,0 +1,217 @@
+{
+  "Painted World of Ariamis_1_Cloak and Feathers": {
+    "placements": [
+      { "enemy_index": 0, "pos": [125, 295], "size": 28 }
+    ]
+  }
+  ,
+
+  "The Sunless City_1_Aged Sentinel": {
+    "placements": [
+      { "enemy_index": 0, "pos": [125, 295], "size": 28 },
+      { "enemy_index": 0, "pos": [280, 465], "size": 28 },
+      { "enemy_index": 0, "pos": [410, 515], "size": 28 }
+    ]
+  },
+
+  "Painted World of Ariamis_2_Cold Snap": {
+    "placements": [
+      { "enemy_index": 3, "pos": [430, 465], "size": 28 }
+    ]
+  },
+
+  "Painted World of Ariamis_3_Corvian Host": {
+    "placements": [
+      { "enemy_index": 2, "pos": [323, 480], "size": 28 },
+      { "enemy_index": 2, "pos": [523, 480], "size": 28 },
+      { "enemy_index": 2, "pos": [533, 505], "size": 28 },
+      { "enemy_index": 2, "pos": [382, 560], "size": 28 },
+      { "enemy_index": 2, "pos": [295, 585], "size": 28 }
+    ]
+  },
+
+  "The Sunless City_3_Central Plaza": {
+    "placements": [
+      { "enemy_index": 4, "pos": [285, 530], "size": 28 }
+    ]
+  },
+
+  "Painted World of Ariamis_2_Corrupted Hovel": {
+    "placements": [
+      { "enemy_index": 0, "pos": [290, 500], "size": 28 }
+    ]
+  },
+
+  "The Sunless City_2_Gleaming Silver": {
+    "placements": [
+      { "enemy_index": 0, "pos": [280, 550], "size": 28 },
+      { "enemy_index": 1, "pos": [320, 550], "size": 28 },
+      { "enemy_index": 3, "pos": [360, 550], "size": 28 },
+      { "enemy_index": 4, "pos": [400, 550], "size": 28 },
+      { "enemy_index": 0, "pos": [360, 425], "size": 28 }
+    ]
+  },
+
+  "The Sunless City_1_Dark Alleyway": {
+    "placements": [
+      { "enemy_index": 0, "pos": [125, 295], "size": 28 }
+    ]
+  },
+
+  "Painted World of Ariamis_2_Abandoned and Forgotten": {
+    "placements": [
+      { "enemy_index": 0, "pos": [573, 445], "size": 45 },
+      { "enemy_index": 1, "pos": [573, 505], "size": 45 },
+      { "enemy_index": 2, "pos": [573, 569], "size": 45 }
+    ]
+  },
+  "Painted World of Ariamis_3_Deathly Freeze": {
+    "placements": [
+      { "enemy_index": 6, "pos": [284, 480], "size": 28 }
+    ]
+  },
+  "Tomb of Giants_1_Deathly Magic": {
+    "placements": [
+      { "enemy_index": 2, "pos": [123, 295], "size": 28 },
+      { "enemy_index": 2, "pos": [549, 394], "size": 28 }
+    ]
+  },
+  "The Sunless City_2_Deathly Tolls": {
+    "placements": [
+      { "enemy_index": 7, "pos": [362, 455], "size": 28 }
+    ]
+  },
+  "The Sunless City_3_Depths of the Cathedral": {
+    "placements": [
+      { "enemy_index": 8, "pos": [362, 398], "size": 28 }
+    ]
+  },
+  "Painted World of Ariamis_2_Distant Tower": { "placements": [ { "enemy_index": 5, "pos": [434, 429], "size": 28 } ] },
+  "Painted World of Ariamis_3_Eye of the Storm": { "placements": [ { "enemy_index": 0, "pos": [373, 485], "size": 28 }, { "enemy_index": 5, "pos": [567, 511], "size": 28 }, { "enemy_index": 5, "pos": [125, 295], "size": 28 } ] },
+  "Painted World of Ariamis_3_Frozen Revolutions": {
+    "placements": [
+      { "enemy_index": 6, "pos": [283, 458], "size": 28 },
+      { "enemy_index": 6, "pos": [283, 492], "size": 28 },
+      { "enemy_index": 6, "pos": [710, 492], "size": 28 }
+    ]
+  },
+  "Tomb of Giants_3_Giant's Coffin": {
+    "placements": [
+      { "enemy_index": 4, "pos": [483, 468], "size": 28 },
+      { "enemy_index": 5, "pos": [571, 468], "size": 28 }
+    ]
+  },
+  "Painted World of Ariamis_2_Gnashing Beaks": {
+    "placements": [
+      { "enemy_index": 2, "pos": [634, 469], "size": 28 },
+      { "enemy_index": 3, "pos": [681, 469], "size": 28 },
+      { "enemy_index": 4, "pos": [476, 494], "size": 28 }
+    ]
+  },
+  "The Sunless City_3_Grim Reunion": {
+    "placements": [
+      { "enemy_index": 10, "pos": [438, 394], "size": 28 },
+      { "enemy_index": 10, "pos": [540, 517], "size": 28 }
+    ]
+  },
+  "Tomb of Giants_2_In Deep Water": {
+    "placements": [
+      { "enemy_index": 4, "pos": [479, 398], "size": 28 },
+      { "enemy_index": 5, "pos": [651, 398], "size": 28 }
+    ]
+  },
+  "Tomb of Giants_3_Lakeview Refuge": {
+    "placements": [
+      { "enemy_index": 8, "pos": [430, 461], "size": 28 },
+      { "enemy_index": 8, "pos": [582, 523], "size": 28 },
+      { "enemy_index": 9, "pos": [285, 577], "size": 28 },
+      { "enemy_index": 10, "pos": [326, 577], "size": 28 },
+      { "enemy_index": 11, "pos": [367, 577], "size": 28 },
+      { "enemy_index": 12, "pos": [408, 577], "size": 28 }
+    ]
+  },
+  "Painted World of Ariamis_2_Monstrous Maw": {
+    "placements": [
+      { "enemy_index": 0, "pos": [124, 293], "size": 28 },
+      { "enemy_index": 0, "pos": [420, 394], "size": 28 }
+    ]
+  },
+  "Painted World of Ariamis_1_No Safe Haven": {
+    "placements": [
+      { "enemy_index": 2, "pos": [125, 295], "size": 28 }
+    ]
+  },
+  "The Sunless City_2_Parish Church": {
+    "placements": [
+      { "enemy_index": 10, "pos": [359, 398], "size": 28 }
+    ]
+  },
+  "The Sunless City_2_Parish Gates": {
+    "placements": [
+      { "enemy_index": 3, "pos": [612, 444], "size": 28 },
+      { "enemy_index": 3, "pos": [375, 517], "size": 28 },
+      { "enemy_index": 3, "pos": [285, 568], "size": 28 },
+      { "enemy_index": 4, "pos": [326, 469], "size": 28 },
+      { "enemy_index": 4, "pos": [414, 517], "size": 28 },
+      { "enemy_index": 4, "pos": [326, 568], "size": 28 }
+    ]
+  },
+  "Tomb of Giants_2_Pitch Black": { "placements": [
+    { "enemy_index": 1, "pos": [126, 295], "size": 28 },
+    { "enemy_index": 5, "pos": [453, 295], "size": 28 }
+  ] },
+  "Tomb of Giants_1_Puppet Master": { "placements": [
+    { "enemy_index": 1, "pos": [125, 295], "size": 28 },
+    { "enemy_index": 0, "pos": [287, 396], "size": 28 }
+  ] },
+  "Tomb of Giants_1_Rain of Filth": { "placements": [] },
+  "The Sunless City_1_Shattered Keep": { "placements": [
+    { "enemy_index": 1, "pos": [288, 429], "size": 28 },
+    { "enemy_index": 2, "pos": [329, 429], "size": 28 },
+    { "enemy_index": 3, "pos": [370, 429], "size": 28 }
+  ] },
+  "Painted World of Ariamis_2_Skeletal Spokes": { "placements": [
+    { "enemy_index": 2, "pos": [287, 394], "size": 28 },
+    { "enemy_index": 2, "pos": [328, 423], "size": 28 },
+    { "enemy_index": 2, "pos": [328, 483], "size": 28 }
+  ] },
+  "Tomb of Giants_3_Skeleton Overlord": { "placements": [
+    { "enemy_index": 1, "pos": [461, 394], "size": 28 },
+    { "enemy_index": 1, "pos": [416, 521], "size": 28 },
+    { "enemy_index": 2, "pos": [622, 394], "size": 28 },
+    { "enemy_index": 2, "pos": [491, 521], "size": 28 },
+    { "enemy_index": 0, "pos": [125, 295], "size": 28 },
+    { "enemy_index": 0, "pos": [630, 469], "size": 28 },
+    { "enemy_index": 0, "pos": [669, 521], "size": 28 }
+  ] },
+  "The Sunless City_1_Tempting Maw": { "placements": [
+    { "enemy_index": 4, "pos": [449, 288], "size": 28 },
+    { "enemy_index": 4, "pos": [441, 396], "size": 28 },
+    { "enemy_index": 4, "pos": [698, 519], "size": 28 }
+  ] },
+  "Tomb of Giants_2_The Abandoned Chest": { "placements": [
+    { "enemy_index": 4, "pos": [649, 392], "size": 28 },
+    { "enemy_index": 5, "pos": [285, 419], "size": 28 }
+  ] },
+  "Tomb of Giants_1_The Beast From the Depths": { "placements": [
+    { "enemy_index": 0, "pos": [124, 293], "size": 28 },
+    { "enemy_index": 0, "pos": [314, 448], "size": 28 }
+  ] },
+  "The Sunless City_1_The Bell Tower": { "placements": [
+    { "enemy_index": 2, "pos": [647, 392], "size": 28 },
+    { "enemy_index": 3, "pos": [688, 392], "size": 28 }
+  ] },
+  "The Sunless City_3_The Grand Hall": { "placements": [ { "enemy_index": 7, "pos": [360, 430], "size": 28 } ] },
+  "The Sunless City_2_The Iron Golem": { "placements": [] },
+  "Painted World of Ariamis_3_The Last Bastion": { "placements": [] },
+  "Tomb of Giants_3_The Locked Grave": { "placements": [] },
+  "The Sunless City_2_The Shine of Gold": { "placements": [] },
+  "Tomb of Giants_3_The Skeleton Ball": { "placements": [] },
+  "Painted World of Ariamis_3_Trecherous Tower": { "placements": [] },
+  "The Sunless City_3_Trophy Room": { "placements": [] },
+  "The Sunless City_3_Twilight Falls": { "placements": [] },
+  "The Sunless City_1_Undead Sanctum": { "placements": [] },
+  "Painted World of Ariamis_1_Unseen Scurrying": { "placements": [] },
+  "Tomb of Giants_2_Urns of the Fallen": { "placements": [] },
+  "Painted World of Ariamis_3_Velka's Chosen": { "placements": [] }
+}

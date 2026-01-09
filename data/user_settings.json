@@ -22,7 +22,9 @@
   ],
   "selected_characters": [
     "Assassin",
-    "Cleric"
+    "Cleric",
+    "Deprived",
+    "Herald"
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,

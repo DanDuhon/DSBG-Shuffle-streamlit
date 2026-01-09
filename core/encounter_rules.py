@@ -810,9 +810,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             ),
             EncounterRule(
                 template="Each time a {enemy_or:2,3} is killed, the {enemy1} suffers 1 damage.",
-                timer_eq=2,
-                reset_timer=True,
-                phase="enemy"
+                phase="player"
             ),
         ],
     },
