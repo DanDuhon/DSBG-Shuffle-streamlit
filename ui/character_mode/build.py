@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Set
-from ui.character_mode.constants import TIERS, CLASS_TIERS, STAT_LABEL
+from core.character_stats import CLASS_TIERS
+from ui.character_mode.constants import STAT_LABEL
 from ui.character_mode.item_fields import _item_expansions, _item_requirements, _name, _upgrade_slots, _slot_cost, _extra_upgrade_slots
 
 

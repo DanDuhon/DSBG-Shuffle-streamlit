@@ -4,12 +4,11 @@ import pandas as pd
 import streamlit as st
 from typing import Any, Dict, List, Set
 import itertools
+from core.character_stats import CLASS_TIERS, TIERS
 from ui.character_mode.build import _build_stats, _validate_build
 from ui.character_mode.constants import (
-    CLASS_TIERS,
     HAND_CONDITION_OPTIONS,
-    HAND_FEATURE_OPTIONS,
-    TIERS
+    HAND_FEATURE_OPTIONS
 )
 from ui.character_mode.data_io import _find_data_file, _load_json_list
 from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _dodge_icons

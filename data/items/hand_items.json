@@ -6790,8 +6790,8 @@
   },
   {
     "id": "great_magic_weapon",
-    "name": "sorcery",
-    "hand_category": "weapon",
+    "name": "Great Magic Weapon",
+    "hand_category": "sorcery",
     "source": {
       "expansion": [
         "Dark Souls The Board Game",

@@ -218,5 +218,6 @@
   },
   "ui_compact": false,
   "edited_encounters_global": false,
-  "rules_show_only_in_phase": false
+  "rules_show_only_in_phase": false,
+  "encounter_item_reward_mode": "Same Item Tier"
 }

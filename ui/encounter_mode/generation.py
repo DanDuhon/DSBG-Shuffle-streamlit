@@ -17,7 +17,8 @@ from ui.encounter_mode.assets import (
     v1Level4s,
     positions,
     ENCOUNTER_CARDS_DIR,
-    EDITED_ENCOUNTER_CARDS_DIR
+    EDITED_ENCOUNTER_CARDS_DIR,
+    ENCOUNTER_ORIGINAL_REWARDS
 )
 from core.behavior.logic import load_behavior
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
@@ -62,14 +63,11 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=3, x=500, y=505),
     ],
     ("The Iron Golem", "The Sunless City"): [
-        # Coordinates estimated by affine fit from old app -> new app.
-        # Original tooltip coords: (65,147), (188,196), (174,219)
         SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295),
         SpecialRuleEnemyIcon(enemy_index=0, x=375, y=394),
         SpecialRuleEnemyIcon(enemy_index=0, x=346, y=442),
     ],
     ("The Last Bastion", "Painted World of Ariamis"): [
-        # Transformed from original tooltip coords (215,227), (316,250), (337,263)
         SpecialRuleEnemyIcon(enemy_index=0, x=431, y=458),
         SpecialRuleEnemyIcon(enemy_index=0, x=636, y=506),
         SpecialRuleEnemyIcon(enemy_index=0, x=679, y=533),
@@ -87,34 +85,27 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=1, x=500, y=392),
     ],
     ("The Skeleton Ball", "Tomb of Giants"): [
-        # Transformed from original tooltip coords (64,148), (222,148)
         SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295),
         SpecialRuleEnemyIcon(enemy_index=5, x=455, y=295),
     ],
     ("Trecherous Tower", "Painted World of Ariamis"): [
-        # Transformed from original tooltip coords (285,218), (285,248), (285,280)
         SpecialRuleEnemyIcon(enemy_index=2, x=573, y=445, size=45),
         SpecialRuleEnemyIcon(enemy_index=3, x=573, y=505, size=45),
         SpecialRuleEnemyIcon(enemy_index=4, x=573, y=569, size=45),
     ],
     ("Trophy Room", "The Sunless City"): [
-        # Transformed from original tooltip coords for two targets
-        # target A: (61,147), (210,197), (145,244)
         SpecialRuleEnemyIcon(enemy_index=4, x=119, y=295),
         SpecialRuleEnemyIcon(enemy_index=4, x=420, y=397),
         SpecialRuleEnemyIcon(enemy_index=4, x=294, y=493),
-        # target B: (81,147), (230,197), (165,244)
         SpecialRuleEnemyIcon(enemy_index=6, x=161, y=295),
         SpecialRuleEnemyIcon(enemy_index=6, x=462, y=397),
         SpecialRuleEnemyIcon(enemy_index=6, x=336, y=493),
     ],
     ("Velka's Chosen", "Painted World of Ariamis"): [
-        # Transformed from original tooltip coords (65,147), (298,195), (205,219)
         SpecialRuleEnemyIcon(enemy_index=2, x=125, y=295),
         SpecialRuleEnemyIcon(enemy_index=2, x=598, y=395),
         SpecialRuleEnemyIcon(enemy_index=2, x=410, y=445),
     ],
-    # Converted from data/encounter_overrides.json
     ("Cloak and Feathers", "Painted World of Ariamis"): [
         SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
     ],
@@ -594,57 +585,66 @@ def generate_encounter_image(
 
         dest = (cfg.x + xOffset, cfg.y + yOffset)
         card_img.alpha_composite(icon_img, dest=dest)
-
     # ---------------------------------------------------------
-    # 4) Encounter-specific override placements & text
+    # 4) Render item reward text
     # ---------------------------------------------------------
-    # Example keys in data/encounter_overrides.json use the pattern
-    # "{expansion}_{level}_{encounter_name}" or a filename-like key.
-
-    placements = data.get("_meta", {}).get("_override_placements", [])
-    texts = data.get("_meta", {}).get("_override_texts", [])
-
+    # Prepare a drawing context for text rendering
     draw = ImageDraw.Draw(card_img)
-    # Use default bitmap font; let failures raise so caller can see them
-    font = ImageFont.load_default()
 
-    for p in placements:
-        asset = p.get("resolved_asset") or p.get("asset")
-        pos = p.get("pos")
-        size = int(p.get("size", 25)) if p.get("size") is not None else 25
-        if not asset or not pos:
-            continue
+    pref = st.session_state.get("user_settings", {}).get("encounter_item_reward_mode", "Original")
 
-        asset_path = Path(asset)
-        # normalize simple relative references
-        if not asset_path.exists():
-            if asset.startswith("assets/"):
-                asset_path = Path(asset)
+    # Fixed font + size per spec
+    font = ImageFont.truetype("assets/AdobeCaslonProSemibold.ttf", 25)
+
+    entries = ENCOUNTER_ORIGINAL_REWARDS.get((encounter_name, expansion_name), [])
+    # When shuffling with replacement preferences (e.g. Similar Soul Cost), allow
+    # the shuffler to provide replacement names via `encounter_data["_shuffled_reward_replacements"]`.
+    repl_map = (data or {}).get("_shuffled_reward_replacements") or {}
+
+    def _wrap_text_to_lines(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
+        words = str(text).split()
+        if not words:
+            return [""]
+        lines = []
+        cur = words[0]
+        for w in words[1:]:
+            candidate = cur + " " + w
+            bbox = draw.textbbox((0, 0), candidate, font=font)
+            w_px = bbox[2] - bbox[0]
+            if w_px <= max_w:
+                cur = candidate
             else:
-                asset_path = Path("assets") / asset
-        if not asset_path.exists():
-            raise FileNotFoundError(f"Override asset not found: {asset} (resolved to {asset_path})")
+                lines.append(cur)
+                cur = w
+        lines.append(cur)
+        return lines
 
-        icon = Image.open(asset_path).convert("RGBA")
-        w, h = icon.size
-        max_side = w if w > h else h
-        if max_side <= 0:
-            raise ValueError(f"Invalid override asset (zero size): {asset_path}")
-        s = size / max_side
-        icon = icon.resize((int(round(w * s)), int(round(h * s))), Image.Resampling.LANCZOS)
+    # Draw either the original listed text, or a replacement if provided and the
+    # user's preference requests non-original rendering.
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError(f"ENCOUNTER_ORIGINAL_REWARDS entries must be dicts: {entry}")
+        orig_txt = entry.get("text")
+        pos = entry.get("pos")
+        if orig_txt is None or pos is None:
+            raise ValueError(f"Malformed original reward entry: {entry}")
 
-        xOffset = int(round((size - icon.size[0]) / 2))
-        yOffset = int(round((size - icon.size[1]) / 2))
-        dest = (int(pos[0]) + xOffset, int(pos[1]) + yOffset)
-        card_img.alpha_composite(icon, dest=dest)
+        # Choose displayed text: original for 'Original' mode, otherwise allow replacement
+        if pref == "Original":
+            txt = orig_txt
+        else:
+            txt = repl_map.get(orig_txt, orig_txt)
 
-    for t in texts:
-        txt = t.get("text")
-        pos = t.get("pos")
-        if not txt or not pos:
-            raise ValueError(f"Malformed override text directive: {t}")
-        fill = t.get("fill", (0, 0, 0))
-        draw.text((int(pos[0]), int(pos[1])), txt, fill=tuple(fill) if isinstance(fill, (list, tuple)) else fill, font=font)
+        # Wrap long text to avoid overflowing the card. Optional per-entry `max_width` in pixels.
+        max_width = int(entry.get("max_width", 200))
+        lines = _wrap_text_to_lines(txt, font, max_width)
+        # vertical spacing: use font height
+        ascent, descent = font.getmetrics()
+        line_h = ascent + descent
+        x0 = int(pos[0])
+        y0 = int(pos[1])
+        for i, line in enumerate(lines):
+            draw.text((x0, y0 + i * line_h), line, font=font, fill=(0, 0, 0))
 
     # ---------------------------------------------------------
     # 5) Render Gang text for Setup/original card if present

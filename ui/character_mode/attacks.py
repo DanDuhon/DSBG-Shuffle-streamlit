@@ -1,8 +1,6 @@
-from typing import Any, Dict, List, Set
+from typing import Any, Dict
 
-from ui.character_mode.constants import DICE_ICON
 from ui.character_mode.dice_math import _dice_count
-from ui.character_mode.item_fields import _id, _name
 
 
 def _attack_int(atk: Dict[str, Any], k: str, default: int = 0) -> int:

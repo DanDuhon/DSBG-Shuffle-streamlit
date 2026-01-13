@@ -15,7 +15,9 @@ from ui.encounter_mode.generation import (
     ENCOUNTER_DATA_DIR
 )
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
-from ui.encounter_mode.assets import enemyNames
+from ui.encounter_mode.assets import enemyNames, ENCOUNTER_ORIGINAL_REWARDS
+from core.character_stats import average_souls_to_equip, souls_needed_for_item_for_character
+from ui.character_mode.data_io import _find_data_file, _load_json_list
 
 
 INVADERS_PATH = Path("data/invaders.json")
@@ -797,10 +799,13 @@ def _build_encounter_index_cached():
 
         base_key = f"{expansion}_{lvl}_{enc_name}"
         ent = index.setdefault(base_key, {"expansion": expansion, "level": lvl, "name": enc_name, "counts": [], "filenames": {}, "version": None})
-        ent["counts"].append(cnt)
+
+        # record available character-count variant and filename
+        if cnt not in ent["counts"]:
+            ent["counts"].append(cnt)
         ent["filenames"][cnt] = str(data_dir / f)
 
-        # Determine approximate version parity used elsewhere in the codebase
+        # determine encounter image versioning heuristics
         if lvl == 4:
             ent["version"] = "V2"
         else:
@@ -1061,7 +1066,7 @@ def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: t
 
 
 def shuffle_encounter(selected_encounter, character_count, active_expansions,
-                      selected_expansion, use_edited, use_original_enemies: bool = False, settings: dict | None = None):
+                      selected_expansion, use_edited, use_original_enemies: bool = False, settings: dict | None = None, campaign_mode: bool = False):
     """Shuffle and generate a randomized encounter (respects invader limit setting).
 
     If `use_original_enemies` is True, the encounter will be generated with the
@@ -1127,6 +1132,398 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                 "ok": False,
                 "message": f"No valid alternatives under current invader limit (level {level} max invaders = {limit}).",
             }
+
+    # Handle Similar Soul Cost item replacements when user requested
+    settings = settings or st.session_state.get("user_settings") or {}
+    pref = settings.get("encounter_item_reward_mode", "Original")
+    if pref in ("Similar Soul Cost", "Same Item Tier"):
+        entries = ENCOUNTER_ORIGINAL_REWARDS.get((name, selected_expansion), []) or []
+        if entries:
+            # Use cached JSON loader to avoid re-reading files on every shuffle
+            try:
+                hand_path = _find_data_file("hand_items.json")
+                hand_items = _load_json_list(str(hand_path)) if hand_path is not None else []
+            except Exception:
+                hand_items = []
+            try:
+                armor_path = _find_data_file("armor.json")
+                armor_items = _load_json_list(str(armor_path)) if armor_path is not None else []
+            except Exception:
+                armor_items = []
+            try:
+                wu_path = _find_data_file("weapon_upgrades.json")
+                weapon_upgrades = _load_json_list(str(wu_path)) if wu_path is not None else []
+            except Exception:
+                weapon_upgrades = []
+            try:
+                au_path = _find_data_file("armor_upgrades.json")
+                armor_upgrades = _load_json_list(str(au_path)) if au_path is not None else []
+            except Exception:
+                armor_upgrades = []
+
+            selected_chars = (settings.get("selected_characters") or [])
+            # Determine tier indices to use for each party member.
+            # Support two shapes for persisted tiers:
+            # 1) legacy: a single dict of stat->index (applies to all classes)
+            # 2) per-class: mapping class_name -> {stat->index}
+            default_tiers = {"str": 0, "dex": 0, "itl": 0, "fth": 0}
+            persist = None
+            try:
+                if isinstance(settings, dict):
+                    persist = settings.get("cm_persist_tiers")
+                if persist is None:
+                    persist = st.session_state.get("cm_persist_tiers")
+            except Exception:
+                persist = None
+
+            if not isinstance(persist, dict):
+                persist = default_tiers
+
+            party = []
+            for cn in selected_chars:
+                tiers_for_member = None
+                # per-class mapping: { class_name: {stat: idx, ...}, ... }
+                candidate = persist.get(cn) if isinstance(persist, dict) else None
+                if isinstance(candidate, dict) and any(k in candidate for k in ("str", "dex", "itl", "fth")):
+                    tiers_for_member = {k: int(candidate.get(k, 0)) for k in ("str", "dex", "itl", "fth")}
+
+                # legacy single stat->idx mapping
+                if tiers_for_member is None and all(k in persist for k in ("str", "dex", "itl", "fth")):
+                    tiers_for_member = {k: int(persist.get(k, 0)) for k in ("str", "dex", "itl", "fth")}
+
+                if tiers_for_member is None:
+                    tiers_for_member = dict(default_tiers)
+
+                party.append({"class_name": cn, "tier_indices": tiers_for_member})
+
+            # Build a stable party signature so we can cache item cost computations.
+            def _party_signature(chars, party_list):
+                sig_parts = []
+                for p in party_list:
+                    c = p.get("class_name") or ""
+                    t = p.get("tier_indices") or {}
+                    sig_parts.append((c, int(t.get("str", 0)), int(t.get("dex", 0)), int(t.get("itl", 0)), int(t.get("fth", 0))))
+                return tuple(sig_parts)
+
+            party_sig = _party_signature(selected_chars, party)
+
+            # Ensure a cache dict exists in session state
+            ss = st.session_state
+            ss.setdefault("item_cost_cache", {})
+            cache_key = str(party_sig)
+            cost_map = ss["item_cost_cache"].get(cache_key)
+            if cost_map is None:
+                # Compute cost for all items once for this party and store in cache
+                cost_map = {}
+                all_items = list(hand_items) + list(armor_items) + list(weapon_upgrades) + list(armor_upgrades)
+                for it in all_items:
+                    item_name = str(it.get("name") or "").strip()
+                    try:
+                        stats = average_souls_to_equip(party, it.get("requirements", {})) if party else {"average": 0, "sum": 0}
+                        cost = stats.get("average") if stats.get("average") is not None else stats.get("sum", 0)
+                    except Exception:
+                        cost = 0
+                    cost_map[item_name] = cost
+                ss["item_cost_cache"][cache_key] = cost_map
+
+            # helper to normalize item metadata from either top-level or nested `source` keys
+            def _meta(item):
+                src = item.get("source") if isinstance(item, dict) else None
+                return {
+                    "type": (item.get("type") if item.get("type") is not None else (src.get("type") if isinstance(src, dict) else None)),
+                    "legendary": (item.get("legendary") if item.get("legendary") is not None else (src.get("legendary") if isinstance(src, dict) else None)),
+                    "entity": (item.get("entity") if item.get("entity") is not None else (src.get("entity") if isinstance(src, dict) else None)),
+                    "expansions": (item.get("expansions") if item.get("expansions") is not None else (src.get("expansion") if isinstance(src, dict) else None))
+                }
+
+            replacements = {}
+            for e in entries:
+                orig_name = (e.get("text") or "").strip()
+                if not orig_name:
+                    continue
+
+                orig_obj = None
+                pool_items = []
+                # locate original in pools
+                for it in hand_items:
+                    if str(it.get("name") or "").strip().lower() == orig_name.lower():
+                        orig_obj = it
+                        pool_items = hand_items
+                        break
+                if not orig_obj:
+                    for it in armor_items:
+                        if str(it.get("name") or "").strip().lower() == orig_name.lower():
+                            orig_obj = it
+                            pool_items = armor_items
+                            break
+                if not orig_obj:
+                    # treat weapon and armor upgrades as a combined upgrade pool
+                    for it in weapon_upgrades:
+                        if str(it.get("name") or "").strip().lower() == orig_name.lower():
+                            orig_obj = it
+                            pool_items = list(weapon_upgrades) + list(armor_upgrades)
+                            break
+                if not orig_obj:
+                    for it in armor_upgrades:
+                        if str(it.get("name") or "").strip().lower() == orig_name.lower():
+                            orig_obj = it
+                            pool_items = list(weapon_upgrades) + list(armor_upgrades)
+                            break
+
+                if not orig_obj:
+                    continue
+
+                # If original item is locked to a class not in the current party, skip replacement
+                m = _meta(orig_obj)
+                orig_entity = m.get("entity")
+                if orig_entity:
+                    if isinstance(orig_entity, str) and orig_entity not in selected_chars:
+                        continue
+                    if isinstance(orig_entity, (list, tuple)) and not any(e in selected_chars for e in orig_entity):
+                        continue
+
+                # Exclude originals that are not allowed for this encounter level
+                # Legendary items: When called from Campaign Mode, only allow after
+                # the mini-boss has been defeated; otherwise (Encounter Mode) disallow on level 1.
+                if m.get("legendary"):
+                    if campaign_mode:
+                        allowed_legendary = False
+                        try:
+                            def _mini_defeated_in_state(s):
+                                if not isinstance(s, dict):
+                                    return False
+                                camp = s.get("campaign") or {}
+                                nodes = camp.get("nodes") or []
+                                for n in nodes:
+                                    if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                        return True
+                                return False
+
+                            v2 = st.session_state.get("campaign_v2_state")
+                            v1 = st.session_state.get("campaign_v1_state")
+                            if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                                allowed_legendary = True
+                        except Exception:
+                            allowed_legendary = False
+
+                        if not allowed_legendary:
+                            continue
+                    else:
+                        if level == 1:
+                            continue
+
+                # Transposed items: If called from Campaign Mode, only allow after
+                # mini-boss defeat; in Encounter Mode, disallow only on level 1.
+                if (m.get("type") == "transposed"):
+                    if campaign_mode:
+                        allowed_transposed = False
+                        try:
+                            def _mini_defeated_in_state(s):
+                                if not isinstance(s, dict):
+                                    return False
+                                camp = s.get("campaign") or {}
+                                nodes = camp.get("nodes") or []
+                                for n in nodes:
+                                    if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                        return True
+                                return False
+
+                            v2 = st.session_state.get("campaign_v2_state")
+                            v1 = st.session_state.get("campaign_v1_state")
+                            if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                                allowed_transposed = True
+                        except Exception:
+                            allowed_transposed = False
+
+                        if not allowed_transposed:
+                            continue
+                    else:
+                        if level == 1:
+                            continue
+
+                # Items of type 'boss' or 'starter' are never valid rewards
+                if m.get("type") in ("boss", "starter"):
+                    continue
+
+                # Invader items are only valid if they come from The Sunless City AND that expansion is enabled
+                if m.get("type") == "invader":
+                    orig_exps = set(m.get("expansions") or [])
+                    if "The Sunless City" in orig_exps:
+                        if "The Sunless City" not in set(active_expansions or []):
+                            continue
+                    else:
+                        continue
+
+                # Lookup precomputed cost from cache
+                orig_cost = cost_map.get(str(orig_obj.get("name") or "").strip(), 0)
+
+                # compute candidate costs
+                cand_list = []
+                cand_costs = []
+                # Precompute active expansions set for filtering
+                active_exps_set = set(active_expansions or [])
+
+                for it in pool_items:
+                    # Exclude items tied to a class not present in the current party
+                    im = _meta(it)
+                    it_entity = im.get("entity")
+                    if it_entity:
+                        if isinstance(it_entity, str) and it_entity not in selected_chars:
+                            # skip candidate not relevant to party
+                            continue
+                        if isinstance(it_entity, (list, tuple)) and not any(e in selected_chars for e in it_entity):
+                            continue
+
+                    # Exclude items that are disallowed by type
+                    it_type = im.get("type")
+                    if it_type in ("boss", "starter"):
+                        continue
+
+                    # Legendary items: When called from Campaign Mode, only allow
+                    # after the mini-boss has been defeated; otherwise disallow on level 1.
+                    if im.get("legendary"):
+                        if campaign_mode:
+                            allowed_legendary = False
+                            try:
+                                def _mini_defeated_in_state(s):
+                                    if not isinstance(s, dict):
+                                        return False
+                                    camp = s.get("campaign") or {}
+                                    nodes = camp.get("nodes") or []
+                                    for n in nodes:
+                                        if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                            return True
+                                    return False
+
+                                v2 = st.session_state.get("campaign_v2_state")
+                                v1 = st.session_state.get("campaign_v1_state")
+                                if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                                    allowed_legendary = True
+                            except Exception:
+                                allowed_legendary = False
+
+                            if not allowed_legendary:
+                                continue
+                        else:
+                            if level == 1:
+                                continue
+
+                    # Transposed items: If called from Campaign Mode, only allow after
+                    # mini-boss defeat; in Encounter Mode, disallow only on level 1.
+                    if (im.get("type") == "transposed"):
+                        if campaign_mode:
+                            allowed_transposed = False
+                            try:
+                                def _mini_defeated_in_state(s):
+                                    if not isinstance(s, dict):
+                                        return False
+                                    camp = s.get("campaign") or {}
+                                    nodes = camp.get("nodes") or []
+                                    for n in nodes:
+                                        if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                            return True
+                                    return False
+
+                                v2 = st.session_state.get("campaign_v2_state")
+                                v1 = st.session_state.get("campaign_v1_state")
+                                if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                                    allowed_transposed = True
+                            except Exception:
+                                allowed_transposed = False
+
+                            if not allowed_transposed:
+                                continue
+                        else:
+                            if level == 1:
+                                continue
+
+                    # Invader items: only allowed if they are from The Sunless City and that expansion is enabled
+                    if it_type == "invader":
+                        it_exps = set(it.get("expansions") or [])
+                        if "The Sunless City" in it_exps:
+                            if "The Sunless City" not in active_exps_set:
+                                continue
+                        else:
+                            continue
+
+                    # Exclude items whose expansions are all disabled
+                    it_exps = set(im.get("expansions") or [])
+                    if it_exps and it_exps.isdisjoint(active_exps_set):
+                        continue
+
+                    cost = cost_map.get(str(it.get("name") or "").strip(), 0)
+                    cand_list.append(it)
+                    cand_costs.append(cost)
+
+                chosen = None
+                if pref == "Similar Soul Cost":
+                    pct = 0.10
+                    candidates = []
+                    while True:
+                        candidates = [it for it, c in zip(cand_list, cand_costs) if abs(c - orig_cost) <= max(1, orig_cost * pct)]
+                        if len(candidates) > 1 or pct >= 1.0:
+                            break
+                        pct += 0.05
+
+                    if not candidates:
+                        candidates = cand_list
+
+                    # exclude exact original from candidates so replacements are meaningful
+                    candidates = [it for it in candidates if str(it.get("name") or "").strip().lower() != orig_name.lower()]
+                    chosen = choice(candidates) if candidates else None
+
+                else:  # Same Item Tier
+                    # Build candidate list (exclude original from final selection)
+                    candidates = list(cand_list)
+                    costs = list(cand_costs)
+                    total = len(candidates)
+                    if total:
+                        import math
+
+                        # Pair and sort by cost ascending
+                        paired = sorted(zip(candidates, costs), key=lambda x: (x[1] or 0))
+                        n = total
+                        first_bound = math.ceil(n / 3)
+                        second_bound = math.ceil(2 * n / 3)
+
+                        # find original's slot; prefer matching item name, fall back to cost position
+                        orig_index = None
+                        for idx, (it, c) in enumerate(paired):
+                            if str(it.get("name") or "").strip().lower() == orig_name.lower():
+                                orig_index = idx
+                                break
+                        if orig_index is None:
+                            # approximate by cost
+                            for idx, (it, c) in enumerate(paired):
+                                if (c or 0) >= orig_cost:
+                                    orig_index = idx
+                                    break
+                        if orig_index is None:
+                            orig_index = n - 1
+
+                        # determine tier for original
+                        if orig_index < first_bound:
+                            tier_slice = paired[0:first_bound]
+                        elif orig_index < second_bound:
+                            tier_slice = paired[first_bound:second_bound]
+                        else:
+                            tier_slice = paired[second_bound:]
+
+                        # choose from same tier, excluding the original
+                        tier_candidates = [it for it, c in tier_slice if str(it.get("name") or "").strip().lower() != orig_name.lower()]
+                        if tier_candidates:
+                            chosen = choice(tier_candidates)
+                        else:
+                            # fallback to any candidate excluding original
+                            fallback = [it for it in candidates if str(it.get("name") or "").strip().lower() != orig_name.lower()]
+                            chosen = choice(fallback) if fallback else None
+
+                if chosen:
+                    replacements[orig_name] = chosen.get("name")
+
+            if replacements:
+                encounter_data = dict(encounter_data) if encounter_data is not None else {}
+                encounter_data.setdefault("_shuffled_reward_replacements", {}).update(replacements)
 
     card_img = generate_encounter_image(
         selected_expansion, level, name, encounter_data, enemies, use_edited

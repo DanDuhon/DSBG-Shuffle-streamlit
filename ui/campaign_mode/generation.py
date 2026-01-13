@@ -221,6 +221,7 @@ def _pick_random_campaign_encounter(
                     settings_snapshot.get("only_original_enemies_for_campaigns", False)
                 ),
                 settings=settings_snapshot,
+                campaign_mode=True,
             )
         except Exception as exc:
             return {"ok": False, "message": str(exc)}

@@ -295,3 +295,23 @@ def render_sidebar(settings: dict):
                 enabled = bool(toggles.get(k, False))
                 emoji = "✅" if enabled else "❌"
                 st.write(f"{emoji} {enc_name} ({enc_exp})")
+
+        # Encounter item reward shuffle setting
+        # Options control how encounters that specify a particular item reward are handled.
+        # Persist the choice in user_settings as `encounter_item_reward_mode`.
+        modes = [
+            "Similar Soul Cost",
+            "Same Item Tier",
+            "Original",
+        ]
+        prev_mode = settings.get("encounter_item_reward_mode", "Original")
+        with st.sidebar.expander("💎 Item Swap", expanded=False):
+            mode = st.selectbox(
+                "When an encounter rewards a specific item, treat it as:",
+                options=modes,
+                index=modes.index(prev_mode) if prev_mode in modes else modes.index("Original"),
+                key="encounter_item_reward_mode",
+            )
+            settings["encounter_item_reward_mode"] = mode
+            st.session_state["user_settings"] = settings
+            save_settings(settings)
