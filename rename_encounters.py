@@ -4,7 +4,6 @@ import json
 with open("C:\\Users\\lenle\\Documents\\GitHub\\DSBG-Shuffle\\lib\\dsbg_shuffle_encounters\\all_encounters.json") as f:
     ref = json.load(f)
 directory_path = "D:\\GitHub\\DSBG-Shuffle-streamlit\\data\\encounters"
-#directory_path = "D:\\GitHub\\DSBG-Shuffle-streamlit\\assets\\encounter cards"
 for index, filename in enumerate(os.listdir(directory_path)):
     if "all_encounter" in filename:
         continue
@@ -15,10 +14,17 @@ for index, filename in enumerate(os.listdir(directory_path)):
         # Get the base name and original extension
         base_name, _ = os.path.splitext(filename)
 
-        new_filename = ref[base_name[:-1]]["expansion"] + "_" + str(ref[base_name[:-1]]["level"]) + "_" + ref[base_name[:-1]]["name"].replace(" (TSC)", "") + "_" + base_name[-1:] + ".json"
-        if base_name[:-1] not in ref:
+        # Ensure the base reference exists before using it
+        ref_key = base_name[:-1]
+        if ref_key not in ref:
             continue
-        #new_filename = ref[base_name]["expansion"] + "_" + str(ref[base_name]["level"]) + "_" + ref[base_name]["name"].replace(" (TSC)", "") + ".jpg"
+
+        new_filename = ref[ref_key]["expansion"] + "_" + str(ref[ref_key]["level"]) + "_" + ref[ref_key]["name"].replace(" (TSC)", "") + "_" + base_name[-1:] + ".json"
+
+        # Skip files that are already correctly named
+        if filename == new_filename:
+            print(f"Skipping '{filename}' (already correct name)")
+            continue
 
         new_file_path = os.path.join(directory_path, new_filename)
 

@@ -285,14 +285,14 @@ def _render_gang_rule(encounter: dict, settings: dict) -> bool:
         text = (
             f"{gang_name} Gang — If a character is attacked by a {gang_name} "
             f"enemy and another {gang_name} enemy is within one node of the character, "
-            "increase the attacking model’s damage and dodge difficulty values "
+            "increase the attacking model's damage and dodge difficulty values "
             "by 1 when resolving the attack."
         )
     else:
         text = (
             "Gang — If a character is attacked by a gang enemy and another "
             "gang enemy is within one node of the character, increase the "
-            "attacking model’s damage and dodge difficulty values by 1 when "
+            "attacking model's damage and dodge difficulty values by 1 when "
             "resolving the attack."
         )
 

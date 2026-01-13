@@ -125,7 +125,7 @@ encounterKeywords = {
     ("Distant Tower", "Painted World of Ariamis"): ["barrage","trial"],
     ("Eye of the Storm", "Painted World of Ariamis"): ["hidden"],
     ("Far From the Sun", "Tomb of Giants"): ["darkness"],
-    ("Flooded Fortress", "The Sunless City"): ["trial"],
+    ("Flooded Fortress", "The Sunless City"): ["trial", "gang"],
     ("Frozen Revolutions", "Painted World of Ariamis"): ["trial"],
     ("Frozen Sentries", "Painted World of Ariamis"): ["snowstorm"],
     ("Giant's Coffin", "Tomb of Giants"): ["onslaught","trial","timer"],
@@ -157,7 +157,7 @@ encounterKeywords = {
     ("The Mass Grave", "Tomb of Giants"): ["onslaught","timer","timer","timer"],
     ("The Shine of Gold", "The Sunless City"): ["timer"],
     ("Trecherous Tower", "Painted World of Ariamis"): ["snowstorm","bitterCold","eerie"],
-    ("Twilight Falls", "The Sunless City"): ["illusion"],
+    ("Twilight Falls", "The Sunless City"): ["illusion", "gang"],
     ("Undead Sanctum", "The Sunless City"): ["onslaught", "gang"],
     ("Unseen Scurrying", "Painted World of Ariamis"): ["hidden"]
 }
@@ -170,6 +170,7 @@ keywordText = {
     "darkness": "Darkness — During this encounter, characters can only attack enemies on the same or an adjacent node.",
     "difficultTerrain": "Difficult Terrain — Characters must spend 1 stamina to walk on their turn or move during another character's turn.",
     "eerie": "Eerie — During setup, take five blank trap tokens and five trap tokens with values on them, and place a random token face down on each of the highlighted nodes. If a character moves onto a node with a token, flip the token. If the token is blank, place it to one side. If the token has a damage value, instead of resolving it normally, spawn an enemy corresponding to the value shown, then discard the token.",
+    "gang": "Gang — A gang enemy is a 1 health enemy whose name includes the word in parentheses. If a character is attacked by a gang enemy and another gang enemy is within one node of the character, increase the attacking model's damage and dodge difficulty values by 1 when resolving the attack.",
     "hidden": "Hidden — After declaring an attack, players must discard a die of their choice before rolling. If the attacks only has a single die already, ignore this rule.",
     "illusion": "Illusion — During setup, only place tile one. Then, shuffle one doorway (or blank) trap token and four trap tokens with damage values, and place a token face down on each of the highlighted nodes. If a character moves onto a node with a token, flip the token. If the token has a damage value, resolve the effects normally. If the token is the doorway, discard all face down trap tokens, and place the next sequential tile as shown on the encounter card. Then, place the character on a doorway node on the new tile. After placing the character, if the new tile has highlighted nodes, repeat the steps above. Once a doorway token has been revealed, it counts as the doorway node that connects to the next sequential tile.",
     "mimic": "Mimic — If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with the listed model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",

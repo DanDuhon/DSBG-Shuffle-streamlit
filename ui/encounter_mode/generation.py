@@ -19,6 +19,7 @@ from ui.encounter_mode.assets import (
     ENCOUNTER_CARDS_DIR,
     EDITED_ENCOUNTER_CARDS_DIR
 )
+from core.behavior.logic import load_behavior
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 
 
@@ -74,17 +75,16 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=0, x=679, y=533),
     ],
     ("The Locked Grave", "Tomb of Giants"): [
-        # Transformed from original tooltip coords (217,197), (306,220)
         SpecialRuleEnemyIcon(enemy_index=7, x=434, y=396),
         SpecialRuleEnemyIcon(enemy_index=7, x=616, y=444),
     ],
     ("The Shine of Gold", "The Sunless City"): [
-        # Transformed from original tooltip coords (65,147), (207,219), (280,254), (250,268), (268,195)
-        SpecialRuleEnemyIcon(enemy_index=-1, x=125, y=295),
-        SpecialRuleEnemyIcon(enemy_index=-1, x=414, y=442),
-        SpecialRuleEnemyIcon(enemy_index=-1, x=563, y=514),
-        SpecialRuleEnemyIcon(enemy_index=-1, x=501, y=543),
-        SpecialRuleEnemyIcon(enemy_index=-1, x=539, y=392),
+        SpecialRuleEnemyIcon(enemy_index=2, x=125, y=295),
+        SpecialRuleEnemyIcon(enemy_index=2, x=414, y=442),
+        SpecialRuleEnemyIcon(enemy_index=2, x=563, y=514),
+        SpecialRuleEnemyIcon(enemy_index=2, x=501, y=543),
+        SpecialRuleEnemyIcon(enemy_index=0, x=539, y=392),
+        SpecialRuleEnemyIcon(enemy_index=1, x=500, y=392),
     ],
     ("The Skeleton Ball", "Tomb of Giants"): [
         # Transformed from original tooltip coords (64,148), (222,148)
@@ -162,7 +162,7 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=2, x=549, y=394, size=28),
     ],
     ("Deathly Tolls", "The Sunless City"): [
-        SpecialRuleEnemyIcon(enemy_index=7, x=362, y=455, size=28),
+        SpecialRuleEnemyIcon(enemy_index=7, x=362, y=458, size=28),
     ],
     ("Depths of the Cathedral", "The Sunless City"): [
         SpecialRuleEnemyIcon(enemy_index=8, x=362, y=398, size=28),
@@ -251,9 +251,9 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=0, x=669, y=521, size=28),
     ],
     ("Tempting Maw", "The Sunless City"): [
-        SpecialRuleEnemyIcon(enemy_index=4, x=449, y=288, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=445, y=295, size=28),
         SpecialRuleEnemyIcon(enemy_index=4, x=441, y=396, size=28),
-        SpecialRuleEnemyIcon(enemy_index=4, x=698, y=519, size=28),
+        SpecialRuleEnemyIcon(enemy_index=4, x=698, y=505, size=28),
     ],
     ("The Abandoned Chest", "Tomb of Giants"): [
         SpecialRuleEnemyIcon(enemy_index=4, x=649, y=392, size=28),
@@ -261,6 +261,7 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
     ],
     ("The Beast From the Depths", "Tomb of Giants"): [
         SpecialRuleEnemyIcon(enemy_index=0, x=124, y=293, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=440, y=400, size=28),
         SpecialRuleEnemyIcon(enemy_index=0, x=314, y=448, size=28),
     ],
     ("The Bell Tower", "The Sunless City"): [
@@ -270,6 +271,17 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
     ("The Grand Hall", "The Sunless City"): [
         SpecialRuleEnemyIcon(enemy_index=7, x=360, y=430, size=28),
     ],
+}
+
+# Per-encounter placement for rendered Gang text on the original card image.
+# Key: (encounter_name, expansion_name) -> (x, y, size)
+GANG_TEXT_POSITIONS: Dict[Tuple[str, str], Tuple[int, int, int]] = {
+    ("Undead Sanctum", "The Sunless City"): (280, 430, 28),
+    ("The Fountainhead", "The Sunless City"): (280, 400, 28),
+    ("Deathly Tolls", "The Sunless City"): (280, 495, 28),
+    ("Flooded Fortress", "The Sunless City"): (280, 430, 28),
+    ("Depths of the Cathedral", "The Sunless City"): (280, 430, 28),
+    ("Twilight Falls", "The Sunless City"): (280, 430, 28),
 }
 
 EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]] = {
@@ -633,6 +645,104 @@ def generate_encounter_image(
             raise ValueError(f"Malformed override text directive: {t}")
         fill = t.get("fill", (0, 0, 0))
         draw.text((int(pos[0]), int(pos[1])), txt, fill=tuple(fill) if isinstance(fill, (list, tuple)) else fill, font=font)
+
+    # ---------------------------------------------------------
+    # 5) Render Gang text for Setup/original card if present
+    # ---------------------------------------------------------
+    try:
+        # Determine whether this encounter card lists the gang keyword
+        src = editedEncounterKeywords if use_edited else encounterKeywords
+        kws = src.get((encounter_name, expansion_name)) or []
+        if "gang" in kws:
+            # Detect gang name from shuffled/original enemies list
+            gang_keys = ["Hollow", "Alonne", "Skeleton", "Silver Knight"]
+            counts: Dict[str, int] = {k: 0 for k in gang_keys}
+
+            for eid in enemies:
+                name = None
+                health = None
+                if isinstance(eid, dict):
+                    name = eid.get("name") or eid.get("id")
+                    if "health" in eid:
+                        try:
+                            health = int(eid.get("health"))
+                        except Exception:
+                            health = None
+                else:
+                    if isinstance(eid, int):
+                        # map id -> name using assets mapping (imported elsewhere)
+                        try:
+                            from ui.encounter_mode.assets import enemyNames as _enemyNames
+                            name = _enemyNames.get(eid)
+                        except Exception:
+                            name = None
+                    else:
+                        name = str(eid)
+
+                    if name:
+                        try:
+                            cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+                            health = int(cfg.raw.get("health", 1))
+                        except Exception:
+                            health = None
+
+                if not name:
+                    continue
+
+                lname = name.lower()
+                for g in gang_keys:
+                    if g.lower() in lname and health == 1:
+                        counts[g] += 1
+                        break
+
+            best = None
+            best_count = 0
+            for k, v in counts.items():
+                if v > best_count:
+                    best = k
+                    best_count = v
+
+            gang_name = best if best_count > 0 else None
+
+            # Use pre-rendered gang images in assets/keywords instead of drawing text.
+            pos_entry = GANG_TEXT_POSITIONS.get((encounter_name, expansion_name))
+            if pos_entry:
+                gx, gy, gsize = pos_entry
+
+                # Candidate filenames to support different naming conventions
+                candidates = []
+                if gang_name:
+                    lname = gang_name.lower().replace(" ", "_")
+                    candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
+                    candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
+                    candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
+                # Generic fallback names
+                candidates.extend(["gang.png", "gang_generic.png"]) 
+
+                gang_img_path = None
+                for fname in candidates:
+                    p = Path("assets") / "keywords" / fname
+                    if p.exists():
+                        gang_img_path = p
+                        break
+
+                if gang_img_path:
+                    try:
+                        gimg = Image.open(gang_img_path).convert("RGBA")
+                        gw, gh = gimg.size
+                        if gh <= 0:
+                            raise ValueError("Invalid gang image height")
+                        scale = gsize / gh
+                        new_size = (int(round(gw * scale)), int(round(gh * scale)))
+                        gimg = gimg.resize(new_size, Image.Resampling.LANCZOS)
+                        # Composite centered on the requested point
+                        card_img.alpha_composite(gimg, dest=(gx, gy))
+                    except Exception:
+                        # Don't fail image generation for Gang rendering errors
+                        pass
+    except Exception:
+        # Don't fail image generation for Gang rendering errors
+        pass
 
     return card_img
 
