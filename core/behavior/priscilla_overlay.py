@@ -82,24 +82,7 @@ def overlay_priscilla_arcs(image_input, behavior_name: str, behavior_json: dict 
                 continue
             arc_name = f"arc_normal_{d}.png"
             icon_path = ICONS_DIR / arc_name
-            if not icon_path.exists():
-                continue
             icon = Image.open(icon_path).convert("RGBA")
-
-            # choose placement coordinate from coords_map as a fallback
-            coord = None
-            if d in {"left", "right"}:
-                coord = coords_map.get("attack_physical", {}).get(d)
-            if not coord:
-                fallback = {
-                    "up": coords_map.get("attack_physical", {}).get("middle"),
-                    "down": coords_map.get("node", {}).get("middle") if coords_map.get("node") else None,
-                    "left": coords_map.get("attack_physical", {}).get("left"),
-                    "right": coords_map.get("attack_physical", {}).get("right"),
-                }
-                coord = fallback.get(d)
-            if not coord:
-                continue
 
             x, y = coord
             ix, iy = icon.size

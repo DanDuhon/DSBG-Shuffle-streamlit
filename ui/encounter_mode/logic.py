@@ -32,6 +32,82 @@ INVADER_LIMIT_SETTING_KEYS = (
     "max_invaders_by_level",             # tolerated alias
     "max_allowed_invaders_per_level",    # tolerated alias
 )
+# Optional table for edited-variant encounter behavior modifiers. Populate
+# with the same shape as ENCOUNTER_BEHAVIOR_MODIFIERS when adding edited
+# encounter-specific modifiers. This keeps defaults and edits separate.
+#
+# Populated from the edited encounter cards present in
+# `assets/edited encounter cards`. Entries are intentionally empty lists
+# by default so you can add, modify, or delete them as needed.
+ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED = {
+    "Painted World of Ariamis_1_No Safe Haven": [],
+    "Painted World of Ariamis_1_The First Bastion": [],
+    "Painted World of Ariamis_2_Monstrous Maw": [],
+    "Painted World of Ariamis_3_Central Plaza": [],
+    "Painted World of Ariamis_3_Deathly Freeze": [],
+    "Painted World of Ariamis_3_Eye of the Storm": [],
+    "Painted World of Ariamis_3_Frozen Revolutions": [],
+    "Painted World of Ariamis_3_Velka's Chosen": [],
+    "The Sunless City_1_Illusionary Doorway": [],
+    "The Sunless City_1_Kingdom's Messengers": [],
+    "The Sunless City_1_The Bell Tower": [],
+    "The Sunless City_2_Flooded Fortress": [],
+    "The Sunless City_2_Parish Church": [],
+    "The Sunless City_2_The Hellkite Bridge": [],
+    "The Sunless City_3_Central Plaza": [],
+    "The Sunless City_3_Depths of the Cathedral": [],
+    "The Sunless City_3_Grim Reunion": [],
+    "The Sunless City_3_The Grand Hall": [],
+    "The Sunless City_3_Trophy Room": [],
+    "The Sunless City_3_Twilight Falls": [],
+    "Tomb of Giants_1_Bridge Too Far": [],
+    "Tomb of Giants_1_Dark Resurrection": [],
+    "Tomb of Giants_2_Far From the Sun": [],
+    "Tomb of Giants_2_Lost Chapel": [],
+    "Tomb of Giants_2_Maze of the Dead": [
+        {
+            "id": "maze_of_the_dead_dodge",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_2_Maze of the Dead",
+            "target": "all_enemies",
+            "stat": "dodge_difficulty",
+            "op": "add",
+            "value": 1,
+            "value_from": "timer",
+            "description": "+Timer value dodge difficulty from special rules.",
+        },
+    ],
+    "Tomb of Giants_2_The Abandoned Chest": [],
+    "Tomb of Giants_2_The Mass Grave": [
+        {
+            "id": "mass_grave_move",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_2_The Mass Grave",
+            "target": "all_enemies",
+            "stat": "move",
+            "op": "add",
+            "value": 1,
+            "value_from": "mass_grave_reset_count",
+            "description": "+1 move per respawn.",
+        },
+        {
+            "id": "mass_grave_damage",
+            "source": "encounter",
+            "source_id": "Tomb of Giants_2_The Mass Grave",
+            "target": "all_enemies",
+            "stat": "damage",
+            "op": "add",
+            "value": 1,
+            "value_from": "mass_grave_reset_count",
+            "description": "+1 damage per respawn.",
+        },
+    ],
+    "Tomb of Giants_2_Urns of the Fallen": [],
+    "Tomb of Giants_3_Death's Precipice": [],
+    "Tomb of Giants_3_Last Shred of Light": [],
+    "Tomb of Giants_3_The Locked Grave": [],
+    "Tomb of Giants_3_The Skeleton Ball": [],
+}
 ENCOUNTER_BEHAVIOR_MODIFIERS = {
     "Painted World of Ariamis_1_Frozen Sentries": [
         {
@@ -142,7 +218,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "health",
             "op": "set",
             "value": 10,
-            "description": "Base HP 10 from special rules.",
+            "description": "Base health 10 from special rules.",
         },
         {
             "id": "pw_monstrous_maw_block",
@@ -185,7 +261,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "op": "add",
             "base": 2,
             "per_player": 1,
-            "description": "+[player_num] HP from special rules.",
+            "description": "+[player_num] health from special rules.",
         },
         {
             "id": "pw_velkas_chosen_block",
@@ -325,7 +401,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "health",
             "op": "add",
             "value": 5,
-            "description": "+5 base HP from special rules.",
+            "description": "+5 base health from special rules.",
         },
         {
             "id": "pw_last_bastion_dodge",
@@ -367,7 +443,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "health",
             "op": "add",
             "value": -2,
-            "description": "-2 base HP from special rules.",
+            "description": "-2 base health from special rules.",
         },
         {
             "id": "tsc_aged_sentinel_damage",
@@ -544,7 +620,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "op": "set",
             "base": 5,
             "per_player": 1,
-            "description": "[player_num] HP from special rules.",
+            "description": "[player_num] health from special rules.",
         },
     ],
     "Tomb of Giants_1_Last Rites": [
@@ -568,7 +644,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "health",
             "op": "set",
             "base": "∞",
-            "description": "∞ HP from special rules.",
+            "description": "∞ health from special rules.",
         },
     ],
     "Tomb of Giants_1_Rain of Filth": [
@@ -635,11 +711,11 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "All attacks become magic from special rules.",
         },
     ],
-    "Maze of the Dead_2_Maze of the Dead": [
+    "Tomb of Giants_2_Maze of the Dead": [
         {
-            "id": "mod_maze_dead_2_dodge",
+            "id": "maze_of_the_dead_dodge",
             "source": "encounter",
-            "source_id": "Maze of the Dead_2_Maze of the Dead",
+            "source_id": "Tomb of Giants_2_Maze of the Dead",
             "target": "all_enemies",
             "stat": "dodge_difficulty",
             "op": "add",
@@ -692,7 +768,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "stat": "health",
             "op": "mul",
             "value": 2,
-            "description": "Double base HP from special rules.",
+            "description": "Double base health from special rules.",
         },
         {
             "id": "tog_skeleton_overlord_block",
@@ -791,11 +867,8 @@ def _build_encounter_index_cached():
         if not m:
             continue
         expansion, level_s, enc_name, count_s = m.groups()
-        try:
-            lvl = int(level_s)
-            cnt = int(count_s)
-        except Exception:
-            continue
+        lvl = int(level_s)
+        cnt = int(count_s)
 
         base_key = f"{expansion}_{lvl}_{enc_name}"
         ent = index.setdefault(base_key, {"expansion": expansion, "level": lvl, "name": enc_name, "counts": [], "filenames": {}, "version": None})
@@ -845,10 +918,7 @@ def _coerce_enemy_id(x):
     if isinstance(x, str):
         s = x.strip()
         if s.isdigit():
-            try:
-                return int(s)
-            except Exception:
-                return s
+            return int(s)
         return s
     return x
 
@@ -862,11 +932,8 @@ def _load_invader_enemy_ids():
     if not INVADERS_PATH.exists():
         return set()
 
-    try:
-        with INVADERS_PATH.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception:
-        return set()
+    with INVADERS_PATH.open("r", encoding="utf-8") as f:
+        data = json.load(f)
 
     ids = set()
 
@@ -907,10 +974,7 @@ def _get_invader_limit_for_level(level: int) -> int:
     if user_val is None:
         user_val = hard
 
-    try:
-        user_int = int(user_val)
-    except Exception:
-        user_int = hard
+    user_int = int(user_val)
 
     return max(0, min(hard, user_int))
 
@@ -976,11 +1040,8 @@ def filter_expansions(encounters_by_expansion, character_count: int, active_expa
 def _encounter_has_viable_alternative(expansion: str, level: int, name: str, character_count: int, active_expansions: set, enemy_included: dict) -> bool:
     """Return True if the encounter has at least one enemy set that is allowed
     by `ENEMY_EXPANSIONS_BY_ID`, not disabled by `enemy_included`, and respects invader limits."""
-    try:
-        encounter_slug = f"{expansion}_{int(level)}_{name}"
-        data = load_encounter(encounter_slug, character_count)
-    except Exception:
-        return False
+    encounter_slug = f"{expansion}_{int(level)}_{name}"
+    data = load_encounter(encounter_slug, character_count)
 
     # Merge caller-provided `enemy_included` with sidebar/campaign toggles
     settings = st.session_state.get("user_settings") or {}
@@ -1026,10 +1087,7 @@ def _encounter_has_viable_alternative(expansion: str, level: int, name: str, cha
         for enemies in alt_sets or []:
             if enemies is None:
                 continue
-            try:
-                enemy_list = list(enemies)
-            except Exception:
-                continue
+            enemy_list = list(enemies)
             # Skip sets that reference unmapped enemies
             skip = False
             inv_count = 0
@@ -1140,26 +1198,14 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
         entries = ENCOUNTER_ORIGINAL_REWARDS.get((name, selected_expansion), []) or []
         if entries:
             # Use cached JSON loader to avoid re-reading files on every shuffle
-            try:
-                hand_path = _find_data_file("hand_items.json")
-                hand_items = _load_json_list(str(hand_path)) if hand_path is not None else []
-            except Exception:
-                hand_items = []
-            try:
-                armor_path = _find_data_file("armor.json")
-                armor_items = _load_json_list(str(armor_path)) if armor_path is not None else []
-            except Exception:
-                armor_items = []
-            try:
-                wu_path = _find_data_file("weapon_upgrades.json")
-                weapon_upgrades = _load_json_list(str(wu_path)) if wu_path is not None else []
-            except Exception:
-                weapon_upgrades = []
-            try:
-                au_path = _find_data_file("armor_upgrades.json")
-                armor_upgrades = _load_json_list(str(au_path)) if au_path is not None else []
-            except Exception:
-                armor_upgrades = []
+            hand_path = _find_data_file("hand_items.json")
+            hand_items = _load_json_list(str(hand_path)) if hand_path is not None else []
+            armor_path = _find_data_file("armor.json")
+            armor_items = _load_json_list(str(armor_path)) if armor_path is not None else []
+            wu_path = _find_data_file("weapon_upgrades.json")
+            weapon_upgrades = _load_json_list(str(wu_path)) if wu_path is not None else []
+            au_path = _find_data_file("armor_upgrades.json")
+            armor_upgrades = _load_json_list(str(au_path)) if au_path is not None else []
 
             selected_chars = (settings.get("selected_characters") or [])
             # Determine tier indices to use for each party member.
@@ -1168,13 +1214,10 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
             # 2) per-class: mapping class_name -> {stat->index}
             default_tiers = {"str": 0, "dex": 0, "itl": 0, "fth": 0}
             persist = None
-            try:
-                if isinstance(settings, dict):
-                    persist = settings.get("cm_persist_tiers")
-                if persist is None:
-                    persist = st.session_state.get("cm_persist_tiers")
-            except Exception:
-                persist = None
+            if isinstance(settings, dict):
+                persist = settings.get("cm_persist_tiers")
+            if persist is None:
+                persist = st.session_state.get("cm_persist_tiers")
 
             if not isinstance(persist, dict):
                 persist = default_tiers
@@ -1218,11 +1261,8 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                 all_items = list(hand_items) + list(armor_items) + list(weapon_upgrades) + list(armor_upgrades)
                 for it in all_items:
                     item_name = str(it.get("name") or "").strip()
-                    try:
-                        stats = average_souls_to_equip(party, it.get("requirements", {})) if party else {"average": 0, "sum": 0}
-                        cost = stats.get("average") if stats.get("average") is not None else stats.get("sum", 0)
-                    except Exception:
-                        cost = 0
+                    stats = average_souls_to_equip(party, it.get("requirements", {})) if party else {"average": 0, "sum": 0}
+                    cost = stats.get("average") if stats.get("average") is not None else stats.get("sum", 0)
                     cost_map[item_name] = cost
                 ss["item_cost_cache"][cache_key] = cost_map
 
@@ -1288,23 +1328,20 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                 if m.get("legendary"):
                     if campaign_mode:
                         allowed_legendary = False
-                        try:
-                            def _mini_defeated_in_state(s):
-                                if not isinstance(s, dict):
-                                    return False
-                                camp = s.get("campaign") or {}
-                                nodes = camp.get("nodes") or []
-                                for n in nodes:
-                                    if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
-                                        return True
+                        def _mini_defeated_in_state(s):
+                            if not isinstance(s, dict):
                                 return False
+                            camp = s.get("campaign") or {}
+                            nodes = camp.get("nodes") or []
+                            for n in nodes:
+                                if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                    return True
+                            return False
 
-                            v2 = st.session_state.get("campaign_v2_state")
-                            v1 = st.session_state.get("campaign_v1_state")
-                            if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
-                                allowed_legendary = True
-                        except Exception:
-                            allowed_legendary = False
+                        v2 = st.session_state.get("campaign_v2_state")
+                        v1 = st.session_state.get("campaign_v1_state")
+                        if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                            allowed_legendary = True
 
                         if not allowed_legendary:
                             continue
@@ -1317,23 +1354,20 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                 if (m.get("type") == "transposed"):
                     if campaign_mode:
                         allowed_transposed = False
-                        try:
-                            def _mini_defeated_in_state(s):
-                                if not isinstance(s, dict):
-                                    return False
-                                camp = s.get("campaign") or {}
-                                nodes = camp.get("nodes") or []
-                                for n in nodes:
-                                    if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
-                                        return True
+                        def _mini_defeated_in_state(s):
+                            if not isinstance(s, dict):
                                 return False
+                            camp = s.get("campaign") or {}
+                            nodes = camp.get("nodes") or []
+                            for n in nodes:
+                                if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                    return True
+                            return False
 
-                            v2 = st.session_state.get("campaign_v2_state")
-                            v1 = st.session_state.get("campaign_v1_state")
-                            if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
-                                allowed_transposed = True
-                        except Exception:
-                            allowed_transposed = False
+                        v2 = st.session_state.get("campaign_v2_state")
+                        v1 = st.session_state.get("campaign_v1_state")
+                        if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                            allowed_transposed = True
 
                         if not allowed_transposed:
                             continue
@@ -1384,23 +1418,20 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                     if im.get("legendary"):
                         if campaign_mode:
                             allowed_legendary = False
-                            try:
-                                def _mini_defeated_in_state(s):
-                                    if not isinstance(s, dict):
-                                        return False
-                                    camp = s.get("campaign") or {}
-                                    nodes = camp.get("nodes") or []
-                                    for n in nodes:
-                                        if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
-                                            return True
+                            def _mini_defeated_in_state(s):
+                                if not isinstance(s, dict):
                                     return False
+                                camp = s.get("campaign") or {}
+                                nodes = camp.get("nodes") or []
+                                for n in nodes:
+                                    if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                        return True
+                                return False
 
-                                v2 = st.session_state.get("campaign_v2_state")
-                                v1 = st.session_state.get("campaign_v1_state")
-                                if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
-                                    allowed_legendary = True
-                            except Exception:
-                                allowed_legendary = False
+                            v2 = st.session_state.get("campaign_v2_state")
+                            v1 = st.session_state.get("campaign_v1_state")
+                            if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                                allowed_legendary = True
 
                             if not allowed_legendary:
                                 continue
@@ -1413,23 +1444,20 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                     if (im.get("type") == "transposed"):
                         if campaign_mode:
                             allowed_transposed = False
-                            try:
-                                def _mini_defeated_in_state(s):
-                                    if not isinstance(s, dict):
-                                        return False
-                                    camp = s.get("campaign") or {}
-                                    nodes = camp.get("nodes") or []
-                                    for n in nodes:
-                                        if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
-                                            return True
+                            def _mini_defeated_in_state(s):
+                                if not isinstance(s, dict):
                                     return False
+                                camp = s.get("campaign") or {}
+                                nodes = camp.get("nodes") or []
+                                for n in nodes:
+                                    if n.get("kind") == "boss" and n.get("stage") == "mini" and n.get("status") == "complete":
+                                        return True
+                                return False
 
-                                v2 = st.session_state.get("campaign_v2_state")
-                                v1 = st.session_state.get("campaign_v1_state")
-                                if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
-                                    allowed_transposed = True
-                            except Exception:
-                                allowed_transposed = False
+                            v2 = st.session_state.get("campaign_v2_state")
+                            v1 = st.session_state.get("campaign_v1_state")
+                            if _mini_defeated_in_state(v2) or _mini_defeated_in_state(v1):
+                                allowed_transposed = True
 
                             if not allowed_transposed:
                                 continue
@@ -1513,10 +1541,6 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                         tier_candidates = [it for it, c in tier_slice if str(it.get("name") or "").strip().lower() != orig_name.lower()]
                         if tier_candidates:
                             chosen = choice(tier_candidates)
-                        else:
-                            # fallback to any candidate excluding original
-                            fallback = [it for it in candidates if str(it.get("name") or "").strip().lower() != orig_name.lower()]
-                            chosen = choice(fallback) if fallback else None
 
                 if chosen:
                     replacements[orig_name] = chosen.get("name")
@@ -1563,14 +1587,11 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
       - 'num_viable_alternatives': int
       - 'original_viable': bool
     """
-    try:
-        expansion = selected_encounter["expansion"]
-        level = int(selected_encounter["level"])
-        name = selected_encounter["name"]
-        encounter_slug = f"{expansion}_{level}_{name}"
-        data = load_encounter(encounter_slug, character_count)
-    except Exception:
-        return {"num_viable_alternatives": 0, "original_viable": False}
+    expansion = selected_encounter["expansion"]
+    level = int(selected_encounter["level"])
+    name = selected_encounter["name"]
+    encounter_slug = f"{expansion}_{level}_{name}"
+    data = load_encounter(encounter_slug, character_count)
 
     # build merged effective toggles
     # Prefer caller-provided `settings` snapshot when available so callers
@@ -1617,16 +1638,10 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
             for enemies in alt_sets or []:
                 if enemies is None:
                     continue
-                try:
-                    enemy_list = list(enemies)
-                except Exception:
-                    continue
+                enemy_list = list(enemies)
 
                 # Normalize enemy list into a canonical tuple of IDs for dedupe
-                try:
-                    normalized = tuple(sorted(_coerce_enemy_id(e) for e in enemy_list))
-                except Exception:
-                    continue
+                normalized = tuple(sorted(_coerce_enemy_id(e) for e in enemy_list))
 
                 if normalized in seen:
                     continue
@@ -1670,10 +1685,7 @@ def pick_random_alternative(data, active_expansions, encounter_level: int):
             if enemies is None:
                 continue
             # enemies should be a list[int], but tolerate other iterables
-            try:
-                enemy_list = list(enemies)
-            except Exception:
-                continue
+            enemy_list = list(enemies)
 
             # Respect user's enemy inclusion toggles and authoritative mapping
             settings = st.session_state.get("user_settings") or {}

@@ -11,7 +11,6 @@ from core.behavior.generation import (
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from ui.campaign_mode.api import (
     BONFIRE_ICON_PATH,
-    PARTY_TOKEN_PATH,
     SOULS_TOKEN_PATH,
     default_sparks_max,
     describe_v1_node_label,
@@ -19,7 +18,6 @@ from ui.campaign_mode.api import (
 )
 from ui.campaign_mode.manage_tab_shared import (
     _render_boss_outcome_controls,
-    _is_stage_closed_for_node,
     _render_campaign_encounter_card,
 )
 from ui.campaign_mode.state import _get_settings, _get_player_count
@@ -247,7 +245,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                     if isinstance(node.get("frozen"), dict):
                         lv = node.get("frozen", {}).get("encounter_level")
                     lv = lv or node.get("encounter_level") or node.get("level")
-                    return int(lv)
+                    return int(lv or 0)
 
                 ascii_tiles: Dict[str, Dict[str, Any]] = {}
                 for tid, tile in tiles_for_render.items():
@@ -340,11 +338,6 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                 if isinstance(tt.get("doors"), list):
                     tt["doors"] = set(tt.get("doors") or [])
                 tiles[tid] = tt
-        else:
-            # Fallback: regenerate current stage layout
-            nodes_for_layout = [n for n in nodes if n.get("kind") == "bonfire"]
-            nodes_for_layout.extend(stage_nodes.get(current_stage, []))
-            tiles = _generate_v1_layout(nodes_for_layout)
 
         # --- Travel controls for ASCII map ---
         st.markdown("#### Travel Controls")
@@ -642,10 +635,7 @@ def _generate_v1_layout(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]
         if isinstance(node.get("frozen"), dict):
             lvl = node.get("frozen", {}).get("encounter_level")
         lvl = lvl or node.get("encounter_level") or node.get("level")
-        try:
-            return int(lvl)
-        except Exception:
-            return 1
+        return int(lvl or 0)
 
     def label_for_encounter(node: Dict[str, Any]) -> str:
         lvl = extract_level(node)
@@ -838,17 +828,6 @@ def _generate_v1_layout(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]
                 if dist > best_dist:
                     best = cand
                     best_dist = dist
-        if best is None:
-            # fallback: allow placement even if it may exceed available threes
-            for px, py in list(occupied):
-                for dx, dy in dirs:
-                    cand = (px + dx, py + dy)
-                    if cand in occupied:
-                        continue
-                    dist = abs(cand[0]) + abs(cand[1])
-                    if dist > best_dist:
-                        best = cand
-                        best_dist = dist
         if best is None:
             best = (len(occupied) + 1, 0)
         x, y = best
@@ -1337,132 +1316,3 @@ def _render_ascii_map(tiles: Dict[str, Dict[str, Any]], cur_id: str, visited: Op
         out_lines.append(s.rstrip())
 
     return "\n".join(out_lines)
-
-    # Encounter (single fixed encounter in V1)
-    if kind == "encounter":
-        frozen = current_node.get("frozen") or {}
-        _render_campaign_encounter_card(frozen)
-
-    # Boss
-    if kind == "boss":
-        stage = current_node.get("stage")
-        # Prefer the campaign's boss metadata, fall back to node field
-        bosses_info = (campaign.get("bosses") or {}).get(stage, {})  # type: ignore[index]
-        boss_name = bosses_info.get("name") or current_node.get("boss_name")
-
-        prefix_map = {"mini": "Mini Boss", "main": "Main Boss", "mega": "Mega Boss"}
-        prefix = prefix_map.get(stage, "Boss")
-
-        if boss_name:
-            st.markdown(f"**{prefix}: {boss_name}**")
-
-            # Load raw behavior JSON directly (cache-aware)
-            json_path = Path("data") / "behaviors" / f"{boss_name}.json"
-            raw_data = None
-            try:
-                from ui.campaign_mode.persistence import load_json_file
-
-                raw_data = load_json_file(json_path)
-            except Exception as exc:
-                st.warning(f"Failed to load behavior JSON for '{boss_name}': {exc}")
-
-            if raw_data is None:
-                # Fallback: show static base data card
-                data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{data_path}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                # Special case: Ornstein & Smough dual-boss card
-                if "Ornstein" in boss_name and "Smough" in boss_name:
-                    try:
-                        o_img, s_img = render_dual_boss_data_cards(raw_data)
-                        o_col, s_col = st.columns(2)
-                        with o_col:
-                            try:
-                                src_o = bytes_to_data_uri(o_img, mime="image/png")
-                                if not src_o:
-                                    raise Exception("empty data uri")
-                            except Exception:
-                                src_o = o_img
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{src_o}" style="width:100%">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-                        with s_col:
-                            try:
-                                src_s = bytes_to_data_uri(s_img, mime="image/png")
-                                if not src_s:
-                                    raise Exception("empty data uri")
-                            except Exception:
-                                src_s = s_img
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{src_s}" style="width:100%">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-                    except Exception as exc:
-                                        st.warning(
-                                            f"Failed to render Ornstein & Smough data cards: {exc}"
-                                        )
-                else:
-                    if boss_name == "Executioner's Chariot":
-                        data_path = (
-                            BEHAVIOR_CARDS_PATH
-                            + "Executioner's Chariot - Skeletal Horse.jpg"
-                        )
-                    else:
-                        data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
-                    try:
-                        img = render_data_card_cached(
-                            data_path,
-                            raw_data,
-                            is_boss=True,
-                        )
-                        try:
-                            src = bytes_to_data_uri(img, mime="image/png")
-                            if not src:
-                                raise Exception("empty data uri")
-                        except Exception:
-                            src = img
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="{src}" style="width:100%">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    except Exception as exc:
-                        st.warning(f"Failed to render boss data card: {exc}")
-        else:
-            st.markdown(f"**{prefix}: Unknown**")
-            st.caption("No boss selected for this space.")
-
-        st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
-
-        if st.button(
-            "Start Boss Fight",
-            key=f"campaign_v1_start_boss_{current_node.get('id')}",
-            width="stretch",
-        ):
-            if not boss_name:
-                st.warning("No boss configured for this node.")
-            else:
-                st.session_state["pending_boss_mode_from_campaign"] = {
-                    "boss_name": boss_name
-                }
-                st.rerun()
-        return

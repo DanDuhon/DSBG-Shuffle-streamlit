@@ -15,13 +15,7 @@ DiceDict = Dict[str, int]  # keys: black, blue, orange, flat_mod
 def _int(v: Any, default: int = 0) -> int:
     if v is None:
         return int(default)
-    try:
-        return int(v)
-    except (TypeError, ValueError):
-        try:
-            return int(str(v))
-        except Exception:
-            return int(default)
+    return int(v)
 
 
 def _as_dice_dict(obj: Any) -> DiceDict:

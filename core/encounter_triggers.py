@@ -550,23 +550,37 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
             ),
         ],
     },
+    "Maze of the Dead|Tomb of Giants": {
+        "edited": [
+            EncounterTrigger(
+                id="maze_of_the_dead_lever1",
+                label="",
+                template="Tile 1 lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="maze_of_the_dead_lever2",
+                label="",
+                template="Tile 2 lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="maze_of_the_dead_lever3",
+                label="",
+                template="Tile 3 lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
     "The Abandoned Chest|Tomb of Giants": {
         "default": [
             EncounterTrigger(
                 id="the_abandoned_chest_chest",
                 label="Chest opened",
                 template="Spawn {enemy_list:5,6} on the Enemy Spawn Node closest to the chest.",
-                kind="checkbox",
-                phase="player",
-            ),
-        ],
-    },
-    "The Mass Grave|Tomb of Giants": {
-        "default": [
-            EncounterTrigger(
-                id="the_mass_grave_lever",
-                label="Lever activated.",
-                template="Remove Tile 2.",
                 kind="checkbox",
                 phase="player",
             ),

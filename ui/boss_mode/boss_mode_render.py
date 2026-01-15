@@ -298,9 +298,6 @@ def render():
                         # Only use combos that are compatible with the currently active expansions.
                         if not exp_set or exp_set.issubset(active):
                             candidates.extend(combos)
-                elif isinstance(alts, list):
-                    # Fallback in case this file ever uses a simple list of combos
-                    candidates = alts
 
                 if candidates:
                     st.session_state[enemies_key] = random.choice(candidates)

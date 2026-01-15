@@ -56,9 +56,6 @@ def _event_kind_for_card(base_id: str, configs: Dict[str, Any]) -> str:
         if "instant" in raw:
             return "instant"
 
-    # Safe fallback: tell the user immediately rather than silently misapplying.
-    return "instant"
-
 
 def _ensure_event_deck_ready(settings: Dict[str, Any], configs: Dict[str, Any]) -> Optional[str]:
     deck_state = st.session_state.get(DECK_STATE_KEY)
@@ -386,9 +383,6 @@ def _render_campaign_play_tab(
             st.info(
                 f"Choose an encounter for this space on the Campaign tab before playing it."
             )
-        else:
-            # Defensive fallback for V1; should basically never trigger.
-            st.info("No encounter is configured for this campaign space.")
         return
 
     encounter = st.session_state.get("current_encounter")

@@ -36,7 +36,7 @@ from ui.encounter_mode.assets import (
     editedEncounterKeywords,
     keywordText
 )
-from ui.encounter_mode.logic import ENCOUNTER_BEHAVIOR_MODIFIERS
+from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
@@ -234,10 +234,7 @@ def _detect_gang_name(encounter: dict) -> Optional[str]:
         if isinstance(eid, dict):
             name = eid.get("name") or eid.get("id")
             if "health" in eid:
-                try:
-                    health = int(eid.get("health"))
-                except Exception:
-                    health = None
+                health = int(eid.get("health"))
         else:
             if isinstance(eid, int):
                 name = enemyNames.get(eid)
@@ -245,12 +242,9 @@ def _detect_gang_name(encounter: dict) -> Optional[str]:
                 name = str(eid)
 
             if name:
-                try:
-                    # load base behavior JSON to read default health
-                    cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
-                    health = int(cfg.raw.get("health", 1))
-                except Exception:
-                    health = None
+                # load base behavior JSON to read default health
+                cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+                health = int(cfg.raw.get("health", 1))
 
         if not name:
             continue
@@ -600,19 +594,6 @@ def _apply_rewards_from_config(
                 player_count=player_count,
             )
             special_lines.append(f"{source_label}: {text}")
-        elif rtype in ("search", "shortcut", "text"):
-            # Fallback generic labels if no explicit text
-            if rtype == "search":
-                special_lines.append(
-                    f"{source_label}: Resolve a search effect (see card)."
-                )
-            elif rtype == "shortcut":
-                special_lines.append(
-                    f"{source_label}: Unlock a shortcut (see encounter card)."
-                )
-            elif rtype == "text":
-                # Bare text with no template – nothing to render
-                pass
 
     # Optional modifiers (currently only souls_multiplier)
     for mod in cfg.get("modifiers", []):
@@ -966,14 +947,11 @@ def _render_timer_and_phase(play_state: dict) -> None:
 
     # Left side: Timer [icon] [counter]
     with c1:
-        try:
-            data_uri = get_image_data_uri_cached(str(TIMER_ICON_PATH))
-            img_tag = (
-                f"<img src='{data_uri}' "
-                f"style='height:18px; width:auto; margin:0 0.25rem;'/>"
-            )
-        except Exception:
-            img_tag = "<span style='margin:0 0.25rem;'>⏱️</span>"
+        data_uri = get_image_data_uri_cached(str(TIMER_ICON_PATH))
+        img_tag = (
+            f"<img src='{data_uri}' "
+            f"style='height:18px; width:auto; margin:0 0.25rem;'/>"
+        )
 
         html = f"""
         <div style="display:flex; align-items:center; gap:0.35rem;">
@@ -1038,7 +1016,9 @@ def _render_turn_controls(
     # manages Timer advancement via triggers (e.g. lever pulls).
     show_manual_button = has_manual_inc and not bool(timer_behavior.get("hide_manual_increment_button", False))
     has_reset_btn = bool(timer_behavior.get("reset_button"))
-    if not (has_manual_inc or has_reset_btn):
+    # If there's nothing to render in this section, hide the whole section
+    # (avoid showing the header with no visible actions).
+    if not (show_manual_button or has_reset_btn):
         return
 
     st.markdown("##### Special Timer Actions")
@@ -1072,7 +1052,7 @@ def _render_turn_controls(
                 st.caption(help_text2)
         return
 
-    cols = st.columns((1 if has_manual_inc else 0) + (1 if has_reset_btn else 0))
+    cols = st.columns((1 if show_manual_button else 0) + (1 if has_reset_btn else 0))
     col_idx = 0
     if show_manual_button:
         with cols[col_idx]:
@@ -1260,21 +1240,54 @@ def _render_encounter_triggers(
                         trig.effect_template,
                         enemy_names,
                     )
-                    # Persist the effect in the turn log so it survives a rerun.
                     log_entry(play_state, effect_text)
-                    # Also persist for immediate display across reruns.
                     st.session_state.setdefault("encounter_last_trigger_messages", []).append(effect_text)
                     st.info(effect_text)
 
                 state[trig.id] = new_val
+
+                # Recompute Timer based on configured decrement triggers
+                def _recompute_timer_from_triggers():
+                    dec_on = timer_behavior.get("decrement_on_trigger")
+                    if not dec_on:
+                        return None
+                    if isinstance(dec_on, (str,)):
+                        dec_list = [dec_on]
+                    else:
+                        dec_list = list(dec_on)
+
+                    triggers_state = st.session_state.get("encounter_triggers", {}) or {}
+                    total = 0
+                    for scope_state in triggers_state.values():
+                        if not isinstance(scope_state, dict):
+                            continue
+                        for tid in dec_list:
+                            if tid not in scope_state:
+                                continue
+                            val = scope_state.get(tid)
+                            if isinstance(val, bool):
+                                total += 1 if val else 0
+                            elif isinstance(val, (int, float)):
+                                total += int(val)
+
+                    init = int(timer_behavior.get("initial_timer", 0) or 0)
+                    return max(0, init - total)
+
+                new_timer = _recompute_timer_from_triggers()
+                if new_timer is not None:
+                    old_timer = int(play_state.get("timer", 0))
+                    if new_timer != old_timer:
+                        play_state["timer"] = new_timer
+                        log_text_dec = timer_behavior.get("manual_decrement_log", "Timer changed by special rule.")
+                        log_entry(play_state, f"{log_text_dec} (was {old_timer}, now {play_state['timer']})")
+                        st.rerun()
+
                 # If this trigger is configured to advance the Timer, do so now.
                 inc_on = timer_behavior.get("increment_on_trigger")
                 if inc_on and new_val and not prev and inc_on == trig.id:
                     play_state["timer"] += 1
-                    # Use configured log text if available
                     log_text = timer_behavior.get("manual_increment_log", "Timer increased.")
                     log_entry(play_state, log_text)
-                    # Re-run so the UI reflects the timer change immediately
                     st.rerun()
 
             # ----- COUNTER -----
@@ -1297,9 +1310,7 @@ def _render_encounter_triggers(
                 new_val = st.number_input(
                     label_text,
                     min_value=trig.min_value,
-                    max_value=(
-                        trig.max_value if trig.max_value is not None else 999
-                    ),
+                    max_value=(trig.max_value if trig.max_value is not None else 999),
                     value=value_int,
                     key=f"trigger_num_{widget_scope}_{trig.id}",
                 )
@@ -1320,6 +1331,43 @@ def _render_encounter_triggers(
                             st.info(effect_text)
 
                 state[trig.id] = new_val
+
+                # Recompute timer based on configured decrement triggers
+                def _recompute_timer_from_triggers_counter():
+                    dec_on = timer_behavior.get("decrement_on_trigger")
+                    if not dec_on:
+                        return None
+                    if isinstance(dec_on, (str,)):
+                        dec_list = [dec_on]
+                    else:
+                        dec_list = list(dec_on)
+
+                    triggers_state = st.session_state.get("encounter_triggers", {}) or {}
+                    total = 0
+                    for scope_state in triggers_state.values():
+                        if not isinstance(scope_state, dict):
+                            continue
+                        for tid in dec_list:
+                            if tid not in scope_state:
+                                continue
+                            val = scope_state.get(tid)
+                            if isinstance(val, bool):
+                                total += 1 if val else 0
+                            elif isinstance(val, (int, float)):
+                                total += int(val)
+
+                    init = int(timer_behavior.get("initial_timer", 0) or 0)
+                    return max(0, init - total)
+
+                new_timer = _recompute_timer_from_triggers_counter()
+                if new_timer is not None:
+                    old_timer = int(play_state.get("timer", 0))
+                    if new_timer != old_timer:
+                        play_state["timer"] = new_timer
+                        log_text_dec = timer_behavior.get("manual_decrement_log", "Timer changed by special rule.")
+                        log_entry(play_state, f"{log_text_dec} (was {old_timer}, now {play_state['timer']})")
+                        st.rerun()
+
                 # If this counter trigger is configured to advance the Timer, do so now.
                 inc_on = timer_behavior.get("increment_on_trigger")
                 if inc_on and new_val > value_int and inc_on == trig.id:
@@ -1534,7 +1582,32 @@ def _gather_behavior_mods_for_enemy(
     enc_label = encounter.get("encounter_name") or encounter.get("name") or ""
 
     if encounter_slug:
-        for mod in ENCOUNTER_BEHAVIOR_MODIFIERS.get(encounter_slug, []):
+        # Determine whether this encounter should be treated as the 'edited' variant.
+        edited_flag = False
+        if isinstance(encounter.get("edited"), bool):
+            edited_flag = encounter["edited"]
+        elif isinstance(st.session_state.get("current_encounter_edited"), bool):
+            edited_flag = st.session_state["current_encounter_edited"]
+        else:
+            settings = st.session_state.get("user_settings") or {}
+            edited_toggles = settings.get("edited_toggles", {}) if isinstance(settings, dict) else {}
+            # Support both key formats: the "slug" used elsewhere
+            # ("Expansion_level_Name") and the setup UI key ("Name|Expansion").
+            alt_key = None
+            enc_label = encounter.get("encounter_name") or encounter.get("name") or ""
+            alt_key = f"{enc_label}|{encounter.get('expansion')}"
+            edited_flag = bool(
+                edited_toggles.get(encounter_slug, False)
+                or (alt_key and edited_toggles.get(alt_key, False))
+            )
+
+        # Prefer edited modifiers when an edited table exists, otherwise fall back to defaults.
+        if edited_flag:
+            mods_list = getattr(enc_logic, "ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED", {}).get(encounter_slug) or enc_logic.ENCOUNTER_BEHAVIOR_MODIFIERS.get(encounter_slug, [])
+        else:
+            mods_list = enc_logic.ENCOUNTER_BEHAVIOR_MODIFIERS.get(encounter_slug, [])
+
+        for mod in mods_list:
             if not _mod_applies_to_enemy(mod, enemy_name, encounter):
                 continue
 
@@ -1595,402 +1668,175 @@ def _apply_behavior_mods_to_raw(
     - For stat == "damage" and op == "add":
       * Add the value to each attack's `damage` field.
 
-    - For stat == "dodge_difficulty" and op == "add":
-      * Apply the delta to `behavior["dodge"]` (the dodge difficulty).
+        - For stat == "dodge_difficulty" and op == "add":
+            * Apply the delta to `behavior["dodge"]` (the dodge difficulty).
 
-    - For everything else:
-      * Fallback to the old behavior:
-        - "flag": raw[stat] = value (or True if value is None)
-        - "add":  raw[stat] += value (creating it if missing)
     """
+
     patched = deepcopy(raw_json)
-    behavior = patched.get("behavior")
+    behavior = patched.get("behavior") or {}
 
     def _iter_attack_nodes():
-        """
-        Yield the per-column attack dicts under behavior
-        (left/right/etc), skipping scalar entries like "dodge".
-        """
         if not isinstance(behavior, dict):
             return
-        for key, node in behavior.items():
-            if key == "dodge":
-                # numeric dodge difficulty, handled separately
+        for k, node in behavior.items():
+            if k == "dodge":
                 continue
             if isinstance(node, dict):
                 yield node
 
-    # Flags that should show up as status icons on attacks
-    EFFECT_FLAG_STATS = {"bleed", "poison", "frostbite", "stagger", "calamity", "corrosion"}
-
     for mod in mods:
         stat = mod.get("stat")
         op = mod.get("op")
-        val = mod.get("value")
-
         if not stat or not op:
             continue
 
-        # Support dynamic value sources (e.g., use the current play Timer)
-        value_from = mod.get("value_from")
-        if value_from == "timer":
-            # Read current timer from play state if available
+        # compute value, supporting timer-based source
+        val = mod.get("value")
+        if mod.get("value_from") == "timer":
             play = st.session_state.get("encounter_play") or {}
             timer_val = int(play.get("timer", 0) or 0)
-            # If mod.value is numeric, treat it as a multiplier; otherwise default 1
-            try:
-                multiplier = float(mod.get("value", 1) or 1)
-            except Exception:
-                multiplier = 1
-            val = int(timer_val * multiplier)
+            mult = float(mod.get("value", 1) or 1)
+            val = int(timer_val * mult)
+        elif mod.get("value_from"):
+            # Generic play-state sourced value (e.g., mass_grave_reset_count)
+            play = st.session_state.get("encounter_play") or {}
+            ref = mod.get("value_from")
+            ref_val = play.get(ref, 0)
+            # Normalize numeric reference
+            ref_num = int(ref_val or 0)
+            mult = float(mod.get("value", 1) or 1)
+            val = int(ref_num * mult)
 
-        # Scaling based on number of characters
-        if val is None:
-            base = mod.get("base")
-            per_player = mod.get("per_player")
+        # Support per-player and base-style modifiers (e.g., +[player_num] health)
+        per = mod.get("per_player")
+        base = mod.get("base")
+        if per is not None:
+            per_n = int(per)
+            players = get_player_count()
 
-            # If the modifier supplies a non-numeric base (e.g. "∞"),
-            # preserve that value directly rather than converting to 0.
-            if base is not None and not isinstance(base, (int, float)):
-                val = base
+            total = per_n * players
+            # include base if present and numeric
+            if base is not None and base != "∞":
+                b = int(base)
+                total = b + total
+
+            # preserve infinite base
+            if base == "∞":
+                val = "∞"
             else:
-                amount = 0
-                if isinstance(base, (int, float)):
-                    amount += base
-                if isinstance(per_player, (int, float)):
-                    amount += per_player * get_player_count()
+                val = total
 
-                val = amount
-
-        # --- Push / node flags: per-attack booleans, not status effects ---
-        # Encounter/event modifiers may say "push" or "node" with op "flag"/"set".
-        # Treat those as booleans on each real attack node (left/middle/right).
-        if stat in {"push", "node"} and op in {"flag", "set"}:
+        # simple handling for common stats
+        if op == "flag":
+            # set boolean flags on attacks
             for node in _iter_attack_nodes():
-                # Only touch nodes that are actual attacks: require damage/effect
-                # to be present. This avoids applying 'node' to pure move slots.
                 if ("damage" not in node and "effect" not in node):
                     continue
-
-                # Only apply push to physical/magic attacks; never to type=="push".
-                if stat == "push":
-                    if node.get("type") not in ("physical", "magic"):
-                        continue
-
-                # 'node' should never be applied to move-type nodes.
-                if stat == "node":
-                    if node.get("type") == "move":
-                        continue
-
                 node[stat] = True if val is None else bool(val)
-
-            # Also keep a top-level flag for convenience / future use.
-            patched[stat] = True if val is None else bool(val)
-            continue
-
-        # --- Status flags (Bleed, etc.) -> add to effect[] on attacks ---
-        if op == "flag" and stat in EFFECT_FLAG_STATS:
-            for node in _iter_attack_nodes():
-                # Only touch real attacks (those that already have effect or damage)
-                if "effect" not in node and "damage" not in node:
-                    continue
-                effects = node.setdefault("effect", [])
-                if isinstance(effects, list) and stat not in effects:
-                    effects.append(stat)
-
-            # Keep a top-level flag as well, in case something cares later
             patched[stat] = True if val is None else val
             continue
 
-        # --- Global damage modifiers: hit every attack's damage field ---
         if op == "add" and stat == "damage" and isinstance(val, (int, float)):
             for node in _iter_attack_nodes():
+                # Standard attack damage field
                 dmg = node.get("damage")
                 if isinstance(dmg, (int, float)):
                     node["damage"] = dmg + val
+                    continue
+
+                # Move-type attacks often encode damage as `push` on the node
+                if isinstance(node, dict) and node.get("type") == "move":
+                    push = node.get("push")
+                    if isinstance(push, (int, float)):
+                        node["push"] = push + val
+                        continue
             continue
 
-        # --- Dodge difficulty: map onto behavior["dodge"] ---
+        if op == "add" and stat == "move" and isinstance(val, (int, float)):
+            for node in _iter_attack_nodes():
+                # Move actions are encoded as nodes with type == "move" and a "distance" field
+                if isinstance(node, dict) and node.get("type") == "move":
+                    dist = node.get("distance")
+                    if isinstance(dist, (int, float)):
+                        node["distance"] = dist + val
+            continue
+
         if op == "add" and stat == "dodge_difficulty" and isinstance(val, (int, float)):
             if isinstance(behavior, dict):
                 old = behavior.get("dodge", 0)
-                try:
-                    behavior["dodge"] = old + val
-                except TypeError:
-                    try:
-                        behavior["dodge"] = float(old) + float(val)
-                    except Exception:
-                        behavior["dodge"] = val
+                behavior["dodge"] = old + val
             else:
-                # Fallback: if for some reason "behavior" isn't structured as expected
                 old = patched.get("dodge_difficulty", 0)
-                try:
-                    patched["dodge_difficulty"] = old + val
-                except TypeError:
-                    try:
-                        patched["dodge_difficulty"] = float(old) + float(val)
-                    except Exception:
-                        patched["dodge_difficulty"] = val
+                patched["dodge_difficulty"] = old + val
             continue
 
-        # --- Movement modifiers: adjust 'distance' on per-attack move nodes ---
-        if stat == "move" and op in {"add", "set"} and isinstance(val, (int, float)):
-            for node in _iter_attack_nodes():
-                try:
-                    if node.get("type") != "move":
-                        continue
-                    old = int(node.get("distance", 0) or 0)
-                except Exception:
-                    old = 0
-
-                if op == "add":
-                    new = old + int(val)
-                else:
-                    new = int(val)
-
-                # Clamp to available icon distances (1..4)
-                new = max(1, min(4, new))
-                node["distance"] = new
-
-            # Keep a top-level marker for convenience
-            try:
-                patched["move"] = int(val)
-            except Exception:
-                patched["move"] = val
-            continue
-
-        # --- Repeat modifier: apply to per-attack nodes so the UI can render
-        # repeat icons on enemy cards. Supports 'add' and 'set'.
-        if stat == "repeat" and op in {"add", "set"}:
-            try:
-                add_val = int(val)
-            except Exception:
-                add_val = 0
-
-            behavior_dict = patched.get("behavior") or {}
-            slots = ["left", "middle", "right"]
-
-            # Find slots that already have an explicit repeat value
-            existing_slots: list[str] = []
-            for s in slots:
-                node = behavior_dict.get(s)
-                if isinstance(node, dict) and ("repeat" in node):
-                    existing_slots.append(s)
-
-            if existing_slots:
-                # Apply to existing repeat slots
-                for s in existing_slots:
-                    node = behavior_dict.get(s) or {}
-                    try:
-                        old = int(node.get("repeat", 0) or 0)
-                    except Exception:
-                        old = 0
-                    new = (old + add_val) if op == "add" else add_val
-                    try:
-                        node["repeat"] = max(0, int(new))
-                    except Exception:
-                        node["repeat"] = old
-                    behavior_dict[s] = node
-            else:
-                # No explicit repeat found. Prefer to place repeat on the
-                # next empty dict slot (left->middle->right). If none exist,
-                # fall back to applying to the first attack-like slot.
-                placed = False
-                for s in slots:
-                    node = behavior_dict.get(s)
-                    if isinstance(node, dict) and len(node) == 0:
-                        # Empty slot: interpret missing repeat as 1 when adding
-                        if op == "add":
-                            new = 1 + add_val
-                        else:
-                            new = add_val
-                        try:
-                            node["repeat"] = max(0, int(new))
-                        except Exception:
-                            node["repeat"] = new
-                        behavior_dict[s] = node
-                        placed = True
-                        break
-
-                if not placed:
-                    # No empty slot found — apply to first attack-like slot
-                    for s in slots:
-                        node = behavior_dict.get(s)
-                        if not isinstance(node, dict):
-                            continue
-                        # Treat lack of explicit repeat as 1
-                        try:
-                            old = int(node.get("repeat", 1) or 1)
-                        except Exception:
-                            old = 1
-                        new = (old + add_val) if op == "add" else add_val
-                        try:
-                            node["repeat"] = max(0, int(new))
-                        except Exception:
-                            node["repeat"] = new
-                        behavior_dict[s] = node
-                        break
-
-            patched["behavior"] = behavior_dict
-            # Also set a top-level marker for convenience
-            try:
-                patched["repeat"] = int(patched.get("repeat", 0) or 0) + add_val if op == "add" else add_val
-            except Exception:
-                patched["repeat"] = patched.get("repeat", add_val)
-
-            continue
-
-        # --- Set per-attack 'type' specially (e.g., convert attacks to magic) ---
-        if op == "set" and stat == "type":
-            for node in _iter_attack_nodes():
-                # Only touch nodes that are actual attacks. Do NOT change
-                # movement nodes (type == 'move') — modifiers should only
-                # affect attacks. Accept nodes that either already have
-                # damage/effect or are an explicit attack-type.
-                node_type = node.get("type")
-                # Skip explicit movement nodes
-                if node_type == "move":
-                    continue
-
-                if ("damage" not in node and "effect" not in node and node_type not in ("physical", "magic", "push")):
-                    continue
-
-                try:
-                    node["type"] = val
-                except Exception:
-                    node["type"] = str(val)
-            continue
-
-        if op == "set":
-            patched[stat] = val
-            continue
-
-        # --- Multiplicative modifiers: multiply existing top-level stat ---
-        if op == "mul":
-            old = patched.get(stat)
-            # If no existing stat, treat this as a set-to-value
-            if old is None:
-                patched[stat] = val
-                continue
-
-            # Numeric * numeric works straightforwardly
-            if isinstance(old, (int, float)) and isinstance(val, (int, float)):
-                try:
-                    # Preserve integer type when possible
-                    if isinstance(old, int) and float(old * val).is_integer():
-                        patched[stat] = int(old * val)
-                    else:
-                        patched[stat] = old * val
-                except Exception:
-                    patched[stat] = old
-                continue
-
-            # Try to coerce to float for mixed-type cases (e.g., strings that parse)
-            try:
-                oldf = float(old)
-                patched[stat] = int(oldf * float(val)) if float(oldf * float(val)).is_integer() else oldf * float(val)
-            except Exception:
-                # Non-numeric existing value (e.g., "∞") — leave unchanged
-                pass
-            continue
-
-        # --- Fallback: old simple behavior ---
-        if op == "flag":
-            patched[stat] = True if val is None else val
-
-        elif op == "add":
+        if op == "add":
             old = patched.get(stat, 0)
-            try:
-                patched[stat] = old + val
-            except TypeError:
-                # Fallback if existing value is weird/non-numeric
-                try:
-                    patched[stat] = float(old) + float(val)
-                except Exception:
-                    patched[stat] = val
+            patched[stat] = old + val
+            continue
 
     return patched
 
 
 def _describe_behavior_mod(mod: Dict[str, Any]) -> str:
-    """
-    Turn a behavior-modifier dict into a short human-readable sentence.
-    """
-    # If the mod explicitly provides a description, allow dynamic
-    # substitution for some value sources (e.g., Timer) so the UI shows
-    # the actual numeric bonus applied right now.
-    desc = mod.get("description")
-    value_from = mod.get("value_from")
-    if value_from == "timer":
+    if not mod:
+        return ""
+    # If the modifier supplies a runtime source (value_from), compute the
+    # actual applied value from `st.session_state['encounter_play']` and use
+    # that in the description so the UI shows the real increase (e.g.,
+    # +2 move when `mass_grave_reset_count == 2`). Prefer this over the
+    # static `description` text when possible.
+    vf = mod.get("value_from")
+    if vf:
         play = st.session_state.get("encounter_play") or {}
-        timer_val = int(play.get("timer", 0) or 0)
-        try:
-            multiplier = float(mod.get("value", 1) or 1)
-        except Exception:
-            multiplier = 1
-        applied = int(timer_val * multiplier)
+        if vf == "timer":
+            ref_val = int(play.get("timer", 0) or 0)
+        else:
+            ref_val = play.get(vf, 0) or 0
+        ref_num = int(ref_val)
+        per_unit = float(mod.get("value", 1) or 1)
+        total = int(ref_num * per_unit)
+        # Build a concise description for common ops
+        op = mod.get("op") or ""
+        stat = mod.get("stat") or "stat"
+        if op == "add" and isinstance(total, int):
+            sign = "+" if total >= 0 else ""
+            return f"{sign}{total} {stat} (cumulative)"
 
-        # If the mod supplies an explicit description string, try to
-        # substitute a value placeholder or sensible keywords so the
-        # text reads naturally (e.g. "+3 damage from special rules").
-        if isinstance(desc, str) and desc:
-            # Preferred templating: use {value} if present
-            if "{value}" in desc or "{applied}" in desc or "{timer}" in desc:
-                try:
-                    return desc.format(value=applied, applied=applied, timer=timer_val)
-                except Exception:
-                    # Fall back to naive replacements below
-                    pass
+    # If the description references player count, substitute the runtime
+    # player count so users see a concrete number (e.g., +2 health).
+    desc = mod.get("description")
+    if isinstance(desc, str) and "[player_num]" in desc:
+        pn = get_player_count()
+        return desc.replace("[player_num]", str(pn))
 
-            # Backwards-compatible replacements for common phrasings
-            if "Timer value" in desc:
-                return desc.replace("Timer value", str(applied))
-            if "Timer" in desc:
-                return desc.replace("Timer", str(timer_val))
-
-        # If there's no explicit description, for common ops return a
-        # short numeric summary like "+N stat" for add operations.
-        if mod.get("op") == "add":
-            stat = mod.get("stat", "stat")
-            sign = "+" if applied >= 0 else ""
-            return f"{sign}{applied} {stat}"
-
-    stat = mod.get("stat", "stat")
-    op = mod.get("op", "")
-    value = mod.get("value")
-
-    # If modifier uses per-player scaling (base + per_player * player_count),
-    # compute the applied value for descriptions and substitute into any
-    # provided description placeholders before falling back to the raw text.
-    if (mod.get("per_player") is not None) or (mod.get("base") is not None and mod.get("per_player") is not None):
-        try:
-            base = int(mod.get("base", 0) or 0)
-        except Exception:
-            base = 0
-        try:
-            per_player = int(mod.get("per_player", 0) or 0)
-        except Exception:
-            per_player = 0
-        applied = base + per_player * get_player_count()
-        # If an explicit description exists, try to format it with the applied value
-        if isinstance(desc, str) and desc:
-            if "{value}" in desc or "{applied}" in desc or "{player_num}" in desc:
-                try:
-                    return desc.format(value=applied, applied=applied, player_num=applied)
-                except Exception:
-                    pass
-            # Backwards-compatible literal replacements
-            if "[player_num]" in desc:
-                return desc.replace("[player_num]", str(applied))
-
-        if mod.get("op") == "add":
-            sign = "+" if applied >= 0 else ""
-            return f"{sign}{applied} {mod.get('stat', 'stat')}"
-
-    # If a description exists but didn't match any dynamic placeholders,
-    # return it as-is.
+    # If there is an explicit description, return it (no placeholder present)
+    desc = mod.get("description")
     if desc:
         return desc
+
+    # If modifier uses per_player/base semantics, try to create a concise
+    # numeric description (handles infinite base too).
+    per = mod.get("per_player")
+    base = mod.get("base")
+    stat = mod.get("stat") or "stat"
+    op = mod.get("op") or ""
+    if per is not None:
+        per_n = int(per)
+        pn = get_player_count()
+
+        if base == "∞":
+            return f"∞ {stat}"
+        b = int(base) if base is not None else 0
+
+        total = b + per_n * pn
+        sign = "+" if op == "add" and isinstance(total, int) and total >= 0 else ""
+        return f"{sign}{total} {stat}"
+
+    stat = mod.get("stat") or "stat"
+    op = mod.get("op") or ""
+    value = mod.get("value")
 
     if op == "flag":
         if value is True or value is None:
@@ -2022,10 +1868,7 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
     enemy_entries = _get_enemy_behavior_entries_for_encounter(encounter)
 
     # Include invaders present in this encounter (avoid dupes by name)
-    try:
-        invader_entries = invader_panel._get_invader_behavior_entries_for_encounter(encounter)
-    except Exception:
-        invader_entries = []
+    invader_entries = invader_panel._get_invader_behavior_entries_for_encounter(encounter)
 
     if invader_entries:
         existing_names = {getattr(e, "name", None) for e in enemy_entries}
@@ -2100,10 +1943,7 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                             candidates.append(v)
 
                 for beh in candidates:
-                    try:
-                        top_type = str(beh.get("type", "")).lower()
-                    except Exception:
-                        top_type = ""
+                    top_type = str(beh.get("type", "")).lower()
 
                     for slot in ("left", "middle", "right"):
                         spec = beh.get(slot)

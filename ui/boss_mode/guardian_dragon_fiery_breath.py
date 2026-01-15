@@ -254,16 +254,8 @@ def _guardian_render_fiery_breath(cfg, pattern):
         base_img = Image.open(io.BytesIO(base)).convert("RGBA")
     elif isinstance(base, str):
         base_img = Image.open(base).convert("RGBA")
-    else:
-        # Last-ditch fallback: try to treat it as a file-like object
-        base_img = Image.open(base).convert("RGBA")
 
-    # Figure out where the assets directory is (parent of behavior cards)
-    try:
-        assets_dir = BEHAVIOR_CARDS_PATH.parent
-    except Exception:
-        from pathlib import Path
-        assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
+    assets_dir = BEHAVIOR_CARDS_PATH.parent
 
     # Load icons
     aoe_icon_path = assets_dir / "behavior icons" / "aoe_node.png"
@@ -272,10 +264,7 @@ def _guardian_render_fiery_breath(cfg, pattern):
     aoe_icon = Image.open(aoe_icon_path).convert("RGBA")
     dest_icon = Image.open(dest_icon_path).convert("RGBA")
 
-    try:
-        resample = Image.Resampling.LANCZOS
-    except AttributeError:
-        resample = Image.LANCZOS
+    resample = Image.Resampling.LANCZOS
 
     aoe_icon = aoe_icon.resize((250, 250), resample)
     dest_icon = dest_icon.resize((122, 122), resample)

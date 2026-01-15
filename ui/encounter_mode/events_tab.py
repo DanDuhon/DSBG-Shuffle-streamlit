@@ -39,15 +39,12 @@ def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _get_card_w(settings: Dict[str, Any]) -> int:
-    try:
-        w = int(
-            settings.get(
-                "ui_card_width",
-                st.session_state.get("ui_card_width", 360),
-            )
+    w = int(
+        settings.get(
+            "ui_card_width",
+            st.session_state.get("ui_card_width", 360),
         )
-    except Exception:
-        w = 360
+    )
     return max(240, min(560, w))
 
 
@@ -276,10 +273,7 @@ def render(settings: Dict[str, Any]) -> None:
             with mid:
                 if current_card:
                     p = Path(str(current_card))
-                    try:
-                        img_bytes = get_image_bytes_cached(str(p))
-                    except Exception:
-                        img_bytes = None
+                    img_bytes = get_image_bytes_cached(str(p))
 
                     if img_bytes:
                         data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
@@ -358,10 +352,7 @@ def render(settings: Dict[str, Any]) -> None:
 
             if current_card:
                 p = Path(str(current_card))
-                try:
-                    img_bytes = get_image_bytes_cached(str(p))
-                except Exception:
-                    img_bytes = None
+                img_bytes = get_image_bytes_cached(str(p))
 
                 if img_bytes:
                     data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
@@ -516,10 +507,7 @@ def render(settings: Dict[str, Any]) -> None:
             with right:
                 st.markdown("### Card")
                 p = Path(str(chosen["image_path"]))
-                try:
-                    img_bytes = get_image_bytes_cached(str(p))
-                except Exception:
-                    img_bytes = None
+                img_bytes = get_image_bytes_cached(str(p))
 
                 if img_bytes:
                     data_uri = bytes_to_data_uri(img_bytes, mime="image/png")

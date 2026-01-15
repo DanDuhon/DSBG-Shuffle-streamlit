@@ -233,13 +233,10 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 level_filter = str(level_values[0])
 
             if level_filter != "All":
-                try:
-                    level_int = int(level_filter)
-                    filtered_encounters = [
-                        e for e in filtered_encounters if e["level"] == level_int
-                    ]
-                except ValueError:
-                    pass
+                level_int = int(level_filter)
+                filtered_encounters = [
+                    e for e in filtered_encounters if e["level"] == level_int
+                ]
 
             if not filtered_encounters:
                 st.warning("No encounters at this level for the current filters.")
@@ -250,10 +247,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             ]
 
             default_label = st.session_state.get("last_encounter", {}).get("label")
-            try:
-                default_index = display_names.index(default_label) if default_label else 0
-            except ValueError:
-                default_index = 0
+            default_index = display_names.index(default_label) if default_label else 0
 
             selected_label = st.selectbox(
                 "Encounter",
@@ -284,16 +278,32 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             if not has_edited and key:
                 settings["edited_toggles"][key] = False
                 prev_state = False
+                # Persist forced-off state so sidebar reflects availability
+                st.session_state["user_settings"] = settings
+                save_settings(settings)
+
+            widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
+
+            def _on_edited_changed():
+                new_val = bool(st.session_state.get(widget_key, False))
+                settings.setdefault("edited_toggles", {})
+                settings[ key ] = new_val
+                st.session_state["user_settings"] = settings
+                save_settings(settings)
 
             use_edited = st.checkbox(
                 "Use lenlendan's edits",
                 value=prev_state,
-                key=f"edited_toggle_{encounter_name}_{selected_expansion}",
+                key=widget_key,
                 disabled=not has_edited,
+                on_change=_on_edited_changed,
             )
 
             if key:
                 settings["edited_toggles"][key] = use_edited
+                # Persist the change immediately so other UI (sidebar) sees it
+                st.session_state["user_settings"] = settings
+                save_settings(settings)
 
             toggle_changed = prev_state != use_edited
             st.session_state["last_toggle"] = use_edited
@@ -639,10 +649,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                             if img:
                                 ev["path"] = str(img)
                                 p = Path(ev["path"])
-                                try:
-                                    img_bytes = get_image_bytes_cached(str(p))
-                                except Exception:
-                                    img_bytes = None
+                                img_bytes = get_image_bytes_cached(str(p))
 
                                 if img_bytes:
                                     data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
@@ -703,13 +710,10 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             level_filter = str(level_values[0])
 
         if level_filter != "All":
-            try:
-                level_int = int(level_filter)
-                filtered_encounters = [
-                    e for e in filtered_encounters if e["level"] == level_int
-                ]
-            except ValueError:
-                pass
+            level_int = int(level_filter)
+            filtered_encounters = [
+                e for e in filtered_encounters if e["level"] == level_int
+            ]
 
         if not filtered_encounters:
             st.warning("No encounters at this level for the current filters.")
@@ -720,10 +724,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         ]
 
         default_label = st.session_state.get("last_encounter", {}).get("label")
-        try:
-            default_index = display_names.index(default_label) if default_label else 0
-        except ValueError:
-            default_index = 0
+        default_index = display_names.index(default_label) if default_label else 0
 
         selected_label = st.selectbox(
             "Encounter",
@@ -754,16 +755,32 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         if not has_edited and key:
             settings["edited_toggles"][key] = False
             prev_state = False
+            # Persist forced-off state so sidebar reflects availability
+            st.session_state["user_settings"] = settings
+            save_settings(settings)
+
+        widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
+
+        def _on_edited_changed_compact():
+            new_val = bool(st.session_state.get(widget_key, False))
+            settings.setdefault("edited_toggles", {})
+            settings[ key ] = new_val
+            st.session_state["user_settings"] = settings
+            save_settings(settings)
 
         use_edited = st.checkbox(
             "Use Edited Encounter",
             value=prev_state,
-            key=f"edited_toggle_{encounter_name}_{selected_expansion}",
+            key=widget_key,
             disabled=not has_edited,
+            on_change=_on_edited_changed_compact,
         )
 
         if key:
             settings["edited_toggles"][key] = use_edited
+            # Persist the change immediately so other UI (sidebar) sees it
+            st.session_state["user_settings"] = settings
+            save_settings(settings)
 
         toggle_changed = prev_state != use_edited
         st.session_state["last_toggle"] = use_edited

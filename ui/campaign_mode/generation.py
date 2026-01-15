@@ -87,10 +87,7 @@ def _resolve_v1_bosses_for_campaign(
 
 
 def _is_v1_campaign_eligible(encounter: Dict[str, Any]) -> bool:
-    try:
-        level = int(encounter["level"])
-    except Exception:
-        return False
+    level = int(encounter["level"])
     if level == 4:
         return True
     version = str(encounter.get("version", "")).upper()
@@ -203,28 +200,22 @@ def _pick_random_campaign_encounter(
     def _attempt_shuffle_sync(exp_choice: str, base_enc: Dict[str, Any]):
         key = f"{base_enc.get('name')}|{exp_choice}"
         use_edited = False
-        try:
-            if isinstance(settings, dict):
-                edited_toggles = settings.get("edited_toggles") or {}
-                use_edited = bool(edited_toggles.get(key, False))
-        except Exception:
-            use_edited = False
+        if isinstance(settings, dict):
+            edited_toggles = settings.get("edited_toggles") or {}
+            use_edited = bool(edited_toggles.get(key, False))
 
-        try:
-            res = shuffle_encounter(
-                base_enc,
-                character_count,
-                active_expansions,
-                exp_choice,
-                use_edited,
-                bool(
-                    settings_snapshot.get("only_original_enemies_for_campaigns", False)
-                ),
-                settings=settings_snapshot,
-                campaign_mode=True,
-            )
-        except Exception as exc:
-            return {"ok": False, "message": str(exc)}
+        res = shuffle_encounter(
+            base_enc,
+            character_count,
+            active_expansions,
+            exp_choice,
+            use_edited,
+            bool(
+                settings_snapshot.get("only_original_enemies_for_campaigns", False)
+            ),
+            settings=settings_snapshot,
+            campaign_mode=True,
+        )
         return res
 
     while flat_candidates:
@@ -264,14 +255,11 @@ def _campaign_encounter_signature(
     frozen: Dict[str, Any],
     default_level: int,
 ) -> Optional[tuple[str, int, str]]:
-    try:
-        return (
-            frozen.get("expansion"),
-            int(frozen.get("encounter_level", default_level)),
-            frozen.get("encounter_name"),
-        )
-    except Exception:
-        return None
+    return (
+        frozen.get("expansion"),
+        int(frozen.get("encounter_level", default_level)),
+        frozen.get("encounter_name"),
+    )
 
 
 def _v2_pick_scout_ahead_alt_frozen(
@@ -282,17 +270,11 @@ def _v2_pick_scout_ahead_alt_frozen(
     max_tries: int = 30,
     campaign: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
-    try:
-        lvl_int = int(level)
-    except Exception:
-        lvl_int = 1
+    lvl_int = int(level)
 
     exclude = exclude_signatures or set()
 
-    try:
-        player_count = get_player_count_from_settings(settings)
-    except Exception:
-        player_count = 1
+    player_count = get_player_count_from_settings(settings)
 
     active_expansions = settings.get("active_expansions") or []
     if not active_expansions:
@@ -304,50 +286,32 @@ def _v2_pick_scout_ahead_alt_frozen(
 
     valid_sets = _load_valid_sets_cached()
 
-    try:
-        if isinstance(campaign, dict):
-            pool = campaign.get("v2_extra_pool")
-            if isinstance(pool, list) and pool:
-                for i, cand in enumerate(list(pool)):
-                    try:
-                        cand_lvl = int(
-                            cand.get("encounter_level") or cand.get("level") or 0
-                        )
-                    except Exception:
-                        cand_lvl = 0
-                    if cand_lvl != lvl_int:
-                        continue
-                    sig = _campaign_encounter_signature(cand, lvl_int)
-                    if sig is not None and sig in exclude:
-                        continue
-                    try:
-                        pool.remove(cand)
-                    except Exception:
-                        pass
-                    return cand
-    except Exception as exc:
-        try:
-            if isinstance(campaign, dict):
-                campaign.setdefault("v2_debug_log", []).append(
-                    f"picker exception: {exc}"
+    if isinstance(campaign, dict):
+        pool = campaign.get("v2_extra_pool")
+        if isinstance(pool, list) and pool:
+            for i, cand in enumerate(list(pool)):
+                cand_lvl = int(
+                    cand.get("encounter_level") or cand.get("level") or 0
                 )
-        except Exception:
-            pass
+                if cand_lvl != lvl_int:
+                    continue
+                sig = _campaign_encounter_signature(cand, lvl_int)
+                if sig is not None and sig in exclude:
+                    continue
+                pool.remove(cand)
+                return cand
 
     tries = max(1, int(max_tries or 30))
     for _ in range(tries):
-        try:
-            cand = _pick_random_campaign_encounter(
-                encounters_by_expansion=encounters_by_expansion,
-                valid_sets=valid_sets,
-                character_count=player_count,
-                active_expansions=active_expansions,
-                level=lvl_int,
-                settings=settings,
-                eligibility_fn=_is_v2_campaign_eligible,
-            )
-        except Exception:
-            continue
+        cand = _pick_random_campaign_encounter(
+            encounters_by_expansion=encounters_by_expansion,
+            valid_sets=valid_sets,
+            character_count=player_count,
+            active_expansions=active_expansions,
+            level=lvl_int,
+            settings=settings,
+            eligibility_fn=_is_v2_campaign_eligible,
+        )
 
         sig = _campaign_encounter_signature(cand, lvl_int)
         if sig is not None and sig in exclude:
@@ -441,12 +405,7 @@ def _generate_v1_campaign(
             return
 
         for idx, lvl in enumerate(levels):
-            try:
-                lvl_int = int(lvl)
-            except Exception as exc:
-                raise ValueError(
-                    f"Invalid encounter level '{lvl}' for boss '{boss_name}'."
-                ) from exc
+            lvl_int = int(lvl)
 
             frozen = _pick_v1_prefer_unused(lvl_int)
 
@@ -619,12 +578,7 @@ def _generate_v2_campaign(
             return
 
         for idx, lvl in enumerate(levels):
-            try:
-                lvl_int = int(lvl)
-            except Exception as exc:
-                raise ValueError(
-                    f"Invalid encounter level '{lvl}' for boss '{boss_name}'."
-                ) from exc
+            lvl_int = int(lvl)
 
             options = _build_options_for_level(lvl_int)
 
@@ -662,83 +616,62 @@ def _generate_v2_campaign(
     if mega_name:
         _add_stage("mega", mega_name)
 
-    try:
-        encounter_nodes = [n for n in nodes if n.get("kind") == "encounter"]
-        total_spaces = len(encounter_nodes)
-        pool_size = max(0, total_spaces + 2)
+    encounter_nodes = [n for n in nodes if n.get("kind") == "encounter"]
+    total_spaces = len(encounter_nodes)
+    pool_size = max(0, total_spaces + 2)
 
-        pool: List[Dict[str, Any]] = []
-        pool_sigs: set[tuple[str, int, str]] = set()
+    pool: List[Dict[str, Any]] = []
+    pool_sigs: set[tuple[str, int, str]] = set()
 
-        used = set(used_signatures) if isinstance(used_signatures, set) else set()
+    used = set(used_signatures) if isinstance(used_signatures, set) else set()
 
-        max_attempts = max(200, pool_size * 20)
-        attempts = 0
+    max_attempts = max(200, pool_size * 20)
+    attempts = 0
 
-        avail_levels = []
-        for n in encounter_nodes:
-            try:
-                lvl = int(n.get("level") or 0)
-            except Exception:
-                lvl = 0
-            if lvl > 0:
-                avail_levels.append(lvl)
-        if not avail_levels:
-            avail_levels = [1]
+    avail_levels = []
+    for n in encounter_nodes:
+        lvl = int(n.get("level") or 0)
+        if lvl > 0:
+            avail_levels.append(lvl)
+    if not avail_levels:
+        avail_levels = [1]
 
-        while len(pool) < pool_size and attempts < max_attempts:
-            attempts += 1
-            try:
-                target_level = int(random.choice(avail_levels))
-            except Exception:
-                target_level = 1
+    while len(pool) < pool_size and attempts < max_attempts:
+        attempts += 1
+        target_level = int(random.choice(avail_levels))
 
-            try:
-                cand = _pick_random_campaign_encounter(
-                    encounters_by_expansion=encounters_by_expansion,
-                    valid_sets=valid_sets,
-                    character_count=player_count,
-                    active_expansions=active_expansions,
-                    level=target_level,
-                    settings=settings,
-                    eligibility_fn=_is_v2_campaign_eligible,
-                )
-            except Exception:
-                continue
+        cand = _pick_random_campaign_encounter(
+            encounters_by_expansion=encounters_by_expansion,
+            valid_sets=valid_sets,
+            character_count=player_count,
+            active_expansions=active_expansions,
+            level=target_level,
+            settings=settings,
+            eligibility_fn=_is_v2_campaign_eligible,
+        )
 
-            try:
-                cand_level = int(cand.get("encounter_level") or cand.get("level") or 0)
-            except Exception:
-                cand_level = 0
+        cand_level = int(cand.get("encounter_level") or cand.get("level") or 0)
 
-            sig = _campaign_encounter_signature(cand, cand_level)
-            if sig is None:
-                continue
-            if sig in used:
-                continue
-            if sig in pool_sigs:
-                continue
+        sig = _campaign_encounter_signature(cand, cand_level)
+        if sig is None:
+            continue
+        if sig in used:
+            continue
+        if sig in pool_sigs:
+            continue
 
-            pool.append(cand)
-            pool_sigs.add(sig)
+        pool.append(cand)
+        pool_sigs.add(sig)
 
-        campaign["v2_extra_pool"] = pool
-        try:
-            campaign["v2_debug_log"] = [
-                f"Starting pool generation: target_size={pool_size}, total_spaces={total_spaces}"
-            ]
-            campaign["v2_debug_log"].append(
-                f"Available levels: {sorted(set(avail_levels))}"
-            )
-            campaign["v2_debug_log"].append(
-                f"Finished pool generation: attempts={attempts}, final_pool_size={len(pool)}"
-            )
-        except Exception:
-            pass
-    except Exception as exc:
-        try:
-            campaign["v2_debug_log"] = [f"pool generation error: {exc}"]
-        except Exception:
-            pass
+    campaign["v2_extra_pool"] = pool
+    campaign["v2_debug_log"] = [
+        f"Starting pool generation: target_size={pool_size}, total_spaces={total_spaces}"
+    ]
+    campaign["v2_debug_log"].append(
+        f"Available levels: {sorted(set(avail_levels))}"
+    )
+    campaign["v2_debug_log"].append(
+        f"Finished pool generation: attempts={attempts}, final_pool_size={len(pool)}"
+    )
 
     return campaign

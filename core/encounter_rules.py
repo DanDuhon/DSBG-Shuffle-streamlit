@@ -721,6 +721,18 @@ ENCOUNTER_RULES: EncounterRulesMap = {
                 phase="enemy"
             ),
         ],
+        "edited": [
+            EncounterRule(
+                template="Onslaught: Each tile begins the encounter as active (all enemies on active tiles act on their turn).",
+                timer_eq=0
+            ),
+            EncounterRule(
+                template="Respawn all enemies on Tile 2 then reset the Timer.",
+                timer_eq=3,
+                phase="enemy",
+                reset_timer=True,
+            ),
+        ],
     },
     "A Trusty Ally|Tomb of Giants": {
         "default": [

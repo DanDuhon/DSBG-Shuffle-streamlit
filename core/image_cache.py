@@ -85,10 +85,7 @@ def bytes_to_data_uri(data: object, mime: str = "image/png") -> str:
         bytes_data = bytes(data)
     # file-like buffer
     elif hasattr(data, "getvalue"):
-        try:
-            bytes_data = data.getvalue()
-        except Exception:
-            raise TypeError("Unsupported buffer-like object for image conversion")
+        bytes_data = data.getvalue()
     else:
         raise TypeError("bytes_to_data_uri expects bytes, PIL.Image, or a buffer with getvalue()")
 

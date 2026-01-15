@@ -282,10 +282,7 @@ def render_text_template(
         parts = [p.strip() for p in indices_str.split(",") if p.strip()]
         names: List[str] = []
         for part in parts:
-            try:
-                idx = int(part)
-            except Exception:
-                continue
+            idx = int(part)
             if 1 <= idx <= len(enemy_names):
                 n = enemy_names[idx - 1]
                 if n not in names:

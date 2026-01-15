@@ -34,6 +34,17 @@ _SPECIAL_TIMER_BEHAVIORS = {
             "reset_button_log": "Timer reset to 0 because a tile was made active.",
         }
     },
+    "Lost Chapel|Tomb of Giants": {
+        "edited": {
+            "manual_increment": True,
+            "manual_increment_label": "Increase Timer (ended turn on a tile with no enemies)",
+            "manual_increment_help": (
+                "The Timer increases only when a character ends their turn on a tile with no enemies. "
+                "Do not increment the Timer manually."
+            ),
+            "manual_increment_log": "Timer increased due to a character ending their turn on a tile with no enemies.",
+        }
+    },
     "The Bell Tower|The Sunless City": {
         "default": {
             # Don't auto-increase the Timer on Player→Enemy transitions.
@@ -49,6 +60,22 @@ _SPECIAL_TIMER_BEHAVIORS = {
             "manual_increment_log": "Timer increased due to lever activation.",
             # When this trigger id steps, increment the Timer automatically.
             "increment_on_trigger": "bell_tower_lever",
+        }
+    },
+    "Maze of the Dead|Tomb of Giants": {
+        "edited": {
+            # Start the Timer at 3 for the edited variant
+            "initial_timer": 3,
+            # Prevent automatic timer increase at end of Player -> Enemy
+            "manual_increment": True,
+            # Hide the generic manual-increment button; timer is driven by levers
+            "hide_manual_increment_button": True,
+            # Decrease the timer by 1 when any of the lever triggers activate
+            "decrement_on_trigger": [
+                "maze_of_the_dead_lever1",
+                "maze_of_the_dead_lever2",
+                "maze_of_the_dead_lever3",
+            ],
         }
     },
 }

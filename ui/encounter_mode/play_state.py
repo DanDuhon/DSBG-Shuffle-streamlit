@@ -13,10 +13,7 @@ def get_encounter_id(encounter: dict):
 
 def get_player_count() -> int:
     """Return the current player count from session_state, clamped to at least 1."""
-    try:
-        pc = int(st.session_state.get("player_count", 1))
-    except Exception:
-        pc = 1
+    pc = int(st.session_state.get("player_count", 1))
     return max(pc, 1)
 
 
@@ -33,6 +30,8 @@ def ensure_play_state(encounter_id):
             "phase": "enemy",   # "enemy" | "player"
             "timer": 0,         # starts at 0, increments after player phase
             "log": [],
+            # Internal flag: freshly initialized state for this encounter.
+            "_fresh": True,
         }
         st.session_state["encounter_play"] = state
         # Clear any transient trigger messages when switching encounters.

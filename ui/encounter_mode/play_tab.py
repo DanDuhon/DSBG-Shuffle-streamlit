@@ -41,10 +41,6 @@ def _keyword_label(keyword: str) -> str:
     if isinstance(txt, str) and txt.strip():
         return txt.split("—", 1)[0].strip()
 
-    # Fallback: camelCase -> "Title Case"
-    spaced = re.sub(r"(?<!^)(?=[A-Z])", " ", str(keyword)).replace("_", " ").strip()
-    return spaced.title() if spaced else str(keyword)
-
 
 def _get_encounter_keywords(name: str, expansion: str, edited: bool) -> list[str]:
     src = editedEncounterKeywords if edited else encounterKeywords
@@ -104,12 +100,9 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
     def _sig(fr: Any, default_level: int) -> Optional[tuple[str, int, str]]:
         if not isinstance(fr, dict):
             return None
-        try:
-            exp = str(fr.get("expansion") or "")
-            lvl = int(fr.get("encounter_level", default_level))
-            nm = str(fr.get("encounter_name") or "")
-        except Exception:
-            return None
+        exp = str(fr.get("expansion") or "")
+        lvl = int(fr.get("encounter_level", default_level))
+        nm = str(fr.get("encounter_name") or "")
         if not exp or not nm:
             return None
         return (exp, lvl, nm)
@@ -145,58 +138,17 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
         )
         if res and res.get("ok"):
             img_obj = res.get("card_img")
-            img_bytes = None
-            try:
-                # bytes-like
-                if isinstance(img_obj, (bytes, bytearray)):
-                    img_bytes = bytes(img_obj)
-                # BytesIO or file-like
-                elif hasattr(img_obj, "read") and callable(img_obj.read):
-                    try:
-                        pos = None
-                        try:
-                            pos = img_obj.tell()
-                        except Exception:
-                            pos = None
-                        img_obj.seek(0)
-                    except Exception:
-                        pass
-                    try:
-                        img_bytes = img_obj.read()
-                    except Exception:
-                        img_bytes = None
-                    try:
-                        if pos is not None:
-                            img_obj.seek(pos)
-                    except Exception:
-                        pass
-                # PIL Image (duck-typed by having a save method)
-                elif hasattr(img_obj, "save") and callable(img_obj.save):
-                    try:
-                        buf = BytesIO()
-                        img_obj.save(buf, format="PNG")
-                        img_bytes = buf.getvalue()
-                    except Exception:
-                        img_bytes = None
-                # Path string
-                elif isinstance(img_obj, str):
-                    try:
-                        img_bytes = get_image_bytes_cached(img_obj)
-                    except Exception:
-                        img_bytes = None
-            except Exception:
-                img_bytes = None
-
-                if img_bytes:
-                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{data_uri}" style="width:100%">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+            # BytesIO or file-like
+            if hasattr(img_obj, "read") and callable(img_obj.read):
+                pos = None
+                pos = img_obj.tell()
+                img_obj.seek(0)
+                if pos is not None:
+                    img_obj.seek(pos)
+            # PIL Image (duck-typed by having a save method)
+            elif hasattr(img_obj, "save") and callable(img_obj.save):
+                buf = BytesIO()
+                img_obj.save(buf, format="PNG")
             else:
                 st.caption(label)
         else:
@@ -355,15 +307,12 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                     if isinstance(pending, dict) and pending.get("path"):
                         img_ref = pending.get("path")
                         img_bytes = None
-                        try:
-                            if isinstance(img_ref, (bytes, bytearray)):
-                                img_bytes = bytes(img_ref)
-                            elif isinstance(img_ref, str):
-                                img_bytes = get_image_bytes_cached(img_ref)
-                            elif hasattr(img_ref, "read") and callable(img_ref.read):
-                                img_bytes = img_ref.read()
-                        except Exception:
-                            img_bytes = None
+                        if isinstance(img_ref, (bytes, bytearray)):
+                            img_bytes = bytes(img_ref)
+                        elif isinstance(img_ref, str):
+                            img_bytes = get_image_bytes_cached(img_ref)
+                        elif hasattr(img_ref, "read") and callable(img_ref.read):
+                            img_bytes = img_ref.read()
 
                         if img_bytes:
                             data_uri = bytes_to_data_uri(img_bytes, mime="image/jpeg")
@@ -376,10 +325,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                                 unsafe_allow_html=True,
                             )
                     elif isinstance(pending, str) and pending:
-                        try:
-                            img_bytes = get_image_bytes_cached(pending)
-                        except Exception:
-                            img_bytes = None
+                        img_bytes = get_image_bytes_cached(pending)
                         if img_bytes:
                             data_uri = bytes_to_data_uri(img_bytes, mime="image/jpeg")
                             st.markdown(
@@ -478,10 +424,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                             row["pending_enc"] = None
                             st.rerun()
 
-                        try:
-                            lvl_int = int(target.get("level") or 1)
-                        except Exception:
-                            lvl_int = 1
+                        lvl_int = int(target.get("level") or 1)
 
                         # Exclude signatures of all current options so we don't re-roll the same card.
                         exclude: set[tuple[str, int, str]] = set()
@@ -546,28 +489,38 @@ def render(settings: dict, campaign: bool=False) -> None:
     edited = _detect_edited_flag(encounter_key, encounter, settings)
 
     timer_behavior = timer_mod.get_timer_behavior(encounter, edited=edited)
+    # If the play state was just created, honor any initial_timer from
+    # the encounter's timer behavior (e.g., Maze of the Dead edited starts at 3).
+    if play.pop("_fresh", False):
+        init = timer_behavior.get("initial_timer")
+        if isinstance(init, int) and init >= 0:
+            play["timer"] = int(init)
+            play_state.log_entry(play, f"Timer initialized to {init} by encounter rule")
+
     action = play_state.apply_pending_action(play, timer_behavior)
 
     # Apply any encounter rules that have side-effects when they become
     # active. For example, some rules may reset the Timer to 0 when the
     # Timer reaches a specific value during the Enemy Phase.
-    try:
-        active_rules = get_rules_for_encounter(
-            encounter_key=encounter_key,
-            edited=edited,
-            timer=play["timer"],
-            phase=play["phase"],
-        )
-        for r in active_rules:
-            if getattr(r, "reset_timer", False):
-                old = play.get("timer", 0)
-                play["timer"] = 0
-                play_state.log_entry(play, f"Timer reset to 0 due to rule: {r.template} (was {old})")
-                # Only reset once per cycle
-                break
-    except Exception:
-        # Be defensive: failure to apply rule effects should not break the UI.
-        pass
+    active_rules = get_rules_for_encounter(
+        encounter_key=encounter_key,
+        edited=edited,
+        timer=play["timer"],
+        phase=play["phase"],
+    )
+    for r in active_rules:
+        if getattr(r, "reset_timer", False):
+            old = play.get("timer", 0)
+            play["timer"] = 0
+            play_state.log_entry(play, f"Timer reset to 0 due to rule: {r.template} (was {old})")
+            # If this is the edited Mass Grave rule, record a respawn
+            enc_name = encounter.get("encounter_name") or encounter.get("name") or ""
+            if edited and enc_name == "The Mass Grave":
+                # Increment the persistent reset counter so mods scale cumulatively
+                play["mass_grave_reset_count"] = int(play.get("mass_grave_reset_count", 0) or 0) + 1
+                play_state.log_entry(play, f"Mass Grave respawn occurred (count={play.get('mass_grave_reset_count')}).")
+            # Only reset once per cycle
+            break
 
     if action == "reset":
         invader_panel.reset_invaders_for_encounter(encounter)

@@ -165,34 +165,77 @@ positions = {
     },
 }
 
-editedEncounterKeywords = {
+def _discover_edited_encounters(dir_path: Path) -> dict:
+    """
+    Inspect the edited encounter cards directory and return a mapping
+    {(encounter_name, expansion): []} for each edited card found.
+
+    Filenames are expected in the form:
+        <Expansion>_<level>_<Encounter Name>.<ext>
+    We parse only the expansion and encounter name; the level is ignored
+    for the purpose of detecting edited availability.
+    """
+    out: dict = {}
+    if not dir_path.exists():
+        return {}
+    for p in dir_path.iterdir():
+        if not p.is_file():
+            continue
+        name = p.stem
+        parts = name.split("_", 2)
+        if len(parts) < 3:
+            continue
+        expansion, _level, encounter_name = parts
+        expansion = expansion.strip()
+        encounter_name = encounter_name.strip()
+        if encounter_name and expansion:
+            out[(encounter_name, expansion)] = []
+    return out
+
+
+# Static keyword overrides for edited encounters. These preserve the
+# per-encounter keyword lists that describe edited variants. Values here
+# are used when an edited card file is present; otherwise the discovered
+# set controls availability and an empty list is used.
+EDITED_ENCOUNTER_KEYWORDS_STATIC = {
     ("Eye of the Storm", "Painted World of Ariamis"): ["hidden","timer"],
-    ("Frozen Revolutions", "Painted World of Ariamis"): ["trial"],
     ("Inhospitable Ground", "Painted World of Ariamis"): ["snowstorm", "bitterCold"],
-    ('No Safe Haven', 'Painted World of Ariamis'): ["poisonMist", "snowstorm", "bitterCold"],
+    ("Monstrous Maw", "Painted World of Ariamis"): ["poisonMist"],
+    ("No Safe Haven", "Painted World of Ariamis"): ["poisonMist", "snowstorm", "bitterCold"],
     ("Promised Respite", "Painted World of Ariamis"): ["snowstorm", "bitterCold"],
     ("The First Bastion", "Painted World of Ariamis"): ["trial","timer","timer","timer"],
     ("Velka's Chosen", "Painted World of Ariamis"): ["barrage"],
     ("Depths of the Cathedral", "The Sunless City"): ["mimic"],
-    ("Flooded Fortress", "The Sunless City"): ["trial"],#, "gang", "difficultTerrain", "permanentTraps"],
+    ("Flooded Fortress", "The Sunless City"): ["trial", "gang"],
     ("Illusionary Doorway", "The Sunless City"): ["illusion","timer"],
     ("Parish Church", "The Sunless City"): ["mimic", "illusion", "trial","timer","timer"],
     ("Kingdom's Messengers", "The Sunless City"): ["trial"],
     ("The Grand Hall", "The Sunless City"): ["trial","mimic"],
-    ("Twilight Falls", "The Sunless City"): ["illusion"],
-    ("Dark Resurrection", "Tomb of Giants"): ["darkness"],
-    ("Death's Precipice", "Tomb of Giants"): ["barrage"],#,"blockedExits", "cramped"],
+    ("Trophy Room", "The Sunless City"): ["barrage"],
+    ("Twilight Falls", "The Sunless City"): ["illusion", "gang"],
+    ("Dark Resurrection", "Tomb of Giants"): ["darkness", "timer"],
+    ("Death's Precipice", "Tomb of Giants"): ["barrage"],
     ("Far From the Sun", "Tomb of Giants"): ["darkness"],
     ("Giant's Coffin", "Tomb of Giants"): ["onslaught","trial","timer"],
     ("In Deep Water", "Tomb of Giants"): ["timer"],
     ("Lakeview Refuge", "Tomb of Giants"): ["onslaught","darkness","trial"],
     ("Last Rites", "Tomb of Giants"): ["timer"],
-    ("Last Shred of Light", "Tomb of Giants"): ["darkness"],
+    ("Last Shred of Light", "Tomb of Giants"): ["darkness", "timer"],
+    ("Lost Chapel", "Tomb of Giants"): ["timer"],
     ("Pitch Black", "Tomb of Giants"): ["darkness"],
     ("Skeleton Overlord", "Tomb of Giants"): ["timer"],
+    ("The Abandoned Chest", "Tomb of Giants"): ["trial"],
     ("The Beast From the Depths", "Tomb of Giants"): ["trial"],
     ("The Locked Grave", "Tomb of Giants"): ["trial"],
-    ("The Mass Grave", "Tomb of Giants"): ["onslaught","timer","timer","timer"]
+    ("The Mass Grave", "Tomb of Giants"): ["onslaught","timer"],
+}
+
+# Build editedEncounterKeywords dynamically from the edited encounter cards
+# folder so availability detection is driven by assets present on disk.
+# Use the static keywords when available, otherwise default to empty list.
+_discovered = _discover_edited_encounters(EDITED_ENCOUNTER_CARDS_DIR)
+editedEncounterKeywords = {
+    k: EDITED_ENCOUNTER_KEYWORDS_STATIC.get(k, []) for k in _discovered.keys()
 }
 
 encounterKeywords = {

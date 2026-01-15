@@ -75,19 +75,12 @@ def _apply_boss_defeated(
     current_souls = int(state.get("souls") or 0)
 
     # 1) Pick up any dropped souls token that is sitting on this boss.
-    # Support both the canonical `souls_token_*` fields and the older
-    # `dropped_souls` fallback to ensure previously-recorded failures
-    # are reclaimed when the space is completed.
     token_node_id = state.get("souls_token_node_id")
     token_amount = int(state.get("souls_token_amount") or 0)
     dropped_amount = int(state.get("dropped_souls") or 0)
 
-    try:
-        tid = None if token_node_id is None else str(token_node_id)
-        nid = None if node_id is None else str(node_id)
-    except Exception:
-        tid = token_node_id
-        nid = node_id
+    tid = None if token_node_id is None else str(token_node_id)
+    nid = None if node_id is None else str(node_id)
 
     if tid is not None and nid is not None and tid == nid and (token_amount > 0 or dropped_amount > 0):
         # Use the larger of the two amounts to avoid double-counting when
@@ -126,30 +119,27 @@ def _apply_boss_defeated(
     # Update chapter expander visibility: close the defeated chapter and
     # open the next chapter expander (if any). Use version-prefixed keys so
     # V1/V2 UI state remains separate.
-    try:
-        order = ["mini", "main", "mega"]
-        if stage in order:
-            idx = order.index(stage)
-            cur_key = f"campaign_{version.lower()}_chapter_expander_{stage}"
-            st.session_state[cur_key] = False
+    order = ["mini", "main", "mega"]
+    if stage in order:
+        idx = order.index(stage)
+        cur_key = f"campaign_{version.lower()}_chapter_expander_{stage}"
+        st.session_state[cur_key] = False
 
-            # Find the next stage that exists in the campaign and is not complete
-            next_stage = None
-            for j in range(idx + 1, len(order)):
-                candidate = order[j]
-                for n in campaign.get("nodes") or []:
-                    if n.get("kind") == "boss" and n.get("stage") == candidate:
-                        if n.get("status") != "complete":
-                            next_stage = candidate
-                        break
-                if next_stage:
+        # Find the next stage that exists in the campaign and is not complete
+        next_stage = None
+        for j in range(idx + 1, len(order)):
+            candidate = order[j]
+            for n in campaign.get("nodes") or []:
+                if n.get("kind") == "boss" and n.get("stage") == candidate:
+                    if n.get("status") != "complete":
+                        next_stage = candidate
                     break
-
             if next_stage:
-                next_key = f"campaign_{version.lower()}_chapter_expander_{next_stage}"
-                st.session_state[next_key] = True
-    except Exception:
-        pass
+                break
+
+        if next_stage:
+            next_key = f"campaign_{version.lower()}_chapter_expander_{next_stage}"
+            st.session_state[next_key] = True
 
     # 4) When the party returns to the bonfire, clear completion on all encounters.
     # This applies to both V1 and V2; shortcuts remain valid.

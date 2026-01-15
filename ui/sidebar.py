@@ -57,6 +57,11 @@ def _sync_invader_caps():
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
 
+    # Use the live session copy of user_settings when available so
+    # changes made elsewhere (e.g. toggling an encounter) appear
+    # immediately in the sidebar without waiting for a full rerun.
+    settings = st.session_state.get("user_settings", settings) or {}
+
     caps = settings.get("max_invaders_per_level") or {}
 
     # Expansions
@@ -263,25 +268,30 @@ def render_sidebar(settings: dict):
     with st.sidebar.expander("✏️ Edited Encounters", expanded=False):
         settings.setdefault("edited_toggles", {})
 
-        prev_global = bool(settings.get("edited_encounters_global", False))
-        # Checkbox is persisted in session state so it remains across reruns
-        global_val = st.checkbox(
-            "Enable edited encounters (global)",
-            value=prev_global,
-            key="edited_encounters_global",
-        )
-
-        # Update persisted settings when the widget value differs from saved
-        curr_global = bool(st.session_state.get("edited_encounters_global", False))
-        settings["edited_encounters_global"] = curr_global
-
-        if curr_global != prev_global:
+        def _edited_global_changed():
+            # Called when the global edited-encounters checkbox changes.
+            curr = bool(st.session_state.get("edited_encounters_global", False))
+            settings.setdefault("edited_toggles", {})
             # Apply the global setting to all known edited encounter toggles
             for enc_name, enc_exp in sorted(editedEncounterKeywords):
                 k = f"{enc_name}|{enc_exp}"
-                settings["edited_toggles"][k] = curr_global
+                settings["edited_toggles"][k] = curr
+                # Also update the per-encounter checkbox widget state so
+                # the checkbox in the Encounter setup reflects this change
+                widget_key = f"edited_toggle_{enc_name}_{enc_exp}"
+                st.session_state[widget_key] = curr
+            settings["edited_encounters_global"] = curr
             st.session_state["user_settings"] = settings
             save_settings(settings)
+
+        prev_global = bool(settings.get("edited_encounters_global", False))
+        # Checkbox is persisted in session state so it remains across reruns
+        st.checkbox(
+            "Enable edited encounters (global)",
+            value=prev_global,
+            key="edited_encounters_global",
+            on_change=_edited_global_changed,
+        )
 
         st.markdown("**Edited encounters available:**")
         if not editedEncounterKeywords:
@@ -289,10 +299,17 @@ def render_sidebar(settings: dict):
         else:
             # Show list with status emoji
             edited_list = sorted(editedEncounterKeywords, key=lambda t: (t[1], t[0]))
-            toggles = settings.get("edited_toggles", {})
+            # Read toggles from the live session settings so changes elsewhere
+            # are visible immediately.
+            toggles = st.session_state.get("user_settings", {}).get("edited_toggles", {})
             for enc_name, enc_exp in edited_list:
                 k = f"{enc_name}|{enc_exp}"
-                enabled = bool(toggles.get(k, False))
+                # Prefer the live per-encounter checkbox widget state if present
+                widget_key = f"edited_toggle_{enc_name}_{enc_exp}"
+                if widget_key in st.session_state:
+                    enabled = bool(st.session_state.get(widget_key, False))
+                else:
+                    enabled = bool(toggles.get(k, False))
                 emoji = "✅" if enabled else "❌"
                 st.write(f"{emoji} {enc_name} ({enc_exp})")
 

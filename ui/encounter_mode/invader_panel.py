@@ -80,12 +80,7 @@ def reset_invaders_for_encounter(encounter: dict) -> None:
         state_key = _invader_state_key(entry, encounter)
 
         # Build a brand-new state + cfg for this invader
-        try:
-            state, cfg = _new_state_from_file(str(entry.path))
-        except Exception:
-            # If loading fails, remove any stale state and continue
-            st.session_state.pop(state_key, None)
-            continue
+        state, cfg = _new_state_from_file(str(entry.path))
 
         state["ngplus_level"] = current_ng
         
@@ -177,14 +172,7 @@ def _get_invader_behavior_entries_for_encounter(encounter: dict) -> List[Behavio
             if name:
                 invader_names.append(str(name))
 
-    # --- 2) Fallback: derive from enemy display names ---
-    if not invader_names:
-        invader_names = _get_enemy_display_names(encounter)
-
-    if not invader_names:
-        return []
-
-    # --- 3) Build a lookup of invader BehaviorEntries by normalized name ---
+    # --- 2) Build a lookup of invader BehaviorEntries by normalized name ---
     catalog = build_behavior_catalog()
     by_name: Dict[str, BehaviorEntry] = {}
 
@@ -195,7 +183,7 @@ def _get_invader_behavior_entries_for_encounter(encounter: dict) -> List[Behavio
                 # First one wins; avoid overwriting if multiple share a name
                 by_name.setdefault(key, entry)
 
-    # --- 4) Preserve encounter order, avoid duplicates ---
+    # --- 3) Preserve encounter order, avoid duplicates ---
     seen: set[str] = set()
     result: List[BehaviorEntry] = []
 
@@ -238,13 +226,6 @@ def _get_enemy_display_names(encounter: dict) -> List[str]:
             )
             if name:
                 names.append(str(name))
-        else:
-            # Index into the global enemyNames mapping from assets.
-            # Fallback to str(eid) if we can't resolve it cleanly.
-            try:
-                names.append(enemyNames[eid])
-            except Exception:
-                names.append(str(eid))
 
     return names
 
@@ -410,14 +391,11 @@ def _get_invader_card_images(
     behavior_bytes: Optional[bytes] = None
 
     data_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
-    try:
-        data_bytes = render_data_card_cached(
-            data_path,
-            cfg.raw,
-            is_boss=True,  # invaders use boss-style data cards
-        )
-    except Exception:
-        data_bytes = None
+    data_bytes = render_data_card_cached(
+        data_path,
+        cfg.raw,
+        is_boss=True,  # invaders use boss-style data cards
+    )
 
     # --- Current behavior card ---
     current = state.get("current_card")
@@ -437,14 +415,11 @@ def _get_invader_card_images(
     beh_json = cfg.behaviors.get(beh_key, {})
     current_path = _behavior_image_path(cfg, beh_key)
 
-    try:
-        behavior_bytes = render_behavior_card_cached(
-            current_path,
-            beh_json,
-            is_boss=True,  # boss-style layout
-        )
-    except Exception:
-        behavior_bytes = None
+    behavior_bytes = render_behavior_card_cached(
+        current_path,
+        beh_json,
+        is_boss=True,  # boss-style layout
+    )
 
     return data_bytes, behavior_bytes
 
@@ -519,10 +494,7 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
             thresholds = getattr(_ent, "heatup_thresholds", []) or []
             crossed = False
             for t in thresholds:
-                try:
-                    t_int = int(t)
-                except Exception:
-                    continue
+                t_int = int(t)
                 if prev > t_int >= val:
                     crossed = True
                     break

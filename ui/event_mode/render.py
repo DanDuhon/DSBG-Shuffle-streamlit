@@ -64,10 +64,7 @@ def img_to_base64(path: str) -> str:
     uri = get_image_data_uri_cached(path)
     if not uri:
         return ""
-    try:
-        return uri.split(",", 1)[1]
-    except Exception:
-        return ""
+    return uri.split(",", 1)[1]
 
 
 def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_height=300):
@@ -84,14 +81,11 @@ def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_heig
     for i, path in enumerate(discard_pile):
         top = i * offset
         title = os.path.splitext(os.path.basename(path))[0]
-        try:
-            src = __import__(
-                "core.image_cache", fromlist=["get_image_data_uri_cached"]
-            ).get_image_data_uri_cached(path)
-            if not src:
-                raise Exception("empty data uri")
-        except Exception:
-            src = path
+        src = __import__(
+            "core.image_cache", fromlist=["get_image_data_uri_cached"]
+        ).get_image_data_uri_cached(path)
+        if not src:
+            raise Exception("empty data uri")
         cards_html.append(
             f'<img src="{src}" '
             f'style="position:absolute; top:{top}px; left:0; '
@@ -185,10 +179,7 @@ def render(settings: Dict[str, Any]) -> None:
             raw_map: Dict[str, Any] = b.get("cards") or {}
             cards_map: Dict[str, int] = {}
             for k, v in raw_map.items():
-                try:
-                    copies = int(v or 0)
-                except Exception:
-                    copies = 0
+                copies = int(v or 0)
                 if copies <= 0:
                     continue
                 canon = Path(str(k)).as_posix()
@@ -246,10 +237,7 @@ def render(settings: Dict[str, Any]) -> None:
         raw_map: Dict[str, Any] = b.get("cards") or {}
         cards_map: Dict[str, int] = {}
         for k, v in raw_map.items():
-            try:
-                copies = int(v or 0)
-            except Exception:
-                copies = 0
+            copies = int(v or 0)
             if copies <= 0:
                 continue
             canon = Path(str(k)).as_posix()
@@ -278,18 +266,9 @@ def render(settings: Dict[str, Any]) -> None:
             )
             with r_img:
                 p = Path(img_path)
-                try:
-                    src = get_image_data_uri_cached(str(p))
-                    if not src:
-                        raise Exception("empty data uri")
-                except Exception:
-                    src = str(p)
+                src = get_image_data_uri_cached(str(p))
 
-                # Use Streamlit's image renderer so users can click/zoom
-                try:
-                    st.image(src, width="stretch")
-                except Exception:
-                    st.image(str(p), width="stretch")
+                st.image(src, width="stretch")
 
                 st.markdown(
                     "<div style='height:0.05rem'></div>", unsafe_allow_html=True
@@ -458,18 +437,9 @@ def render(settings: Dict[str, Any]) -> None:
                 if current_card:
                     card_name = Path(str(current_card)).stem
                     p = Path(str(current_card))
-                    try:
-                        src = get_image_data_uri_cached(str(p))
-                        if not src:
-                            raise Exception("empty data uri")
-                    except Exception:
-                        src = str(p)
+                    src = get_image_data_uri_cached(str(p))
 
-                    # show current card with st.image for zooming
-                    try:
-                        st.image(src, width="stretch")
-                    except Exception:
-                        st.image(str(p), width="stretch")
+                    st.image(src, width="stretch")
                 else:
                     st.markdown("### Current card")
                     st.caption("—")
@@ -540,17 +510,8 @@ def render(settings: Dict[str, Any]) -> None:
 
             if current_card:
                 p = Path(str(current_card))
-                try:
-                    src = get_image_data_uri_cached(str(p))
-                    if not src:
-                        raise Exception("empty data uri")
-                except Exception:
-                    src = str(p)
-
-                try:
-                    st.image(src, width="stretch")
-                except Exception:
-                    st.image(str(p), width="stretch")
+                src = get_image_data_uri_cached(str(p))
+                st.image(src, width="stretch")
             else:
                 st.markdown("### Current card")
                 st.caption("—")

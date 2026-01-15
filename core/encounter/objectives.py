@@ -188,6 +188,13 @@ ENCOUNTER_OBJECTIVES = {
             "trials": [
             ],
         },
+        "edited": {
+            "objectives": [
+                "Kill all enemies on {players} tiles. Reach the exit node or kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
     },
     "Corvian Host|Painted World of Ariamis": {
         "default": {
@@ -337,6 +344,13 @@ ENCOUNTER_OBJECTIVES = {
             "trials": [
             ],
         },
+        "edited": {
+            "objectives": [
+                "Activate the lever at least once. Reach the exit node.",
+            ],
+            "trials": [
+            ],
+        },
     },
     "Undead Sanctum|The Sunless City": {
         "default": {
@@ -365,6 +379,14 @@ ENCOUNTER_OBJECTIVES = {
                 "Kill {players+2} enemies."
             ],
         },
+        "edited": {
+            "objectives": [
+                "Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy2} and {players} other enemies."
+            ],
+        },
     },
     "Gleaming Silver|The Sunless City": {
         "default": {
@@ -383,6 +405,14 @@ ENCOUNTER_OBJECTIVES = {
             ],
             "trials": [
                 "Flip all trap tokens."
+            ],
+        },
+        "edited": {
+            "objectives": [
+                "Kill all enemies.",
+            ],
+            "trials": [
+                "Open the chest."
             ],
         },
     },
@@ -458,6 +488,13 @@ ENCOUNTER_OBJECTIVES = {
             "trials": [
             ],
         },
+        "edited": {
+            "objectives": [
+                "Kill all enemies {players} times.",
+            ],
+            "trials": [
+            ],
+        },
     },
     "Depths of the Cathedral|The Sunless City": {
         "default": {
@@ -472,6 +509,14 @@ ENCOUNTER_OBJECTIVES = {
         "default": {
             "objectives": [
                 "Activate the lever. Reach the exit node.",
+            ],
+            "trials": [
+                "Kill the {enemy11}."
+            ],
+        },
+        "edited": {
+            "objectives": [
+                "Activate the lever. Reach the exit node or kill all enemies.",
             ],
             "trials": [
                 "Kill the {enemy11}."
@@ -495,6 +540,16 @@ ENCOUNTER_OBJECTIVES = {
             ],
             "trials": [
                 "Kill all enemies."
+            ],
+        },
+    },
+    "The Grand Hall|The Sunless City": {
+        "default": {
+            "objectives": [
+                "Activate the lever.",
+            ],
+            "trials": [
+                "Kill all enemies without flipping more than two trap tokens with values."
             ],
         },
     },
@@ -529,6 +584,13 @@ ENCOUNTER_OBJECTIVES = {
         "default": {
             "objectives": [
                 "Activate the lever three times.",
+            ],
+            "trials": [
+            ],
+        },
+        "edited": {
+            "objectives": [
+                "Activate the lever at least twice. Reach the exit node.",
             ],
             "trials": [
             ],
@@ -691,6 +753,13 @@ ENCOUNTER_OBJECTIVES = {
         "default": {
             "objectives": [
                 "Kill all enemies.",
+            ],
+            "trials": [
+            ],
+        },
+        "edited": {
+            "objectives": [
+                "Reach the exit node.",
             ],
             "trials": [
             ],

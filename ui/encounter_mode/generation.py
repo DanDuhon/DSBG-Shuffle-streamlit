@@ -281,6 +281,14 @@ EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnem
     # ("Velka's Chosen", "Painted World of Ariamis"): [
     #     SpecialRuleEnemyIcon(enemy_index=0, x=330, y=448),
     # ],
+    ("Trophy Room", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=119, y=295),
+        SpecialRuleEnemyIcon(enemy_index=4, x=420, y=447),
+        SpecialRuleEnemyIcon(enemy_index=4, x=294, y=543),
+        SpecialRuleEnemyIcon(enemy_index=6, x=161, y=295),
+        SpecialRuleEnemyIcon(enemy_index=6, x=462, y=447),
+        SpecialRuleEnemyIcon(enemy_index=6, x=336, y=543),
+    ],
 }
 
 
@@ -299,31 +307,25 @@ def load_valid_sets():
 
 
 def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: str = "") -> str:
-    try:
-        if not path.exists():
-            return ""
-        try:
-            data = get_image_bytes_cached(str(path))
-        except Exception:
-            return ""
-        suffix = path.suffix.lower()
-        mime = "image/png" if suffix == ".png" else "image/jpeg"
-        data_uri = bytes_to_data_uri(data, mime=mime)
-
-        style = (
-            f"height:{height_px}px; "
-            f"max-height:none; "
-            f"width:auto; "
-            f"max-width:none; "
-            f"{extra_css}"
-        )
-
-        return (
-            f"<img src='{data_uri}' "
-            f"title='{title}' alt='{title}' "
-            f"style='{style}'/>")
-    except Exception:
+    if not path.exists():
         return ""
+    data = get_image_bytes_cached(str(path))
+    suffix = path.suffix.lower()
+    mime = "image/png" if suffix == ".png" else "image/jpeg"
+    data_uri = bytes_to_data_uri(data, mime=mime)
+
+    style = (
+        f"height:{height_px}px; "
+        f"max-height:none; "
+        f"width:auto; "
+        f"max-width:none; "
+        f"{extra_css}"
+    )
+
+    return (
+        f"<img src='{data_uri}' "
+        f"title='{title}' alt='{title}' "
+        f"style='{style}'/>")
 
 
 def render_encounter_icons(current_encounter, assets_dir="assets"):
@@ -427,39 +429,8 @@ def load_encounter(encounter_slug: str, character_count: int):
     """
     # Fast path: exact filename
     file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
-    if file_path.exists():
-        with open(file_path, "r", encoding="utf-8") as f:
-            return load(f)
-
-    # Fallback: scan directory for matching base slug and character count
-    base_prefix = f"{encounter_slug}_"
-    if not ENCOUNTER_DATA_DIR.exists():
-        raise FileNotFoundError(f"Encounter data directory not found: {ENCOUNTER_DATA_DIR}")
-
-    for fname in os.listdir(ENCOUNTER_DATA_DIR):
-        if not fname.endswith(".json"):
-            continue
-        if not fname.startswith(base_prefix):
-            continue
-        # filename format: <slug>_<character_count>.json
-        parts = fname.rsplit("_", 1)
-        if len(parts) != 2:
-            continue
-        cnt_part = parts[1]
-        if not cnt_part.endswith(".json"):
-            continue
-        try:
-            cnt = int(cnt_part[:-5])
-        except Exception:
-            continue
-        if cnt != int(character_count):
-            continue
-        # Found matching file
-        fp = ENCOUNTER_DATA_DIR / fname
-        with open(fp, "r", encoding="utf-8") as f:
-            return load(f)
-
-    raise FileNotFoundError(f"No encounter file found for '{encounter_slug}' with character_count={character_count}")
+    with open(file_path, "r", encoding="utf-8") as f:
+        return load(f)
 
 
 def generate_encounter_image(
@@ -535,12 +506,6 @@ def generate_encounter_image(
 
             pos_table = positions.get(lookup) or positions.get("V2", {})
             key = (slot_idx, i)
-            if key not in pos_table:
-                # Fallback to V2 if current table missing this key
-                pos_table = positions.get("V2", {})
-                if key not in pos_table:
-                    # No safe coordinate to use; skip this icon
-                    continue
 
             coords = (pos_table[key][0] + xOffset, pos_table[key][1] + yOffset)
             card_img.alpha_composite(icon_img, dest=coords)
@@ -649,100 +614,81 @@ def generate_encounter_image(
     # ---------------------------------------------------------
     # 5) Render Gang text for Setup/original card if present
     # ---------------------------------------------------------
-    try:
-        # Determine whether this encounter card lists the gang keyword
-        src = editedEncounterKeywords if use_edited else encounterKeywords
-        kws = src.get((encounter_name, expansion_name)) or []
-        if "gang" in kws:
-            # Detect gang name from shuffled/original enemies list
-            gang_keys = ["Hollow", "Alonne", "Skeleton", "Silver Knight"]
-            counts: Dict[str, int] = {k: 0 for k in gang_keys}
+    # Determine whether this encounter card lists the gang keyword
+    src = editedEncounterKeywords if use_edited else encounterKeywords
+    kws = src.get((encounter_name, expansion_name)) or []
+    if "gang" in kws:
+        # Detect gang name from shuffled/original enemies list
+        gang_keys = ["Hollow", "Alonne", "Skeleton", "Silver Knight"]
+        counts: Dict[str, int] = {k: 0 for k in gang_keys}
 
-            for eid in enemies:
-                name = None
-                health = None
-                if isinstance(eid, dict):
-                    name = eid.get("name") or eid.get("id")
-                    if "health" in eid:
-                        try:
-                            health = int(eid.get("health"))
-                        except Exception:
-                            health = None
+        for eid in enemies:
+            name = None
+            health = None
+            if isinstance(eid, dict):
+                name = eid.get("name") or eid.get("id")
+                if "health" in eid:
+                    health = int(eid.get("health"))
+            else:
+                if isinstance(eid, int):
+                    # map id -> name using assets mapping (imported elsewhere)
+                    from ui.encounter_mode.assets import enemyNames as _enemyNames
+                    name = _enemyNames.get(eid)
                 else:
-                    if isinstance(eid, int):
-                        # map id -> name using assets mapping (imported elsewhere)
-                        try:
-                            from ui.encounter_mode.assets import enemyNames as _enemyNames
-                            name = _enemyNames.get(eid)
-                        except Exception:
-                            name = None
-                    else:
-                        name = str(eid)
+                    name = str(eid)
 
-                    if name:
-                        try:
-                            cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
-                            health = int(cfg.raw.get("health", 1))
-                        except Exception:
-                            health = None
+                if name:
+                    cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+                    health = int(cfg.raw.get("health", 1))
 
-                if not name:
-                    continue
+            if not name:
+                continue
 
-                lname = name.lower()
-                for g in gang_keys:
-                    if g.lower() in lname and health == 1:
-                        counts[g] += 1
-                        break
+            lname = name.lower()
+            for g in gang_keys:
+                if g.lower() in lname and health == 1:
+                    counts[g] += 1
+                    break
 
-            best = None
-            best_count = 0
-            for k, v in counts.items():
-                if v > best_count:
-                    best = k
-                    best_count = v
+        best = None
+        best_count = 0
+        for k, v in counts.items():
+            if v > best_count:
+                best = k
+                best_count = v
 
-            gang_name = best if best_count > 0 else None
+        gang_name = best if best_count > 0 else None
 
-            # Use pre-rendered gang images in assets/keywords instead of drawing text.
-            pos_entry = GANG_TEXT_POSITIONS.get((encounter_name, expansion_name))
-            if pos_entry:
-                gx, gy, gsize = pos_entry
+        # Use pre-rendered gang images in assets/keywords instead of drawing text.
+        pos_entry = GANG_TEXT_POSITIONS.get((encounter_name, expansion_name))
+        if pos_entry:
+            gx, gy, gsize = pos_entry
 
-                # Candidate filenames to support different naming conventions
-                candidates = []
-                if gang_name:
-                    lname = gang_name.lower().replace(" ", "_")
-                    candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
-                    candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
-                    candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
-                # Generic fallback names
-                candidates.extend(["gang.png", "gang_generic.png"]) 
+            # Candidate filenames to support different naming conventions
+            candidates = []
+            if gang_name:
+                lname = gang_name.lower().replace(" ", "_")
+                candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
+                candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
+                candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
 
-                gang_img_path = None
-                for fname in candidates:
-                    p = Path("assets") / "keywords" / fname
-                    if p.exists():
-                        gang_img_path = p
-                        break
+            gang_img_path = None
+            for fname in candidates:
+                p = Path("assets") / "keywords" / fname
+                if p.exists():
+                    gang_img_path = p
+                    break
 
-                if gang_img_path:
-                    try:
-                        gimg = Image.open(gang_img_path).convert("RGBA")
-                        gw, gh = gimg.size
-                        if gh <= 0:
-                            raise ValueError("Invalid gang image height")
-                        scale = gsize / gh
-                        new_size = (int(round(gw * scale)), int(round(gh * scale)))
-                        gimg = gimg.resize(new_size, Image.Resampling.LANCZOS)
-                        # Composite centered on the requested point
-                        card_img.alpha_composite(gimg, dest=(gx, gy))
-                    except Exception:
-                        # Don't fail image generation for Gang rendering errors
-                        pass
-    except Exception:
-        # Don't fail image generation for Gang rendering errors
-        pass
+            if gang_img_path:
+                gimg = Image.open(gang_img_path).convert("RGBA")
+                gw, gh = gimg.size
+                if gh <= 0:
+                    raise ValueError("Invalid gang image height")
+                scale = gsize / gh
+                new_size = (int(round(gw * scale)), int(round(gh * scale)))
+                gimg = gimg.resize(new_size, Image.Resampling.LANCZOS)
+                # Composite centered on the requested point
+                card_img.alpha_composite(gimg, dest=(gx, gy))
 
     return card_img
 

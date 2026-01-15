@@ -845,12 +845,7 @@ def _render_v2_current_panel(
             if isinstance(rv, dict) and rv.get("path"):
                 w = card_w()
                 p = Path(rv["path"])
-                try:
-                    src = get_image_data_uri_cached(str(p))
-                    if not src:
-                        raise Exception("empty data uri")
-                except Exception:
-                    src = str(p)
+                src = get_image_data_uri_cached(str(p))
 
                 st.markdown(
                     f"""
@@ -864,10 +859,7 @@ def _render_v2_current_panel(
             return
 
         # Choice already made
-        try:
-            chosen_idx = int(choice_idx)
-        except Exception:
-            chosen_idx = -1
+        chosen_idx = int(choice_idx)
 
         if not (0 <= chosen_idx < len(options)):
             st.caption(
@@ -881,10 +873,7 @@ def _render_v2_current_panel(
             if isinstance(sa, dict):
                 if alt_idx is None:
                     alt_idx = sa.get("alt_choice_index")
-                try:
-                    alt_idx_int = int(alt_idx) if alt_idx is not None else None
-                except Exception:
-                    alt_idx_int = None
+                alt_idx_int = int(alt_idx) if alt_idx is not None else None
 
                 base_idx = sa.get("base_choice_index")
                 if not isinstance(base_idx, int) or not (0 <= base_idx < len(options)):

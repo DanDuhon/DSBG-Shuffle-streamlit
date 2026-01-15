@@ -326,10 +326,7 @@ def load_custom_event_decks() -> Dict[str, dict]:
     """
     if not CUSTOM_DECKS_PATH.exists():
         return {}
-    try:
-        data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
 
     if isinstance(data, dict) and "decks" in data and isinstance(data["decks"], dict):
         return data["decks"]
@@ -438,17 +435,12 @@ def compute_draw_rewards_for_card(card_path: str, *, player_count: int = 1) -> D
     if not entries:
         return totals
 
-    try:
-        pc = int(player_count)
-    except Exception:
-        pc = 1
-
     for entry in entries:
         kind = entry.get("type")
         if kind == "souls":
             per_player = int(entry.get("per_player") or 0)
             flat = int(entry.get("flat") or 0)
-            totals["souls"] += flat + per_player * pc
+            totals["souls"] += flat + per_player * player_count
         elif kind == "treasure":
             flat = int(entry.get("flat") or 0)
             totals["treasure"] += flat
@@ -520,10 +512,7 @@ def build_deck_for_preset(preset: str, configs: Dict[str, dict]) -> List[str]:
         cards = (deck_def.get("cards") or {}) if isinstance(deck_def, dict) else {}
         draw: List[str] = []
         for img_path, copies in (cards.items() if isinstance(cards, dict) else []):
-            try:
-                n = int(copies)
-            except Exception:
-                n = 0
+            n = int(copies)
             if n > 0 and img_path:
                 draw.extend([str(img_path)] * n)
         random.shuffle(draw)

@@ -4,3 +4,4 @@ __pycache__/
 *.pyo
 *.pyd
 .github/copilot-instructions.md
+CODING_GUIDELINES.md

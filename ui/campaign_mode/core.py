@@ -330,10 +330,7 @@ def _v2_compute_allowed_destinations(campaign: Dict[str, Any]) -> Optional[set[s
 
         # Otherwise, we can also go to the next encounter/boss in the same stage
         stage = current_node.get("stage")
-        try:
-            current_index = int(current_node.get("index"))
-        except Exception:
-            return allowed
+        current_index = int(current_node.get("index"))
 
         next_node_id: Optional[str] = None
         next_index: Optional[int] = None
@@ -346,10 +343,7 @@ def _v2_compute_allowed_destinations(campaign: Dict[str, Any]) -> Optional[set[s
             if node.get("kind") == "boss":
                 idx = current_index + 1_000_000
             else:
-                try:
-                    idx = int(node.get("index"))
-                except Exception:
-                    continue
+                idx = int(node.get("index"))
 
             if idx <= current_index:
                 continue
@@ -374,10 +368,7 @@ def _v2_compute_allowed_destinations(campaign: Dict[str, Any]) -> Optional[set[s
         for node in nodes:
             if node.get("kind") != "encounter" or node.get("stage") != stage:
                 continue
-            try:
-                idx = int(node.get("index"))
-            except Exception:
-                continue
+            idx = int(node.get("index"))
             encounters.append((idx, node))
 
         if not encounters:
