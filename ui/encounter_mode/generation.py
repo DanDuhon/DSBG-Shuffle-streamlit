@@ -300,6 +300,43 @@ EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnem
         SpecialRuleEnemyIcon(enemy_index=0, x=416, y=394, size=28),
         SpecialRuleEnemyIcon(enemy_index=0, x=285, y=494, size=28),
     ],
+    ("Eye of the Storm", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=378, y=510, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=650, y=540, size=28),
+        SpecialRuleEnemyIcon(enemy_index=5, x=125, y=295, size=28),
+    ],
+    ("Frozen Revolutions", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=6, x=283, y=452, size=28),
+        SpecialRuleEnemyIcon(enemy_index=6, x=283, y=480, size=28),
+        SpecialRuleEnemyIcon(enemy_index=6, x=700, y=478, size=28),
+        SpecialRuleEnemyIcon(enemy_index=6, x=375, y=555, size=28),
+    ],
+    ("Velka's Chosen", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=130, y=295),
+        SpecialRuleEnemyIcon(enemy_index=2, x=598, y=445),
+        SpecialRuleEnemyIcon(enemy_index=2, x=420, y=495),
+    ],
+    ("The Bell Tower", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=647, y=450, size=28),
+        SpecialRuleEnemyIcon(enemy_index=3, x=688, y=450, size=28),
+    ],
+    ("Flooded Fortress", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=433, y=400, size=28),
+    ],
+    ("The Hellkite Bridge", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=2, x=640, y=500, size=28),
+    ],
+    ("Central Plaza", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=4, x=285, y=490, size=28),
+    ],
+    ("Grim Reunion", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=10, x=438, y=394, size=28),
+        SpecialRuleEnemyIcon(enemy_index=10, x=540, y=477, size=28),
+        SpecialRuleEnemyIcon(enemy_index=10, x=573, y=587, size=28),
+    ],
+    ("The Grand Hall", "The Sunless City"): [
+        SpecialRuleEnemyIcon(enemy_index=7, x=360, y=453, size=28),
+    ],
 }
 
 

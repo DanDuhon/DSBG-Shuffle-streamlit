@@ -94,15 +94,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED = {
             "description": "Attacks gain push from special rules.",
         }
     ],
-    "Painted World of Ariamis_3_Central Plaza": [],
-    "Painted World of Ariamis_3_Deathly Freeze": [],
-    "Painted World of Ariamis_3_Eye of the Storm": [],
-    "Painted World of Ariamis_3_Frozen Revolutions": [],
-    "Painted World of Ariamis_3_Velka's Chosen": [],
-    "The Sunless City_1_Illusionary Doorway": [],
-    "The Sunless City_1_Kingdom's Messengers": [],
-    "The Sunless City_1_The Bell Tower": [],
-    "The Sunless City_2_Flooded Fortress": [],
     "The Sunless City_2_Parish Church": [],
     "The Sunless City_2_The Hellkite Bridge": [],
     "The Sunless City_3_Central Plaza": [],
@@ -312,7 +303,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "op": "add",
             "base": 2,
             "per_player": 1,
-            "description": "+[player_num] health from special rules.",
+            "description": "+[player_num+2] health from special rules.",
         },
         {
             "id": "pw_velkas_chosen_block",
@@ -543,11 +534,11 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
             "description": "+Timer value dodge difficulty from special rules.",
         },
     ],
-    "The Sunless City_1_Gleaming Silver": [
+    "The Sunless City_2_Gleaming Silver": [
         {
             "id": "tsc_gleaming_silver_block",
             "source": "encounter",
-            "source_id": "The Sunless City_1_Gleaming Silver",
+            "source_id": "The Sunless City_2_Gleaming Silver",
             "target_alt_indices": [0,1,3,4],
             "stat": "block",
             "op": "add",
@@ -557,7 +548,7 @@ ENCOUNTER_BEHAVIOR_MODIFIERS = {
         {
             "id": "tsc_gleaming_silver_frostbite",
             "source": "encounter",
-            "source_id": "The Sunless City_1_Gleaming Silver",
+            "source_id": "The Sunless City_2_Gleaming Silver",
             "target_alt_indices": [0,1,3,4],
             "stat": "frostbite",
             "op": "flag",

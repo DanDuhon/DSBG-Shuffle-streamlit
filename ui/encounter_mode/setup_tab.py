@@ -449,6 +449,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 encounter_changed = (
                     last.get("label") != selected_label
                     or last.get("edited") != use_edited
+                    or last.get("expansion") != selected_expansion
                 )
 
                 if encounter_changed:
@@ -926,6 +927,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             encounter_changed = (
                 last.get("label") != selected_label
                 or last.get("edited") != use_edited
+                or last.get("expansion") != selected_expansion
             )
 
             if encounter_changed:

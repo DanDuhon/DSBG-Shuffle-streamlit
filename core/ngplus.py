@@ -82,8 +82,17 @@ def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
             region = deepcopy(region)
             region["damage"] = damage_for_level(int(region["damage"]), level)
             card[side] = region
+        
+        # Also scale numeric push values on the region (some move-attacks
+        # encode their push as a numeric `push` field). Preserve boolean
+        # `push` flags (they indicate presence rather than amount).
+        if isinstance(region, dict) and "push" in region and isinstance(region["push"], (int, float)):
+            region = deepcopy(region)
+            region["push"] = damage_for_level(int(region["push"]), level)
+            card[side] = region
 
     return card
+
 
 
 def apply_ngplus_to_raw(

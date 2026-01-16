@@ -331,8 +331,8 @@ def _render_objectives(encounter: dict, settings: dict) -> None:
     # Figure out if there is a tile cap for this encounter
     tile_cap = OBJECTIVE_TILE_CAPS.get(encounter_key)
 
-    primary = cfg.get("objectives") or []
-    trials = cfg.get("trials") or []
+    primary = cfg.get("objectives", [])
+    trials = cfg.get("trials", [])
 
     if len(primary) + len(trials) == 0:
         return
@@ -1730,10 +1730,42 @@ def _apply_behavior_mods_to_raw(
         # simple handling for common stats
         if op == "flag":
             # set boolean flags on attacks
+            status_effects = {"bleed", "poison", "frostbite", "stagger"}
             for node in _iter_attack_nodes():
-                if ("damage" not in node and "effect" not in node):
+                if not isinstance(node, dict):
                     continue
-                node[stat] = True if val is None else bool(val)
+
+                # Determine eligibility for status effects. Only attach
+                # status effects to attacks that are `physical` or `magic`,
+                # or to `move` attacks that include a `push` key. As a
+                # defensive fallback, allow nodes that explicitly define
+                # a `damage` key.
+                node_type = node.get("type")
+                eligible = False
+                if node_type in ("physical", "magic"):
+                    eligible = True
+                elif node_type == "move":
+                    if node.get("push") is not None:
+                        eligible = True
+                elif "damage" in node:
+                    eligible = True
+
+                if stat in status_effects:
+                    if not eligible:
+                        continue
+                    effects = node.setdefault("effect", [])
+                    if isinstance(effects, list):
+                        if val is None or bool(val):
+                            if stat not in effects:
+                                effects.append(stat)
+                        else:
+                            if stat in effects:
+                                try:
+                                    effects.remove(stat)
+                                except ValueError:
+                                    pass
+                else:
+                    node[stat] = True if val is None else bool(val)
             patched[stat] = True if val is None else val
             continue
 
@@ -1771,13 +1803,52 @@ def _apply_behavior_mods_to_raw(
                 patched["dodge_difficulty"] = old + val
             continue
 
+        # Special handling for adding `repeat` to single-card behaviors.
+        # When the behavior is a single-card dict (common for regular enemies),
+        # prefer to increment an existing `repeat` on a slot, or place it into
+        # the first empty slot (left->middle->right).
+        if op == "add" and stat == "repeat" and isinstance(val, (int, float)):
+            applied = False
+            beh = patched.get("behavior")
+            if isinstance(beh, dict):
+                slots = ["left", "middle", "right"]
+                # 1) If any slot already has repeat, increment it.
+                for s in slots:
+                    node = beh.get(s)
+                    if isinstance(node, dict) and isinstance(node.get("repeat"), (int, float)):
+                        node["repeat"] = int(node.get("repeat", 0)) + int(val)
+                        applied = True
+                        break
+
+                # 2) Otherwise, find the first empty slot (empty dict) and add repeat there.
+                if not applied:
+                    for s in slots:
+                        node = beh.get(s)
+                        if isinstance(node, dict) and len(node) == 0:
+                            node["repeat"] = int(val) + 1
+                            applied = True
+                            break
+            continue
+
         if op == "add":
             old = patched.get(stat, 0)
             patched[stat] = old + val
             continue
 
         if op == "set":
-            # Overwrite the stat with the provided value.
+            # Special-case: setting attack `type` should modify each attack node
+            # (left/middle/right or behavior entries) so attacks change from
+            # e.g. "physical" to "magic". Also set the top-level stat.
+            if stat == "type":
+                for node in _iter_attack_nodes():
+                    if not isinstance(node, dict):
+                        continue
+                    # Only convert attacks that are explicitly `physical`.
+                    # This avoids overwriting `move` or other special types
+                    # (which previously caused move icons to be lost).
+                    node_type = node.get("type")
+                    if node_type == "physical":
+                        node["type"] = val
             patched[stat] = val
             continue
 
@@ -1824,9 +1895,23 @@ def _describe_behavior_mod(mod: Dict[str, Any]) -> str:
     # If the description references player count, substitute the runtime
     # player count so users see a concrete number (e.g., +2 health).
     desc = mod.get("description")
-    if isinstance(desc, str) and "[player_num]" in desc:
-        pn = get_player_count()
-        return desc.replace("[player_num]", str(pn))
+    if isinstance(desc, str):
+        # Support patterns like [player_num], [player_num+N], [player_num-N]
+        import re
+        pattern = re.compile(r"\[player_num(?:([+-]\d+))?\]")
+
+        def _replace(m: re.Match) -> str:
+            off = m.group(1)
+            pn = get_player_count()
+            if off:
+                try:
+                    pn = pn + int(off)
+                except Exception:
+                    pass
+            return str(pn)
+
+        if pattern.search(desc):
+            return pattern.sub(_replace, desc)
 
     # If there is an explicit description, return it (no placeholder present)
     desc = mod.get("description")

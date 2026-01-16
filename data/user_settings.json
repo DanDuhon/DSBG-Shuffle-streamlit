@@ -97,7 +97,7 @@
     "The Iron Golem|The Sunless City": false,
     "The Shine of Gold|The Sunless City": false,
     "Hanging Rafters|The Sunless City": false,
-    "Trophy Room|The Sunless City": false,
+    "Trophy Room|The Sunless City": true,
     "A Trusty Ally|Tomb of Giants": false,
     "Deathly Magic|Tomb of Giants": false,
     "Grave Matters|Tomb of Giants": false,
@@ -221,9 +221,10 @@
   "rules_show_only_in_phase": false,
   "encounter_item_reward_mode": "Similar Soul Cost",
   "No Safe Haven|Painted World of Ariamis": true,
-  "Trophy Room|The Sunless City": false,
+  "Trophy Room|The Sunless City": true,
   "The First Bastion|Painted World of Ariamis": true,
   "Abandoned and Forgotten|Painted World of Ariamis": false,
   "Inhospitable Ground|Painted World of Ariamis": true,
-  "Cloak and Feathers|Painted World of Ariamis": false
+  "Cloak and Feathers|Painted World of Ariamis": false,
+  "Eye of the Storm|Painted World of Ariamis": true
 }
