@@ -231,6 +231,13 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             )
         ],
     },
+    "Monstrous Maw|Painted World of Ariamis": {
+        "edited": [
+            EncounterRule(
+                template="Characters are always pushed towards a trap token.",
+            )
+        ],
+    },
     "Skeletal Spokes|Painted World of Ariamis": {
         "default": [
             EncounterRule(

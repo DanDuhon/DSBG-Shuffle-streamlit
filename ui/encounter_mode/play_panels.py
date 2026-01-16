@@ -1776,6 +1776,23 @@ def _apply_behavior_mods_to_raw(
             patched[stat] = old + val
             continue
 
+        if op == "set":
+            # Overwrite the stat with the provided value.
+            patched[stat] = val
+            continue
+
+        if op == "mul" and isinstance(val, (int, float)):
+            old = patched.get(stat)
+            try:
+                if isinstance(old, (int, float)):
+                    patched[stat] = old * val
+                else:
+                    # If old value missing or non-numeric, set to val (treat as multiplier of 1)
+                    patched[stat] = val
+            except Exception:
+                patched[stat] = val
+            continue
+
     return patched
 
 
@@ -1907,13 +1924,19 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
     for i, entry in enumerate(entries):
         target_col = cols[i % ncols]
         with target_col:
-            cfg = load_behavior(entry.path)
-            enemy_name = cfg.name
+            # Load base behavior JSON without NG+ so we can apply encounter
+            # modifiers first, then re-run NG+ on the modified raw.
+            base_cfg = load_behavior(entry.path, apply_ngplus=False)
+            enemy_name = base_cfg.name
             all_enemy_names.append(enemy_name)
 
             mod_tuples = _gather_behavior_mods_for_enemy(encounter, enemy_name)
             mod_dicts = [m for (m, _, _) in mod_tuples]
-            raw_for_render = _apply_behavior_mods_to_raw(cfg.raw, mod_dicts)
+            modified_raw = _apply_behavior_mods_to_raw(base_cfg.raw, mod_dicts)
+
+            # Rebuild a NG+-adjusted BehaviorConfig from the modified raw
+            cfg = load_behavior(entry.path, raw_override=modified_raw, apply_ngplus=True)
+            raw_for_render = cfg.raw
 
             # Special-case: for The Fountainhead, mark behavior JSON so
             # behavior-card renderer can add the extra icon to enemy cards.

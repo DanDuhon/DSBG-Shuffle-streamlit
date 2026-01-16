@@ -247,7 +247,16 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             ]
 
             default_label = st.session_state.get("last_encounter", {}).get("label")
-            default_index = display_names.index(default_label) if default_label else 0
+            default_index = 0
+            if default_label:
+                if default_label in display_names:
+                    default_index = display_names.index(default_label)
+                else:
+                    base = default_label.split(" (level")[0]
+                    default_index = next(
+                        (i for i, d in enumerate(display_names) if d.startswith(base)),
+                        0,
+                    )
 
             selected_label = st.selectbox(
                 "Encounter",
@@ -724,7 +733,16 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         ]
 
         default_label = st.session_state.get("last_encounter", {}).get("label")
-        default_index = display_names.index(default_label) if default_label else 0
+        default_index = 0
+        if default_label:
+            if default_label in display_names:
+                default_index = display_names.index(default_label)
+            else:
+                base = default_label.split(" (level")[0]
+                default_index = next(
+                    (i for i, d in enumerate(display_names) if d.startswith(base)),
+                    0,
+                )
 
         selected_label = st.selectbox(
             "Encounter",

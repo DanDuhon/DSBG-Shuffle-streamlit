@@ -28,7 +28,7 @@
   ],
   "edited_toggles": {
     "Cloak and Feathers|Painted World of Ariamis": false,
-    "No Safe Haven|Painted World of Ariamis": false,
+    "No Safe Haven|Painted World of Ariamis": true,
     "Aged Sentinel|The Sunless City": false,
     "The Grand Hall|The Sunless City": true,
     "Dark Alleyway|The Sunless City": false,
@@ -73,7 +73,7 @@
     "Corrupted Hovel|Painted World of Ariamis": false,
     "Distant Tower|Painted World of Ariamis": false,
     "Gnashing Beaks|Painted World of Ariamis": false,
-    "Inhospitable Ground|Painted World of Ariamis": false,
+    "Inhospitable Ground|Painted World of Ariamis": true,
     "Monstrous Maw|Painted World of Ariamis": true,
     "Skeletal Spokes|Painted World of Ariamis": false,
     "Snowblind|Painted World of Ariamis": false,
@@ -220,6 +220,10 @@
   "edited_encounters_global": true,
   "rules_show_only_in_phase": false,
   "encounter_item_reward_mode": "Similar Soul Cost",
-  "No Safe Haven|Painted World of Ariamis": false,
-  "Trophy Room|The Sunless City": false
+  "No Safe Haven|Painted World of Ariamis": true,
+  "Trophy Room|The Sunless City": false,
+  "The First Bastion|Painted World of Ariamis": true,
+  "Abandoned and Forgotten|Painted World of Ariamis": false,
+  "Inhospitable Ground|Painted World of Ariamis": true,
+  "Cloak and Feathers|Painted World of Ariamis": false
 }

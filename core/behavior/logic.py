@@ -424,18 +424,24 @@ def _read_behavior_json(path_str: str) -> dict:
     with open(path_str, "r", encoding="utf-8") as f:
         return json.load(f)
     
-def load_behavior(fname: Path) -> BehaviorConfig:
-    # 1) Load base raw config from JSON
-    base_raw = deepcopy(_read_behavior_json(str(fname)))  # copy so we can mutate safely
+def load_behavior(fname: Path, raw_override: dict | None = None, apply_ngplus: bool = True) -> BehaviorConfig:
+    # 1) Load base raw config from JSON or use an explicit override
+    if raw_override is None:
+        base_raw = deepcopy(_read_behavior_json(str(fname)))  # copy so we can mutate safely
+    else:
+        base_raw = deepcopy(raw_override)
     name = fname.stem
 
-    # 2) Apply NG+ to raw before building entities / thresholds
+    # 2) Apply NG+ to raw (or skip if caller requested)
     level = get_current_ngplus_level()
-    raw = apply_ngplus_to_raw(
-        base_raw,
-        level,
-        enemy_name=name,
-    )
+    if apply_ngplus:
+        raw = apply_ngplus_to_raw(
+            base_raw,
+            level,
+            enemy_name=name,
+        )
+    else:
+        raw = deepcopy(base_raw)
 
     hp = int(raw.get("health", 1))
     heatup_threshold = raw.get("heatup", None) if isinstance(raw.get("heatup"), int) else None

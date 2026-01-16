@@ -197,7 +197,7 @@ SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnemyIcon]]
         SpecialRuleEnemyIcon(enemy_index=12, x=408, y=577, size=28),
     ],
     ("Monstrous Maw", "Painted World of Ariamis"): [
-        SpecialRuleEnemyIcon(enemy_index=0, x=124, y=293, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
         SpecialRuleEnemyIcon(enemy_index=0, x=420, y=394, size=28),
     ],
     ("No Safe Haven", "Painted World of Ariamis"): [
@@ -288,6 +288,17 @@ EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnem
         SpecialRuleEnemyIcon(enemy_index=6, x=161, y=295),
         SpecialRuleEnemyIcon(enemy_index=6, x=462, y=447),
         SpecialRuleEnemyIcon(enemy_index=6, x=336, y=543),
+    ],
+    ("The First Bastion", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=1, x=480, y=430),
+        SpecialRuleEnemyIcon(enemy_index=2, x=480, y=463),
+        SpecialRuleEnemyIcon(enemy_index=3, x=420, y=400),
+        SpecialRuleEnemyIcon(enemy_index=3, x=480, y=495),
+    ],
+    ("Monstrous Maw", "Painted World of Ariamis"): [
+        SpecialRuleEnemyIcon(enemy_index=0, x=125, y=295, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=416, y=394, size=28),
+        SpecialRuleEnemyIcon(enemy_index=0, x=285, y=494, size=28),
     ],
 }
 
