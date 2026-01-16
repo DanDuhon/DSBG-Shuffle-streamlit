@@ -3894,7 +3894,7 @@
     "block_dice": {},
     "resist_dice": {},
     "dodge_dice": 0,
-    "upgrade_slots": 1,
+    "upgrade_slots": 0,
     "range": 3,
     "hands_required": 1,
     "attacks": [
@@ -6703,7 +6703,7 @@
   {
     "id": "sorcerers_catalyst",
     "name": "Sorcerer's Catalyst",
-    "hand_category": "sorcery",
+    "hand_category": "weapon",
     "source": {
       "expansion": [
         "Characters Expansion",

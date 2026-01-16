@@ -79,6 +79,23 @@ st.markdown("""
     .encounter-icons-wrapper img:last-child {
         margin-right: 0;
     }
+    /* Global: reduce vertical spacing for markdown elements (paragraphs, lists, headings)
+       This keeps rendered dice/icon lines and short bullets more compact across the app. */
+    div[data-testid="stMarkdownContainer"] > p,
+    div[data-testid="stMarkdownContainer"] ul,
+    div[data-testid="stMarkdownContainer"] li {
+        line-height: 1.05 !important;
+        margin-top: 0.08rem !important;
+        margin-bottom: 0.08rem !important;
+    }
+    div[data-testid="stMarkdownContainer"] h1,
+    div[data-testid="stMarkdownContainer"] h2,
+    div[data-testid="stMarkdownContainer"] h3,
+    div[data-testid="stMarkdownContainer"] h4,
+    div[data-testid="stMarkdownContainer"] h5 {
+        margin-top: 0.18rem !important;
+        margin-bottom: 0.18rem !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 

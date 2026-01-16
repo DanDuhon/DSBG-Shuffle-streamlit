@@ -324,7 +324,7 @@ EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnem
         SpecialRuleEnemyIcon(enemy_index=2, x=433, y=400, size=28),
     ],
     ("The Hellkite Bridge", "The Sunless City"): [
-        SpecialRuleEnemyIcon(enemy_index=2, x=640, y=500, size=28),
+        SpecialRuleEnemyIcon(enemy_index=2, x=620, y=500, size=28),
     ],
     ("Central Plaza", "The Sunless City"): [
         SpecialRuleEnemyIcon(enemy_index=4, x=285, y=490, size=28),

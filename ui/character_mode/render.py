@@ -2,10 +2,11 @@
 from __future__ import annotations
 import pandas as pd
 import streamlit as st
+import json
 from typing import Any, Dict, List, Set
 import itertools
 from core.character_stats import CLASS_TIERS, TIERS
-from ui.character_mode.build import _build_stats, _validate_build
+from ui.character_mode.build import _build_stats, _validate_build, _eligibility_issues
 from ui.character_mode.constants import (
     HAND_CONDITION_OPTIONS,
     HAND_FEATURE_OPTIONS
@@ -58,6 +59,26 @@ def render(settings: Dict[str, Any]) -> None:
     ss.setdefault("cm_selected_armor_upgrade_ids", [])
     ss.setdefault("cm_selected_hand_ids", [])
     ss.setdefault("cm_selected_weapon_upgrade_ids_by_hand", {})
+
+    # If a build was requested to be applied from the previous run, apply it
+    # before any widgets are instantiated so we can safely set widget-backed
+    # session_state keys.
+    pending = ss.pop("cm_pending_build", None)
+    if pending:
+        ss["cm_persist_class"] = pending.get("class_name", ss.get("cm_persist_class"))
+        tiers = pending.get("tier_indices", {}) or {}
+        ss.setdefault("cm_persist_tiers", {"str": 0, "dex": 0, "itl": 0, "fth": 0})
+        for stat, wkey in [("str", "cm_tier_str_i"), ("dex", "cm_tier_dex_i"), ("itl", "cm_tier_itl_i"), ("fth", "cm_tier_fth_i")]:
+            val = int(tiers.get(stat, int(ss.get(wkey, 0))))
+            # Safe to set widget keys here because widgets haven't been created yet
+            ss[wkey] = val
+            ss["cm_persist_tiers"][stat] = val
+        # Also set the class widget key prior to instantiation
+        ss["character_mode_class"] = ss["cm_persist_class"]
+        ss["cm_selected_armor_id"] = pending.get("selected_armor_id", "")
+        ss["cm_selected_armor_upgrade_ids"] = list(pending.get("selected_armor_upgrade_ids") or [])
+        ss["cm_selected_hand_ids"] = list(pending.get("selected_hand_ids") or [])
+        ss["cm_selected_weapon_upgrade_ids_by_hand"] = dict(pending.get("selected_weapon_upgrade_ids_by_hand") or {})
 
     left, right = st.columns([1, 1])
 
@@ -200,13 +221,14 @@ def render(settings: Dict[str, Any]) -> None:
     def _apply_build(data: dict):
         if not data:
             return
+        # Only write persistent values here; actual widget-backed keys are
+        # updated by setting `cm_pending_build` and rerunning so they can be
+        # applied before widgets are instantiated.
         ss["cm_persist_class"] = data.get("class_name", ss.get("cm_persist_class"))
-        ss["character_mode_class"] = ss["cm_persist_class"]
         tiers = data.get("tier_indices", {}) or {}
         ss.setdefault("cm_persist_tiers", {"str": 0, "dex": 0, "itl": 0, "fth": 0})
-        for stat, key in [("str", "cm_tier_str_i"), ("dex", "cm_tier_dex_i"), ("itl", "cm_tier_itl_i"), ("fth", "cm_tier_fth_i")]:
-            val = int(tiers.get(stat, int(ss.get(key, 0))))
-            ss[key] = val
+        for stat in ("str", "dex", "itl", "fth"):
+            val = int(tiers.get(stat, int(ss["cm_persist_tiers"].get(stat, 0))))
             ss["cm_persist_tiers"][stat] = val
         ss["cm_selected_armor_id"] = data.get("selected_armor_id", "")
         ss["cm_selected_armor_upgrade_ids"] = list(data.get("selected_armor_upgrade_ids") or [])
@@ -222,30 +244,24 @@ def render(settings: Dict[str, Any]) -> None:
             if st.button("Save build", key="cm_build_save"):
                 name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
                 ss["cm_builds"][name] = _current_build()
-                st.success(f"Saved build {name}")
 
         snaps = list(ss.get("cm_builds", {}).keys())
         sel = st.selectbox("Saved builds", options=[""] + snaps, key="cm_build_select")
-        c3, c4, c5 = st.columns([1, 1, 1])
+        c3, c4 = st.columns([1, 1])
         with c3:
             if st.button("Load", key="cm_build_load"):
                 name = ss.get("cm_build_select")
                 if name:
-                    _apply_build(ss["cm_builds"][name])
-                    st.experimental_rerun()
+                    # Mark build to be applied on the next run so we can set
+                    # widget-backed keys before widgets are created.
+                    ss["cm_pending_build"] = ss["cm_builds"][name]
+                    st.rerun()
         with c4:
             if st.button("Delete", key="cm_build_delete"):
                 name = ss.get("cm_build_select")
                 if name and name in ss.get("cm_builds", {}):
                     ss["cm_builds"].pop(name, None)
-                    st.experimental_rerun()
-        with c5:
-            if st.button("Export", key="cm_build_export"):
-                name = ss.get("cm_build_select")
-                if name:
-                    import json
-
-                    st.code(json.dumps(ss["cm_builds"][name], ensure_ascii=False, indent=2), language="json")
+                    st.rerun()
 
     enabled_items = []
     present_exps: Set[str] = set()
@@ -907,6 +923,78 @@ def render(settings: Dict[str, Any]) -> None:
 
     ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
 
+    # Enforce equip legality: remove items that no longer meet requirements
+    # (e.g., stats lowered or expansions disabled). This keeps the build
+    # consistent when the user changes class/tier/expansions.
+    removed = {"armor": [], "armor_upgrades": [], "hands": [], "weapon_upgrades": []}
+    # Armor
+    armor_id = ss.get("cm_selected_armor_id") or ""
+    if armor_id:
+        aobj = armor_by_id.get(armor_id)
+        if aobj:
+            a_issues = _eligibility_issues(aobj, stats=stats, active=active)
+            if a_issues:
+                removed["armor"].append(aobj.get("name") or armor_id)
+                ss["cm_selected_armor_id"] = ""
+                ss["cm_selected_armor_upgrade_ids"] = []
+
+    # Armor upgrades
+    au_ids = list(ss.get("cm_selected_armor_upgrade_ids") or [])
+    kept_au = []
+    for uid in au_ids:
+        u = au_by_id.get(uid)
+        if not u:
+            continue
+        u_issues = _eligibility_issues(u, stats=stats, active=active)
+        if u_issues:
+            removed["armor_upgrades"].append(u.get("name") or uid)
+        else:
+            kept_au.append(uid)
+    ss["cm_selected_armor_upgrade_ids"] = _ordered_unique(kept_au, stable_order=au_order)
+
+    # Hands and their weapon upgrades
+    hand_ids = list(ss.get("cm_selected_hand_ids") or [])
+    new_hand_ids: List[str] = []
+    for hid in hand_ids:
+        h = hand_by_id.get(hid)
+        if not h:
+            continue
+        h_issues = _eligibility_issues(h, stats=stats, active=active)
+        if h_issues:
+            removed["hands"].append(h.get("name") or hid)
+            # drop associated weapon upgrades
+            if hid in wu_map:
+                for uid in wu_map.get(hid) or []:
+                    u = wu_by_id.get(uid)
+                    if u:
+                        removed["weapon_upgrades"].append(u.get("name") or uid)
+                wu_map.pop(hid, None)
+        else:
+            # prune weapon upgrades for this hand that are no longer valid
+            kept_wus: List[str] = []
+            for uid in (wu_map.get(hid) or []):
+                u = wu_by_id.get(uid)
+                if not u:
+                    continue
+                u_issues = _eligibility_issues(u, stats=stats, active=active)
+                if u_issues:
+                    removed["weapon_upgrades"].append(u.get("name") or uid)
+                else:
+                    kept_wus.append(uid)
+            wu_map[hid] = _ordered_unique(kept_wus, stable_order=wu_order)
+            new_hand_ids.append(hid)
+
+    ss["cm_selected_hand_ids"] = _normalize_hand_selection(new_hand_ids, items_by_id=hand_by_id, stable_order=hand_order)
+    ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
+
+    # Inform the user about removals
+    msgs = []
+    for k, v in removed.items():
+        if v:
+            msgs.append(f"{k.replace('_', ' ').title()}: " + ", ".join(v))
+    if msgs:
+        st.info("Removed items due to changed eligibility:\n- " + "\n- ".join(msgs))
+
     # Recompute and render Totals now that selections are reconciled
     # Gather selected objects (may be empty)
     armor_id = ss.get("cm_selected_armor_id") or ""
@@ -1016,9 +1104,9 @@ def render(settings: Dict[str, Any]) -> None:
             b_stats = _dice_min_max_avg(dtot.block)
             r_stats = _dice_min_max_avg(dtot.resist)
             st.markdown(f"**{title_suffix}**")
-            st.markdown(f"- Dodge: {_dodge_icons(eff_dodge)} (armor {dtot.dodge_armor} + hands {sum_hand_dodge})")
-            st.markdown(f"- Block: {_dice_icons(dtot.block)} (avg {b_stats['avg']:.2f})")
-            st.markdown(f"- Resist: {_dice_icons(dtot.resist)} (avg {r_stats['avg']:.2f})")
+            st.markdown(f"- Dodge:\t{_dodge_icons(eff_dodge)} (armor {dtot.dodge_armor} + hands {sum_hand_dodge})")
+            st.markdown(f"- Block:\t{_dice_icons(dtot.block)} (avg {b_stats['avg']:.2f})")
+            st.markdown(f"- Resist:\t{_dice_icons(dtot.resist)} (avg {r_stats['avg']:.2f})")
             sim_block = expected_damage_taken(incoming_damage=incoming_cmp, dodge_dice=eff_dodge, dodge_difficulty=dodge_diff_cmp, defense_dice=dtot.block)
             sim_resist = expected_damage_taken(incoming_damage=incoming_cmp, dodge_dice=eff_dodge, dodge_difficulty=dodge_diff_cmp, defense_dice=dtot.resist)
             st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
@@ -1165,23 +1253,36 @@ def render(settings: Dict[str, Any]) -> None:
             b_stats = _dice_min_max_avg(dt.block)
             r_stats = _dice_min_max_avg(dt.resist)
             st.markdown(f"**{title}**")
-            st.markdown(f"- Dodge: {_dodge_icons(eff_dodge)} (armor {dt.dodge_armor} + hands {sum_hand_dodge})")
-            st.markdown(f"- Block: {_dice_icons(dt.block)} (avg {b_stats['avg']:.2f})")
-            st.markdown(f"- Resist: {_dice_icons(dt.resist)} (avg {r_stats['avg']:.2f})")
+            st.markdown(
+                f"""
+                <ul style="list-style:none; padding-left:0; margin:0;">
+                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Dodge:</span> {_dodge_icons(eff_dodge)} <span style="color:#bfb79f">(armor {dt.dodge_armor} + hands {sum_hand_dodge})</span></li>
+                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Block:</span> {_dice_icons(dt.block)} <span style="color:#bfb79f">(avg {b_stats['avg']:.2f})</span></li>
+                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Resist:</span> {_dice_icons(dt.resist)} <span style="color:#bfb79f">(avg {r_stats['avg']:.2f})</span></li>
+                </ul>
+                """,
+                unsafe_allow_html=True,
+            )
             sim_incoming = ss.get("cm_sim_incoming", 6)
             sim_diff = ss.get("cm_sim_dodge_diff", 2)
             sim_block = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.block)
             sim_resist = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.resist)
             st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
             # Attack info for this combo (dice icons and avg per attack)
-            combo_atks = []
-            for h in h_objs:
-                hid = _id(h)
-                for r in (atk_rows or []):
-                    if isinstance(r, dict) and str(r.get('RowId') or '').startswith(f"{hid}::atk::"):
-                        combo_atks.append(r)
-            if combo_atks:
-                df_combo = pd.DataFrame(combo_atks)
+            # Compute combo-specific attack rows so per-attack mods from the
+            # items participating in the combo (e.g., catalysts) are applied
+            # to partner attacks only when the provider is included.
+            combo_wu_by_hand = { _id(h): weapon_upgrades_by_hand.get(_id(h)) or [] for h in h_objs }
+            combo_rows = build_attack_totals_rows_cached(
+                hand_items=h_objs,
+                selected_hand_ids=set([_id(h) for h in h_objs]),
+                armor_obj=armor_obj,
+                armor_upgrade_objs=armor_upgrade_objs,
+                weapon_upgrades_by_hand=combo_wu_by_hand,
+                apply_other_hand_attack_mods=True,
+            )
+            if combo_rows:
+                df_combo = pd.DataFrame(combo_rows)
                 # coerce Repeat to numeric so missing shows blank
                 if 'Repeat' in df_combo.columns:
                     df_combo['Repeat'] = pd.to_numeric(df_combo.get('Repeat'), errors='coerce')
@@ -1249,11 +1350,6 @@ def render(settings: Dict[str, Any]) -> None:
             _add_eff(u.get('text'))
             for imm in (u.get('immunities') or []):
                 _add_eff(f"Immunity: {imm}")
-
-        # Derived effects from attack lines
-        for r in atk_rows or []:
-            _add_eff(r.get('TotCond'))
-            _add_eff(r.get('Text'))
 
         effects = list(dict.fromkeys([e for e in effects if e]))
         if effects:

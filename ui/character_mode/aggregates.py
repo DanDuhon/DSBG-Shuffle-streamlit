@@ -103,6 +103,8 @@ _ATTACK_DICE_KEYS = (
     # v2 schema (canonical)
     "mods.attack.dice",
     "mods.damage.dice",
+    "dice",
+    "damage_dice",
 
     # legacy / transitional
     "attack_dice_mod",
@@ -132,6 +134,7 @@ _ATTACK_STAM_KEYS = (
     "stamina_delta",
     "mods.attack.stamina_mod",
     "mods.attack.stamina",
+    "stamina_cost",
 )
 
 _COND_KEYS = (
@@ -309,6 +312,7 @@ def _aggregate_attack_mods(
     armor_obj: Optional[Dict[str, Any]],
     armor_upgrade_objs: List[Dict[str, Any]],
     weapon_upgrade_objs: List[Dict[str, Any]],
+    hand_objs: List[Dict[str, Any]] = (),
 ) -> AttackMods:
     # global + weapon/armor upgrades; per-attack mods are handled separately elsewhere
     total_dice: DiceDict = {"black": 0, "blue": 0, "orange": 0, "flat_mod": 0}
@@ -321,6 +325,7 @@ def _aggregate_attack_mods(
         objs.append(armor_obj)
     objs.extend(armor_upgrade_objs)
     objs.extend(weapon_upgrade_objs)
+    objs.extend([h for h in hand_objs if isinstance(h, dict)])
 
     for o in objs:
         am = _extract_attack_mods(o)
@@ -332,7 +337,7 @@ def _aggregate_attack_mods(
     return AttackMods(dice=total_dice, stamina_delta=total_stam, conditions=tuple(dict.fromkeys(conds)), ignore_block=ign)
 
 
-def _per_attack_mod_from_upgrade(up: Dict[str, Any], attack_index: int) -> AttackMods:
+def _per_attack_mod_from_upgrade(up: Dict[str, Any], attack_index: int, *, attack_magic: bool = False) -> AttackMods:
     # Supported shapes:
     # - attack_mods: [ {dice_mod...}, ...]
     # - mods.attack_lines: [ {attack_dice_mod...}, ...]
@@ -343,10 +348,26 @@ def _per_attack_mod_from_upgrade(up: Dict[str, Any], attack_index: int) -> Attac
     v2 = _get_nested(up, "mods.attack_lines")
     if isinstance(v2, list):
         candidates = v2
+    # also support newer placement under effects.attack_mods (e.g. on attacks)
+    v3 = _get_nested(up, "effects.attack_mods")
+    if isinstance(v3, list):
+        candidates = v3
 
-    if 0 <= attack_index < len(candidates):
-        obj = candidates[attack_index]
+    if candidates:
+        # If a single candidate is present, treat it as a generic modifier
+        # that applies to any attack index (useful for items that grant
+        # "your magic attacks..." in a single entry).
+        if len(candidates) == 1:
+            obj = candidates[0]
+        elif 0 <= attack_index < len(candidates):
+            obj = candidates[attack_index]
+        else:
+            obj = None
+
         if isinstance(obj, dict):
+            targ = str(obj.get("target") or "").strip().lower()
+            if targ == "magic" and not bool(attack_magic):
+                return AttackMods(dice={"black": 0, "blue": 0, "orange": 0, "flat_mod": 0}, stamina_delta=0, conditions=tuple(), ignore_block=False)
             return _extract_attack_mods(obj)
     return AttackMods(dice={"black": 0, "blue": 0, "orange": 0, "flat_mod": 0}, stamina_delta=0, conditions=tuple(), ignore_block=False)
 
@@ -430,6 +451,7 @@ def build_attack_totals_rows(
     armor_obj: Optional[Dict[str, Any]],
     armor_upgrade_objs: List[Dict[str, Any]],
     weapon_upgrades_by_hand: Dict[str, List[Dict[str, Any]]],
+    apply_other_hand_attack_mods: bool = False,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
 
@@ -447,6 +469,7 @@ def build_attack_totals_rows(
             armor_obj=armor_obj,
             armor_upgrade_objs=armor_upgrade_objs,
             weapon_upgrade_objs=wups,
+            hand_objs=hand_items,
         )
 
         # Optional range delta (v2 supports mods.attack.range, but most range tweaks live in rules).
@@ -504,11 +527,36 @@ def build_attack_totals_rows(
 
             # legacy per-attack mods from upgrades (attack_mods / mods.attack_lines)
             for up in wups:
-                pam = _per_attack_mod_from_upgrade(up, idx)
+                pam = _per_attack_mod_from_upgrade(up, idx, attack_magic=magic)
                 dice = _dice_add(dice, pam.dice)
                 stam += int(pam.stamina_delta)
                 conds.extend(list(pam.conditions))
                 ignore_block = ignore_block or bool(pam.ignore_block)
+
+            # per-attack mods declared on the attack itself (effects.attack_mods)
+            pam_atk = _per_attack_mod_from_upgrade(atk, idx, attack_magic=magic)
+            dice = _dice_add(dice, pam_atk.dice)
+            stam += int(pam_atk.stamina_delta)
+            conds.extend(list(pam_atk.conditions))
+            ignore_block = ignore_block or bool(pam_atk.ignore_block)
+
+            # Optionally apply attack-level mods declared on other equipped
+            # hand items (e.g., catalysts that modify "your magic attacks").
+            # This is used when computing attack rows for a specific combo
+            # consisting only of the provided hand items so the provider's
+            # mods affect partner attacks.
+            if apply_other_hand_attack_mods:
+                for other in hand_items:
+                    if not isinstance(other, dict):
+                        continue
+                    if _id(other) == iid:
+                        continue
+                    for other_atk in (other.get("attacks") or []):
+                        pam_other = _per_attack_mod_from_upgrade(other_atk or {}, idx, attack_magic=magic)
+                        dice = _dice_add(dice, pam_other.dice)
+                        stam += int(pam_other.stamina_delta)
+                        conds.extend(list(pam_other.conditions))
+                        ignore_block = ignore_block or bool(pam_other.ignore_block)
 
             states.append(
                 AttackState(
@@ -691,7 +739,7 @@ def _to_json(obj: Any) -> str:
 
 
 @st.cache_data(show_spinner=False)
-def _build_attack_totals_rows_cached_key(hand_items_json: str, selected_hand_ids_tuple: Tuple[str, ...], armor_json: str, armor_upgrade_json: str, weapon_upgrades_by_hand_json: str) -> List[Dict[str, Any]]:
+def _build_attack_totals_rows_cached_key(hand_items_json: str, selected_hand_ids_tuple: Tuple[str, ...], armor_json: str, armor_upgrade_json: str, weapon_upgrades_by_hand_json: str, apply_other_hand_attack_mods: bool = False) -> List[Dict[str, Any]]:
     hand_items = json.loads(hand_items_json)
     selected_hand_ids = set(list(selected_hand_ids_tuple))
     armor_obj = json.loads(armor_json) if armor_json else None
@@ -703,6 +751,7 @@ def _build_attack_totals_rows_cached_key(hand_items_json: str, selected_hand_ids
         armor_obj=armor_obj,
         armor_upgrade_objs=armor_upgrade_objs,
         weapon_upgrades_by_hand=weapon_upgrades_by_hand,
+        apply_other_hand_attack_mods=apply_other_hand_attack_mods,
     )
 
 
@@ -713,6 +762,7 @@ def build_attack_totals_rows_cached(
     armor_obj: Optional[Dict[str, Any]],
     armor_upgrade_objs: List[Dict[str, Any]],
     weapon_upgrades_by_hand: Dict[str, List[Dict[str, Any]]],
+    apply_other_hand_attack_mods: bool = False,
 ) -> List[Dict[str, Any]]:
     return _build_attack_totals_rows_cached_key(
         _to_json(hand_items),
@@ -720,6 +770,7 @@ def build_attack_totals_rows_cached(
         _to_json(armor_obj) if armor_obj is not None else "",
         _to_json(armor_upgrade_objs),
         _to_json(weapon_upgrades_by_hand),
+        bool(apply_other_hand_attack_mods),
     )
 
 
