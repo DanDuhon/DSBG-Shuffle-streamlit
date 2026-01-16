@@ -934,7 +934,6 @@ def render(settings: Dict[str, Any]) -> None:
 
     if left_choice == right_choice:
         st.warning("Select two different builds to compare.")
-        return
     
     def _build_preview_from_build(data: dict):
         if not data:
@@ -1006,8 +1005,6 @@ def render(settings: Dict[str, Any]) -> None:
         wu_by_hand = preview.get('wu_by_hand') or {}
         one_hands = [h for h in hands if _hands_required(h) == 1]
         two_hands = [h for h in hands if _hands_required(h) == 2]
-        # shields usable with a 2-hander should be considered for 2H combos
-        twohand_compatible_shields = [h for h in hands if _is_twohand_compatible_shield(h)]
 
         def _render_def_for(h_objs: List[dict], title_suffix: str):
             # collect weapon upgrades for these hands
@@ -1051,8 +1048,6 @@ def render(settings: Dict[str, Any]) -> None:
     with cR:
         _render_preview_column(right_preview, "Right build")
 
-    # (Preview UI removed) keep pandas tables as primary interaction
-
     def_tot = build_defense_totals_cached(
         armor_obj=armor_obj,
         armor_upgrade_objs=armor_upgrade_objs,
@@ -1061,9 +1056,6 @@ def render(settings: Dict[str, Any]) -> None:
     )
 
     dodge_effective = max(int(def_tot.dodge_armor), 0) + max(int(def_tot.dodge_hand_max), 0)
-
-    bstats = _dice_min_max_avg(def_tot.block)
-    rstats = _dice_min_max_avg(def_tot.resist)
 
     # Total attack lines for selected items (includes armor + upgrades)
     weapon_upgrades_by_hand = {
