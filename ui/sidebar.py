@@ -74,6 +74,73 @@ def render_sidebar(settings: dict):
         )
         settings["active_expansions"] = active_expansions
 
+    # Characters
+    available_characters = sorted(
+        c for c, exps in CHARACTER_EXPANSIONS.items()
+        if any(exp in active_expansions for exp in exps)
+    )
+
+    previous_selection = settings.get("selected_characters", [])
+    still_valid = [c for c in previous_selection if c in available_characters]
+    if len(still_valid) < len(previous_selection):
+        removed = [c for c in previous_selection if c not in still_valid]
+        st.sidebar.warning(f"Removed invalid characters: {', '.join(removed)}")
+        settings["selected_characters"] = still_valid
+
+    with st.sidebar.expander("🎭 Party", expanded=False):
+        selected_characters = st.multiselect(
+            "Selected Characters (max 4):",
+            options=available_characters,
+            default=settings.get("selected_characters", []),
+            max_selections=4,
+            key="selected_characters",
+        )
+        settings["selected_characters"] = selected_characters
+
+    # --- New Game+ selection ---
+    if "sidebar_ngplus_expanded" not in st.session_state:
+        st.session_state["sidebar_ngplus_expanded"] = False
+
+    def _ngplus_level_changed():
+        st.session_state["sidebar_ngplus_expanded"] = True
+
+    current_ng = int(st.session_state.get("ngplus_level", 0))
+
+    with st.sidebar.expander(
+        f"⬆️ New Game+ (Current: NG+{current_ng})",
+        expanded=bool(st.session_state.get("sidebar_ngplus_expanded", False)),
+    ):
+        level = st.number_input(
+            "NG+ Level",
+            min_value=0,
+            max_value=MAX_NGPLUS_LEVEL,
+            value=max(0, min(int(current_ng), MAX_NGPLUS_LEVEL)),
+            step=1,
+            key="ngplus_level",
+            on_change=_ngplus_level_changed,
+        )
+
+        lvl = int(level)
+        if lvl > 0:
+            dodge_b = dodge_bonus_for_level(lvl)
+            if dodge_b == 1:
+                dodge_text = "+1 to dodge difficulty."
+            elif dodge_b == 2:
+                dodge_text = "+2 to dodge difficulty."
+
+            st.markdown(
+                "\n".join(
+                    [
+                        f"- Base HP 1-3: +{lvl}",
+                        f"- Base HP 4-7: +{_HP_4_TO_7_BONUS[lvl]}",
+                        f"- Base HP 8-10: +{lvl*2}",
+                        f"- Base HP 11+: +{lvl*10}% (rounded up)",
+                        f"- +{lvl} damage to all attacks.",
+                    ]
+                    + ([f"- {dodge_text}"] if dodge_b > 0 else [])
+                )
+            )
+
     # Enemy selection (global): group by expansion and let user enable/disable enemies
     # Applies to both Encounter Mode and Campaign Mode generation.
     with st.sidebar.expander("🛡️ Enemy Selection", expanded=False):
@@ -141,29 +208,6 @@ def render_sidebar(settings: dict):
             settings["enemy_included"] = included
             st.session_state["user_settings"] = settings
 
-    # Characters
-    available_characters = sorted(
-        c for c, exps in CHARACTER_EXPANSIONS.items()
-        if any(exp in active_expansions for exp in exps)
-    )
-
-    previous_selection = settings.get("selected_characters", [])
-    still_valid = [c for c in previous_selection if c in available_characters]
-    if len(still_valid) < len(previous_selection):
-        removed = [c for c in previous_selection if c not in still_valid]
-        st.sidebar.warning(f"Removed invalid characters: {', '.join(removed)}")
-        settings["selected_characters"] = still_valid
-
-    with st.sidebar.expander("🎭 Party", expanded=False):
-        selected_characters = st.multiselect(
-            "Selected Characters (max 4):",
-            options=available_characters,
-            default=settings.get("selected_characters", []),
-            max_selections=4,
-            key="selected_characters",
-        )
-        settings["selected_characters"] = selected_characters
-
     # Invaders
     with st.sidebar.expander("⚔️ Encounter Invader Cap", expanded=False):
         for lvl, mx in INVADER_CAP_CLAMP.items():
@@ -179,79 +223,29 @@ def render_sidebar(settings: dict):
                 on_change=_sync_invader_caps,
             )
 
-    # --- New Game+ selection ---
-    if "sidebar_ngplus_expanded" not in st.session_state:
-        st.session_state["sidebar_ngplus_expanded"] = False
-
-    def _ngplus_level_changed():
-        st.session_state["sidebar_ngplus_expanded"] = True
-
-    current_ng = int(st.session_state.get("ngplus_level", 0))
-
-    with st.sidebar.expander(
-        f"⬆️ New Game+ (Current: NG+{current_ng})",
-        expanded=bool(st.session_state.get("sidebar_ngplus_expanded", False)),
-    ):
-        level = st.number_input(
-            "NG+ Level",
-            min_value=0,
-            max_value=MAX_NGPLUS_LEVEL,
-            value=max(0, min(int(current_ng), MAX_NGPLUS_LEVEL)),
-            step=1,
-            key="ngplus_level",
-            on_change=_ngplus_level_changed,
-        )
-
-        lvl = int(level)
-        if lvl > 0:
-            dodge_b = dodge_bonus_for_level(lvl)
-            if dodge_b == 1:
-                dodge_text = "+1 to dodge difficulty."
-            elif dodge_b == 2:
-                dodge_text = "+2 to dodge difficulty."
-
-            st.markdown(
-                "\n".join(
-                    [
-                        f"- Base HP 1-3: +{lvl}",
-                        f"- Base HP 4-7: +{_HP_4_TO_7_BONUS[lvl]}",
-                        f"- Base HP 8-10: +{lvl*2}",
-                        f"- Base HP 11+: +{lvl*10}% (rounded up)",
-                        f"- +{lvl} damage to all attacks.",
-                    ]
-                    + ([f"- {dodge_text}"] if dodge_b > 0 else [])
-                )
-            )
-
     # One-time init for the widget key (must happen BEFORE st.slider is created)
     if "ui_card_width" not in st.session_state:
         st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
 
-    with st.sidebar.expander("🖼️ Card Display", expanded=False):
-        st.slider(
-            "Card width (px)",
-            min_value=240,
-            max_value=560,
-            step=10,
-            key="ui_card_width",
-            value=int(st.session_state["ui_card_width"]),
-        )
-        st.caption("This scales the size of boss cards and event cards in Encounter Mode's Event tab.")
-
-    # Sync widget -> persisted settings (mutate IN PLACE, do not replace settings dict)
-    settings["ui_card_width"] = int(st.session_state["ui_card_width"])
-
-    # Session + persisted UI controls
-    # Initialize from settings if present so the choice persists across runs
-    if "ui_compact" not in st.session_state:
-        st.session_state["ui_compact"] = bool(settings.get("ui_compact", False))
-
-    with st.sidebar.expander("📱 UI", expanded=False):
-        st.checkbox("Compact layout (mobile)", key="ui_compact")
-
-    # Persist the compact toggle into the settings dict (and session_state)
-    settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
-    st.session_state["user_settings"] = settings
+        # Encounter item reward shuffle setting
+        # Options control how encounters that specify a particular item reward are handled.
+        # Persist the choice in user_settings as `encounter_item_reward_mode`.
+        modes = [
+            "Similar Soul Cost",
+            "Same Item Tier",
+            "Original",
+        ]
+        prev_mode = settings.get("encounter_item_reward_mode", "Original")
+        with st.sidebar.expander("💎 Item Swap", expanded=False):
+            mode = st.selectbox(
+                "When an encounter rewards a specific item, treat it as:",
+                options=modes,
+                index=modes.index(prev_mode) if prev_mode in modes else modes.index("Original"),
+                key="encounter_item_reward_mode",
+            )
+            settings["encounter_item_reward_mode"] = mode
+            st.session_state["user_settings"] = settings
+            save_settings(settings)
 
     # Rules display preference: show phase-only rules/triggers only in their phase
     prev_rules_pref = bool(settings.get("rules_show_only_in_phase", True))
@@ -313,22 +307,28 @@ def render_sidebar(settings: dict):
                 emoji = "✅" if enabled else "❌"
                 st.write(f"{emoji} {enc_name} ({enc_exp})")
 
-        # Encounter item reward shuffle setting
-        # Options control how encounters that specify a particular item reward are handled.
-        # Persist the choice in user_settings as `encounter_item_reward_mode`.
-        modes = [
-            "Similar Soul Cost",
-            "Same Item Tier",
-            "Original",
-        ]
-        prev_mode = settings.get("encounter_item_reward_mode", "Original")
-        with st.sidebar.expander("💎 Item Swap", expanded=False):
-            mode = st.selectbox(
-                "When an encounter rewards a specific item, treat it as:",
-                options=modes,
-                index=modes.index(prev_mode) if prev_mode in modes else modes.index("Original"),
-                key="encounter_item_reward_mode",
-            )
-            settings["encounter_item_reward_mode"] = mode
-            st.session_state["user_settings"] = settings
-            save_settings(settings)
+    with st.sidebar.expander("🖼️ Card Display", expanded=False):
+        st.slider(
+            "Card width (px)",
+            min_value=240,
+            max_value=560,
+            step=10,
+            key="ui_card_width",
+            value=int(st.session_state["ui_card_width"]),
+        )
+        st.caption("This scales the size of boss cards and event cards in Encounter Mode's Event tab.")
+
+    # Sync widget -> persisted settings (mutate IN PLACE, do not replace settings dict)
+    settings["ui_card_width"] = int(st.session_state["ui_card_width"])
+
+    # Session + persisted UI controls
+    # Initialize from settings if present so the choice persists across runs
+    if "ui_compact" not in st.session_state:
+        st.session_state["ui_compact"] = bool(settings.get("ui_compact", False))
+
+    with st.sidebar.expander("📱 UI", expanded=False):
+        st.checkbox("Compact layout (mobile)", key="ui_compact")
+
+    # Persist the compact toggle into the settings dict (and session_state)
+    settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
+    st.session_state["user_settings"] = settings
