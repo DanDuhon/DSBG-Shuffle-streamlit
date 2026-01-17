@@ -139,7 +139,7 @@ def _render_v1_setup(
     # Mirror into settings so campaign generation code can read it
     settings["only_original_enemies_for_campaigns"] = bool(only_original)
 
-    if st.button("Generate campaign", key="campaign_v1_generate", width="stretch"):
+    if st.button("Generate campaign ⚙️", key="campaign_v1_generate", width="stretch"):
         with st.spinner("Generating campaign..."):
             campaign = generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
@@ -277,7 +277,7 @@ def _render_v2_setup(
     # Mirror into settings so campaign generation reads it immediately
     settings["only_original_enemies_for_campaigns"] = bool(only_original)
 
-    if st.button("Generate campaign", key="campaign_v2_generate", width="stretch"):
+    if st.button("Generate campaign ⚙️", key="campaign_v2_generate", width="stretch"):
         with st.spinner("Generating V2 campaign..."):
             # Mirror v2-only original-enemy option into settings as well
             if "only_original_enemies" not in state:
@@ -340,7 +340,7 @@ def _render_save_load_section(
             key=f"campaign_name_{version}",
         )
 
-        if st.button("Save campaign", key=f"campaign_save_{version}", width="stretch"):
+        if st.button("Save campaign 💾", key=f"campaign_save_{version}", width="stretch"):
             name = name_input.strip()
             if not name:
                 st.error("Campaign name is required to save.")

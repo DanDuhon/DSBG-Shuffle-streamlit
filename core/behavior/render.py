@@ -283,7 +283,7 @@ def render():
                     st.session_state["heatup_done"] = True
                 st.rerun()
         with confirm_cols[1]:
-            if st.button("Cancel", key="cancel_heatup", width="stretch"):
+            if st.button("Cancel ❌", key="cancel_heatup", width="stretch"):
                 _clear_heatup_prompt()
                 st.session_state["heatup_done"] = False
                 st.rerun()
@@ -299,7 +299,7 @@ def render():
                     apply_heatup(state, cfg, random.Random(), reason="manual")
                     st.rerun()
             with c2:
-                if st.button("Cancel", width="stretch"):
+                if st.button("Cancel ❌", width="stretch"):
                     _clear_heatup_prompt()
                     state["old_dragonslayer_pending"] = False
                     state["old_dragonslayer_confirmed"] = False
@@ -314,7 +314,7 @@ def render():
                 if st.button("🔥 Confirm Phase Change", width="stretch"):
                     _ornstein_smough_heatup_ui(state, cfg)
             with c2:
-                if st.button("Cancel", width="stretch"):
+                if st.button("Cancel ❌", width="stretch"):
                     st.session_state["pending_heatup_prompt"] = False
                     st.session_state["smough_dead_pending"] = False
                     st.session_state["ornstein_dead_pending"] = False

@@ -167,11 +167,11 @@ def render(settings: Dict[str, Any]) -> None:
             with left:
                 r1a, r1b = st.columns(2)
                 with r1a:
-                    if st.button("Draw", width="stretch", key="enc_events_sim_draw"):
+                    if st.button("Draw 🃏", width="stretch", key="enc_events_sim_draw"):
                         draw_event_card()
                         _sync_deck_to_settings(settings)
                 with r1b:
-                    if st.button("Reset and Shuffle", width="stretch", key="enc_events_sim_reset"):
+                    if st.button("Reset and Shuffle 🔄", width="stretch", key="enc_events_sim_reset"):
                         reset_event_deck(configs=configs, preset=preset)
                         _sync_deck_to_settings(settings)
 
@@ -188,7 +188,7 @@ def render(settings: Dict[str, Any]) -> None:
                 r2a, r2b = st.columns(2)
                 with r2a:
                     if st.button(
-                        "Current → Top",
+                        "Current → Top ⬆️",
                         width="stretch",
                         disabled=not has_current,
                         key="enc_events_sim_top",
@@ -197,7 +197,7 @@ def render(settings: Dict[str, Any]) -> None:
                         _sync_deck_to_settings(settings)
                 with r2b:
                     if st.button(
-                        "Current → Bottom",
+                        "Current → Bottom ⬇️",
                         width="stretch",
                         disabled=not has_current,
                         key="enc_events_sim_bottom",

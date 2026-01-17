@@ -344,11 +344,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             # --- Shuffle / Original buttons ---
             col_shuffle, col_original = st.columns(2)
             with col_shuffle:
-                shuffle_clicked = st.button("Shuffle", width="stretch", disabled=shuffle_disabled)
+                shuffle_clicked = st.button("Shuffle 🔀", width="stretch", disabled=shuffle_disabled)
                 if shuffle_disabled:
                     st.warning("No other enemy alternatives available for this encounter.")
             with col_original:
-                original_clicked = st.button("Original", width="stretch", disabled=original_disabled)
+                original_clicked = st.button("Original 🔁", width="stretch", disabled=original_disabled)
                 if original_disabled:
                     st.warning("Original enemy list is not available (disabled or unmapped enemies).")
 
@@ -522,7 +522,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             )
             save_name = st.text_input("Save as:", value=save_name_default)
 
-            if st.button("Save Current", width="stretch"):
+            if st.button("Save Current 💾", width="stretch"):
                 if "current_encounter" not in st.session_state:
                     st.warning("No active encounter to save.")
                 else:
@@ -557,7 +557,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 )
                 load_col, delete_col = st.columns([1, 1])
                 with load_col:
-                    if st.button("Load", width="stretch"):
+                    if st.button("Load 📥", width="stretch"):
                         payload = dict(st.session_state.saved_encounters[load_name])
 
                         # Re-generate the encounter image (images are not persisted)
@@ -593,7 +593,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         _apply_added_invaders_to_current_encounter()
 
                 with delete_col:
-                    if st.button("Delete", width="stretch"):
+                    if st.button("Delete 🗑️", width="stretch"):
                         if load_name in st.session_state.saved_encounters:
                             st.session_state.saved_encounters.pop(load_name, None)
                             # Persist deletion to dedicated file, fallback to settings
@@ -665,7 +665,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             col_ev1, col_ev2, col_ev3 = st.columns(3)
             with col_ev1:
                 if st.button(
-                    "Attach Random Event",
+                    "Attach Random Event 🎲",
                     width="stretch",
                     key="enc_attach_random_event",
                 ):
@@ -701,7 +701,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             with col_ev2:
                 if st.button(
-                    "Clear Events",
+                    "Clear Events 🧹",
                     width="stretch",
                     key="enc_clear_events",
                 ):
@@ -873,9 +873,9 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         # --- Shuffle / Original buttons ---
         col_shuffle, col_original = st.columns(2)
         with col_shuffle:
-            shuffle_clicked = st.button("Shuffle", width="stretch")
+            shuffle_clicked = st.button("Shuffle 🔀", width="stretch")
         with col_original:
-            original_clicked = st.button("Original", width="stretch")
+            original_clicked = st.button("Original 🔁", width="stretch")
 
         # Shuffle
         if shuffle_clicked and selected_label:
@@ -1077,7 +1077,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         events = st.session_state.get("encounter_events", [])
         
         if st.button(
-            "Attach Random Event",
+            "Attach Random Event 🎲",
             width="stretch",
             key="enc_attach_random_event",
         ):
@@ -1112,7 +1112,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             events = st.session_state.get("encounter_events", [])
             
         if st.button(
-            "Clear Events",
+            "Clear Events 🧹",
             width="stretch",
             key="enc_clear_events",
         ):
@@ -1323,10 +1323,10 @@ def _render_invader_setup_controls(encounter: dict) -> None:
                     st.markdown(f"- {name}")
                 with c2:
                     if st.button(
-                        "X",
+                        "❌",
                         key=f"remove_invader_{key}_{idx}",
                         width="stretch"
-                    ):
+                    ): 
                         added_names = [n for n in added_names if n != name]
                         added_map[key] = added_names
                         st.session_state[ADDED_INVADERS_KEY] = added_map
@@ -1367,7 +1367,7 @@ def _render_invader_setup_controls(encounter: dict) -> None:
         )
 
         if choice != "(none)" and st.button(
-            "Add invader", key=f"invader_add_btn_{key}",
+            "Add invader ➕", key=f"invader_add_btn_{key}",
             width="stretch"
         ):
             if choice not in added_names:

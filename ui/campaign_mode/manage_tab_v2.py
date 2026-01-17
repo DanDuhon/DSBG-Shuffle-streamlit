@@ -666,20 +666,21 @@ def _render_v2_path_row(
             return
 
         # If chapter is closed, encounters/bosses in this stage are no longer legal destinations
-        if stage_closed and kind in ("encounter", "boss"):
-            return
+        stage_is_closed = bool(stage_closed and kind in ("encounter", "boss"))
 
         can_travel_here = True
         if allowed_destinations is not None and node_id not in allowed_destinations:
             can_travel_here = False
+        if stage_is_closed:
+            can_travel_here = False
 
         # Bonfire row
         if kind == "bonfire":
-            if not can_travel_here:
-                return
             # When travel is disabled due to an unresolved encounter choice,
-            # render the Return button as disabled for other nodes.
-            disabled = disable_travel and node_id != campaign.get("current_node_id")
+            # or the destination is otherwise illegal, render the Return button as disabled.
+            disabled = (not can_travel_here) or (
+                disable_travel and node_id != campaign.get("current_node_id")
+            )
             if st.button(
                 "Return to Bonfire (spend 1 Spark)",
                 key=f"campaign_v2_goto_{node_id}",
@@ -710,18 +711,16 @@ def _render_v2_path_row(
         )
 
         if kind in ("encounter", "boss"):
-            if not can_travel_here:
-                if show_souls_token:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
-                return
-
             btn_label = "Travel" if kind == "encounter" else "Confront"
             if is_shortcut_destination:
                 btn_label = "Take Shortcut"
 
             # When travel is disabled due to an unresolved encounter choice,
-            # render the travel/confront/shortcut button disabled for other nodes.
-            disabled = disable_travel and node_id != campaign.get("current_node_id")
+            # or the destination is otherwise illegal, render the travel/confront/
+            # shortcut button disabled for other nodes.
+            disabled = (not can_travel_here) or (
+                disable_travel and node_id != campaign.get("current_node_id")
+            )
 
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])

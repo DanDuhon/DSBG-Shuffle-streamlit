@@ -159,7 +159,7 @@ def render(settings: Dict[str, Any]) -> None:
                 "Load custom deck", options=["(new)"] + names, key="event_builder_pick"
             )
 
-            if st.button("Load into editor", width="stretch"):
+            if st.button("Load into editor 📥", width="stretch"):
                 b = _builder_get()
                 if pick == "(new)":
                     b.update({"name": "", "cards": {}, "loaded_from": None})
@@ -206,7 +206,7 @@ def render(settings: Dict[str, Any]) -> None:
 
             save_disabled = not (b.get("name") and cards_map)
 
-            if st.button("Save custom deck", width="stretch", disabled=save_disabled):
+            if st.button("Save custom deck 💾", width="stretch", disabled=save_disabled):
                 name = str(b["name"]).strip()
                 if name:
                     custom_decks[name] = {"cards": dict(cards_map)}
@@ -229,7 +229,7 @@ def render(settings: Dict[str, Any]) -> None:
 
             # Reset per-card counts to zero without deleting the saved deck
             reset_disabled = not bool(cards_map)
-            if st.button("Reset deck", width="stretch", disabled=reset_disabled):
+            if st.button("Reset deck 🔄", width="stretch", disabled=reset_disabled):
                 prefix = "event_builder_copies_all::"
                 for key in list(st.session_state.keys()):
                     if isinstance(key, str) and key.startswith(prefix):
@@ -246,7 +246,7 @@ def render(settings: Dict[str, Any]) -> None:
             del_disabled = not (
                 b.get("loaded_from") and b.get("loaded_from") in custom_decks
             )
-            if st.button("Delete loaded deck", width="stretch", disabled=del_disabled):
+            if st.button("Delete loaded deck 🗑️", width="stretch", disabled=del_disabled):
                 loaded = b.get("loaded_from")
                 if loaded in custom_decks:
                     del custom_decks[loaded]
@@ -410,14 +410,14 @@ def render(settings: Dict[str, Any]) -> None:
             with left:
                 b_row1_a, b_row1_b = st.columns(2)
                 with b_row1_a:
-                    if st.button("Draw", width="stretch", key="event_sim_draw"):
+                    if st.button("Draw 🃏", width="stretch", key="event_sim_draw"):
                         draw_event_card()
                         deck_state = st.session_state[DECK_STATE_KEY]
                         settings["event_deck"] = deck_state
                         save_settings(settings)
                 with b_row1_b:
                     if st.button(
-                        "Reset and Shuffle", width="stretch", key="event_sim_reset"
+                        "Reset and Shuffle 🔄", width="stretch", key="event_sim_reset"
                     ):
                         reset_event_deck(configs=configs, preset=preset)
                         deck_state = st.session_state[DECK_STATE_KEY]
@@ -427,7 +427,7 @@ def render(settings: Dict[str, Any]) -> None:
                 b_row2_a, b_row2_b = st.columns(2)
                 with b_row2_a:
                     if st.button(
-                        "Current → Top",
+                        "Current → Top ⬆️",
                         width="stretch",
                         disabled=not has_current,
                         key="event_sim_top",
@@ -438,7 +438,7 @@ def render(settings: Dict[str, Any]) -> None:
                         save_settings(settings)
                 with b_row2_b:
                     if st.button(
-                        "Current → Bottom",
+                        "Current → Bottom ⬇️",
                         width="stretch",
                         disabled=not has_current,
                         key="event_sim_bottom",
@@ -463,10 +463,10 @@ def render(settings: Dict[str, Any]) -> None:
                     a1, a2 = st.columns(2)
                     with a1:
                         if st.button(
-                            "Shuffle into deck",
-                            width="stretch",
-                            key="event_sim_shuffle_into_deck",
-                        ):
+                                "Shuffle into deck 🔀",
+                                width="stretch",
+                                key="event_sim_shuffle_into_deck",
+                            ):
                             shuffle_current_into_deck()
                             deck_state = st.session_state[DECK_STATE_KEY]
                             settings["event_deck"] = deck_state
@@ -475,7 +475,7 @@ def render(settings: Dict[str, Any]) -> None:
                     with a2:
                         if is_lost_to_time:
                             if st.button(
-                                "Remove from deck",
+                                "Remove from deck 🗑️",
                                 width="stretch",
                                 key="event_sim_remove_from_deck",
                             ):
@@ -557,18 +557,18 @@ def render(settings: Dict[str, Any]) -> None:
             is_big_pilgrims_key = name_norm == "big pilgrim's key"
             is_lost_to_time = name_norm == "lost to time"
 
-            st.button("Draw", width="stretch", key="event_sim_draw", on_click=_cb_draw)
+            st.button("Draw 🃏", width="stretch", key="event_sim_draw", on_click=_cb_draw)
 
             if has_current and (is_big_pilgrims_key or is_lost_to_time):
                 st.button(
-                    "Shuffle into deck",
+                    "Shuffle into deck 🔀",
                     width="stretch",
                     key="event_sim_shuffle_into_deck",
                     on_click=_cb_shuffle_into_deck,
                 )
                 if is_lost_to_time:
                     st.button(
-                        "Remove from deck",
+                        "Remove from deck 🗑️",
                         width="stretch",
                         key="event_sim_remove_from_deck",
                         on_click=_cb_remove_from_deck,
@@ -583,14 +583,14 @@ def render(settings: Dict[str, Any]) -> None:
                 st.caption("—")
 
             st.button(
-                "Current → Top",
+                "Current → Top ⬆️",
                 width="stretch",
                 disabled=not has_current,
                 key="event_sim_top",
                 on_click=_cb_top,
             )
             st.button(
-                "Current → Bottom",
+                "Current → Bottom ⬇️",
                 width="stretch",
                 disabled=not has_current,
                 key="event_sim_bottom",
@@ -598,7 +598,7 @@ def render(settings: Dict[str, Any]) -> None:
             )
 
             st.button(
-                "Reset and Shuffle",
+                "Reset and Shuffle 🔄",
                 width="stretch",
                 key="event_sim_reset",
                 on_click=_cb_reset,

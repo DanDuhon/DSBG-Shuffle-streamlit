@@ -255,7 +255,7 @@ def render(settings: Dict[str, Any]) -> None:
         with c1:
             _ = st.text_input("Build name", key="cm_build_name")
         with c2:
-            if st.button("Save build", key="cm_build_save"):
+            if st.button("Save build 💾", key="cm_build_save"):
                 name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
                 ss["cm_builds"][name] = _current_build()
                 # Persist saved builds to dedicated file
@@ -265,7 +265,7 @@ def render(settings: Dict[str, Any]) -> None:
         sel = st.selectbox("Saved builds", options=[""] + snaps, key="cm_build_select")
         c3, c4 = st.columns([1, 1])
         with c3:
-            if st.button("Load", key="cm_build_load"):
+            if st.button("Load 📥", key="cm_build_load"):
                 name = ss.get("cm_build_select")
                 if name:
                     # Mark build to be applied on the next run so we can set
@@ -273,7 +273,7 @@ def render(settings: Dict[str, Any]) -> None:
                     ss["cm_pending_build"] = ss["cm_builds"][name]
                     st.rerun()
         with c4:
-            if st.button("Delete", key="cm_build_delete"):
+            if st.button("Delete 🗑️", key="cm_build_delete"):
                 name = ss.get("cm_build_select")
                 if name and name in ss.get("cm_builds", {}):
                     ss["cm_builds"].pop(name, None)

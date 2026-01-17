@@ -342,7 +342,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 3: Put On Top
                 with c2:
-                    if st.button("Put On Top", key=f"gravestone_evt_top_{ctx}_{i}", width="stretch"):
+                    if st.button("Put On Top ⬆️", key=f"gravestone_evt_top_{ctx}_{i}", width="stretch"):
                         if isinstance(deck, dict):
                             draw = _ensure_draw_pile(deck)
                             draw.insert(0, pending)
@@ -357,7 +357,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 4: Put On Bottom
                 with c3:
-                    if st.button("Put On Bottom", key=f"gravestone_evt_bottom_{ctx}_{i}", width="stretch"):
+                    if st.button("Put On Bottom ⬇️", key=f"gravestone_evt_bottom_{ctx}_{i}", width="stretch"):
                         if isinstance(deck, dict):
                             draw = _ensure_draw_pile(deck)
                             draw.append(pending)

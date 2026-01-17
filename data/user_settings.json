@@ -133,7 +133,6 @@
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Skeletal Reforging.jpg",
       "assets\\events\\Princess Guard.jpg",
       "assets\\events\\Green Blossom.jpg",
       "assets\\events\\Martial Bonfire Ascetic.jpg",
@@ -173,7 +172,7 @@
       "assets\\events\\Fleeting Glory.jpg"
     ],
     "discard_pile": [],
-    "current_card": null,
+    "current_card": "assets\\events\\Skeletal Reforging.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",
