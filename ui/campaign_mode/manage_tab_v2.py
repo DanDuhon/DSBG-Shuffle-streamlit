@@ -498,15 +498,15 @@ def _render_v2_campaign_compact(
                 dest_node = n
                 break
 
-        btn_label = "Travel"
+        btn_label = "Travel ➡️"
         if isinstance(dest_node, dict):
             k = dest_node.get("kind")
             if k == "bonfire":
-                btn_label = "Return to Bonfire (spend 1 Spark)"
+                btn_label = "Return to Bonfire (spend 1 Spark) 🔥"
             elif k == "boss":
-                btn_label = "Confront"
+                btn_label = "Confront ⚔️"
             if current_is_bonfire and dest_node.get("shortcut_unlocked"):
-                btn_label = "Take Shortcut"
+                btn_label = "Take Shortcut ↗️"
 
         # Disable the compact travel button if choices must be resolved on the
         # current encounter space.
@@ -682,7 +682,7 @@ def _render_v2_path_row(
                 disable_travel and node_id != campaign.get("current_node_id")
             )
             if st.button(
-                "Return to Bonfire (spend 1 Spark)",
+                "Return to Bonfire (spend 1 Spark) 🔥",
                 key=f"campaign_v2_goto_{node_id}",
                 width="stretch",
                 disabled=disabled,
@@ -711,9 +711,9 @@ def _render_v2_path_row(
         )
 
         if kind in ("encounter", "boss"):
-            btn_label = "Travel" if kind == "encounter" else "Confront"
+            btn_label = "Travel ➡️" if kind == "encounter" else "Confront ⚔️"
             if is_shortcut_destination:
-                btn_label = "Take Shortcut"
+                btn_label = "Take Shortcut ↗️"
 
             # When travel is disabled due to an unresolved encounter choice,
             # or the destination is otherwise illegal, render the travel/confront/

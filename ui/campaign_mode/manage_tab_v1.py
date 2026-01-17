@@ -356,7 +356,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             or current_node.get("kind") == "bonfire"
         )
         if st.button(
-            "Return to Bonfire (spend 1 Spark)",
+            "Return to Bonfire (spend 1 Spark) 🔥",
             key="v1_return_button",
             width="stretch",
             disabled=disable_return_button,

@@ -481,7 +481,7 @@ def _render_campaign_play_tab(
         # Button to commit the last encounter's rewards into the campaign state
         if has_any_rewards and not encounter_is_complete:
             if st.button(
-                "Mark encounter as completed (apply rewards to campaign)",
+                "Mark encounter as completed (apply rewards to campaign) ✅",
                 key="campaign_play_mark_completed",
                 width="stretch"
             ):
@@ -568,7 +568,7 @@ def _render_campaign_play_tab(
         )
 
         if st.button(
-            "Mark encounter as failed (return to bonfire, lose 1 Spark)",
+            "Mark encounter as failed (return to bonfire, lose 1 Spark) ❌",
             key="campaign_play_mark_failed",
             width="stretch"
         ):

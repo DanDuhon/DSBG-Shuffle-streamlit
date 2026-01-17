@@ -252,7 +252,7 @@ def _render_boss_outcome_controls(
 
     with col_win:
         if st.button(
-            "Boss defeated (close chapter)",
+            "Boss defeated ✅ (close chapter)",
             key=f"campaign_{version.lower()}_boss_defeated",
             width="stretch",
         ):
@@ -260,7 +260,7 @@ def _render_boss_outcome_controls(
 
     with col_fail:
         if st.button(
-            "Boss failed (return to bonfire, lose 1 Spark)",
+            "Boss failed ❌ (return to bonfire, lose 1 Spark)",
             key=f"campaign_{version.lower()}_boss_failed",
             width="stretch",
         ):

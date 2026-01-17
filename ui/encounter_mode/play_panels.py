@@ -996,18 +996,17 @@ def _render_turn_controls(
             st.rerun()
 
     if compact:
-        _action_button("Previous Turn", key="encounter_play_prev_turn", action="prev")
-        _action_button("Next Turn", key="encounter_play_next_turn", action="next", disabled=stop_on_timer_objective)
-        _action_button("Reset", key="encounter_play_reset", action="reset")
+        _action_button("Previous Turn ⬅️", key="encounter_play_prev_turn", action="prev")
+        _action_button("Next Turn ➡️", key="encounter_play_next_turn", action="next", disabled=stop_on_timer_objective)
+        _action_button("Reset 🔁", key="encounter_play_reset", action="reset")
     else:
         b1, b2, b3 = st.columns(3)
         with b1:
-            _action_button("Previous Turn", key="encounter_play_prev_turn", action="prev")
+            _action_button("Previous Turn ⬅️", key="encounter_play_prev_turn", action="prev")
         with b2:
-            _action_button("Next Turn", key="encounter_play_next_turn", action="next", disabled=stop_on_timer_objective)
+            _action_button("Next Turn ➡️", key="encounter_play_next_turn", action="next", disabled=stop_on_timer_objective)
         with b3:
-            _action_button("Reset", key="encounter_play_reset", action="reset")
-
+            _action_button("Reset 🔁", key="encounter_play_reset", action="reset")
     if stop_on_timer_objective:
         st.caption("Time has run out; Next Turn is disabled for this encounter.")
 
@@ -1025,11 +1024,11 @@ def _render_turn_controls(
 
     # Define labels/help text/log text with safe defaults so they exist
     # even if the button is hidden. Actual rendering uses `show_manual_button`.
-    label = timer_behavior.get("manual_increment_label", "Increase Timer") if has_manual_inc else None
+    label = timer_behavior.get("manual_increment_label", "⏱️ Increase Timer") if has_manual_inc else None
     help_text = timer_behavior.get("manual_increment_help") if has_manual_inc else None
     log_text = timer_behavior.get("manual_increment_log", "Timer manually increased.") if has_manual_inc else None
 
-    label2 = timer_behavior.get("reset_button_label", "Reset Timer (special rule)") if has_reset_btn else None
+    label2 = timer_behavior.get("reset_button_label", "⏱️ Reset Timer (special rule)") if has_reset_btn else None
     help_text2 = timer_behavior.get("reset_button_help") if has_reset_btn else None
     log_text2 = timer_behavior.get("reset_button_log", "Timer reset due to special rule.") if has_reset_btn else None
 

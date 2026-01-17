@@ -380,7 +380,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 3: Put On Top (no-op)
                 with c2:
-                    if st.button("Put On Top", key=f"gravestone_enc_top_{ctx}_{i}", width="stretch"):
+                    if st.button("Put On Top ⬆️", key=f"gravestone_enc_top_{ctx}_{i}", width="stretch"):
                         row["phase"] = "done"
                         row["result"] = f"{label} put on top."
                         row["pending_enc"] = None
@@ -388,7 +388,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                 # Column 4: Put On Bottom (replace the top option on the target node)
                 with c3:
-                    if st.button("Put On Bottom", key=f"gravestone_enc_bottom_{ctx}_{i}", width="stretch"):
+                    if st.button("Put On Bottom ⬇️", key=f"gravestone_enc_bottom_{ctx}_{i}", width="stretch"):
                         v2_state = st.session_state.get("campaign_v2_state")
                         if not isinstance(v2_state, dict) or not isinstance(v2_state.get("campaign"), dict):
                             row["phase"] = "done"
