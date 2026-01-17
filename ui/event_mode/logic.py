@@ -340,6 +340,11 @@ def save_custom_event_decks(decks: Dict[str, dict]) -> None:
     CUSTOM_DECKS_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {"decks": decks, "updated": _utc_now_iso()}
     CUSTOM_DECKS_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    # Clear the cached loader so future calls reflect the updated file.
+    try:
+        load_custom_event_decks.clear()
+    except Exception:
+        pass
     st.rerun()
 
 

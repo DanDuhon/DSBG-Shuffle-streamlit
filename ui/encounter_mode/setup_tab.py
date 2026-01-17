@@ -5,6 +5,7 @@ from pathlib import Path
 from io import BytesIO
 
 from core.settings_manager import save_settings
+from ui.encounter_mode.persistence import load_saved_encounters, save_saved_encounters
 from core.behavior.generation import build_behavior_catalog
 from core.behavior.models import BehaviorEntry
 from ui.encounter_mode.generation import (
@@ -176,6 +177,24 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     if "saved_encounters" not in st.session_state:
         st.session_state.saved_encounters = {}  # name -> encounter dict
 
+    # Migration: if saved encounters exist in user settings, move them to file
+    try:
+        persisted_in_settings = settings.pop("saved_encounters", None)
+        if isinstance(persisted_in_settings, dict):
+            # write to new file and update settings on disk
+            save_saved_encounters(persisted_in_settings)
+            save_settings(settings)
+    except Exception:
+        pass
+
+    # Load persisted saved encounters from dedicated file if session empty
+    if not st.session_state.get("saved_encounters"):
+        try:
+            file_encs = load_saved_encounters()
+            if isinstance(file_encs, dict):
+                st.session_state.saved_encounters = dict(file_encs)
+        except Exception:
+            pass
     if "encounter_events" not in st.session_state:
         st.session_state.encounter_events = []
 
@@ -507,14 +526,28 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 if "current_encounter" not in st.session_state:
                     st.warning("No active encounter to save.")
                 else:
+                    # Build payload but strip non-JSON-serializable objects (images/bytes)
+                    raw = dict(st.session_state.current_encounter)
+                    for k in ("card_img", "buf", "card_bytes"):
+                        if k in raw:
+                            raw.pop(k, None)
+
                     payload = {
-                        **st.session_state.current_encounter,
+                        **raw,
                         "events": st.session_state.get("encounter_events", []),
                         "meta_label": st.session_state.get("last_encounter", {}).get("label"),
                         "character_count": character_count,
                         "edited": use_edited,
                     }
                     st.session_state.saved_encounters[save_name] = payload
+                    # Persist saved encounters into dedicated file
+                    try:
+                        save_saved_encounters(st.session_state.saved_encounters)
+                    except Exception:
+                        # fallback: store in user settings
+                        settings["saved_encounters"] = st.session_state.saved_encounters
+                        st.session_state["user_settings"] = settings
+                        save_settings(settings)
                     st.success(f"Saved encounter as '{save_name}'.")
 
             if st.session_state.saved_encounters:
@@ -522,23 +555,56 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     "Load saved encounter:",
                     list(st.session_state.saved_encounters.keys()),
                 )
-                if st.button("Load", width="stretch"):
-                    payload = st.session_state.saved_encounters[load_name]
-                    st.session_state.current_encounter = payload
-                    st.session_state.encounter_events = payload.get("events", [])
-                    st.session_state["last_encounter"] = {
-                        "label": payload.get("meta_label", load_name),
-                        "slug": payload.get("slug"),
-                        "expansion": payload.get("expansion"),
-                        "character_count": payload.get("character_count"),
-                        "edited": payload.get("edited", False),
-                        "enemies": payload.get("enemies"),
-                        "expansions_used": payload.get("expansions_used"),
-                    }
+                load_col, delete_col = st.columns([1, 1])
+                with load_col:
+                    if st.button("Load", width="stretch"):
+                        payload = dict(st.session_state.saved_encounters[load_name])
 
-                    # Reconstruct 'added invaders' from payload['invaders']
-                    _restore_added_invaders_from_payload(payload)
-                    _apply_added_invaders_to_current_encounter()
+                        # Re-generate the encounter image (images are not persisted)
+                        try:
+                            card_img = generate_encounter_image(
+                                payload.get("expansion") or payload.get("expansions_used", [None])[0],
+                                int(payload.get("encounter_level") or payload.get("level") or 0),
+                                payload.get("encounter_name") or payload.get("encounter_name") or payload.get("name"),
+                                payload.get("encounter_data") or payload.get("encounter_data") or payload.get("data") or {},
+                                payload.get("enemies") or payload.get("enemies", []),
+                                use_edited=payload.get("edited", False),
+                            )
+                        except Exception:
+                            card_img = None
+
+                        if card_img is not None:
+                            payload["card_img"] = card_img
+
+                        st.session_state.current_encounter = payload
+                        st.session_state.encounter_events = payload.get("events", [])
+                        st.session_state["last_encounter"] = {
+                            "label": payload.get("meta_label", load_name),
+                            "slug": payload.get("slug"),
+                            "expansion": payload.get("expansion"),
+                            "character_count": payload.get("character_count"),
+                            "edited": payload.get("edited", False),
+                            "enemies": payload.get("enemies"),
+                            "expansions_used": payload.get("expansions_used"),
+                        }
+
+                        # Reconstruct 'added invaders' from payload['invaders']
+                        _restore_added_invaders_from_payload(payload)
+                        _apply_added_invaders_to_current_encounter()
+
+                with delete_col:
+                    if st.button("Delete", width="stretch"):
+                        if load_name in st.session_state.saved_encounters:
+                            st.session_state.saved_encounters.pop(load_name, None)
+                            # Persist deletion to dedicated file, fallback to settings
+                            try:
+                                save_saved_encounters(st.session_state.saved_encounters)
+                            except Exception:
+                                settings["saved_encounters"] = st.session_state.saved_encounters
+                                st.session_state["user_settings"] = settings
+                                save_settings(settings)
+                            st.success(f"Deleted saved encounter '{load_name}'.")
+                            st.rerun()
 
         # -------------------------------------------------------------------------
         # RIGHT COLUMN – CARDS

@@ -11,7 +11,7 @@ from ui.character_mode.constants import (
     HAND_CONDITION_OPTIONS,
     HAND_FEATURE_OPTIONS
 )
-from ui.character_mode.data_io import _find_data_file, _load_json_list
+from ui.character_mode.data_io import _find_data_file, _load_json_list, load_builds, save_builds
 from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _dodge_icons
 from ui.character_mode.filters import (
     _apply_armor_filters,
@@ -48,6 +48,7 @@ from ui.character_mode.aggregates import (
     build_defense_totals_cached,
 )
 from ui.character_mode.widgets import _render_selection_table
+from core.settings_manager import save_settings
 
 
 def render(settings: Dict[str, Any]) -> None:
@@ -207,6 +208,19 @@ def render(settings: Dict[str, Any]) -> None:
 
     # Build helpers (store builds in session state)
     ss.setdefault("cm_builds", {})
+    # Load persisted builds from dedicated file (migrate from user settings if needed)
+    persisted = load_builds() or {}
+    # If no dedicated file exists but user settings contain builds, migrate them
+    if not persisted and isinstance(settings.get("character_builds"), dict):
+        persisted = dict(settings.get("character_builds"))
+        save_builds(persisted)
+        # remove migrated builds from user settings
+        settings.pop("character_builds", None)
+        st.session_state["user_settings"] = settings
+        save_settings(settings)
+
+    if isinstance(persisted, dict) and not ss.get("cm_builds"):
+        ss["cm_builds"] = dict(persisted)
 
     def _current_build():
         return {
@@ -244,6 +258,8 @@ def render(settings: Dict[str, Any]) -> None:
             if st.button("Save build", key="cm_build_save"):
                 name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
                 ss["cm_builds"][name] = _current_build()
+                # Persist saved builds to dedicated file
+                save_builds(ss["cm_builds"])
 
         snaps = list(ss.get("cm_builds", {}).keys())
         sel = st.selectbox("Saved builds", options=[""] + snaps, key="cm_build_select")
@@ -261,6 +277,8 @@ def render(settings: Dict[str, Any]) -> None:
                 name = ss.get("cm_build_select")
                 if name and name in ss.get("cm_builds", {}):
                     ss["cm_builds"].pop(name, None)
+                    # Persist deletion to dedicated file
+                    save_builds(ss["cm_builds"])
                     st.rerun()
 
     enabled_items = []
@@ -1180,7 +1198,7 @@ def render(settings: Dict[str, Any]) -> None:
         armor_id = ss.get("cm_selected_armor_id") or ""
         if armor_id and armor_id in armor_by_id:
             a = armor_by_id[armor_id]
-            lines.append(f"Armor: {a.get('name')}")
+            lines.append(a.get("name"))
             for uid in (ss.get("cm_selected_armor_upgrade_ids") or []):
                 u = au_by_id.get(uid)
                 if u:
@@ -1326,30 +1344,50 @@ def render(settings: Dict[str, Any]) -> None:
         st.markdown("#### Effects")
         effects = []
 
-        def _add_eff(x):
+        def _add_eff(x, source=None):
             s = str(x or '').strip()
-            if s:
+            if not s:
+                return
+            if source:
+                effects.append(f"{s} — {source}")
+            else:
                 effects.append(s)
 
+        # Count how many hands have any weapon upgrades attached
+        hands_with_wu = [hid for hid in selected_hand_ids if (wu_map.get(hid) or [])]
+        multi_weapon_wu = len(hands_with_wu) > 1
+
         if armor_obj:
-            _add_eff(armor_obj.get('text'))
+            _add_eff(armor_obj.get('text'), source=armor_obj.get('name'))
             for imm in (armor_obj.get('immunities') or []):
-                _add_eff(f"Immunity: {imm}")
+                _add_eff(f"Immunity: {imm}", source=armor_obj.get('name'))
 
         for u in armor_upgrade_objs:
-            _add_eff(u.get('text'))
+            _add_eff(u.get('text'), source=u.get('name'))
             for imm in (u.get('immunities') or []):
-                _add_eff(f"Immunity: {imm}")
+                _add_eff(f"Immunity: {imm}", source=u.get('name'))
 
         for h in selected_hand_objs:
-            _add_eff(h.get('text'))
+            _add_eff(h.get('text'), source=h.get('name'))
             for imm in (h.get('immunities') or []):
-                _add_eff(f"Immunity: {imm}")
+                _add_eff(f"Immunity: {imm}", source=h.get('name'))
 
-        for u in selected_weapon_upgrade_objs:
-            _add_eff(u.get('text'))
-            for imm in (u.get('immunities') or []):
-                _add_eff(f"Immunity: {imm}")
+        # Weapon upgrades: iterate by hand so we can include the parent hand name when needed
+        for hid in selected_hand_ids:
+            hand = hand_by_id.get(hid)
+            hand_name = hand.get('name') if hand else None
+            for uid in (wu_map.get(hid) or []):
+                u = wu_by_id.get(uid)
+                if not u:
+                    continue
+                # If multiple weapons have upgrades, include which weapon this upgrade is attached to
+                if multi_weapon_wu and hand_name:
+                    src = f"{u.get('name')} on {hand_name}"
+                else:
+                    src = u.get('name')
+                _add_eff(u.get('text'), source=src)
+                for imm in (u.get('immunities') or []):
+                    _add_eff(f"Immunity: {imm}", source=src)
 
         effects = list(dict.fromkeys([e for e in effects if e]))
         if effects:

@@ -155,7 +155,9 @@ def render(settings: Dict[str, Any]) -> None:
 
         with c1:
             st.markdown("### Edit / Create")
-            pick = st.selectbox("Load custom deck", options=["(new)"] + names)
+            pick = st.selectbox(
+                "Load custom deck", options=["(new)"] + names, key="event_builder_pick"
+            )
 
             if st.button("Load into editor", width="stretch"):
                 b = _builder_get()
@@ -171,18 +173,32 @@ def render(settings: Dict[str, Any]) -> None:
                 st.session_state[_BUILDER_SYNC_KEY] = True
 
             b = _builder_get()
-            b["name"] = st.text_input("Deck name", value=b.get("name", "") or "")
+            # Persist the name input to a stable session key so we can clear it
+            # when deleting a deck without needing another render pass.
+            b_name = st.text_input(
+                "Deck name", value=b.get("name", "") or "", key="event_builder_name"
+            )
+            b["name"] = b_name
 
         with c2:
             st.markdown("### Deck Summary")
             b = _builder_get()
-            raw_map: Dict[str, Any] = b.get("cards") or {}
+            # Build card counts from the live number-input session keys so
+            # UI changes immediately enable the Save button without a full
+            # rerun that updates the builder map first.
             cards_map: Dict[str, int] = {}
-            for k, v in raw_map.items():
-                copies = int(v or 0)
+            prefix = "event_builder_copies_all::"
+            for key, val in st.session_state.items():
+                if not isinstance(key, str) or not key.startswith(prefix):
+                    continue
+                path = key.split("::", 1)[1]
+                try:
+                    copies = int(val or 0)
+                except Exception:
+                    copies = 0
                 if copies <= 0:
                     continue
-                canon = Path(str(k)).as_posix()
+                canon = Path(str(path)).as_posix()
                 cards_map[canon] = cards_map.get(canon, 0) + copies
             total = sum(int(v or 0) for v in cards_map.values())
             st.markdown(f"**Unique cards:** {len(cards_map)}")
@@ -195,6 +211,37 @@ def render(settings: Dict[str, Any]) -> None:
                 if name:
                     custom_decks[name] = {"cards": dict(cards_map)}
                     save_custom_event_decks(custom_decks)
+                    # Update builder state to reflect saved deck and force
+                    # the UI to refresh so the new deck is listed in the
+                    # "Load custom deck" dropdown immediately.
+                    b["loaded_from"] = name
+                    st.session_state[_BUILDER_KEY] = b
+                    st.session_state[_BUILDER_SYNC_KEY] = True
+                    try:
+                        st.session_state["event_builder_pick"] = name
+                    except Exception:
+                        pass
+                    try:
+                        st.session_state["event_builder_name"] = name
+                    except Exception:
+                        pass
+                    st.rerun()
+
+            # Reset per-card counts to zero without deleting the saved deck
+            reset_disabled = not bool(cards_map)
+            if st.button("Reset deck", width="stretch", disabled=reset_disabled):
+                prefix = "event_builder_copies_all::"
+                for key in list(st.session_state.keys()):
+                    if isinstance(key, str) and key.startswith(prefix):
+                        try:
+                            st.session_state[key] = 0
+                        except Exception:
+                            pass
+                # Clear builder map and sync to UI
+                b.update({"cards": {}})
+                st.session_state[_BUILDER_KEY] = b
+                st.session_state[_BUILDER_SYNC_KEY] = True
+                st.rerun()
 
             del_disabled = not (
                 b.get("loaded_from") and b.get("loaded_from") in custom_decks
@@ -204,9 +251,28 @@ def render(settings: Dict[str, Any]) -> None:
                 if loaded in custom_decks:
                     del custom_decks[loaded]
                     save_custom_event_decks(custom_decks)
+                    # Clear builder state and UI widgets
                     b.update({"name": "", "cards": {}, "loaded_from": None})
                     st.session_state[_BUILDER_KEY] = b
                     st.session_state[_BUILDER_SYNC_KEY] = True
+                    # Reset the load selector to the default '(new)'
+                    try:
+                        st.session_state["event_builder_pick"] = "(new)"
+                    except Exception:
+                        pass
+                    # Clear the deck name input
+                    try:
+                        st.session_state["event_builder_name"] = ""
+                    except Exception:
+                        pass
+                    # Zero all per-card copies inputs so the UI reflects an empty deck
+                    prefix = "event_builder_copies_all::"
+                    for key in list(st.session_state.keys()):
+                        if isinstance(key, str) and key.startswith(prefix):
+                            try:
+                                st.session_state[key] = 0
+                            except Exception:
+                                pass
                     st.rerun()
 
         st.markdown("---")

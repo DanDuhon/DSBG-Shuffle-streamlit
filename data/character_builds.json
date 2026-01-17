@@ -1,0 +1,30 @@
+{
+  "Dragonslayer": {
+    "class_name": "Knight",
+    "tier_indices": {
+      "str": 3,
+      "dex": 3,
+      "itl": 3,
+      "fth": 3
+    },
+    "selected_armor_id": "black_iron_armour_legendary",
+    "selected_armor_upgrade_ids": [
+      "hornet_ring",
+      "sun_princess_ring"
+    ],
+    "selected_hand_ids": [
+      "dragon_king_greataxe",
+      "dragonrider_bow",
+      "hawkwoods_shield"
+    ],
+    "selected_weapon_upgrade_ids_by_hand": {
+      "dragon_king_greataxe": [
+        "raw_gem"
+      ],
+      "hawkwoods_shield": [],
+      "dragonrider_bow": [
+        "heavy_gem"
+      ]
+    }
+  }
+}
