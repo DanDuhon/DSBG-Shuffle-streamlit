@@ -1122,9 +1122,16 @@ def render(settings: Dict[str, Any]) -> None:
             b_stats = _dice_min_max_avg(dtot.block)
             r_stats = _dice_min_max_avg(dtot.resist)
             st.markdown(f"**{title_suffix}**")
-            st.markdown(f"- Dodge:\t{_dodge_icons(eff_dodge)} (armor {dtot.dodge_armor} + hands {sum_hand_dodge})")
-            st.markdown(f"- Block:\t{_dice_icons(dtot.block)} (avg {b_stats['avg']:.2f})")
-            st.markdown(f"- Resist:\t{_dice_icons(dtot.resist)} (avg {r_stats['avg']:.2f})")
+            st.markdown(
+                f"""
+                <ul style="list-style:none; padding-left:0; margin:0;">
+                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Dodge:</span> {_dodge_icons(eff_dodge)} <span style="color:#bfb79f">(armor {dtot.dodge_armor} + hands {sum_hand_dodge})</span></li>
+                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Block:</span> {_dice_icons(dtot.block)} <span style="color:#bfb79f">(avg {b_stats['avg']:.2f})</span></li>
+                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Resist:</span> {_dice_icons(dtot.resist)} <span style="color:#bfb79f">(avg {r_stats['avg']:.2f})</span></li>
+                </ul>
+                """,
+                unsafe_allow_html=True,
+            )
             sim_block = expected_damage_taken(incoming_damage=incoming_cmp, dodge_dice=eff_dodge, dodge_difficulty=dodge_diff_cmp, defense_dice=dtot.block)
             sim_resist = expected_damage_taken(incoming_damage=incoming_cmp, dodge_dice=eff_dodge, dodge_difficulty=dodge_diff_cmp, defense_dice=dtot.resist)
             st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
@@ -1204,7 +1211,7 @@ def render(settings: Dict[str, Any]) -> None:
                 if u:
                     lines.append(f"  - {u.get('name')}")
 
-        # Hands and weapon upgrades (annotate weapon upgrades with parent hand name)
+        # Hands and weapon upgrades
         for hid in list(ss.get("cm_selected_hand_ids") or []):
             h = hand_by_id.get(hid)
             if not h:
@@ -1213,12 +1220,17 @@ def render(settings: Dict[str, Any]) -> None:
             for uid in (ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}).get(hid, []):
                 wu = wu_by_id.get(uid)
                 if wu:
-                    lines.append(f"  - {wu.get('name')} ({h.get('name')})")
+                    lines.append(f"  - {wu.get('name')}")
 
         if lines:
             st.markdown("#### Selected Items")
+            md_lines = []
             for l in lines:
-                st.markdown(f"- {l}")
+                if isinstance(l, str) and l.startswith("  - "):
+                    md_lines.append("  - " + l[4:])
+                else:
+                    md_lines.append("- " + str(l))
+            st.markdown("\n".join(md_lines))
 
         df_atk = pd.DataFrame(atk_rows)
         disp_atk = df_atk.copy()
@@ -1301,12 +1313,28 @@ def render(settings: Dict[str, Any]) -> None:
             )
             if combo_rows:
                 df_combo = pd.DataFrame(combo_rows)
+                disp_combo = df_combo.copy()
+                # Normalize Tot* column names to friendly names
+                disp_combo["Stamina"] = disp_combo.get("TotStam") if "TotStam" in disp_combo.columns else disp_combo.get("Stam")
+                disp_combo["Dice"] = disp_combo.get("TotDice") if "TotDice" in disp_combo.columns else disp_combo.get("Dice")
+                disp_combo["Min"] = disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("TotMin")
+                disp_combo["Max"] = disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("TotMax")
+                disp_combo["Avg"] = disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("TotAvg")
+
+                if "Cond" in disp_combo.columns:
+                    disp_combo["Conditions"] = disp_combo["Cond"]
+                elif "TotCond" in disp_combo.columns:
+                    disp_combo["Conditions"] = disp_combo["TotCond"]
+                else:
+                    disp_combo["Conditions"] = ""
+
                 # coerce Repeat to numeric so missing shows blank
-                if 'Repeat' in df_combo.columns:
-                    df_combo['Repeat'] = pd.to_numeric(df_combo.get('Repeat'), errors='coerce')
-                pref = ["Item", "Atk#", "TotStam", "TotDice", "TotMin", "TotMax", "TotAvg", "TotCond", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
-                disp_cols = [c for c in pref if c in df_combo.columns]
-                st.dataframe(df_combo[disp_cols], hide_index=True, width="stretch", height=140)
+                if 'Repeat' in disp_combo.columns:
+                    disp_combo['Repeat'] = pd.to_numeric(disp_combo.get('Repeat'), errors='coerce')
+
+                pref = ["Item", "Atk#", "Stamina", "Dice", "Min", "Max", "Avg", "Conditions", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
+                disp_cols = [c for c in pref if c in disp_combo.columns]
+                st.dataframe(disp_combo[disp_cols], hide_index=True, width="stretch", height=140)
 
         if len(one_hands) >= 2:
             for a, b in itertools.combinations(one_hands, 2):
