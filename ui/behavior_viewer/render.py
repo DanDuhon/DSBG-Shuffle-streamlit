@@ -267,6 +267,11 @@ def render():
 
     left_col, right_col = st.columns([1, 2])
 
+    # Card display width (from settings)
+    user_settings = st.session_state.get("user_settings") or {}
+    card_w = int(user_settings.get("ui_card_width", st.session_state.get("ui_card_width", 360)))
+    card_w = max(240, min(560, card_w))
+
     # Respect compact UI setting: dropdown in compact mode, radio otherwise.
     compact = bool(st.session_state.get("ui_compact", False))
 
@@ -327,9 +332,9 @@ def render():
                 o_img, s_img = render_dual_boss_data_cards(cfg.raw)
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.image(o_img, width=360)
+                    st.image(o_img, width=card_w)
                 with c2:
-                    st.image(s_img, width=360)
+                    st.image(s_img, width=card_w)
             else:
                 # Special-case: always show skeletal horse data card for Executioner's Chariot
                 if entry.name == "Executioner's Chariot":
@@ -338,10 +343,10 @@ def render():
                         cfg.raw,
                         is_boss=(entry.tier != "enemy"),
                     )
-                    st.image(img_bytes, width=360)
+                    st.image(img_bytes, width=card_w)
                 elif cfg.display_cards:
                     img_bytes = render_data_card_cached(cfg.display_cards[0], cfg.raw, is_boss=(entry.tier != "enemy"))
-                    st.image(img_bytes, width=360)
+                    st.image(img_bytes, width=card_w)
         else:
             # Map display label back to original behavior name for non-compact mode
             if compact:
@@ -372,4 +377,4 @@ def render():
                         st.markdown("**🏃 Move**")
                     elif btype == "attack":
                         st.markdown("**⚔️ Attack**")
-                st.image(img_bytes, width=360)
+                st.image(img_bytes, width=card_w)

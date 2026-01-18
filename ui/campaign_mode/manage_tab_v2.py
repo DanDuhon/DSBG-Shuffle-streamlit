@@ -190,14 +190,7 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
             if src:
                 img_src = src
 
-            st.markdown(
-                f"""
-                <div class="card-image">
-                    <img src="{img_src}" style="width:100%">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.image(img_src, width="stretch")
             nm = str(ev.get("name") or ev.get("id") or ev_type).strip()
             if nm:
                 st.caption(nm)
@@ -846,14 +839,7 @@ def _render_v2_current_panel(
                 p = Path(rv["path"])
                 src = get_image_data_uri_cached(str(p))
 
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(src or img_src, width=w)
 
             return
 
@@ -935,14 +921,7 @@ def _render_v2_current_panel(
                         if src:
                             img_src = src
 
-                        st.markdown(
-                            f"""
-                            <div class="card-image" style="width:{w}px">
-                                <img src="{img_src}" style="width:100%">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        st.image(img_src, width=w)
                     return
 
         # Normal: show the chosen encounter card
@@ -957,14 +936,7 @@ def _render_v2_current_panel(
             if src:
                 img_src = src
 
-            st.markdown(
-                f"""
-                <div class="card-image" style="width:{w}px">
-                    <img src="{img_src}" style="width:100%">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.image(img_src, width=w)
 
         return
 

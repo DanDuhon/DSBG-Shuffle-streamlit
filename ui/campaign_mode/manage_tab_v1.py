@@ -546,25 +546,9 @@ def _render_v1_current_panel(
                 o_img, s_img = render_dual_boss_data_cards(raw_data)
                 o_col, s_col = st.columns(2)
                 with o_col:
-                    src_o = bytes_to_data_uri(o_img, mime="image/png")
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src_o}" style="width:100%">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(o_img, width="stretch")
                 with s_col:
-                    src_s = bytes_to_data_uri(s_img, mime="image/png")
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src_s}" style="width:100%">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(s_img, width="stretch")
             else:
                 if boss_name == "Executioner's Chariot":
                     data_path = (
@@ -578,15 +562,7 @@ def _render_v1_current_panel(
                     raw_data,
                     is_boss=True,
                 )
-                src = bytes_to_data_uri(img, mime="image/png")
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(img, width="stretch")
         else:
             st.markdown(f"**{prefix}: Unknown**")
             st.caption("No boss selected for this space.")

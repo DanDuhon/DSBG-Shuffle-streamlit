@@ -178,7 +178,7 @@
   },
   "event_preset": "Mixed V2",
   "behavior_deck_saves": [],
-  "ui_card_width": 320,
+  "ui_card_width": 340,
   "only_original_enemies_for_campaigns": false,
   "enemy_included": {
     "6": true,

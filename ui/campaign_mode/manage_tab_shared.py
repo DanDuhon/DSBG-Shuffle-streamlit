@@ -298,17 +298,6 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
     if res and res.get("ok"):
         img = res["card_img"]
 
-        buf = BytesIO()
-        img.save(buf, format="PNG")
-        src = bytes_to_data_uri(buf.getvalue(), mime="image/png")
-
-        st.markdown(
-            f"""
-            <div class="card-image">
-                <img src="{src}" style="width:100%">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.image(img, width="stretch")
     else:
         st.warning("Failed to render encounter card.")

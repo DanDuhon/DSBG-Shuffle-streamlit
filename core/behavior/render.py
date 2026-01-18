@@ -26,6 +26,10 @@ def render():
 
     st.subheader("Behavior Decks")
 
+    # Card display width (from settings)
+    card_w = int(settings.get("ui_card_width", st.session_state.get("ui_card_width", 360)))
+    card_w = max(240, min(560, card_w))
+
     # Build or reuse catalog
     if "behavior_catalog" not in st.session_state:
         st.session_state["behavior_catalog"] = build_behavior_catalog()
@@ -116,14 +120,8 @@ def render():
         with cols[0]:
             data_card = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
             img_bytes = render_data_card_cached(data_card, cfg.raw, is_boss=False)
-            st.markdown(
-                f"""
-                <div class="card-image">
-                    <img src="{img_bytes}" style="width:100%">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            w = 360
+            st.image(img_bytes, width=w)
         return
 
     # --- Boss / Invader mode ---
@@ -181,55 +179,20 @@ def render():
                 is_boss=True,
             )
         with cols[0]:
-            st.markdown(
-                f"""
-                <div class="card-image">
-                    <img src="{edited_img}" style="width:100%">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.image(edited_img, width=card_w)
     elif "Ornstein" in cfg.raw and "Smough" in cfg.raw:
         ornstein_img, smough_img = render_dual_boss_data_cards(cfg.raw)
         dual_cols = st.columns(2)
         with dual_cols[0]:
             if st.session_state.get("ornstein_dead"):
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{_dim_greyscale(ornstein_img)}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(_dim_greyscale(ornstein_img), width=card_w)
             else:
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{ornstein_img}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(ornstein_img, width=card_w)
         with dual_cols[1]:
             if st.session_state.get("smough_dead"):
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{_dim_greyscale(smough_img)}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(_dim_greyscale(smough_img), width=card_w)
             else:
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{smough_img}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(smough_img, width=card_w)
     else:
         for i, data_path in enumerate(state["display_cards"]):
             if i == 0:
@@ -244,14 +207,7 @@ def render():
                     edited_img = overlay_priscilla_arcs(edited_img, card_name, cfg.raw[card_name])
 
             with cols[i if i < len(cols) else -1]:
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{edited_img}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(edited_img, width=card_w)
                 
     if cfg.name == "Crossbreed Priscilla":
         invis = st.session_state["behavior_deck"].get("priscilla_invisible", False)
