@@ -145,47 +145,16 @@ coords_map = {
             "left": (285, 167),
             "right": (541, 167),
         },
-        "attack_push": {
-            "left": (150, 180),
-            "right": (440, 180),
-        },
-        "repeat": {
-            "left": (100, 240),
-            "right": (500, 240),
-        },
-        "effect_one": {
-            "left": (170, 260),
-            "right": (480, 260),
-        },
-        "effect_two": {
-            "left": [(150, 250), (190, 290)],
-            "right": [(460, 250), (500, 290)],
-        },
+        "repeat": (46, 216),
     },
     "dual_smough": {
         "attack_physical": {
             "left": (36, 639),
             "right": (290, 635),
         },
-        "attack_magic": {
-            "left": (67, 692),
-            "right": (286, 692),
-        },
         "attack_push": {
             "left": (41, 636),
             "right": (440, 636),
-        },
-        "repeat": {
-            "left": (100, 880),
-            "right": (500, 880),
-        },
-        "effect_one": {
-            "left": (170, 900),
-            "right": (480, 900),
-        },
-        "effect_two": {
-            "left": [(150, 890), (190, 930)],
-            "right": [(460, 890), (500, 930)],
         },
     }
 }

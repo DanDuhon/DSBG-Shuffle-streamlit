@@ -496,8 +496,8 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
 
         attack_type = slot_data.get("type")
         damage = slot_data.get("damage")
-        repeat = slot_data.get("repeat", False)
-        effects = slot_data.get("effect", [])
+        repeat = slot_data.get("repeat", data.get("repeat", False))
+        effects = slot_data.get("effect", data.get("effect", []))
 
         # --- Attack icon ---
         if attack_type and damage:
@@ -512,10 +512,18 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
 
         # --- Repeat icon ---
         if repeat:
-            rpt_coords = zone_map.get("repeat", {}).get(slot)
-            rpt_icon = ICONS_DIR / "repeat.png"
-            if rpt_coords and rpt_icon.exists():
-                icon = load_pil_image_cached(str(rpt_icon), convert="RGBA").copy()
+            rpt_map = zone_map.get("repeat")
+            # zone_map['repeat'] may be a dict mapping slots to coords,
+            # or a single tuple for card-level placement. Handle both.
+            if isinstance(rpt_map, dict):
+                rpt_coords = rpt_map.get(slot)
+            else:
+                rpt_coords = rpt_map
+
+            rpt_icon_path = ICONS_DIR / f"repeat_{repeat}.png"
+
+            if rpt_coords and rpt_icon_path.exists():
+                icon = load_pil_image_cached(str(rpt_icon_path), convert="RGBA").copy()
                 base.alpha_composite(icon, rpt_coords)
 
         # --- Effects ---
