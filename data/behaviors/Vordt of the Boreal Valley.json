@@ -127,7 +127,7 @@
             "type": "magic",
             "damage": 5
         },
-        "middle": {},
+        "right": {},
         "type": "attack"
     },
     "Hammerfist": {

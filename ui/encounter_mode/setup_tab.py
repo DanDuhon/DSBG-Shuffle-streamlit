@@ -33,7 +33,7 @@ from ui.event_mode.logic import (
     DECK_STATE_KEY,
     RENDEZVOUS_EVENTS,
 )
-from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
+from core.image_cache import get_image_bytes_cached
 
 
 # --- Event attachment helpers -------------------------------------------------
@@ -88,14 +88,7 @@ def render_event_card(event_obj):
     # If you store an image for the event, show it here
     image = event_obj.get("image")
     if image is not None:
-        st.markdown(
-            f"""
-            <div class="card-image">
-                <img src="{image}" style="width:100%">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.image(image, width="stretch")
 
     # Fallback / extra rules text
     text = event_obj.get("text")
@@ -616,16 +609,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                 buf = BytesIO()
                 img.save(buf, format="PNG")
-                data_uri = bytes_to_data_uri(buf.getvalue(), mime="image/png")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{data_uri}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                buf.seek(0)
+                st.image(buf.getvalue(), width="stretch")
 
                 # Divider between card and rules
                 st.markdown(
@@ -728,15 +713,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                                 img_bytes = get_image_bytes_cached(str(p))
 
                                 if img_bytes:
-                                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
-                                    st.markdown(
-                                        f"""
-                                        <div class="card-image">
-                                            <img src="{data_uri}" style="width:100%">
-                                        </div>
-                                        """,
-                                        unsafe_allow_html=True,
-                                    )
+                                    st.image(img_bytes, width="stretch")
                             else:
                                 st.caption("Event image missing.")
     else:
@@ -1028,16 +1005,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             buf = BytesIO()
             img.save(buf, format="PNG")
-            data_uri = bytes_to_data_uri(buf.getvalue(), mime="image/png")
-
-            st.markdown(
-                f"""
-                <div class="card-image">
-                    <img src="{data_uri}" style="width:100%">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            buf.seek(0)
+            st.image(buf.getvalue(), width="stretch")
 
             # Divider between card and rules
             st.markdown(
@@ -1129,14 +1098,9 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             if img:
                 # migrate in-place so future code can rely on "path"
                 ev["path"] = str(img)
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{str(img)}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                # Show image directly
+                # If `img` is a path or bytes, `st.image` will handle it.
+                st.image(str(img), width="stretch")
             else:
                 st.caption("Event image missing.")
 

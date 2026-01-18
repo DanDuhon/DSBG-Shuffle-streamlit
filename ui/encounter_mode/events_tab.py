@@ -20,7 +20,7 @@ from ui.event_mode.logic import (
     reset_event_deck,
     shuffle_current_into_deck,
 )
-from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
+from core.image_cache import get_image_bytes_cached
 
 
 def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
@@ -276,16 +276,7 @@ def render(settings: Dict[str, Any]) -> None:
                     img_bytes = get_image_bytes_cached(str(p))
 
                     if img_bytes:
-                        data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
-
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="{data_uri}" style="{card_w}px">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        st.image(img_bytes, width=card_w)
                     st.caption(event_name or "—")
                 else:
                     st.markdown("### Current card")
@@ -355,16 +346,7 @@ def render(settings: Dict[str, Any]) -> None:
                 img_bytes = get_image_bytes_cached(str(p))
 
                 if img_bytes:
-                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{data_uri}" style="{card_w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(img_bytes, width=card_w)
                 st.caption(event_name or "—")
             else:
                 st.markdown("### Current card")
@@ -510,15 +492,7 @@ def render(settings: Dict[str, Any]) -> None:
                 img_bytes = get_image_bytes_cached(str(p))
 
                 if img_bytes:
-                    data_uri = bytes_to_data_uri(img_bytes, mime="image/png")
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{data_uri}" style="{card_w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(img_bytes, width=card_w)
                 txt = str(chosen.get("text") or "").strip()
                 if txt:
                     st.caption(txt)

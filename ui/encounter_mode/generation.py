@@ -378,7 +378,7 @@ def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: s
 
 def render_encounter_icons(current_encounter, assets_dir="assets"):
     chars_dir = Path(assets_dir) / "characters"
-    exps_dir  = Path(assets_dir) / "expansions"
+    exps_dir = Path(assets_dir) / "expansions"
 
     html = """
     <style>

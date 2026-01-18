@@ -551,6 +551,36 @@ def load_behavior(fname: Path, raw_override: dict | None = None, apply_ngplus: b
                 and k not in meta
                 and not is_entity_block(v)
             }
+
+    # --- Special-case tweaks for specific bosses
+    # Executioner's Chariot: prefer a single Death Race reference card
+    # and exclude any 'Mega Boss Setup' entry from visible display cards.
+    if name == "Executioner's Chariot":
+        # Find first Death Race variant in behaviors (Death Race 1..4)
+        death_keys = [k for k in (behaviors or {}) if str(k).startswith("Death Race")]
+        death_keys.sort()
+        chosen_death = death_keys[0] if death_keys else None
+        # Rebuild display_cards: keep data card first, then a single Death Race image
+        new_display = []
+        if Path(data_card_path).exists():
+            new_display.append(data_card_path)
+        if chosen_death:
+            dr_path = _path(f"{name} - {chosen_death}.jpg")
+            if Path(dr_path).exists():
+                new_display.append(dr_path)
+        # Append any other existing display cards that are neither Mega Boss Setup nor Death Race variants
+        for p in display_cards:
+            stem = Path(p).stem
+            if "Mega Boss Setup" in stem:
+                continue
+            if any(stem.startswith(f"{name} - Death Race") for _ in [0]):
+                # we've already added the chosen Death Race; skip other Death Race variants
+                # (match by checking presence of 'Death Race' in the filename after the boss name)
+                if "Death Race" in stem and p not in new_display:
+                    continue
+            if p not in new_display:
+                new_display.append(p)
+        display_cards = new_display
  
     # --- Build deck and heat-up pool
     deck = [k for k, v in behaviors.items() if not v.get("heatup", False)]

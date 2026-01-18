@@ -13,7 +13,7 @@ from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state, play_panels, invader_panel
 from ui.encounter_mode.setup_tab import render_original_encounter
 from ui.encounter_mode.assets import encounterKeywords, editedEncounterKeywords, keywordText
-from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
+from core.image_cache import get_image_bytes_cached
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
 from ui.campaign_mode.api import ENCOUNTER_GRAVESTONES, v2_pick_scout_ahead_alt_frozen
 
@@ -315,27 +315,11 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                             img_bytes = img_ref.read()
 
                         if img_bytes:
-                            data_uri = bytes_to_data_uri(img_bytes, mime="image/jpeg")
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{data_uri}" style="width:100%">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
+                            st.image(img_bytes, width="stretch")
                     elif isinstance(pending, str) and pending:
                         img_bytes = get_image_bytes_cached(pending)
                         if img_bytes:
-                            data_uri = bytes_to_data_uri(img_bytes, mime="image/jpeg")
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{data_uri}" style="width:100%">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
+                            st.image(img_bytes, width="stretch")
                     else:
                         st.write("Event card unavailable.")
                     st.caption(_event_card_label(pending))

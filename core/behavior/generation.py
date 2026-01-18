@@ -22,6 +22,7 @@ from core.behavior.assets import (
 from core.image_cache import load_pil_image_cached
 from core.behavior.models import BehaviorEntry
 from core.behavior.logic import load_behavior, list_behavior_files
+from core.ngplus import get_current_ngplus_level
 
 
 @st.cache_data(show_spinner=False)
@@ -254,6 +255,28 @@ def render_data_card(
         buf = io.BytesIO()
         base.save(buf, format="PNG")
         return buf.getvalue()
+
+    # Special-cases: Adjust text to include NG+ level
+    # and render it at specific coords with Adobe Caslon Pro Regular.ttf size 33
+    try:
+        bp_stem = Path(base_path).stem
+    except Exception:
+        bp_stem = str(base_path)
+    if "Paladin Leeroy" in bp_stem:
+        level = get_current_ngplus_level()
+        text = f"The first time Leeroy's health would be\nreduced to 0, set his health to {2 + level} instead."
+        draw = ImageDraw.Draw(base)
+        font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
+        font = ImageFont.truetype(str(font_path), 33)
+        draw.text((97, 855), text, font=font, fill="black")
+    elif "Maneater Mildred" in bp_stem:
+        level = get_current_ngplus_level()
+        heal = 1 if level <= 2 else 2 if level <= 4 else 3
+        text = f"If Mildred's attack damages one or more\ncharacters, she gains {heal} health."
+        draw = ImageDraw.Draw(base)
+        font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
+        font = ImageFont.truetype(str(font_path), 33)
+        draw.text((97, 855), text, font=font, fill="black")
 
     # --- core stats ---
     if "armor" in raw_json:

@@ -2,7 +2,7 @@
 import random
 import json
 import streamlit as st
-from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
+from core.image_cache import get_image_data_uri_cached, get_image_bytes_cached
 from pathlib import Path
 from ui.encounter_mode.assets import ENCOUNTER_CARDS_DIR
 
@@ -175,6 +175,7 @@ def render():
 
         # Controls: Shuffle / Original
         col_shuffle, col_original = st.columns(2)
+
         with col_shuffle:
             if st.button("Shuffle Setup 🔀", key="nito_shuffle", width="stretch"):
                 alts = encounter_data.get("alternatives") or {}
@@ -182,22 +183,18 @@ def render():
 
                 if isinstance(alts, dict):
                     settings = st.session_state.get("user_settings", {})
-                    active = set(settings.get("active_expansions", []))
-
-                    for exp_combo, combos in alts.items():
-                        exp_set = (
-                            {e.strip() for e in exp_combo.split(",")} if exp_combo else set()
-                        )
-                        if not exp_set or exp_set.issubset(active):
-                            candidates.extend(combos)
-                elif isinstance(alts, list):
-                    candidates = alts
-
-                if candidates:
-                    st.session_state[enemies_key] = random.choice(candidates)
-                    st.session_state[mode_key] = "shuffled"
-        with col_original:
-            if st.button("Original Setup 🔁", key="nito_original", width="stretch"):
+                    if isinstance(alts, dict):
+                        settings = st.session_state.get("user_settings", {})
+                        active = set(settings.get("active_expansions", []))
+                        for exp_combo, combos in alts.items():
+                            exp_set = {e.strip() for e in exp_combo.split(",")} if exp_combo else set()
+                            if not exp_set or exp_set.issubset(active):
+                                candidates.extend(combos)
+                    elif isinstance(alts, list):
+                        candidates = alts
+                    if candidates:
+                        st.session_state[enemies_key] = random.choice(candidates)
+                        st.session_state[mode_key] = "shuffled"
                 st.session_state[enemies_key] = encounter_data.get("original")
                 st.session_state[mode_key] = "original"
 
@@ -220,16 +217,7 @@ def render():
         )
 
         w = _card_w()
-        src = bytes_to_data_uri(card_img, mime="image/png")
-
-        st.markdown(
-            f"""
-            <div class="card-image">
-                <img src="{src}" style="width:{w}px">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.image(card_img, width=w)
 
     def _load_ec_mega_boss_setup_data():
         """
@@ -267,17 +255,16 @@ def render():
         """
         encounter_data = _load_ec_mega_boss_setup_data()
 
-        # Session keys to remember which enemy combination we're showing
         enemies_key = "ec_mega_setup_enemies"
         mode_key = "ec_mega_setup_mode"
 
-        # Default to the printed/original setup
         if enemies_key not in st.session_state:
-            st.session_state[enemies_key] = encounter_data["original"]
+            st.session_state[enemies_key] = encounter_data.get("original")
             st.session_state[mode_key] = "original"
 
         # Controls: Shuffle / Original
         col_shuffle, col_original = st.columns(2)
+
         with col_shuffle:
             if st.button("Shuffle Setup 🔀", key="ec_mega_shuffle", width="stretch"):
                 # Pick a random alternative combo.
@@ -320,17 +307,7 @@ def render():
         )
 
         w = _card_w()
-
-        src = bytes_to_data_uri(card_img, mime="image/png")
-
-        st.markdown(
-            f"""
-            <div class="card-image">
-                <img src="{src}" style="width:{w}px">
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.image(card_img, width=w)
 
     _ensure_state()
 
@@ -603,17 +580,7 @@ def render():
                     )
 
                 w = _card_w()
-
-                src = bytes_to_data_uri(img, mime="image/png")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:{w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(img, width=w)
 
             # Before heat-up, show the Mega Boss Setup encounter + buttons
             if not st.session_state.get("chariot_heatup_done", False):
@@ -629,16 +596,7 @@ def render():
                 if data_path:
                     img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
                     w = _card_w()
-                    src = bytes_to_data_uri(img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(img, width=w)
 
             with setup_col:
                 _render_nito_setup_panel()
@@ -653,60 +611,20 @@ def render():
             if ornstein_dead and not smough_dead:
                 # Smough survives
                 w = _card_w()
-
-                src = bytes_to_data_uri(s_img, mime="image/png")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:{w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(s_img, width=w)
             elif smough_dead and not ornstein_dead:
                 # Ornstein survives
                 w = _card_w()
-
-                src = bytes_to_data_uri(o_img, mime="image/png")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:{w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(o_img, width=w)
             else:
                 # Phase 1 (both alive): show both
                 o_col, s_col = st.columns(2)
                 with o_col:
                     w = _card_w()
-
-                    src = bytes_to_data_uri(o_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(o_img, width=w)
                 with s_col:
                     w = _card_w()
-
-                    src = bytes_to_data_uri(s_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(s_img, width=w)
         # Special case for Vordt's Frostbreath
         elif cfg.name == "Vordt of the Boreal Valley":
             data_path = cfg.display_cards[0] if cfg.display_cards else None
@@ -733,64 +651,25 @@ def render():
                         c1, c2 = st.columns(2)
                         with c1:
                             w = _card_w()
-
-                            src = bytes_to_data_uri(data_img, mime="image/png")
-
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{src}" style="width:{w}px">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
+                            st.image(data_img, width=w)
                         with c2:
                             w = _card_w()
 
                             # If Priscilla is invisible, overlay arcs onto the behavior card
                             if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                                 frost_img = overlay_priscilla_arcs(frost_img, frost_key, cfg.behaviors.get(frost_key, {}))
-                            src = bytes_to_data_uri(frost_img, mime="image/png")
-
-                            st.markdown(
-                                f"""
-                                <div class="card-image">
-                                    <img src="{src}" style="width:{w}px">
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
+                            st.image(frost_img, width=w)
                 else:
                     # Normal Vordt display, no Frostbreath this draw
                     w = _card_w()
-
-                    src = bytes_to_data_uri(data_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(data_img, width=w)
         else:
             # first display card is always the data card
             data_path = cfg.display_cards[0] if cfg.display_cards else None
             if data_path:
                 img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
                 w = _card_w()
-
-                src = bytes_to_data_uri(img, mime="image/png")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:{w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(img, width=w)
 
         if st.session_state.get("ui_compact", False):
             cfg.entities = render_health_tracker(cfg, state)
@@ -804,18 +683,11 @@ def render():
             w = _card_w()
 
             p = Path(CARD_BACK)
-            src = get_image_data_uri_cached(str(p))
-            if not src:
+            img_bytes = get_image_bytes_cached(str(p))
+            if not img_bytes:
                 raise Exception("empty data uri")
 
-            st.markdown(
-                f"""
-                <div class="card-image">
-                    <img src="{src}" style="width:{w}px">
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            st.image(img_bytes, width=w)
         else:
             # --- Ornstein & Smough dual-boss case ---
             if cfg.name == "Ornstein & Smough":
@@ -838,17 +710,7 @@ def render():
                         )
 
                     w = _card_w()
-
-                    src = bytes_to_data_uri(img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(img, width=w)
 
             # --- Vordt of the Boreal Valley: movement + attack decks ---
             elif cfg.name == "Vordt of the Boreal Valley" and isinstance(
@@ -867,19 +729,11 @@ def render():
                             move_path, cfg.behaviors.get(move_card, {}), is_boss=True
                         )
                         move_img = overlay_priscilla_arcs(move_img, move_card, cfg.behaviors.get(move_card, {}))
-                        src = bytes_to_data_uri(move_img, mime="image/png")
-                    
+                        st.image(move_img, width=w)
                     else:
-                        src = get_image_data_uri_cached(move_path)
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                        move_bytes = get_image_bytes_cached(move_path)
+                        if move_bytes:
+                            st.image(move_bytes, width=w)
                 with c2:
                     atk_path = _behavior_image_path(cfg, atk_card)
                     w = _card_w()
@@ -889,18 +743,11 @@ def render():
                             atk_path, cfg.behaviors.get(atk_card, {}), is_boss=True
                         )
                         atk_img = overlay_priscilla_arcs(atk_img, atk_card, cfg.behaviors.get(atk_card, {}))
-                        src = bytes_to_data_uri(atk_img, mime="image/png")
+                        st.image(atk_img, width=w)
                     else:
-                        src = get_image_data_uri_cached(atk_path)
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                        atk_bytes = get_image_bytes_cached(atk_path)
+                        if atk_bytes:
+                            st.image(atk_bytes, width=w)
 
             # --- Gaping Dragon: Stomach Slam shows Crawling Charge alongside ---
             elif cfg.name == "Gaping Dragon" and current.startswith("Stomach Slam"):
@@ -934,31 +781,22 @@ def render():
 
                         if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                             stomach_img = overlay_priscilla_arcs(stomach_img, current, cfg.behaviors.get(current, {}))
-                        src = bytes_to_data_uri(stomach_img, mime="image/png")
+                            st.image(stomach_img, width=w)
+                        else:
+                            stomach_bytes = get_image_bytes_cached(stomach_path)
+                            if stomach_bytes:
+                                st.image(stomach_bytes, width=w)
 
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="{src}" style="width:{w}px">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
                     with c2:
                         w = _card_w()
 
                         if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                             crawl_img = overlay_priscilla_arcs(crawl_img, crawl_key, cfg.behaviors.get(crawl_key, {}))
-                        src = bytes_to_data_uri(crawl_img, mime="image/png")
-
-                        st.markdown(
-                            f"""
-                            <div class="card-image">
-                                <img src="{src}" style="width:{w}px">
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                            st.image(crawl_img, width=w)
+                        else:
+                            crawl_bytes = get_image_bytes_cached(crawl_path)
+                            if crawl_bytes:
+                                st.image(crawl_bytes, width=w)
 
             # --- Guardian Dragon: Cage Grasp Inferno shows Fiery Breath alongside ---
             elif (
@@ -1007,29 +845,10 @@ def render():
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                         cage_img = overlay_priscilla_arcs(cage_img, current, cfg.behaviors.get(current, {}))
-                    src = bytes_to_data_uri(cage_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(cage_img, width=w)
                 with c2:
                     w = _card_w()
-
-                    src = bytes_to_data_uri(fiery_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(fiery_img, width=w)
 
             # --- Black Dragon Kalameet: Hellfire cards show Fiery Ruin alongside ---
             elif (
@@ -1078,29 +897,10 @@ def render():
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                         hellfire_img = overlay_priscilla_arcs(hellfire_img, current, cfg.behaviors.get(current, {}))
-                    src = bytes_to_data_uri(hellfire_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(hellfire_img, width=w)
                 with c2:
                     w = _card_w()
-
-                    src = bytes_to_data_uri(fiery_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(fiery_img, width=w)
 
             # --- Old Iron King: Fire Beam cards show Blasted Nodes alongside ---
             elif (
@@ -1148,29 +948,10 @@ def render():
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                         beam_img = overlay_priscilla_arcs(beam_img, current, cfg.behaviors.get(current, {}))
-                    src = bytes_to_data_uri(beam_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(beam_img, width=w)
                 with c2:
                     w = _card_w()
-
-                    src = bytes_to_data_uri(blasted_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(blasted_img, width=w)
 
             # --- Executioner's Chariot: Death Race shows AoE track alongside ---
             elif (
@@ -1221,29 +1002,10 @@ def render():
 
                     if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                         death_race_img = overlay_priscilla_arcs(death_race_img, current, cfg.behaviors.get(current, {}))
-                    src = bytes_to_data_uri(death_race_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(death_race_img, width=w)
                 with c2:
                     w = _card_w()
-
-                    src = bytes_to_data_uri(aoe_img, mime="image/png")
-
-                    st.markdown(
-                        f"""
-                        <div class="card-image">
-                            <img src="{src}" style="width:{w}px">
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    st.image(aoe_img, width=w)
 
             # --- Normal single-card case ---
             else:
@@ -1257,16 +1019,7 @@ def render():
 
                 if cfg.name == "Crossbreed Priscilla" and st.session_state.get("behavior_deck", {}).get("priscilla_invisible", False):
                     img = overlay_priscilla_arcs(img, current, cfg.behaviors.get(current, {}))
-                src = bytes_to_data_uri(img, mime="image/png")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{src}" style="width:{w}px">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(img, width=w)
 
         if cfg.name == "Vordt of the Boreal Valley":
             st.caption(

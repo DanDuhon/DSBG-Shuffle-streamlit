@@ -39,7 +39,7 @@ from ui.encounter_mode.assets import (
 from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
-from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
+from core.image_cache import get_image_data_uri_cached
 
 
 # ---------------------------------------------------------------------
@@ -2084,16 +2084,7 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                 is_boss=(cfg.tier == "boss"),
             )
             if data_bytes is not None:
-                data_uri = bytes_to_data_uri(data_bytes, mime="image/jpeg")
-
-                st.markdown(
-                    f"""
-                    <div class="card-image">
-                        <img src="{data_uri}" style="width:100%">
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+                st.image(data_bytes, width="stretch")
                 st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
 
         # If we made any special-case changes (Fountainhead / Hanging Rafters),

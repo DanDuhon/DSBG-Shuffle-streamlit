@@ -23,7 +23,7 @@ from ui.event_mode.logic import (
 )
 
 # cached image helper (use at module level to avoid repeated dynamic imports)
-from core.image_cache import get_image_data_uri_cached
+from core.image_cache import get_image_data_uri_cached, get_image_bytes_cached
 
 
 _BUILDER_KEY = "event_mode_builder"
@@ -332,9 +332,9 @@ def render(settings: Dict[str, Any]) -> None:
             )
             with r_img:
                 p = Path(img_path)
-                src = get_image_data_uri_cached(str(p))
-
-                st.image(src, width="stretch")
+                img_bytes = get_image_bytes_cached(str(p))
+                if img_bytes:
+                    st.image(img_bytes, width="stretch")
 
                 st.markdown(
                     "<div style='height:0.05rem'></div>", unsafe_allow_html=True
@@ -503,9 +503,9 @@ def render(settings: Dict[str, Any]) -> None:
                 if current_card:
                     card_name = Path(str(current_card)).stem
                     p = Path(str(current_card))
-                    src = get_image_data_uri_cached(str(p))
-
-                    st.image(src, width="stretch")
+                    img_bytes = get_image_bytes_cached(str(p))
+                    if img_bytes:
+                        st.image(img_bytes, width="stretch")
                 else:
                     st.markdown("### Current card")
                     st.caption("—")
@@ -574,10 +574,11 @@ def render(settings: Dict[str, Any]) -> None:
                         on_click=_cb_remove_from_deck,
                     )
 
-            if current_card:
-                p = Path(str(current_card))
-                src = get_image_data_uri_cached(str(p))
-                st.image(src, width="stretch")
+                if current_card:
+                    p = Path(str(current_card))
+                    img_bytes = get_image_bytes_cached(str(p))
+                    if img_bytes:
+                        st.image(img_bytes, width="stretch")
             else:
                 st.markdown("### Current card")
                 st.caption("—")
