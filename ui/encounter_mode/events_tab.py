@@ -218,7 +218,7 @@ def render(settings: Dict[str, Any]) -> None:
                 a1, a2 = st.columns(2)
                 with a1:
                     if st.button(
-                        "Attach current",
+                        "Attach current 📎",
                         width="stretch",
                         disabled=(not can_attach) or (not has_current),
                         key="enc_events_attach_current",
@@ -226,7 +226,7 @@ def render(settings: Dict[str, Any]) -> None:
                         _attach_event_to_current_encounter(event_name, str(current_card))
                 with a2:
                     if st.button(
-                        "Clear attached",
+                        "Clear attached 🧹",
                         width="stretch",
                         disabled=not bool(st.session_state.get("encounter_events")),
                         key="enc_events_clear_attached",
@@ -237,7 +237,7 @@ def render(settings: Dict[str, Any]) -> None:
                     s1, s2 = st.columns(2)
                     with s1:
                         if st.button(
-                            "Shuffle into deck",
+                            "Shuffle into deck 🔀",
                             width="stretch",
                             key="enc_events_sim_shuffle_into_deck",
                         ):
@@ -247,7 +247,7 @@ def render(settings: Dict[str, Any]) -> None:
                     with s2:
                         if is_lost_to_time:
                             if st.button(
-                                "Remove from deck",
+                                "Remove from deck ❌",
                                 width="stretch",
                                 key="enc_events_sim_remove_from_deck",
                             ):
@@ -302,7 +302,7 @@ def render(settings: Dict[str, Any]) -> None:
             is_big_pilgrims_key = name_norm == "big pilgrim's key"
             is_lost_to_time = name_norm == "lost to time"
 
-            if st.button("Draw", width="stretch", key="enc_events_sim_draw"):
+            if st.button("Draw 🃏", width="stretch", key="enc_events_sim_draw"):
                 draw_event_card()
                 _sync_deck_to_settings(settings)
 
@@ -318,7 +318,7 @@ def render(settings: Dict[str, Any]) -> None:
 
             if has_current and (is_big_pilgrims_key or is_lost_to_time):
                 if st.button(
-                    "Shuffle into deck",
+                    "Shuffle into deck 🔀",
                     width="stretch",
                     key="enc_events_sim_shuffle_into_deck",
                 ):
@@ -326,15 +326,15 @@ def render(settings: Dict[str, Any]) -> None:
                     _sync_deck_to_settings(settings)
                     st.rerun()
                     
-                if is_lost_to_time:
-                    if st.button(
-                        "Remove from deck",
-                        width="stretch",
-                        key="enc_events_sim_remove_from_deck",
-                    ):
-                        remove_card_from_deck()
-                        _sync_deck_to_settings(settings)
-                        st.rerun()
+                    if is_lost_to_time:
+                        if st.button(
+                            "Remove from deck ❌",
+                            width="stretch",
+                            key="enc_events_sim_remove_from_deck",
+                        ):
+                            remove_card_from_deck()
+                            _sync_deck_to_settings(settings)
+                            st.rerun()
 
             draw_n = len(deck_state.get("draw_pile") or [])
             discard_n = len(deck_state.get("discard_pile") or [])
@@ -353,7 +353,7 @@ def render(settings: Dict[str, Any]) -> None:
                 st.caption("—")
 
             if st.button(
-                "Attach current",
+                "Attach current 📎",
                 width="stretch",
                 disabled=(not can_attach) or (not has_current),
                 key="enc_events_attach_current",
@@ -361,19 +361,19 @@ def render(settings: Dict[str, Any]) -> None:
                 _attach_event_to_current_encounter(event_name, str(current_card))
                 
             if st.button(
-                "Clear attached",
+                "Clear attached 🧹",
                 width="stretch",
                 disabled=not bool(st.session_state.get("encounter_events")),
                 key="enc_events_clear_attached",
             ):
                 _clear_attached_events()
                 
-            if st.button("Reset and Shuffle", width="stretch", key="enc_events_sim_reset"):
+            if st.button("Reset and Shuffle 🔄", width="stretch", key="enc_events_sim_reset"):
                 reset_event_deck(configs=configs, preset=preset)
                 _sync_deck_to_settings(settings)
 
             if st.button(
-                "Current → Top",
+                "Current → Top ⬆️",
                 width="stretch",
                 disabled=not has_current,
                 key="enc_events_sim_top",
@@ -382,7 +382,7 @@ def render(settings: Dict[str, Any]) -> None:
                 _sync_deck_to_settings(settings)
                 
             if st.button(
-                "Current → Bottom",
+                "Current → Bottom ⬇️",
                 width="stretch",
                 disabled=not has_current,
                 key="enc_events_sim_bottom",
@@ -479,7 +479,7 @@ def render(settings: Dict[str, Any]) -> None:
                 chosen = cards[labels.index(choice)]
 
                 if st.button(
-                    "Attach selected",
+                    "Attach selected 📎",
                     width="stretch",
                     disabled=not can_attach,
                     key="enc_events_attach_selected",
