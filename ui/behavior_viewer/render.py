@@ -3,6 +3,7 @@ from core.behavior.generation import (
     build_behavior_catalog,
     render_behavior_card_cached,
     render_data_card_cached,
+    render_dual_boss_behavior_card,
     render_dual_boss_data_cards,
 )
 from core.behavior.logic import load_behavior
@@ -353,11 +354,15 @@ def render():
                 st.info("Select a behavior card — header rows are labels in compact mode.")
             else:
                 beh = cfg.behaviors.get(sel, {})
-                img_path = _behavior_image_path(cfg, sel)
-                img_bytes = render_behavior_card_cached(img_path, beh, is_boss=(entry.tier != "enemy"))
-                # Apply Priscilla overlay when requested
-                if entry.name == "Crossbreed Priscilla" and st.session_state.get(priscilla_invis_key, True):
-                    img_bytes = overlay_priscilla_arcs(img_bytes, sel, beh)
+                # Dual Ornstein & Smough cards need the special dual-boss renderer
+                if entry.name == "Ornstein & Smough" and isinstance(sel, str) and "&" in sel:
+                    img_bytes = render_dual_boss_behavior_card(cfg.raw, sel, boss_name=entry.name)
+                else:
+                    img_path = _behavior_image_path(cfg, sel)
+                    img_bytes = render_behavior_card_cached(img_path, beh, is_boss=(entry.tier != "enemy"))
+                    # Apply Priscilla overlay when requested
+                    if entry.name == "Crossbreed Priscilla" and st.session_state.get(priscilla_invis_key, True):
+                        img_bytes = overlay_priscilla_arcs(img_bytes, sel, beh)
                 # If this is Vordt, prepend a small emoji indicating move vs attack
                 if entry.name == "Vordt of the Boreal Valley":
                     btype = None

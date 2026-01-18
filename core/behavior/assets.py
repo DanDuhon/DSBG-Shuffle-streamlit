@@ -138,12 +138,12 @@ coords_map = {
     # Ornstein & Smough
     "dual_ornstein": {
         "attack_physical": {
-            "left": (150, 180),
-            "right": (440, 180),
+            "left": (223, 169),
+            "right": (545, 169),
         },
         "attack_magic": {
-            "left": (150, 180),
-            "right": (440, 180),
+            "left": (285, 167),
+            "right": (541, 167),
         },
         "attack_push": {
             "left": (150, 180),
@@ -164,16 +164,16 @@ coords_map = {
     },
     "dual_smough": {
         "attack_physical": {
-            "left": (150, 820),
-            "right": (440, 820),
+            "left": (36, 639),
+            "right": (290, 635),
         },
         "attack_magic": {
-            "left": (150, 820),
-            "right": (440, 820),
+            "left": (67, 692),
+            "right": (286, 692),
         },
         "attack_push": {
-            "left": (150, 180),
-            "right": (440, 180),
+            "left": (41, 636),
+            "right": (440, 636),
         },
         "repeat": {
             "left": (100, 880),
