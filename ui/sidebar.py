@@ -57,18 +57,15 @@ def _sync_invader_caps():
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
 
-    # Supabase config indicator: checks for required secrets in Streamlit's secrets
+    # Small settings preview to help debug migrated settings
     try:
-        supabase_url = bool(st.secrets.get("SUPABASE_URL"))
-        supabase_key = bool(st.secrets.get("SUPABASE_KEY"))
+        preview_settings = st.session_state.get("user_settings") or settings
+        with st.sidebar.expander("Persistence / Settings preview", expanded=False):
+            st.write("Active expansions:", preview_settings.get("active_expansions", []))
+            st.write("Selected characters:", preview_settings.get("selected_characters", []))
+            st.write("Only original enemies for campaigns:", bool(preview_settings.get("only_original_enemies_for_campaigns", False)))
     except Exception:
-        supabase_url = False
-        supabase_key = False
-
-    if supabase_url and supabase_key:
-        st.sidebar.success("Supabase configured")
-    else:
-        st.sidebar.warning("Supabase not configured — add SUPABASE_URL and SUPABASE_KEY in app Secrets")
+        pass
 
     # Use the live session copy of user_settings when available so
     # changes made elsewhere (e.g. toggling an encounter) appear
