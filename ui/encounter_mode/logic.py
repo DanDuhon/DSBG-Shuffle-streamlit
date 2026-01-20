@@ -1157,10 +1157,24 @@ def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: t
     Returns True if at least one expansion set for this encounter/char_count
     is a subset of the active expansions.
     """
+    def _norm_name(x):
+        # Normalize expansion names from different shapes (str, dict, list)
+        if isinstance(x, str):
+            return x.strip()
+        if isinstance(x, dict):
+            for k in ("name", "title", "expansion"):
+                if k in x:
+                    return str(x[k]).strip()
+            return json.dumps(x, sort_keys=True)
+        if isinstance(x, (list, tuple)) and x:
+            return _norm_name(x[0])
+        return str(x).strip()
+
     expansions_for_enc = valid_sets.get(encounter_key, {}).get(str(char_count), [])
-    active_set = set(active_expansions)
+    active_set = set(_norm_name(a) for a in active_expansions or ())
     for expansion_set in expansions_for_enc:
-        if set(expansion_set).issubset(active_set):
+        norm_set = set(_norm_name(e) for e in (expansion_set or []))
+        if norm_set.issubset(active_set):
             return True
     return False
 
