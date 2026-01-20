@@ -57,6 +57,19 @@ def _sync_invader_caps():
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
 
+    # Supabase config indicator: checks for required secrets in Streamlit's secrets
+    try:
+        supabase_url = bool(st.secrets.get("SUPABASE_URL"))
+        supabase_key = bool(st.secrets.get("SUPABASE_KEY"))
+    except Exception:
+        supabase_url = False
+        supabase_key = False
+
+    if supabase_url and supabase_key:
+        st.sidebar.success("Supabase configured")
+    else:
+        st.sidebar.warning("Supabase not configured — add SUPABASE_URL and SUPABASE_KEY in app Secrets")
+
     # Use the live session copy of user_settings when available so
     # changes made elsewhere (e.g. toggling an encounter) appear
     # immediately in the sidebar without waiting for a full rerun.

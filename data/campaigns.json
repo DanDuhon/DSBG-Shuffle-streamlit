@@ -1,1 +1,813 @@
-{}
+{
+  "v1": {
+    "rules_version": "V1",
+    "sidebar_settings": {
+      "active_expansions": [
+        "Painted World of Ariamis",
+        "The Sunless City",
+        "Tomb of Giants",
+        "Dark Souls The Board Game",
+        "Darkroot",
+        "Explorers",
+        "Iron Keep",
+        "Characters Expansion",
+        "Phantoms",
+        "Executioner's Chariot",
+        "Asylum Demon",
+        "Black Dragon Kalameet",
+        "Gaping Dragon",
+        "Guardian Dragon",
+        "Manus, Father of the Abyss",
+        "Old Iron King",
+        "The Four Kings",
+        "The Last Giant",
+        "Vordt of the Boreal Valley"
+      ],
+      "ngplus_level": 0,
+      "selected_characters": [
+        "Assassin"
+      ]
+    },
+    "state": {
+      "_chapter_expanded": {
+        "main": false,
+        "mega": false,
+        "mini": true
+      },
+      "_last_layouts": {
+        "main": {
+          "key": "v1:main:40ba8a5b4ce164ad584979f1834f6b6e:bonfire,boss:main,encounter:main:0,encounter:main:1,encounter:main:2,encounter:main:3",
+          "layout": {
+            "__gen_trace__": {
+              "allowed_count": {
+                "bonfire": 1,
+                "boss:main": 1,
+                "encounter:main:0": 3,
+                "encounter:main:1": 3,
+                "encounter:main:2": 2,
+                "encounter:main:3": 2
+              },
+              "connected": [],
+              "neighbor_dirs": [],
+              "occupied_positions": {
+                "bonfire": [
+                  0,
+                  0
+                ],
+                "boss:main": [
+                  0,
+                  3
+                ],
+                "encounter:main:0": [
+                  0,
+                  1
+                ],
+                "encounter:main:1": [
+                  0,
+                  2
+                ],
+                "encounter:main:2": [
+                  -1,
+                  2
+                ],
+                "encounter:main:3": [
+                  -1,
+                  3
+                ]
+              },
+              "placed_order": [
+                "encounter:main:0"
+              ],
+              "required_threes": 2,
+              "sampled": [
+                "3",
+                "3",
+                "2",
+                "2"
+              ],
+              "type_map": {
+                "encounter:main:0": "3",
+                "encounter:main:1": "3",
+                "encounter:main:2": "2",
+                "encounter:main:3": "2"
+              }
+            },
+            "bonfire": {
+              "connected": [
+                "encounter:main:0"
+              ],
+              "doors": [
+                "S"
+              ],
+              "id": "bonfire",
+              "kind": "bonfire",
+              "label": "🔥Bonfire",
+              "level": 0,
+              "neighbor_dirs": [
+                [
+                  "encounter:main:0",
+                  "S"
+                ]
+              ],
+              "neighbors": [
+                "encounter:main:0"
+              ],
+              "x": 0,
+              "y": 0
+            },
+            "boss:main": {
+              "connected": [
+                "encounter:main:3"
+              ],
+              "doors": [
+                "W"
+              ],
+              "id": "boss:main",
+              "kind": "boss",
+              "label": "Artorias",
+              "level": 4,
+              "neighbor_dirs": [
+                [
+                  "encounter:main:1",
+                  "N"
+                ],
+                [
+                  "encounter:main:3",
+                  "W"
+                ]
+              ],
+              "neighbors": [
+                "encounter:main:1",
+                "encounter:main:3"
+              ],
+              "x": 0,
+              "y": 3
+            },
+            "encounter:main:0": {
+              "connected": [
+                "bonfire",
+                "encounter:main:1"
+              ],
+              "doors": [
+                "S",
+                "N"
+              ],
+              "id": "encounter:main:0",
+              "kind": "encounter",
+              "label": "3️⃣Unknown",
+              "level": 3,
+              "neighbor_dirs": [
+                [
+                  "bonfire",
+                  "N"
+                ],
+                [
+                  "encounter:main:1",
+                  "S"
+                ]
+              ],
+              "neighbors": [
+                "bonfire",
+                "encounter:main:1"
+              ],
+              "x": 0,
+              "y": 1
+            },
+            "encounter:main:1": {
+              "connected": [
+                "encounter:main:0",
+                "encounter:main:2"
+              ],
+              "doors": [
+                "S",
+                "N",
+                "W"
+              ],
+              "id": "encounter:main:1",
+              "kind": "encounter",
+              "label": "3️⃣Unknown",
+              "level": 3,
+              "neighbor_dirs": [
+                [
+                  "encounter:main:0",
+                  "N"
+                ],
+                [
+                  "encounter:main:2",
+                  "W"
+                ],
+                [
+                  "boss:main",
+                  "S"
+                ]
+              ],
+              "neighbors": [
+                "encounter:main:0",
+                "encounter:main:2",
+                "boss:main"
+              ],
+              "x": 0,
+              "y": 2
+            },
+            "encounter:main:2": {
+              "connected": [
+                "encounter:main:1",
+                "encounter:main:3"
+              ],
+              "doors": [
+                "S",
+                "E"
+              ],
+              "id": "encounter:main:2",
+              "kind": "encounter",
+              "label": "3️⃣Unknown",
+              "level": 3,
+              "neighbor_dirs": [
+                [
+                  "encounter:main:1",
+                  "E"
+                ],
+                [
+                  "encounter:main:3",
+                  "S"
+                ]
+              ],
+              "neighbors": [
+                "encounter:main:1",
+                "encounter:main:3"
+              ],
+              "x": -1,
+              "y": 2
+            },
+            "encounter:main:3": {
+              "connected": [
+                "encounter:main:2",
+                "boss:main"
+              ],
+              "doors": [
+                "N",
+                "E"
+              ],
+              "id": "encounter:main:3",
+              "kind": "encounter",
+              "label": "3️⃣Unknown",
+              "level": 3,
+              "neighbor_dirs": [
+                [
+                  "encounter:main:2",
+                  "N"
+                ],
+                [
+                  "boss:main",
+                  "E"
+                ]
+              ],
+              "neighbors": [
+                "encounter:main:2",
+                "boss:main"
+              ],
+              "x": -1,
+              "y": 3
+            }
+          }
+        },
+        "mega": {
+          "key": "v1:mega:3d8fa207152fd3e3d288228329f90c77:bonfire",
+          "layout": {
+            "__gen_trace__": {
+              "allowed_count": {
+                "bonfire": 1
+              },
+              "connected": [],
+              "neighbor_dirs": [],
+              "occupied_positions": {
+                "bonfire": [
+                  0,
+                  0
+                ]
+              },
+              "placed_order": [],
+              "required_threes": 0,
+              "sampled": [],
+              "type_map": {}
+            },
+            "bonfire": {
+              "connected": [],
+              "doors": [],
+              "id": "bonfire",
+              "kind": "bonfire",
+              "label": "🔥Bonfire",
+              "level": 0,
+              "neighbor_dirs": [],
+              "neighbors": [],
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        "mini": {
+          "key": "v1:mini:a1af0c30f927693fcc800eef4d378357:bonfire,boss:mini,encounter:mini:0,encounter:mini:1,encounter:mini:2,encounter:mini:3",
+          "layout": {
+            "__gen_trace__": {
+              "allowed_count": {
+                "bonfire": 2,
+                "boss:mini": 1,
+                "encounter:mini:0": 3,
+                "encounter:mini:1": 2,
+                "encounter:mini:2": 3,
+                "encounter:mini:3": 3
+              },
+              "connected": [],
+              "neighbor_dirs": [],
+              "occupied_positions": {
+                "bonfire": [
+                  0,
+                  0
+                ],
+                "boss:mini": [
+                  3,
+                  -1
+                ],
+                "encounter:mini:0": [
+                  1,
+                  0
+                ],
+                "encounter:mini:1": [
+                  0,
+                  -1
+                ],
+                "encounter:mini:2": [
+                  1,
+                  -1
+                ],
+                "encounter:mini:3": [
+                  2,
+                  -1
+                ]
+              },
+              "placed_order": [
+                "encounter:mini:0",
+                "encounter:mini:1",
+                "encounter:mini:2"
+              ],
+              "required_threes": 2,
+              "sampled": [
+                "3",
+                "2",
+                "3",
+                "2"
+              ],
+              "type_map": {
+                "encounter:mini:0": "3",
+                "encounter:mini:1": "2",
+                "encounter:mini:2": "3",
+                "encounter:mini:3": "2"
+              }
+            },
+            "bonfire": {
+              "connected": [
+                "encounter:mini:0",
+                "encounter:mini:1"
+              ],
+              "doors": [
+                "N",
+                "E"
+              ],
+              "id": "bonfire",
+              "kind": "bonfire",
+              "label": "🔥Bonfire",
+              "level": 0,
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:0",
+                  "E"
+                ],
+                [
+                  "encounter:mini:1",
+                  "N"
+                ]
+              ],
+              "neighbors": [
+                "encounter:mini:0",
+                "encounter:mini:1"
+              ],
+              "x": 0,
+              "y": 0
+            },
+            "boss:mini": {
+              "connected": [
+                "encounter:mini:3"
+              ],
+              "doors": [
+                "W"
+              ],
+              "id": "boss:mini",
+              "kind": "boss",
+              "label": "Old Dragonslayer",
+              "level": 3,
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:3",
+                  "W"
+                ]
+              ],
+              "neighbors": [
+                "encounter:mini:3"
+              ],
+              "x": 3,
+              "y": -1
+            },
+            "encounter:mini:0": {
+              "connected": [
+                "bonfire",
+                "encounter:mini:2"
+              ],
+              "doors": [
+                "W",
+                "N"
+              ],
+              "id": "encounter:mini:0",
+              "kind": "encounter",
+              "label": "1️⃣Unknown",
+              "level": 1,
+              "neighbor_dirs": [
+                [
+                  "bonfire",
+                  "W"
+                ],
+                [
+                  "encounter:mini:2",
+                  "N"
+                ]
+              ],
+              "neighbors": [
+                "bonfire",
+                "encounter:mini:2"
+              ],
+              "x": 1,
+              "y": 0
+            },
+            "encounter:mini:1": {
+              "connected": [
+                "bonfire",
+                "encounter:mini:2"
+              ],
+              "doors": [
+                "S",
+                "E"
+              ],
+              "id": "encounter:mini:1",
+              "kind": "encounter",
+              "label": "1️⃣Unknown",
+              "level": 1,
+              "neighbor_dirs": [
+                [
+                  "bonfire",
+                  "S"
+                ],
+                [
+                  "encounter:mini:2",
+                  "E"
+                ]
+              ],
+              "neighbors": [
+                "bonfire",
+                "encounter:mini:2"
+              ],
+              "x": 0,
+              "y": -1
+            },
+            "encounter:mini:2": {
+              "connected": [
+                "encounter:mini:0",
+                "encounter:mini:1",
+                "encounter:mini:3"
+              ],
+              "doors": [
+                "S",
+                "W",
+                "E"
+              ],
+              "id": "encounter:mini:2",
+              "kind": "encounter",
+              "label": "1️⃣Unknown",
+              "level": 1,
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:0",
+                  "S"
+                ],
+                [
+                  "encounter:mini:1",
+                  "W"
+                ],
+                [
+                  "encounter:mini:3",
+                  "E"
+                ]
+              ],
+              "neighbors": [
+                "encounter:mini:0",
+                "encounter:mini:1",
+                "encounter:mini:3"
+              ],
+              "x": 1,
+              "y": -1
+            },
+            "encounter:mini:3": {
+              "connected": [
+                "encounter:mini:2",
+                "boss:mini"
+              ],
+              "doors": [
+                "W",
+                "E"
+              ],
+              "id": "encounter:mini:3",
+              "kind": "encounter",
+              "label": "2️⃣Unknown",
+              "level": 2,
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:2",
+                  "W"
+                ],
+                [
+                  "boss:mini",
+                  "E"
+                ]
+              ],
+              "neighbors": [
+                "encounter:mini:2",
+                "boss:mini"
+              ],
+              "x": 2,
+              "y": -1
+            }
+          }
+        }
+      },
+      "_stage_completed": {
+        "main": false,
+        "mega": false,
+        "mini": false
+      },
+      "bosses": {
+        "main": "Random",
+        "mega": "None",
+        "mini": "Random"
+      },
+      "campaign": {
+        "bosses": {
+          "main": {
+            "name": "Artorias",
+            "was_random": true
+          },
+          "mega": {
+            "name": null,
+            "was_random": false
+          },
+          "mini": {
+            "name": "Old Dragonslayer",
+            "was_random": true
+          }
+        },
+        "current_node_id": "bonfire",
+        "nodes": [
+          {
+            "id": "bonfire",
+            "kind": "bonfire"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 1,
+              "encounter_name": "Ash Gardens",
+              "enemies": [
+                28,
+                11
+              ],
+              "expansion": "Dark Souls The Board Game",
+              "expansions_used": [
+                "Tomb of Giants",
+                "Explorers"
+              ]
+            },
+            "id": "encounter:mini:0",
+            "index": 0,
+            "kind": "encounter",
+            "level": 1,
+            "revealed": false,
+            "stage": "mini",
+            "status": "locked"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 1,
+              "encounter_name": "Ashen Hollow",
+              "enemies": [
+                21,
+                6,
+                21
+              ],
+              "expansion": "Dark Souls The Board Game",
+              "expansions_used": [
+                "The Sunless City",
+                "Painted World of Ariamis"
+              ]
+            },
+            "id": "encounter:mini:1",
+            "index": 1,
+            "kind": "encounter",
+            "level": 1,
+            "revealed": false,
+            "stage": "mini",
+            "status": "locked"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 1,
+              "encounter_name": "Blazing Plaza",
+              "enemies": [
+                3,
+                6,
+                28
+              ],
+              "expansion": "Iron Keep",
+              "expansions_used": [
+                "Tomb of Giants",
+                "Iron Keep",
+                "The Sunless City"
+              ]
+            },
+            "id": "encounter:mini:2",
+            "index": 2,
+            "kind": "encounter",
+            "level": 1,
+            "revealed": false,
+            "stage": "mini",
+            "status": "locked"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 2,
+              "encounter_name": "Pyre of Souls",
+              "enemies": [
+                15,
+                31
+              ],
+              "expansion": "Iron Keep",
+              "expansions_used": [
+                "Iron Keep",
+                "Painted World of Ariamis"
+              ]
+            },
+            "id": "encounter:mini:3",
+            "index": 3,
+            "kind": "encounter",
+            "level": 2,
+            "revealed": false,
+            "stage": "mini",
+            "status": "locked"
+          },
+          {
+            "boss_name": "Old Dragonslayer",
+            "id": "boss:mini",
+            "kind": "boss",
+            "revealed": false,
+            "stage": "mini",
+            "status": "locked",
+            "was_random": true
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 3,
+              "encounter_name": "Pit of the Dead",
+              "enemies": [
+                23,
+                29,
+                28
+              ],
+              "expansion": "Dark Souls The Board Game",
+              "expansions_used": [
+                "The Sunless City",
+                "Tomb of Giants"
+              ]
+            },
+            "id": "encounter:main:0",
+            "index": 0,
+            "kind": "encounter",
+            "level": 3,
+            "revealed": false,
+            "stage": "main",
+            "status": "locked"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 3,
+              "encounter_name": "Dilapidated Bridge",
+              "enemies": [
+                17,
+                6,
+                9,
+                16,
+                11,
+                9
+              ],
+              "expansion": "Dark Souls The Board Game",
+              "expansions_used": [
+                "Dark Souls The Board Game",
+                "Painted World of Ariamis",
+                "Explorers",
+                "Darkroot"
+              ]
+            },
+            "id": "encounter:main:1",
+            "index": 1,
+            "kind": "encounter",
+            "level": 3,
+            "revealed": false,
+            "stage": "main",
+            "status": "locked"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 3,
+              "encounter_name": "Desecrated Church",
+              "enemies": [
+                30,
+                30,
+                28,
+                30,
+                13,
+                28
+              ],
+              "expansion": "Dark Souls The Board Game",
+              "expansions_used": [
+                "Tomb of Giants"
+              ]
+            },
+            "id": "encounter:main:2",
+            "index": 2,
+            "kind": "encounter",
+            "level": 3,
+            "revealed": false,
+            "stage": "main",
+            "status": "locked"
+          },
+          {
+            "frozen": {
+              "edited": false,
+              "encounter_level": 3,
+              "encounter_name": "Sweltering Sanctum",
+              "enemies": [
+                15,
+                15,
+                31
+              ],
+              "expansion": "Iron Keep",
+              "expansions_used": [
+                "Iron Keep",
+                "Painted World of Ariamis"
+              ]
+            },
+            "id": "encounter:main:3",
+            "index": 3,
+            "kind": "encounter",
+            "level": 3,
+            "revealed": false,
+            "stage": "main",
+            "status": "locked"
+          },
+          {
+            "boss_name": "Artorias",
+            "id": "boss:main",
+            "kind": "boss",
+            "revealed": false,
+            "stage": "main",
+            "status": "locked",
+            "was_random": true
+          }
+        ],
+        "player_count": 1,
+        "version": "V1"
+      },
+      "instant_events_unresolved": [],
+      "name": "v1",
+      "only_original_enemies": false,
+      "orphaned_rendezvous_events": [],
+      "party_consumable_events": [],
+      "souls": 0,
+      "souls_token_amount": 0,
+      "souls_token_node_id": null,
+      "sparks": 5,
+      "sparks_max": 5
+    }
+  }
+}

@@ -684,8 +684,6 @@ def render():
 
             p = Path(CARD_BACK)
             img_bytes = get_image_bytes_cached(str(p))
-            if not img_bytes:
-                raise Exception("empty data uri")
 
             st.image(img_bytes, width=w)
         else:

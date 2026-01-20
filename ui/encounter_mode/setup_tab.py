@@ -13,6 +13,7 @@ from ui.encounter_mode.generation import (
     generate_encounter_image,
     render_encounter_icons,
     build_encounter_keywords,
+    load_encounter_data,
 )
 from ui.encounter_mode.invader_panel import (
     _get_invader_behavior_entries_for_encounter,
@@ -525,6 +526,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         if k in raw:
                             raw.pop(k, None)
 
+                    # Ensure we do not persist full encounter JSON in saved payloads
+                    raw.pop("encounter_data", None)
                     payload = {
                         **raw,
                         "events": st.session_state.get("encounter_events", []),
@@ -553,14 +556,23 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     if st.button("Load 📥", width="stretch"):
                         payload = dict(st.session_state.saved_encounters[load_name])
 
-                        # Re-generate the encounter image (images are not persisted)
+                        # Re-generate the encounter image (images are not persisted).
+                        # Load encounter JSON on-demand if it wasn't saved in payload.
                         try:
+                            exp = payload.get("expansion") or payload.get("expansions_used", [None])[0]
+                            lvl = int(payload.get("encounter_level") or payload.get("level") or 0)
+                            nm = payload.get("encounter_name") or payload.get("name")
+                            pc = int(payload.get("character_count") or character_count)
+                            enc_data = payload.get("encounter_data") or payload.get("data") or {}
+                            if not enc_data and exp and nm:
+                                enc_data = load_encounter_data(exp, nm, character_count=pc, level=lvl)
+
                             card_img = generate_encounter_image(
-                                payload.get("expansion") or payload.get("expansions_used", [None])[0],
-                                int(payload.get("encounter_level") or payload.get("level") or 0),
-                                payload.get("encounter_name") or payload.get("encounter_name") or payload.get("name"),
-                                payload.get("encounter_data") or payload.get("encounter_data") or payload.get("data") or {},
-                                payload.get("enemies") or payload.get("enemies", []),
+                                exp,
+                                lvl,
+                                nm,
+                                enc_data or {},
+                                payload.get("enemies") or [],
                                 use_edited=payload.get("edited", False),
                             )
                         except Exception:

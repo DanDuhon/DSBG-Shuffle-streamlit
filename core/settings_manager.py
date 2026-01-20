@@ -1,6 +1,9 @@
 import json
+import os
 from copy import deepcopy
 from pathlib import Path
+
+from core import supabase_store
 
 SETTINGS_FILE = Path("data/user_settings.json")
 
@@ -43,8 +46,15 @@ def load_settings():
     """Load saved user settings, merged with defaults."""
     merged = deepcopy(DEFAULT_SETTINGS)
 
-    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-        loaded = json.load(f)
+    # Choose storage backend: Supabase when configured, otherwise local JSON.
+    if _has_supabase_config():
+        loaded = supabase_store.get_document("user_settings", "default")
+    else:
+        try:
+            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+        except FileNotFoundError:
+            loaded = None
 
     if not isinstance(loaded, dict):
         return merged
@@ -72,6 +82,30 @@ def load_settings():
     return merged
 
 def save_settings(settings: dict):
+    """Persist settings to Supabase if configured, otherwise to local JSON."""
+    if _has_supabase_config():
+        return supabase_store.upsert_document("user_settings", "default", settings)
+
     SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2)
+    return True
+
+
+def _has_supabase_config() -> bool:
+    """Return True when SUPABASE_URL and SUPABASE_KEY are available via
+    environment variables or Streamlit secrets (when running under Streamlit).
+    This lets Docker/local runs (without secrets) continue using JSON files.
+    """
+    # Prefer environment variables for non-Streamlit runs (scripts, Docker)
+    if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_KEY"):
+        return True
+    try:
+        import streamlit as st
+
+        if st.secrets.get("SUPABASE_URL") and st.secrets.get("SUPABASE_KEY"):
+            return True
+    except Exception:
+        # streamlit may not be available in some contexts
+        pass
+    return False

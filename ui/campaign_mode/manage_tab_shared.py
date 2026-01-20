@@ -8,6 +8,8 @@ from ui.campaign_mode.api import (
     record_dropped_souls,
 )
 from ui.encounter_mode.setup_tab import render_original_encounter
+from ui.encounter_mode.generation import load_encounter_data
+from ui.campaign_mode.helpers import get_player_count_from_settings
 
 
 def _frozen_sig(
@@ -283,9 +285,12 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
     encounter_data = frozen.get("encounter_data")
     use_edited = bool(frozen.get("edited", False))
 
+    # If generation/persistence stripped full encounter JSON, load it on demand
     if not encounter_data:
-        st.warning("Missing encounter data; regenerate this campaign.")
-        return
+        # Determine player count from user settings so we load the correct variant
+        settings = st.session_state.get("user_settings") or {}
+        player_count = int(get_player_count_from_settings(settings))
+        encounter_data = load_encounter_data(expansion, name, character_count=player_count, level=level)
 
     res = render_original_encounter(
         encounter_data,

@@ -232,7 +232,6 @@ def _pick_random_campaign_encounter(
                     "encounter_name": res.get("encounter_name") or base_enc.get("name"),
                     "enemies": res.get("enemies") or [],
                     "expansions_used": res.get("expansions_used") or [],
-                    "encounter_data": res.get("encounter_data"),
                     "edited": bool(res.get("edited", False)),
                 }
                 return frozen

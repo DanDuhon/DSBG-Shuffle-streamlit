@@ -1,4 +1,14 @@
 {
-  "decks": {},
-  "updated": "2026-01-16T22:49:39+00:00"
+  "decks": {
+    "blah": {
+      "cards": {
+        "assets/events/Alluring Skull.jpg": 1,
+        "assets/events/Big Pilgrim's Key.jpg": 2,
+        "assets/events/Bleak Bonfire Ascetic.jpg": 3,
+        "assets/events/Bloodstained Bonfire Ascetic.jpg": 1,
+        "assets/events/Cracked Bonfire Ascetic.jpg": 1
+      }
+    }
+  },
+  "updated": "2026-01-20T16:14:11+00:00"
 }

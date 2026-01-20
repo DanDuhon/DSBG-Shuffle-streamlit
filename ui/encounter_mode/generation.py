@@ -748,12 +748,16 @@ def cached_encounter_image(expansion: str, level: int, name: str, data: dict, en
 
 
 @st.cache_data(show_spinner=False)
-def load_encounter_data(expansion: str, name: str | None = None, character_count: int = 3) -> dict:
+def load_encounter_data(expansion: str, name: str | None = None, character_count: int | None = None, level: int | None = None) -> dict:
     """
     Wrapper around load_encounter that can later handle list or dataclass conversion.
     """
     if name:
-        slug = f"{expansion}_{name}"
+        # Prefer filenames that include expansion, level, and name
+        if level is not None:
+            slug = f"{expansion}_{int(level)}_{name}"
+        else:
+            slug = f"{expansion}_{name}"
         return load_encounter(slug, character_count)
     else:
         # Future support for all encounters in expansion
