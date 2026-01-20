@@ -203,6 +203,48 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         st.write("**Sample valid_sets mismatches (first 10):**")
         for m in mismatches:
             st.write(m)
+
+        # Additional per-encounter diagnostics: show whether valid_sets contains
+        # the encounter_key for a few sample encounters, and nearest-key hints.
+        try:
+            def _closest_keys(key, pool, limit=5):
+                keyl = key.lower()
+                scores = []
+                for p in pool:
+                    p2 = p.lower()
+                    # simple prefix/substring heuristics
+                    score = 0
+                    if p2 == keyl:
+                        score = 100
+                    elif keyl in p2 or p2 in keyl:
+                        score = 50
+                    elif p2.split('_')[-1].startswith(keyl.split('_')[-1][:6]):
+                        score = 25
+                    if score > 0:
+                        scores.append((score, p))
+                scores.sort(reverse=True)
+                return [s[1] for s in scores[:limit]]
+
+            sample_encs = []
+            # collect up to 10 encounter keys from the available encounters
+            for exp_name, elist in list(encounters_by_expansion.items())[:10]:
+                for e in elist[:3]:
+                    sample_encs.append(f"{exp_name}_{e['level']}_{e['name']}")
+                    if len(sample_encs) >= 10:
+                        break
+                if len(sample_encs) >= 10:
+                    break
+
+            st.write("**Per-encounter valid_sets presence (sample):**")
+            all_keys = list(valid_sets.keys())
+            for k in sample_encs:
+                present = k in valid_sets
+                hints = []
+                if not present:
+                    hints = _closest_keys(k, all_keys, limit=5)
+                st.write({"encounter_key": k, "in_valid_sets": present, "hints": hints})
+        except Exception:
+            pass
         st.stop()
 
     # Ensure some state containers exist
