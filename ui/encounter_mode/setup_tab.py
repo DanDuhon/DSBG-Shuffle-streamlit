@@ -169,12 +169,40 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     )
 
     if not filtered_expansions:
-        st.error(
-            "No valid expansions for the current settings.\n"
-            f"Active expansions: {active_expansions}\n"
-            f"Selected characters: {settings.get('selected_characters', [])}\n"
-            f"Encounter sets loaded: {len(encounters_by_expansion)}"
-        )
+        # Provide extended diagnostics to help root-cause mismatched names
+        def _norm_name(x):
+            if isinstance(x, str):
+                return x.strip()
+            if isinstance(x, (list, tuple)) and x:
+                return _norm_name(x[0])
+            return str(x).strip()
+
+        active_norm = set(_norm_name(a) for a in (active_expansions or []))
+        # Inspect valid_sets for the current character count to show why nothing matched
+        try:
+            sample_keys = list(valid_sets.keys())[:50]
+            mismatches = []
+            for k in sample_keys:
+                sets_for = valid_sets.get(k, {}).get(str(character_count), [])
+                for s in sets_for:
+                    norm_set = set(_norm_name(e) for e in (s or []))
+                    missing = sorted(list(norm_set - active_norm))
+                    mismatches.append({"encounter": k, "required": sorted(list(norm_set)), "missing": missing})
+                    if len(mismatches) >= 10:
+                        break
+                if len(mismatches) >= 10:
+                    break
+        except Exception:
+            mismatches = []
+
+        st.error("No valid expansions for the current settings.")
+        st.write("**Active expansions (raw):**", active_expansions)
+        st.write("**Active expansions (normalized):**", sorted(list(active_norm)))
+        st.write("**Selected characters:**", settings.get('selected_characters', []))
+        st.write("**Encounter sets loaded:**", len(encounters_by_expansion))
+        st.write("**Sample valid_sets mismatches (first 10):**")
+        for m in mismatches:
+            st.write(m)
         st.stop()
 
     # Ensure some state containers exist
