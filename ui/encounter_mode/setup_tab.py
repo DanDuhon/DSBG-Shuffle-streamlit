@@ -211,6 +211,16 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 disabled=not valid_party,
             )
 
+            # Defensive fallback: `st.selectbox` can return None in some
+            # situations (widget state mismatch). Prefer the first available
+            # expansion rather than raising a KeyError later.
+            if not selected_expansion:
+                if filtered_expansions:
+                    selected_expansion = filtered_expansions[0]
+                else:
+                    st.error("No valid expansions available.")
+                    st.stop()
+
             all_encounters = encounters_by_expansion[selected_expansion]
 
             filtered_encounters = filter_encounters(
@@ -739,6 +749,13 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             index=0,
             disabled=not valid_party,
         )
+
+        if not selected_expansion:
+            if filtered_expansions:
+                selected_expansion = filtered_expansions[0]
+            else:
+                st.error("No valid expansions available.")
+                st.stop()
 
         all_encounters = encounters_by_expansion[selected_expansion]
 
