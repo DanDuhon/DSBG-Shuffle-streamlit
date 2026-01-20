@@ -181,6 +181,13 @@ mode = st.sidebar.radio(
 render_sidebar(settings)
 save_settings(settings)
 
+# Recompute selected characters and party size after sidebar widgets may have
+# mutated `settings` via `st.session_state` so renderers get current values.
+selected_characters = settings.get("selected_characters", [])
+character_count = len(selected_characters)
+valid_party = 0 < character_count <= 4
+st.session_state["player_count"] = character_count
+
 if mode == "Encounter Mode":
     encounter_mode_render(settings, valid_party, character_count)
 elif mode == "Event Mode":
