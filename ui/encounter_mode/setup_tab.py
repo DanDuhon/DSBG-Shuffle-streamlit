@@ -168,10 +168,6 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         valid_sets,
     )
 
-    if not filtered_expansions:
-        st.error("No valid expansions for the current settings.")
-        st.stop()
-
     # Ensure some state containers exist
     if "saved_encounters" not in st.session_state:
         st.session_state.saved_encounters = {}  # name -> encounter dict
