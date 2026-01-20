@@ -119,8 +119,25 @@ def render_sidebar(settings: dict):
             key="ngplus_level",
             on_change=_ngplus_level_changed,
         )
-
         lvl = int(level)
+
+        # Compute nodes added at this NG+ level (per-level mapping)
+        extra_map = [0, 1, 1, 2, 2, 3]
+        nodes_added = extra_map[lvl] if 0 <= lvl < len(extra_map) else 0
+
+        # Optional: increase AoE node counts for Mega Bosses per NG+ level
+        prev_increase = bool(settings.get("ngplus_increase_nodes", False))
+        checkbox_label = "Increase AoE node count with NG+ (Mega bosses only)"
+
+        increase_nodes = st.checkbox(
+            checkbox_label,
+            value=prev_increase,
+            key="ngplus_increase_nodes",
+        )
+        settings["ngplus_increase_nodes"] = bool(increase_nodes)
+        st.session_state["user_settings"] = settings
+        save_settings(settings)
+
         if lvl > 0:
             dodge_b = dodge_bonus_for_level(lvl)
             if dodge_b == 1:
@@ -128,6 +145,7 @@ def render_sidebar(settings: dict):
             elif dodge_b == 2:
                 dodge_text = "+2 to dodge difficulty."
 
+            # NG+ summary text
             st.markdown(
                 "\n".join(
                     [
@@ -136,6 +154,7 @@ def render_sidebar(settings: dict):
                         f"- Base HP 8-10: +{lvl*2}",
                         f"- Base HP 11+: +{lvl*10}% (rounded up)",
                         f"- +{lvl} damage to all attacks.",
+                        f"- +{nodes_added} node{'s' if nodes_added != 1 else ''}", " to Mega Boss AoE patterns.",
                     ]
                     + ([f"- {dodge_text}"] if dodge_b > 0 else [])
                 )

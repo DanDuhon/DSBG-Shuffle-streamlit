@@ -4,17 +4,23 @@ import random
 from typing import Sequence, Tuple
 
 from PIL import Image
+from PIL import Image, ImageDraw
+from pathlib import Path
 
 from core.behavior.generation import render_behavior_card_cached
-from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
+from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path, FONTS, text_styles, ICONS_DIR
 from ui.boss_mode.aoe_pattern_utils import (
     NODE_COORDS,
     is_adjacent,
     is_diagonal,
     connected_under,
     generate_random_pattern_for_dest,
-    _aoe_node_to_xy
+    _aoe_node_to_xy,
+    candidate_nodes_for_dest,
+    manhattan,
 )
+import streamlit as st
+from core.ngplus import get_current_ngplus_level
 
 
 Coord = Tuple[int, int]
@@ -241,9 +247,23 @@ def _guardian_render_fiery_breath(cfg, pattern):
 
     pattern is {"dest": (x, y), "aoe": [(x, y), ...]} using the shared NODE_COORDS grid.
     """
+    beh = cfg.behaviors.get(GUARDIAN_FIERY_BREATH_NAME, {}) or {}
+    dodge_val = beh.get("dodge")
+    # Render the base card without dodge and without any magic attack slot
+    beh_no_dodge = dict(beh)
+    beh_no_dodge.pop("dodge", None)
+
+    # Remove any magic attack slots so we can draw the icon at a custom location
+    magic_slot_damage = None
+    for slot in ("left", "middle", "right"):
+        spec = beh_no_dodge.get(slot)
+        if isinstance(spec, dict) and spec.get("type") == "magic":
+            magic_slot_damage = spec.get("damage")
+            beh_no_dodge.pop(slot, None)
+
     base = render_behavior_card_cached(
         _behavior_image_path(cfg, GUARDIAN_FIERY_BREATH_NAME),
-        cfg.behaviors.get(GUARDIAN_FIERY_BREATH_NAME, {}),
+        beh_no_dodge,
         is_boss=True,
     )
 
@@ -255,7 +275,7 @@ def _guardian_render_fiery_breath(cfg, pattern):
     elif isinstance(base, str):
         base_img = Image.open(base).convert("RGBA")
 
-    assets_dir = BEHAVIOR_CARDS_PATH.parent
+    assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
 
     # Load icons
     aoe_icon_path = assets_dir / "behavior icons" / "aoe_node.png"
@@ -275,9 +295,41 @@ def _guardian_render_fiery_breath(cfg, pattern):
         x, y = _aoe_node_to_xy(dest, True)
         base_img.alpha_composite(dest_icon, dest=(x, y))
 
+    # Possibly expand AoE when NG+ nodes option enabled
+    aoe_nodes = list(pattern.get("aoe", []))
+    ng_level = get_current_ngplus_level()
+    increase_enabled = bool(st.session_state.get("ngplus_increase_nodes", False))
+    if increase_enabled and ng_level > 0:
+        # NG+ extra nodes mapping for levels 1..5: [1,1,2,2,3]
+        extra_map = [0, 1, 1, 2, 2, 3]
+        lvl = max(0, min(int(ng_level), len(extra_map) - 1))
+        extra = extra_map[lvl]
+        target = len(aoe_nodes) + extra
+        candidates = candidate_nodes_for_dest(pattern.get("dest"), node_coords=NODE_COORDS)
+        candidates = [c for c in candidates if c not in aoe_nodes and c != pattern.get("dest")]
+        candidates.sort(key=lambda n: min(manhattan(n, a) for a in aoe_nodes) if aoe_nodes else 0)
+        for c in candidates:
+            if len(aoe_nodes) >= target:
+                break
+            new_set = set(aoe_nodes) | {c}
+            if connected_under(new_set, adjacency_fn=is_adjacent):
+                aoe_nodes.append(c)
+
     # Overlay AoE nodes
-    for coord in pattern.get("aoe", []):
+    for coord in aoe_nodes:
         x, y = _aoe_node_to_xy(coord)
         base_img.alpha_composite(aoe_icon, dest=(x, y))
 
+    draw = ImageDraw.Draw(base_img)
+    font = FONTS.get("dodge")
+    fill = text_styles.get("dodge", {}).get("fill", "black")
+    text = str(dodge_val)
+    draw.text((420, 940), text, font=font, fill=fill)
+
+    if magic_slot_damage is not None:
+        atk_icon_path = ICONS_DIR / f"attack_magic_{magic_slot_damage}.png"
+        if atk_icon_path.exists():
+            atk_icon = Image.open(atk_icon_path).convert("RGBA")
+            placeholder_coords = (50, 870)
+            base_img.alpha_composite(atk_icon, dest=placeholder_coords)
     return base_img

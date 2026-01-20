@@ -4,6 +4,7 @@ from __future__ import annotations
 import io
 import random
 from PIL import Image
+from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
 from core.behavior.generation import render_behavior_card_cached
@@ -13,8 +14,12 @@ from ui.boss_mode.aoe_pattern_utils import (
     is_adjacent,
     is_diagonal,
     connected_under,
-    _aoe_node_to_xy
+    _aoe_node_to_xy,
+    candidate_nodes_for_dest,
+    manhattan,
 )
+import streamlit as st
+from core.ngplus import get_current_ngplus_level
 
 Coord = Tuple[int, int]
 
@@ -298,7 +303,7 @@ def _kalameet_render_fiery_ruin(cfg, pattern):
     elif isinstance(base, str):
         base_img = Image.open(base).convert("RGBA")
 
-    assets_dir = BEHAVIOR_CARDS_PATH.parent
+    assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
 
     # Load icons
     aoe_icon_path = assets_dir / "behavior icons" / "aoe_node.png"
@@ -318,8 +323,28 @@ def _kalameet_render_fiery_ruin(cfg, pattern):
         x, y = _aoe_node_to_xy(dest, True)
         base_img.alpha_composite(dest_icon, dest=(x, y))
 
+    # Possibly expand AoE when NG+ nodes option enabled
+    aoe_nodes = list(pattern.get("aoe", []))
+    ng_level = get_current_ngplus_level()
+    increase_enabled = bool(st.session_state.get("ngplus_increase_nodes", False))
+    if increase_enabled and ng_level > 0:
+        # NG+ extra nodes mapping for levels 1..5: [1,1,2,2,3]
+        extra_map = [0, 1, 1, 2, 2, 3]
+        lvl = max(0, min(int(ng_level), len(extra_map) - 1))
+        extra = extra_map[lvl]
+        target = len(aoe_nodes) + extra
+        candidates = candidate_nodes_for_dest(pattern.get("dest"), node_coords=NODE_COORDS)
+        candidates = [c for c in candidates if c not in aoe_nodes and c != pattern.get("dest")]
+        candidates.sort(key=lambda n: min(manhattan(n, a) for a in aoe_nodes) if aoe_nodes else 0)
+        for c in candidates:
+            if len(aoe_nodes) >= target:
+                break
+            new_set = set(aoe_nodes) | {c}
+            if connected_under(new_set, adjacency_fn=is_adjacent):
+                aoe_nodes.append(c)
+
     # Overlay AoE nodes
-    for coord in pattern.get("aoe", []):
+    for coord in aoe_nodes:
         x, y = _aoe_node_to_xy(coord)
         base_img.alpha_composite(aoe_icon, dest=(x, y))
 

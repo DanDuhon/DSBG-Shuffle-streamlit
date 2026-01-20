@@ -1,24 +1,18 @@
 version: "3.9"
 
 services:
-  dsbg-light:
+  dsbg-dev:
     build:
       context: .
-      dockerfile: Dockerfile.light
-    container_name: dsbg-web-light
+      dockerfile: Dockerfile
+    container_name: dsbg-dev
     ports:
       - "8501:8501"
     volumes:
-      # Mount local data and assets so they aren’t baked into the image
+      - ./:/app
       - ./data:/app/data
       - ./assets:/app/assets
-    restart: unless-stopped
-
-  dsbg-full:
-    build:
-      context: .
-      dockerfile: Dockerfile.full
-    container_name: dsbg-web-full
-    ports:
-      - "8501:8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: streamlit run app.py --server.port 8501 --server.address 0.0.0.0
     restart: unless-stopped

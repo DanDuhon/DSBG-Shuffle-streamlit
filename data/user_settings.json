@@ -178,7 +178,7 @@
   },
   "event_preset": "Mixed V2",
   "behavior_deck_saves": [],
-  "ui_card_width": 340,
+  "ui_card_width": 330,
   "only_original_enemies_for_campaigns": false,
   "enemy_included": {
     "6": true,
@@ -227,5 +227,6 @@
   "Inhospitable Ground|Painted World of Ariamis": true,
   "Cloak and Feathers|Painted World of Ariamis": false,
   "Eye of the Storm|Painted World of Ariamis": true,
-  "Aged Sentinel|The Sunless City": false
+  "Aged Sentinel|The Sunless City": false,
+  "ngplus_increase_nodes": true
 }

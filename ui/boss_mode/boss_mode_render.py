@@ -827,11 +827,14 @@ def render():
                     state["guardian_fiery_current_pattern"] = pattern_nodes
                     state["guardian_fiery_current_mode"] = mode
 
-                # Base Cage Grasp Inferno image
+                # Base Cage Grasp Inferno image - render without the dodge value
                 cage_path = _behavior_image_path(cfg, current)
+                cage_beh = cfg.behaviors.get(current, {}) or {}
+                cage_beh_no_dodge = dict(cage_beh)
+                cage_beh_no_dodge.pop("dodge", None)
                 cage_img = render_behavior_card_cached(
                     cage_path,
-                    cfg.behaviors.get(current, {}),
+                    cage_beh_no_dodge,
                     is_boss=True,
                 )
 
