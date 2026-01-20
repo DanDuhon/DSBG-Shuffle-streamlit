@@ -7,7 +7,7 @@ from pathlib import Path
 
 BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
 ICONS_DIR = Path("assets/behavior icons")
-CARD_BACK = Path("assets/behavior cards/back.jpg")
+CARD_BACK = Path("assets/behavior cards/Back.jpg")
 FONT_PATH_NUMBER = Path("assets/OptimusPrinceps.ttf")
 FONT_PATH_TEXT = Path("assets/AdobeCaslonProSemibold.ttf")
 FONT_PATH_DEJAVU = Path("assets/DejaVuSans.ttf")

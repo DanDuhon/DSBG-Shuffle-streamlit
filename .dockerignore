@@ -1,15 +1,12 @@
 __pycache__/
 *.pyc
-.git
-.venv
+*.pyo
+*.pyd
 .env
-.DS_Store
-.pytest_cache
-node_modules/
-reports/
-.vscode/
-.idea/
-
-# Optional large directories you may prefer to mount at runtime instead of copying into the image
-# data/
-# assets/
+.venv
+venv/
+.env.*
+.git/
+.gitignore
+.streamlit/
+tests/

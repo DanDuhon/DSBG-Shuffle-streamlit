@@ -1,2 +1,2 @@
-streamlit
-pillow
+streamlit>=1.50.0
+pillow>=11.0.0
