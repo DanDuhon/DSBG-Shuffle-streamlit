@@ -253,7 +253,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 raw = valid_sets.get(k, {})
                 st.write("raw valid_sets entry:", raw)
                 active_norm = set(_norm_name(a) for a in (active_expansions or []))
+                # Show the runtime character_count and its type for debugging
+                st.write("character_count (repr):", repr(character_count), "type:", type(character_count).__name__)
+                # Support both string and integer keys in valid_sets entries
                 sets_for = raw.get(str(character_count), [])
+                if not sets_for and isinstance(character_count, int):
+                    sets_for = raw.get(character_count, [])
                 out = []
                 for s in sets_for:
                     norm_set = [ _norm_name(x) for x in (s or []) ]
