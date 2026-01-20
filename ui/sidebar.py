@@ -57,16 +57,6 @@ def _sync_invader_caps():
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
 
-    # Small settings preview to help debug migrated settings
-    try:
-        preview_settings = st.session_state.get("user_settings") or settings
-        with st.sidebar.expander("Persistence / Settings preview", expanded=False):
-            st.write("Active expansions:", preview_settings.get("active_expansions", []))
-            st.write("Selected characters:", preview_settings.get("selected_characters", []))
-            st.write("Only original enemies for campaigns:", bool(preview_settings.get("only_original_enemies_for_campaigns", False)))
-    except Exception:
-        pass
-
     # Use the live session copy of user_settings when available so
     # changes made elsewhere (e.g. toggling an encounter) appear
     # immediately in the sidebar without waiting for a full rerun.

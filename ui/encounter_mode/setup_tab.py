@@ -147,6 +147,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     """
     active_expansions = settings.get("active_expansions", [])
 
+    # Require at least one selected character
+    if not settings.get("selected_characters") or len(settings.get("selected_characters", [])) == 0:
+        st.error("No characters selected. Please pick at least one character in the sidebar.")
+        st.stop()
+
     # --- Encounter Selection Data ---
     encounters_by_expansion = _list_encounters_cached()
     if not encounters_by_expansion:
