@@ -168,6 +168,15 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         valid_sets,
     )
 
+    if not filtered_expansions:
+        st.error(
+            "No valid expansions for the current settings.\n"
+            f"Active expansions: {active_expansions}\n"
+            f"Selected characters: {settings.get('selected_characters', [])}\n"
+            f"Encounter sets loaded: {len(encounters_by_expansion)}"
+        )
+        st.stop()
+
     # Ensure some state containers exist
     if "saved_encounters" not in st.session_state:
         st.session_state.saved_encounters = {}  # name -> encounter dict
@@ -218,7 +227,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 if filtered_expansions:
                     selected_expansion = filtered_expansions[0]
                 else:
-                    st.error("No valid expansions available.")
+                    st.error(
+                        "No valid expansions available.\n"
+                        f"Active expansions: {active_expansions}\n"
+                        f"Selected characters: {settings.get('selected_characters', [])}\n"
+                        f"Encounter sets loaded: {len(encounters_by_expansion)}"
+                    )
                     st.stop()
 
             all_encounters = encounters_by_expansion[selected_expansion]
@@ -754,7 +768,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             if filtered_expansions:
                 selected_expansion = filtered_expansions[0]
             else:
-                st.error("No valid expansions available.")
+                st.error(
+                    "No valid expansions available.\n"
+                    f"Active expansions: {active_expansions}\n"
+                    f"Selected characters: {settings.get('selected_characters', [])}\n"
+                    f"Encounter sets loaded: {len(encounters_by_expansion)}"
+                )
                 st.stop()
 
         all_encounters = encounters_by_expansion[selected_expansion]
