@@ -1079,6 +1079,23 @@ def filter_expansions(encounters_by_expansion, character_count: int, active_expa
     return filtered_expansions
 
 
+def _norm_name(x):
+    """Normalize expansion/entry names for consistent comparisons."""
+    if isinstance(x, str):
+        return x.strip()
+    if isinstance(x, dict):
+        for k in ("name", "title", "expansion"):
+            if k in x:
+                return str(x[k]).strip()
+        try:
+            return json.dumps(x, sort_keys=True)
+        except Exception:
+            return str(x)
+    if isinstance(x, (list, tuple)) and x:
+        return _norm_name(x[0])
+    return str(x).strip()
+
+
 def _encounter_has_viable_alternative(expansion: str, level: int, name: str, character_count: int, active_expansions: set, enemy_included: dict) -> bool:
     """Return True if the encounter has at least one enemy set that is allowed
     by `ENEMY_EXPANSIONS_BY_ID`, not disabled by `enemy_included`, and respects invader limits."""
@@ -1629,9 +1646,12 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
 def get_alternatives(data, active_expansions):
     """Return all valid alternative enemy sets based on expansions."""
     valid_alts = {}
-    for combo, alt_sets in data["alternatives"].items():
-        combo_set = set(combo.split(","))
-        if combo_set.issubset(active_expansions):
+    # Normalize active expansions to handle naming/casing/whitespace mismatches
+    active_norm = set(_norm_name(a) for a in (active_expansions or ()))
+    for combo, alt_sets in data.get("alternatives", {}).items():
+        parts = [p for p in combo.split(",") if p is not None]
+        combo_set = set(_norm_name(p) for p in parts)
+        if combo_set.issubset(active_norm):
             valid_alts[combo] = alt_sets
     return valid_alts
 
