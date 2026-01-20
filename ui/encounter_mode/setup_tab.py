@@ -245,6 +245,23 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 st.write({"encounter_key": k, "in_valid_sets": present, "hints": hints})
         except Exception:
             pass
+        # Deep-dive diagnostic for first sample: show raw valid_sets entries
+        try:
+            if sample_encs:
+                k = sample_encs[0]
+                st.write("**Deep diagnostics for:**", k)
+                raw = valid_sets.get(k, {})
+                st.write("raw valid_sets entry:", raw)
+                active_norm = set(_norm_name(a) for a in (active_expansions or []))
+                sets_for = raw.get(str(character_count), [])
+                out = []
+                for s in sets_for:
+                    norm_set = [ _norm_name(x) for x in (s or []) ]
+                    is_subset = set(norm_set).issubset(active_norm)
+                    out.append({"raw": s, "normalized": norm_set, "is_subset": is_subset})
+                st.write("expanded sets for character_count:", out)
+        except Exception:
+            pass
         st.stop()
 
     # Ensure some state containers exist
