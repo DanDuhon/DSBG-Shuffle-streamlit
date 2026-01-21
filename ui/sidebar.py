@@ -53,26 +53,6 @@ def _sync_invader_caps():
         out[str(lvl)] = int(st.session_state.get(f"cap_invaders_lvl_{lvl}", mx))
     settings["max_invaders_per_level"] = out
     st.session_state["user_settings"] = settings
-
-    # Persistence / Supabase test
-    with st.sidebar.expander("💾 Persistence", expanded=False):
-        if _has_supabase_config():
-            ok = supabase_store.ping()
-            if ok:
-                st.success("Supabase reachable")
-            else:
-                st.warning("Supabase configured but not reachable")
-
-            if st.button("Test Supabase write"):
-                try:
-                    payload = {"test": True, "ts": int(time.time())}
-                    res = supabase_store.upsert_document("integration_tests", "last_test", payload)
-                    st.success("Supabase write succeeded")
-                    st.write(res)
-                except Exception as e:
-                    st.error(f"Supabase write failed: {e}")
-        else:
-            st.info("Supabase not configured. Add SUPABASE_URL and SUPABASE_KEY to env or st.secrets.")
     save_settings(settings)
 
 
@@ -373,3 +353,23 @@ def render_sidebar(settings: dict):
     # Persist the compact toggle into the settings dict (and session_state)
     settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
     st.session_state["user_settings"] = settings
+
+    # Persistence / Supabase test
+    with st.sidebar.expander("💾 Persistence", expanded=False):
+        if _has_supabase_config():
+            ok = supabase_store.ping()
+            if ok:
+                st.success("Supabase reachable")
+            else:
+                st.warning("Supabase configured but not reachable")
+
+            if st.button("Test Supabase write"):
+                try:
+                    payload = {"test": True, "ts": int(time.time())}
+                    res = supabase_store.upsert_document("integration_tests", "last_test", payload)
+                    st.success("Supabase write succeeded")
+                    st.write(res)
+                except Exception as e:
+                    st.error(f"Supabase write failed: {e}")
+        else:
+            st.info("Supabase not configured. Add SUPABASE_URL and SUPABASE_KEY to env or st.secrets.")
