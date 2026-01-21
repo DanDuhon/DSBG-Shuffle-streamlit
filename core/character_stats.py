@@ -95,25 +95,6 @@ def _normalize_stat_key(k: str) -> str:
     raise KeyError(f"Unknown stat key: {k}")
 
 
-def stat_value_for_tier(class_name: str, stat: str, tier_index: int) -> Optional[int]:
-    """Return the stat value for the given class at the specified tier index.
-
-    Returns None if class or stat not found.
-    """
-    cfg = CLASS_TIERS.get(class_name)
-    if not cfg:
-        return None
-    sk = _normalize_stat_key(stat)
-    arr = cfg.get(sk)
-    if not arr:
-        return None
-    if tier_index < 0:
-        tier_index = 0
-    if tier_index >= len(arr):
-        tier_index = len(arr) - 1
-    return int(arr[tier_index])
-
-
 def souls_to_upgrade(from_tier: int, to_tier: int) -> int:
     """Return total souls required to upgrade from from_tier to to_tier (exclusive of from_tier).
 

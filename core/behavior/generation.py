@@ -14,7 +14,6 @@ from core.behavior.assets import (
     coords_map,
     text_styles,
     FONT_PATH_NUMBER,
-    FONT_PATH_DEJAVU,
     build_icon_filename,
     CATEGORY_ORDER,
     BOSS_CATEGORY_MAP,

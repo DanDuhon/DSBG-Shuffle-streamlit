@@ -366,27 +366,7 @@ enemyNames = {
 }
 
 
-@st.cache_data(show_spinner=False)
-def get_enemy_image_by_name(enemy_name: str):
-    """Load and cache enemy icon images."""
-    return Image.open(ENEMY_ICONS_DIR / f"{enemy_name}.png")
-
-
-@st.cache_data(show_spinner=False)
-def get_keyword_image(keyword_name: str):
-    """Load and cache keyword icon images."""
-    # Adjust path as needed
-    path = Path("assets/keywords") / f"{keyword_name}.png"
-    return Image.open(path)
-
-
 def get_enemy_image_by_id(enemy_id: int):
     """Return image path for a given enemy ID."""
     image_path = ENEMY_ICONS_DIR / f"{enemyNames[enemy_id]}.png"
-    return str(image_path)
-
-
-def get_keyword_image(keyword: str):
-    """Return image path for a given keyword."""
-    image_path = KEYWORDS_DIR / f"{keyword}.png"
     return str(image_path)

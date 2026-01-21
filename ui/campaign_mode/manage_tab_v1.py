@@ -570,7 +570,7 @@ def _render_v1_current_panel(
         st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
 
         if st.button(
-            "Start Boss Fight",
+            "Start Boss Fight ⚔️",
             key=f"campaign_v1_start_boss_{current_node.get('id')}",
             width="stretch",
         ):

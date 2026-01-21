@@ -2,7 +2,6 @@
 from __future__ import annotations
 import pandas as pd
 import streamlit as st
-import json
 from typing import Any, Dict, List, Set
 import itertools
 from core.character_stats import CLASS_TIERS, TIERS
@@ -1423,7 +1422,3 @@ def render(settings: Dict[str, Any]) -> None:
                 st.markdown(f"- {e}")
         else:
             st.caption("No effects found on selected items.")
-
-
-
-

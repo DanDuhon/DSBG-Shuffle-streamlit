@@ -63,16 +63,6 @@ def _card_w() -> int:
     return max(240, min(560, w))
 
 
-def _get_player_count_from_settings(settings: Dict[str, Any]) -> int:
-    """
-    Local copy of the player-count logic to avoid importing ui.campaign_mode.state
-    and creating a circular import.
-    """
-    from ui.campaign_mode.helpers import get_player_count_from_settings
-
-    return get_player_count_from_settings(settings)
-
-
 # Persistence helpers (load/save paths) are provided by
 # `ui.campaign_mode.persistence` and imported at module top.
 

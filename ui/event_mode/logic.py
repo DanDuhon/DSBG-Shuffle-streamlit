@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from collections import defaultdict
 from datetime import datetime, timezone
+from core import supabase_store
+from core.settings_manager import _has_supabase_config
 from ui.event_mode.event_card_text import EVENT_CARD_TEXT
 from ui.event_mode.event_card_type import EVENT_CARD_TYPE
 
@@ -316,10 +318,6 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-from core import supabase_store
-from core.settings_manager import _has_supabase_config
-
-
 @st.cache_data(show_spinner=False)
 def load_custom_event_decks() -> Dict[str, dict]:
     """
@@ -605,33 +603,84 @@ def initialize_event_deck(preset: str, configs: Optional[Dict[str, dict]] = None
     }
 
 
-def _attach_event_to_current_encounter(card_path: str) -> None:
-    """Attach an event card image to the current encounter, enforcing the rendezvous rule."""
-    if not card_path:
+def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Ensure the event deck state exists in `st.session_state` and return it.
+
+    This mirrors the local helpers used by UI renderers and centralizes
+    deck state initialization so callers don't duplicate logic.
+    """
+    state = st.session_state.get(DECK_STATE_KEY)
+    if isinstance(state, dict):
+        return state
+
+    saved = settings.get("event_deck")
+    if isinstance(saved, dict):
+        st.session_state[DECK_STATE_KEY] = saved
+        return saved
+
+    state = {"draw_pile": [], "discard_pile": [], "current_card": None, "preset": None}
+    st.session_state[DECK_STATE_KEY] = state
+    return state
+
+
+def _attach_event_to_current_encounter(*args) -> None:
+    """Attach an event to the current encounter.
+
+    Flexible signature for backward compatibility:
+      - `_attach_event_to_current_encounter(card_path)`
+      - `_attach_event_to_current_encounter(event_name, card_path)`
+
+    The function normalizes the provided name (if any) and enforces the
+    rendezvous rule (only one rendezvous event at a time).
+    """
+    # Parse flexible args
+    event_name = None
+    card_path = None
+    if len(args) == 1:
+        card_path = args[0]
+    elif len(args) >= 2:
+        event_name = args[0]
+        card_path = args[1]
+
+    if not card_path and not event_name:
         return
 
-    if "encounter_events" not in st.session_state:
-        st.session_state.encounter_events = []
+    # Determine a display name for the event
+    if event_name:
+        name = str(event_name or "").strip()
+    else:
+        name = os.path.splitext(os.path.basename(str(card_path)))[0]
 
-    base = os.path.splitext(os.path.basename(str(card_path)))[0]
-    is_rendezvous = base in RENDEZVOUS_EVENTS
+    name_norm = str(name or "").strip()
+    name_norm_lower = name_norm.lower()
+    rendezvous_lower = {n.lower() for n in RENDEZVOUS_EVENTS}
+    is_rendezvous = name_norm_lower in rendezvous_lower
 
-    events = st.session_state.encounter_events
+    events = st.session_state.get("encounter_events")
+    if not isinstance(events, list):
+        events = []
 
-    # If this is a rendezvous card, drop any existing rendezvous
+    # If rendezvous, drop existing rendezvous events
     if is_rendezvous:
-        events = [ev for ev in events if not ev.get("is_rendezvous")]
+        events = [e for e in events if not (isinstance(e, dict) and bool(e.get("is_rendezvous")))]
 
+    base = Path(str(card_path)).stem if card_path else name_norm
     event_obj = {
         "id": base,
-        "name": base,
-        "path": str(card_path),
+        "name": name_norm,
+        "path": str(card_path) if card_path else None,
+        "card_path": str(card_path) if card_path else None,
+        "image_path": str(card_path) if card_path else None,
         "is_rendezvous": is_rendezvous,
     }
 
     events.append(event_obj)
-    st.session_state.encounter_events = events
-    st.rerun()
+    st.session_state["encounter_events"] = events
+    # Refresh UI so attached events are visible immediately in callers.
+    try:
+        st.rerun()
+    except Exception:
+        pass
 
 
 def draw_event_card():
@@ -759,9 +808,3 @@ def remove_card_from_deck(card_path: Optional[str] = None) -> int:
     state["discard_pile"] = new_discard
 
     return removed
-
-
-def get_card_width(layout_width=700, col_ratio=2, total_ratio=4, max_width=350) -> int:
-    """Calculate appropriate image display width."""
-    col_w = int(layout_width * (col_ratio / total_ratio))
-    return min(col_w - 20, max_width)

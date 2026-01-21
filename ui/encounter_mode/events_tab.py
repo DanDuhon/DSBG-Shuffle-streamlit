@@ -19,23 +19,13 @@ from ui.event_mode.logic import (
     remove_card_from_deck,
     reset_event_deck,
     shuffle_current_into_deck,
+    _attach_event_to_current_encounter,
+    _ensure_deck_state,
 )
 from core.image_cache import get_image_bytes_cached
 
 
-def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
-    state = st.session_state.get(DECK_STATE_KEY)
-    if isinstance(state, dict):
-        return state
-
-    saved = settings.get("event_deck")
-    if isinstance(saved, dict):
-        st.session_state[DECK_STATE_KEY] = saved
-        return saved
-
-    state = {"draw_pile": [], "discard_pile": [], "current_card": None, "preset": None}
-    st.session_state[DECK_STATE_KEY] = state
-    return state
+# Use shared `_ensure_deck_state` from `ui.event_mode.logic`.
 
 
 def _get_card_w(settings: Dict[str, Any]) -> int:
@@ -55,38 +45,7 @@ def _sync_deck_to_settings(settings: Dict[str, Any]) -> None:
         save_settings(settings)
 
 
-def _attach_event_to_current_encounter(event_name: str, card_path: str) -> None:
-    name = str(event_name or "").strip()
-    if not name:
-        return
-
-    name_norm = name.lower()
-    is_rendezvous = name_norm in RENDEZVOUS_EVENTS
-
-    events = st.session_state.get("encounter_events")
-    if not isinstance(events, list):
-        events = []
-
-    # Rendezvous: only one at a time
-    if is_rendezvous:
-        events = [
-            e
-            for e in events
-            if not (isinstance(e, dict) and bool(e.get("is_rendezvous")))
-        ]
-
-    base = Path(str(card_path)).stem if card_path else name
-    event_obj = {
-        "id": base,
-        "name": name,
-        "path": str(card_path),
-        "card_path": str(card_path),      # keep alias for backward-compat
-        "image_path": str(card_path),     # keep alias for backward-compat
-        "is_rendezvous": is_rendezvous,
-    }
-    events.append(event_obj)
-    st.session_state["encounter_events"] = events
-    st.rerun()
+# Use shared `_attach_event_to_current_encounter` from `ui.event_mode.logic`.
 
 
 def _clear_attached_events() -> None:

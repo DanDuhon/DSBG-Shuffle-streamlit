@@ -1,14 +1,12 @@
 #ui/sidebar.py
 import streamlit as st
-from core.settings_manager import save_settings, _has_supabase_config
-from core import supabase_store
-import time
-import uuid
+from core.settings_manager import save_settings
 from core.characters import CHARACTER_EXPANSIONS
 from core.ngplus import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
 from ui.encounter_mode.assets import enemyNames
 from ui.encounter_mode.generation import editedEncounterKeywords
+
 
 all_expansions = [
     "Painted World of Ariamis",
@@ -37,11 +35,11 @@ CARD_WIDTH_MAX = 560
 CARD_WIDTH_DEFAULT = 380
 
 if "sidebar_ngplus_expanded" not in st.session_state:
-    st.session_state.sidebar_ngplus_expanded = False
+    st.session_state["sidebar_ngplus_expanded"] = False
 
 
 def _ngplus_level_changed():
-    st.session_state.sidebar_ngplus_expanded = True
+    st.session_state["sidebar_ngplus_expanded"] = True
 
 
 def _sync_invader_caps():
@@ -101,11 +99,7 @@ def render_sidebar(settings: dict):
         settings["selected_characters"] = selected_characters
 
     # --- New Game+ selection ---
-    if "sidebar_ngplus_expanded" not in st.session_state:
-        st.session_state["sidebar_ngplus_expanded"] = False
-
-    def _ngplus_level_changed():
-        st.session_state["sidebar_ngplus_expanded"] = True
+    # (uses module-level `_ngplus_level_changed` to toggle expander open)
 
     current_ng = int(st.session_state.get("ngplus_level", 0))
 

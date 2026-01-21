@@ -1,8 +1,6 @@
 # ui/campaign_mode/manage_tab_shared.py
 import streamlit as st
-from io import BytesIO
 from typing import Any, Dict, Optional
-from core.image_cache import bytes_to_data_uri
 from ui.campaign_mode.api import (
     reset_all_encounters_on_bonfire_return,
     record_dropped_souls,

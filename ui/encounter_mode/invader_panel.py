@@ -20,7 +20,6 @@ from core.behavior.logic import (
 )
 from core.behavior.models import BehaviorEntry, BehaviorConfig
 from ui.encounter_mode import play_state
-from ui.encounter_mode.assets import enemyNames
 from core.ngplus import get_current_ngplus_level
 
 
@@ -199,35 +198,7 @@ def _get_invader_behavior_entries_for_encounter(encounter: dict) -> List[Behavio
     return result
 
 
-from typing import List
-
-def _get_enemy_display_names(encounter: dict) -> List[str]:
-    """
-    Return human-readable names for the shuffled enemies in this encounter.
-
-    This mirrors play_panels._get_enemy_display_names but lives here to
-    avoid circular imports.
-
-    - Assumes Setup stored the shuffled list on encounter["enemies"].
-    - Each entry may be:
-        * a dict with name/id fields, or
-        * an enemy id that can be looked up in enemyNames.
-    """
-    enemy_ids = encounter.get("enemies") or []
-    names: List[str] = []
-
-    for eid in enemy_ids:
-        if isinstance(eid, dict):
-            # Inline metadata from Setup / encounter JSON
-            name = (
-                eid.get("name")
-                or eid.get("display_name")
-                or eid.get("id")
-            )
-            if name:
-                names.append(str(name))
-
-    return names
+from ui.encounter_mode.helpers import _get_enemy_display_names
 
 
 
@@ -533,7 +504,7 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
         col_confirm, col_cancel = st.columns(2)
 
         with col_confirm:
-            if st.button("🔥 Confirm Heat-Up", key=f"{slider_key}_confirm_heatup", width="stretch"):
+            if st.button("Confirm Heat-Up 🔥", key=f"{slider_key}_confirm_heatup", width="stretch"):
                 prev = int(st.session_state.get(pending_prev_key, current_hp))
                 new = int(st.session_state.get(pending_new_key, current_hp))
 
@@ -584,8 +555,7 @@ def _render_invader_deck_controls(cfg: BehaviorConfig, state: dict) -> None:
         # Optional: only show if cfg has heat-up behavior
         if st.button("Manual heat-up 🔥", key=f"invader_heatup_{cfg.name}", width="stretch"):
             _manual_heatup(state)
-
-    # TODO: If you want a tiny discard/draw pile summary, add it here.
+            
     draw_count = len(state.get("draw_pile", []))
     discard_count = len(state.get("discard_pile", []))
     st.caption(f"Deck: {draw_count} | Played: {discard_count}")

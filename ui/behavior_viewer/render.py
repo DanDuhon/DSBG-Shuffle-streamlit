@@ -8,7 +8,6 @@ from core.behavior.generation import (
 )
 from core.behavior.logic import load_behavior
 from core.behavior.assets import CATEGORY_ORDER, _behavior_image_path
-from core.image_cache import get_image_bytes_cached
 from core.behavior.priscilla_overlay import overlay_priscilla_arcs
 
 

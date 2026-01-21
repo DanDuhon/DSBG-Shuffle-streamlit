@@ -33,39 +33,13 @@ from ui.event_mode.logic import (
     draw_event_card,
     DECK_STATE_KEY,
     RENDEZVOUS_EVENTS,
+    _attach_event_to_current_encounter,
 )
 from core.image_cache import get_image_bytes_cached
 
 
 # --- Event attachment helpers -------------------------------------------------
-def _attach_event_to_current_encounter(card_path: str) -> None:
-    """Attach an event card image to the current encounter, enforcing the rendezvous rule."""
-    if not card_path:
-        return
-    
-    if "saved_encounters" not in st.session_state:
-        st.session_state.saved_encounters = {}
-
-    if "encounter_events" not in st.session_state:
-        st.session_state.encounter_events = []
-
-    base = os.path.splitext(os.path.basename(str(card_path)))[0]
-    is_rendezvous = base in RENDEZVOUS_EVENTS
-
-    events = st.session_state.encounter_events
-
-    if is_rendezvous:
-        events = [ev for ev in events if not ev.get("is_rendezvous")]
-
-    event_obj = {
-        "id": base,
-        "name": base,
-        "path": str(card_path),
-        "is_rendezvous": is_rendezvous,
-    }
-
-    events.append(event_obj)
-    st.session_state.encounter_events = events
+# Event attachment helper is provided by `ui.event_mode.logic`.
 
 
 def _event_img_path(ev: dict) -> str | None:
@@ -75,26 +49,6 @@ def _event_img_path(ev: dict) -> str | None:
         or ev.get("image_path")
         or ev.get("img_path")
     )
-
-
-def render_event_card(event_obj):
-    """Render the attached event card (or a placeholder if none)."""
-    if not event_obj:
-        st.caption("No event attached yet.")
-        return
-
-    title = event_obj.get("name", "Event")
-    st.markdown(f"#### {title}")
-
-    # If you store an image for the event, show it here
-    image = event_obj.get("image")
-    if image is not None:
-        st.image(image, width="stretch")
-
-    # Fallback / extra rules text
-    text = event_obj.get("text")
-    if text:
-        st.markdown(text)
 
 
 def render_original_encounter(

@@ -809,14 +809,3 @@ def build_defense_totals_cached(
         _to_json(weapon_upgrade_objs),
     )
     return DefenseTotals(block=res["block"], resist=res["resist"], dodge_armor=int(res["dodge_armor"]), dodge_hand_max=int(res["dodge_hand_max"]))
-
-
-@st.cache_data(show_spinner=False)
-def expected_damage_taken_cached(incoming_damage: int, dodge_dice: int, dodge_difficulty: int, defense_dice_json: str) -> Dict[str, float]:
-    defense_dice = json.loads(defense_dice_json) if defense_dice_json else {}
-    return expected_damage_taken(
-        incoming_damage=incoming_damage,
-        dodge_dice=dodge_dice,
-        dodge_difficulty=dodge_difficulty,
-        defense_dice=defense_dice,
-    )

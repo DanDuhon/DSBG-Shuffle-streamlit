@@ -16,7 +16,7 @@ from ui.encounter_mode.generation import (
 )
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
 from ui.encounter_mode.assets import enemyNames, ENCOUNTER_ORIGINAL_REWARDS
-from core.character_stats import average_souls_to_equip, souls_needed_for_item_for_character
+from core.character_stats import average_souls_to_equip
 from ui.character_mode.data_io import _find_data_file, _load_json_list
 
 
@@ -94,18 +94,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED = {
             "description": "Attacks gain push from special rules.",
         }
     ],
-    "The Sunless City_2_Parish Church": [],
-    "The Sunless City_2_The Hellkite Bridge": [],
-    "The Sunless City_3_Central Plaza": [],
-    "The Sunless City_3_Depths of the Cathedral": [],
-    "The Sunless City_3_Grim Reunion": [],
-    "The Sunless City_3_The Grand Hall": [],
-    "The Sunless City_3_Trophy Room": [],
-    "The Sunless City_3_Twilight Falls": [],
-    "Tomb of Giants_1_Bridge Too Far": [],
-    "Tomb of Giants_1_Dark Resurrection": [],
-    "Tomb of Giants_2_Far From the Sun": [],
-    "Tomb of Giants_2_Lost Chapel": [],
     "Tomb of Giants_2_Maze of the Dead": [
         {
             "id": "maze_of_the_dead_dodge",
@@ -119,7 +107,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED = {
             "description": "+Timer value dodge difficulty from special rules.",
         },
     ],
-    "Tomb of Giants_2_The Abandoned Chest": [],
     "Tomb of Giants_2_The Mass Grave": [
         {
             "id": "mass_grave_move",
@@ -144,11 +131,6 @@ ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED = {
             "description": "+1 damage per respawn.",
         },
     ],
-    "Tomb of Giants_2_Urns of the Fallen": [],
-    "Tomb of Giants_3_Death's Precipice": [],
-    "Tomb of Giants_3_Last Shred of Light": [],
-    "Tomb of Giants_3_The Locked Grave": [],
-    "Tomb of Giants_3_The Skeleton Ball": [],
 }
 ENCOUNTER_BEHAVIOR_MODIFIERS = {
     "Painted World of Ariamis_1_Frozen Sentries": [
@@ -933,19 +915,6 @@ def _build_encounter_index_cached():
     return index
 
 
-def get_encounter_file(expansion: str, level: int, name: str, character_count: int) -> str:
-    """Return the filesystem path for the specified encounter variant, or raise FileNotFoundError."""
-    idx = _build_encounter_index_cached()
-    base_key = f"{expansion}_{level}_{name}"
-    ent = idx.get(base_key)
-    if not ent:
-        raise FileNotFoundError(f"No encounter '{name}' @ {expansion} level {level} found in data/encounters")
-    fp = ent.get("filenames", {}).get(int(character_count))
-    if not fp:
-        raise FileNotFoundError(f"Encounter '{name}' @ {expansion} level {level} has no variant for character_count={character_count}")
-    return fp
-
-
 @st.cache_data(show_spinner=False)
 def _load_valid_sets_cached():
     return load_valid_sets()
@@ -1174,19 +1143,6 @@ def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: t
     Returns True if at least one expansion set for this encounter/char_count
     is a subset of the active expansions.
     """
-    def _norm_name(x):
-        # Normalize expansion names from different shapes (str, dict, list)
-        if isinstance(x, str):
-            return x.strip()
-        if isinstance(x, dict):
-            for k in ("name", "title", "expansion"):
-                if k in x:
-                    return str(x[k]).strip()
-            return json.dumps(x, sort_keys=True)
-        if isinstance(x, (list, tuple)) and x:
-            return _norm_name(x[0])
-        return str(x).strip()
-
     expansions_for_enc = valid_sets.get(encounter_key, {}).get(str(char_count), [])
     active_set = set(_norm_name(a) for a in active_expansions or ())
     for expansion_set in expansions_for_enc:
@@ -1816,68 +1772,3 @@ def pick_random_alternative(data, active_expansions, encounter_level: int):
     combo = choice(list(filtered.keys()))
     enemies = choice(filtered[combo])
     return combo, enemies
-
-
-def list_encounters():
-    """
-    Parse encounter JSON filenames and return a dict grouped by expansion:
-    {
-      'Tomb of Giants': ['Altar of Bones', 'Crypt of the Dead'],
-      'Iron Keep': ['The Bell Gargoyles']
-    }
-    """
-    encounters = defaultdict(dict)
-    pattern = re.compile(r"(.+?)_(\d+)_(.+?)_\d+\.json")
-
-    for f in os.listdir(ENCOUNTER_DATA_DIR):
-        if not f.endswith(".json"):
-            continue
-        match = pattern.match(f)
-        if not match:
-            continue
-
-        expansion, level, encounter_name = match.groups()
-        key = (encounter_name.lower(), int(level))
-
-        # store once per unique (name, expansion, level)
-        encounters[expansion][key] = {
-            "name": encounter_name,
-            "expansion": expansion,
-            "level": int(level),
-            "version": "V1" if int(level) < 4 and expansion.lower() in {"dark souls the board game", "darkroot", "explorers", "iron keep", "executioner's chariot"} else "V2"
-        }
-
-
-    # --- Custom expansion sorting ---
-    def expansion_sort_key(exp):
-        """Sort expansions according to your priority rules."""
-        exp_lower = exp.lower()
-
-        # new core sets first
-        if any(x in exp_lower for x in ["tomb of giants", "painted world of ariamis", "the sunless city"]):
-            return (0, exp_lower)
-        # base game next
-        elif "dark souls the board game" in exp_lower:
-            return (1, exp_lower)
-        # original expansions
-        elif any(x in exp_lower for x in ["darkroot", "explorers", "iron keep"]):
-            return (2, exp_lower)
-        # executioner’s chariot
-        elif "executioner" in exp_lower:
-            return (3, exp_lower)
-        # mega bosses or others
-        else:
-            return (4, exp_lower)
-
-    sorted_expansions = sorted(encounters.keys(), key=expansion_sort_key)
-
-    # --- Sort encounters by level then name ---
-    sorted_data = {}
-    for exp in sorted_expansions:
-        sorted_encounters = sorted(
-            encounters[exp].values(),
-            key=lambda e: (e["level"], e["name"].lower())
-        )
-        sorted_data[exp] = sorted_encounters
-
-    return sorted_data

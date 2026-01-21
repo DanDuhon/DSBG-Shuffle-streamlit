@@ -340,12 +340,6 @@ EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS: Dict[Tuple[str, str], List[SpecialRuleEnem
 }
 
 
-@st.cache_data(show_spinner=False)
-def cached_encounter_image(expansion: str, level: int, name: str, data: dict, enemies: list[int], edited: bool):
-    """Cache the generated encounter image."""
-    return generate_encounter_image(expansion, level, name, data, enemies, use_edited=edited)
-
-
 def load_valid_sets():
     """Load the precomputed valid sets JSON file once."""
     if VALID_SETS_PATH.exists():
@@ -739,12 +733,6 @@ def generate_encounter_image(
                 card_img.alpha_composite(gimg, dest=(gx, gy))
 
     return card_img
-
-
-@st.cache_data(show_spinner=False)
-def cached_encounter_image(expansion: str, level: int, name: str, data: dict, enemies: list[int], edited: bool):
-    """Cached wrapper for generate_encounter_image to avoid re-rendering identical encounters."""
-    return generate_encounter_image(expansion, level, name, data, enemies, use_edited=edited)
 
 
 @st.cache_data(show_spinner=False)

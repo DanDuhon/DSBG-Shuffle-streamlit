@@ -1,6 +1,5 @@
-from typing import Set
-
 STAT_LABEL = {"str": "STR", "dex": "DEX", "itl": "INT", "fth": "FAI"}
+
 HAND_FEATURE_OPTIONS = [
     "magic",
     "node_attack",
@@ -13,6 +12,7 @@ HAND_FEATURE_OPTIONS = [
     "heal",
     "ignore_block",
 ]
+
 HAND_CONDITION_OPTIONS = ["bleed", "poison", "frostbite", "stagger"]
 
 DIE_FACES = {

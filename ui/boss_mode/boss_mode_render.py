@@ -2,12 +2,13 @@
 import random
 import json
 import streamlit as st
-from core.image_cache import get_image_data_uri_cached, get_image_bytes_cached
+from core.image_cache import get_image_bytes_cached
 from pathlib import Path
 from ui.encounter_mode.assets import ENCOUNTER_CARDS_DIR
 
 from ui.encounter_mode.generation import generate_encounter_image
 from ui.campaign_mode.helpers import get_player_count_from_settings
+from ui.campaign_mode.api import card_w as _card_w
 from core.ngplus import get_current_ngplus_level
 from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,
@@ -64,10 +65,6 @@ from ui.boss_mode.executioners_chariot_death_race import (
 BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
 
 
-def _card_w() -> int:
-    s = st.session_state.get("user_settings") or {}
-    w = int(s.get("ui_card_width", 360))
-    return max(240, min(560, w))
 
 
 def _get_boss_mode_state_key(entry) -> str:
@@ -481,14 +478,14 @@ def render():
     ):
         # Generic bosses (and Vordt), first-time heat-up
         st.warning(
-            f"⚠️ The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} "
+            f"The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} "
             f"has entered Heat-Up range!"
         )
 
         confirm_cols = st.columns(2)
         with confirm_cols[0]:
             if st.button(
-                "🔥 Confirm Heat-Up", key="boss_mode_confirm_heatup", width="stretch"
+                "Confirm Heat-Up 🔥", key="boss_mode_confirm_heatup", width="stretch"
             ):
                 rng = random.Random()
                 apply_heatup(state, cfg, rng, reason="auto")
@@ -522,7 +519,7 @@ def render():
             c1, c2 = st.columns(2)
             with c1:
                 if st.button(
-                    "🔥 Confirm Heat-Up", key="boss_mode_ods_confirm", width="stretch"
+                    "Confirm Heat-Up 🔥", key="boss_mode_ods_confirm", width="stretch"
                 ):
                     state["old_dragonslayer_confirmed"] = True
                     _clear_heatup_prompt()
@@ -537,11 +534,11 @@ def render():
 
         # --- Ornstein & Smough: death/phase change confirmation ---
         elif boss == "Ornstein & Smough":
-            st.warning("⚔️ One of the duo has fallen! Apply the new phase?")
+            st.warning("One of the duo has fallen! Apply the new phase?")
             c1, c2 = st.columns(2)
             with c1:
                 if st.button(
-                    "🔥 Confirm Phase Change",
+                    "Confirm Phase Change 🔥",
                     key="boss_mode_ons_confirm",
                     width="stretch",
                 ):

@@ -31,7 +31,7 @@ DEFAULT_SETTINGS = {
         "The Last Giant",
         "Vordt of the Boreal Valley"
     ],
-    "selected_characters": [],
+    "selected_characters": ["Assassin"],
     "edited_toggles": {},
 
     # Max allowed invaders in a shuffled encounter, by encounter level.

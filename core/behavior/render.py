@@ -11,7 +11,6 @@ from core.behavior.logic import (_ensure_state, load_behavior
     , _revert_sif_limping_mode)
 from core.behavior.assets import (BEHAVIOR_CARDS_PATH, CARD_BACK
     , _dim_greyscale, _behavior_image_path, CATEGORY_ORDER, CATEGORY_EMOJI)
-from core.behavior.persistance import _save_slot_ui
 from core.behavior.generation import (render_dual_boss_data_cards
     , render_dual_boss_behavior_card, render_data_card_cached
     , render_behavior_card_cached, build_behavior_catalog)
@@ -145,7 +144,7 @@ def render():
         state = st.session_state["behavior_deck"]
         cfg = _load_cfg_for_state(state)
 
-    if st.button("🔄 Reset Deck and Health", key="reset_deck", width="stretch"):
+    if st.button("Reset Deck and Health 🔄", key="reset_deck", width="stretch"):
         _reset_deck(st.session_state["behavior_deck"], cfg)
 
     state = st.session_state["behavior_deck"]
@@ -224,11 +223,11 @@ def render():
         and (cfg.name == "Vordt of the Boreal Valley" or not st.session_state.get("heatup_done", False))
         and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}
     ):
-        st.warning(f"⚠️ The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} has entered Heat-Up range!")
+        st.warning(f"The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} has entered Heat-Up range!")
 
         confirm_cols = st.columns([1, 1])
         with confirm_cols[0]:
-            if st.button("🔥 Confirm Heat-Up", key="confirm_heatup", width="stretch"):
+            if st.button("Confirm Heat-Up 🔥", key="confirm_heatup", width="stretch"):
                 rng = random.Random()
                 apply_heatup(state, cfg, rng, reason="auto")
                 _clear_heatup_prompt()
@@ -249,7 +248,7 @@ def render():
             st.warning("Was 4+ damage was done in a single attack?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Heat-Up", width="stretch"):
+                if st.button("Confirm Heat-Up 🔥", width="stretch"):
                     state["old_dragonslayer_confirmed"] = True
                     _clear_heatup_prompt()
                     apply_heatup(state, cfg, random.Random(), reason="manual")
@@ -264,10 +263,10 @@ def render():
         
         # --- Ornstein & Smough death confirmation ---
         elif boss == "Ornstein & Smough":
-            st.warning("⚔️ One of the duo has fallen! Apply the new phase?")
+            st.warning("One of the duo has fallen! Apply the new phase?")
             c1, c2 = st.columns(2)
             with c1:
-                if st.button("🔥 Confirm Phase Change", width="stretch"):
+                if st.button("Confirm Phase Change 🔥", width="stretch"):
                     _ornstein_smough_heatup_ui(state, cfg)
             with c2:
                 if st.button("Cancel ❌", width="stretch"):
@@ -419,21 +418,18 @@ def render():
     # --- Action buttons
     btn_cols = st.columns(2)
     with btn_cols[0]:
-        draw_label = "Draw Movement + Attack" if cfg.name == "Vordt of the Boreal Valley" else "Draw"
+        draw_label = "Draw Movement + Attack 🃏" if cfg.name == "Vordt of the Boreal Valley" else "Draw"
         if st.button(draw_label, width="stretch", key="behavior_draw"):
             _clear_heatup_prompt()
             _draw_card(state)
             st.rerun()
     with btn_cols[1]:
-        if st.button("Manual Heat-Up", width="stretch"):
+        if st.button("Manual Heat-Up 🔥", width="stretch"):
             _clear_heatup_prompt()
             _manual_heatup(state)
             st.rerun()
 
     st.markdown("---")
-
-    # --- Save slots (persist to settings file)
-    _save_slot_ui(settings, state)
 
 
 def render_health_tracker(cfg, state):

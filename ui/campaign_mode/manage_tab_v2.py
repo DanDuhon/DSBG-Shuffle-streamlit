@@ -198,7 +198,7 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
     # Controls
     if instants:
         if st.button(
-            "Clear immediate event notifications",
+            "Clear immediate event notifications 🧹",
             key="campaign_clear_instant_events",
             width="stretch",
         ):
@@ -898,7 +898,7 @@ def _render_v2_current_panel(
                     )
 
                     if st.button(
-                        "Apply choice",
+                        "Apply choice ✅",
                         key=f"campaign_v2_scout_ahead_apply_{current_node.get('id')}",
                         width="stretch",
                     ):

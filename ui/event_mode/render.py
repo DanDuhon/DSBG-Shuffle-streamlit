@@ -20,6 +20,7 @@ from ui.event_mode.logic import (
     remove_card_from_deck,
     reset_event_deck,
     shuffle_current_into_deck,
+    _ensure_deck_state,
 )
 
 # cached image helper (use at module level to avoid repeated dynamic imports)
@@ -30,19 +31,7 @@ _BUILDER_KEY = "event_mode_builder"
 _BUILDER_SYNC_KEY = "event_mode_builder_sync"
 
 
-def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
-    state = st.session_state.get(DECK_STATE_KEY)
-    if isinstance(state, dict):
-        return state
-
-    saved = settings.get("event_deck")
-    if isinstance(saved, dict):
-        st.session_state[DECK_STATE_KEY] = saved
-        return saved
-
-    state = {"draw_pile": [], "discard_pile": [], "current_card": None, "preset": None}
-    st.session_state[DECK_STATE_KEY] = state
-    return state
+# Use shared `_ensure_deck_state` from `ui.event_mode.logic`.
 
 
 def _builder_get() -> Dict[str, Any]:
@@ -54,17 +43,6 @@ def _builder_get() -> Dict[str, Any]:
     b = {"name": "", "cards": {}, "loaded_from": None}
     st.session_state[_BUILDER_KEY] = b
     return b
-
-
-@st.cache_resource(show_spinner=False)
-def img_to_base64(path: str) -> str:
-    """Compatibility wrapper returning base64 payload for `path` using cached helpers."""
-    from core.image_cache import get_image_data_uri_cached
-
-    uri = get_image_data_uri_cached(path)
-    if not uri:
-        return ""
-    return uri.split(",", 1)[1]
 
 
 def render_discard_pile(discard_pile, card_width=100, offset=22, max_iframe_height=300):

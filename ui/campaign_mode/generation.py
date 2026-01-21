@@ -1,5 +1,4 @@
 import random
-import os
 from typing import Any, Dict, List, Optional
 from ui.encounter_mode.logic import (
     _list_encounters_cached,

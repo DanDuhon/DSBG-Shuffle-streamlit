@@ -139,14 +139,3 @@ def delete_document(doc_type: str, key_name: str, user_id: Optional[str] = None)
     resp = requests.delete(url, headers=headers, params=params, timeout=10)
     # 204 No Content or 200 with representation
     return resp.status_code in (200, 204)
-
-
-def ping() -> bool:
-    """Quickly check Supabase connectivity by listing zero rows from table."""
-    try:
-        url = _table_url()
-        headers = _headers()
-        resp = requests.get(url, headers=headers, params={"select": "doc_type", "limit": "1"}, timeout=8)
-        return resp.status_code == 200
-    except Exception:
-        return False

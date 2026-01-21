@@ -391,7 +391,7 @@ def _render_save_load_section(
 
             with load_col:
                 if st.button(
-                    "Load selected campaign",
+                    "Load selected campaign 📥",
                     key=f"campaign_load_btn_{version}",
                     width="stretch"
                 ):
@@ -405,7 +405,7 @@ def _render_save_load_section(
 
             with delete_col:
                 if st.button(
-                    "Delete selected",
+                    "Delete selected 🗑️",
                     key=f"campaign_delete_btn_{version}",
                     width="stretch"
                 ):

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 from copy import deepcopy
 import streamlit as st
+import re
 
 from core.encounter import templates, objectives as obj_mod
 from core.encounter_rewards import get_v1_reward_config_for_encounter
@@ -24,7 +25,6 @@ from core.encounter_triggers import (
 
 from core.encounter import timer as timer_mod
 
-from core.behavior import render as behavior_decks_render
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
 from core.behavior.generation import render_data_card_cached, build_behavior_catalog
 from core.behavior.logic import load_behavior
@@ -40,6 +40,7 @@ from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
 from core.image_cache import get_image_data_uri_cached
+from ui.encounter_mode.helpers import _detect_edited_flag, _get_enemy_display_names
 
 
 # ---------------------------------------------------------------------
@@ -100,8 +101,7 @@ def _keyword_label(keyword: str) -> str:
     if isinstance(txt, str) and txt.strip():
         return txt.split("—", 1)[0].strip()
 
-    import re as _re
-    s = _re.sub(r"(?<!^)(?=[A-Z])", " ", str(keyword)).replace("_", " ").strip()
+    s = re.sub(r"(?<!^)(?=[A-Z])", " ", str(keyword)).replace("_", " ").strip()
     return s.title() if s else str(keyword)
 
 
@@ -170,43 +170,6 @@ def _has_top_level_colon(template: str | None) -> bool:
         elif ch == ":" and depth == 0:
             return True
     return False
-
-def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
-    """
-    Best-effort way to figure out whether this encounter is using the
-    'edited' version. Adjust to match how your Setup tab stores the toggle.
-    """
-    # 1) Encounter dict itself
-    if isinstance(encounter.get("edited"), bool):
-        return encounter["edited"]
-
-    # 2) Session state override (if you set one from Setup)
-    if isinstance(st.session_state.get("current_encounter_edited"), bool):
-        return st.session_state["current_encounter_edited"]
-
-    # 3) Settings-level toggle keyed by encounter key
-    edited_toggles = settings.get("edited_toggles", {})
-    return bool(edited_toggles.get(encounter_key, False))
-
-
-def _get_enemy_display_names(encounter: dict) -> list[str]:
-    """
-    Return human-readable names for the shuffled enemies in this encounter.
-
-    Assumes Setup stored the shuffled list on encounter["enemies"].
-    Replace the internals with your real enemy metadata lookup instead of str().
-    """
-    enemy_ids = encounter.get("enemies") or []
-
-    names: list[str] = []
-    for eid in enemy_ids:
-        if isinstance(eid, dict):
-            names.append(eid.get("name") or eid.get("id") or str(eid))
-        else:
-            # Index into the global enemyNames mapping from assets
-            names.append(enemyNames[eid])
-
-    return names
 
 
 def _detect_gang_name(encounter: dict) -> Optional[str]:

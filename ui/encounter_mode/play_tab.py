@@ -1,7 +1,6 @@
 # ui/encounter_mode/play_tab.py
 from __future__ import annotations
 
-import re
 import streamlit as st
 import random
 from io import BytesIO
@@ -12,52 +11,9 @@ from core.encounter_rules import make_encounter_key, get_rules_for_encounter
 from core.encounter import timer as timer_mod
 from ui.encounter_mode import play_state, play_panels, invader_panel
 from ui.encounter_mode.setup_tab import render_original_encounter
-from ui.encounter_mode.assets import encounterKeywords, editedEncounterKeywords, keywordText
 from core.image_cache import get_image_bytes_cached
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
 from ui.campaign_mode.api import ENCOUNTER_GRAVESTONES, v2_pick_scout_ahead_alt_frozen
-
-
-
-def _detect_edited_flag(encounter_key: str, encounter: dict, settings: dict) -> bool:
-    """
-    Best-effort way to figure out whether this encounter is using the
-    'edited' version. This mirrors the helper in play_panels so the
-    timer logic can share the same decision.
-    """
-    if isinstance(encounter.get("edited"), bool):
-        return encounter["edited"]
-
-    if isinstance(st.session_state.get("current_encounter_edited"), bool):
-        return st.session_state["current_encounter_edited"]
-
-    edited_toggles = settings.get("edited_toggles", {})
-    return bool(edited_toggles.get(encounter_key, False))
-
-
-def _keyword_label(keyword: str) -> str:
-    # Prefer the human-facing label from keywordText (everything before the em-dash).
-    txt = keywordText.get(keyword)
-    if isinstance(txt, str) and txt.strip():
-        return txt.split("—", 1)[0].strip()
-
-
-def _get_encounter_keywords(name: str, expansion: str, edited: bool) -> list[str]:
-    src = editedEncounterKeywords if edited else encounterKeywords
-    raw = (src.get((name, expansion)) or []) if isinstance(src, dict) else []
-
-    out: list[str] = []
-    seen: set[str] = set()
-    for k in raw:
-        if not k:
-            continue
-        k = str(k)
-        if k in seen:
-            continue
-        seen.add(k)
-        out.append(k)
-    return out
-
 
 def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict) -> None:
     name = str((encounter or {}).get("encounter_name") or (encounter or {}).get("name") or "").strip()
@@ -183,7 +139,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
     store = st.session_state.setdefault("gravestones_state", {})
     ctx_state = store.setdefault(ctx, {})  # row_idx -> row dict
 
-    with st.expander("Gravestones", expanded=False):
+    with st.expander("Gravestones 🪦", expanded=False):
         # Header row (keeps layout readable on narrow widths)
         h0, h1, h2, h3 = st.columns([0.5, 1.5, 1.8, 1.6])
         with h0:
@@ -218,7 +174,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
             if phase == "idle":
                 # Row action buttons
                 with c1:
-                    if st.button("Use", key=f"gravestone_events_{ctx}_{i}", help="Use On Events", width="stretch"):
+                    if st.button("Use", key=f"gravestone_events_{ctx}_{i}", width="stretch"):
                         deck = _get_event_deck_ref()
                         if not isinstance(deck, dict):
                             row["phase"] = "done"
@@ -244,7 +200,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                         st.rerun()
 
                 with c2:
-                    if st.button("Use", key=f"gravestone_encounters_{ctx}_{i}", disabled=False, help="Use On Encounters", width="stretch"):
+                    if st.button("Use", key=f"gravestone_encounters_{ctx}_{i}", disabled=False, width="stretch"):
                         # Requires an active V2 campaign; encounters are peeked from the next unchosen encounter space.
                         v2_state = st.session_state.get("campaign_v2_state")
                         if not isinstance(v2_state, dict) or not isinstance(v2_state.get("campaign"), dict):
@@ -293,7 +249,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                         st.rerun()
 
                 with c3:
-                    if st.button("Use", key=f"gravestone_treasure_{ctx}_{i}", help="Use On Treasure", width="stretch"):
+                    if st.button("Use", key=f"gravestone_treasure_{ctx}_{i}", width="stretch"):
                         row["phase"] = "done"
                         row["result"] = "Look at the top card of the treasure deck, then put it on the top or bottom of the deck."
                         st.rerun()
@@ -470,7 +426,7 @@ def render(settings: dict, campaign: bool=False) -> None:
     name = encounter.get("encounter_name") or encounter.get("name") or "Unknown Encounter"
     expansion = encounter.get("expansion", "Unknown Expansion")
     encounter_key = make_encounter_key(name=name, expansion=expansion)
-    edited = _detect_edited_flag(encounter_key, encounter, settings)
+    edited = play_panels._detect_edited_flag(encounter_key, encounter, settings)
 
     timer_behavior = timer_mod.get_timer_behavior(encounter, edited=edited)
     # If the play state was just created, honor any initial_timer from

@@ -1710,21 +1710,3 @@ def get_reward_config_for_key(
         return variants["edited"]
 
     return variants.get("default")
-
-
-def get_reward_config_for_encounter(
-    encounter: dict,
-    *,
-    edited: bool = False,
-) -> Optional[EncounterRewardsConfig]:
-    """
-    Convenience wrapper that builds the encounter key from an encounter dict.
-    """
-    name = (
-        encounter.get("encounter_name")
-        or encounter.get("name")
-        or "Unknown Encounter"
-    )
-    expansion = encounter.get("expansion", "Unknown Expansion")
-    encounter_key = make_encounter_key(name=name, expansion=expansion)
-    return get_reward_config_for_key(encounter_key, edited=edited)

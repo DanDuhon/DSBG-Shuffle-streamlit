@@ -545,7 +545,7 @@ def _render_campaign_play_tab(
                 st.session_state["last_encounter_reward_totals"] = {}
                 st.session_state.pop("last_encounter_rewards_for_slug", None)
 
-                st.success("Encounter completed; campaign state updated.")
+                st.success("Encounter completed; campaign updated.")
         elif not encounter_is_complete:
             st.caption(
                 'Play the encounter above, then click '
