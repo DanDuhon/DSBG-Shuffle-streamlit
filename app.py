@@ -3,7 +3,7 @@ import streamlit as st
 
 from ui.sidebar import render_sidebar
 from ui.encounter_mode.render import render as encounter_mode_render
-from ui.boss_mode.boss_mode_render import render as boss_mode_render
+from ui.boss_mode.render import render as boss_mode_render
 from ui.campaign_mode.render import render as campaign_mode_render
 from ui.event_mode.render import render as event_mode_render
 from ui.character_mode.render import render as character_mode_render
