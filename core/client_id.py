@@ -28,7 +28,7 @@ def get_or_create_client_id() -> str:
 
     # 2) Check query params (useful fallback when JS bridge isn't available)
     try:
-        params = st.experimental_get_query_params()
+        params = st.query_params()
         qcid = params.get("client_id", [None])[0]
         if qcid:
             st.session_state["client_id"] = qcid
@@ -64,7 +64,7 @@ def get_or_create_client_id() -> str:
 
     # Also set query param so the id survives refreshes even if localStorage fails
     try:
-        st.experimental_set_query_params(client_id=new_id)
+        st.query_params(client_id=new_id)
     except Exception:
         pass
 

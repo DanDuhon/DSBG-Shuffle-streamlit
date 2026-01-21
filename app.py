@@ -8,6 +8,7 @@ from ui.campaign_mode.render import render as campaign_mode_render
 from ui.event_mode.render import render as event_mode_render
 from ui.character_mode.render import render as character_mode_render
 from ui.behavior_viewer.render import render as behavior_viewer_render
+from core import client_id as client_id_module
 from core.settings_manager import load_settings, save_settings
 
 st.set_page_config(
@@ -84,22 +85,20 @@ st.markdown("""
     div[data-testid="stMarkdownContainer"] > p,
     div[data-testid="stMarkdownContainer"] ul,
     div[data-testid="stMarkdownContainer"] li {
-        line-height: 1.05 !important;
-        margin-top: 0.08rem !important;
-        margin-bottom: 0.08rem !important;
+        line-height: 1.20 !important;
+        margin-top: 0.20rem !important;
+        margin-bottom: 0.20rem !important;
     }
     div[data-testid="stMarkdownContainer"] h1,
     div[data-testid="stMarkdownContainer"] h2,
     div[data-testid="stMarkdownContainer"] h3,
     div[data-testid="stMarkdownContainer"] h4,
     div[data-testid="stMarkdownContainer"] h5 {
-        margin-top: 0.18rem !important;
-        margin-bottom: 0.18rem !important;
+        margin-top: 0.48rem !important;
+        margin-bottom: 0.48rem !important;
     }
     </style>
 """, unsafe_allow_html=True)
-
-from core import client_id as client_id_module
 
 # Ensure client_id from browser localStorage is available before loading settings
 try:

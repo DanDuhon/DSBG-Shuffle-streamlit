@@ -354,39 +354,3 @@ def render_sidebar(settings: dict):
     # Persist the compact toggle into the settings dict (and session_state)
     settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
     st.session_state["user_settings"] = settings
-
-    # Persistence / Supabase test
-    with st.sidebar.expander("💾 Persistence", expanded=False):
-        # Show current client id for debugging persistence behavior
-        client_id_display = st.session_state.get("client_id") or settings.get("client_id") or None
-        if client_id_display:
-            st.markdown(f"**Client ID:** {client_id_display}")
-        else:
-            st.markdown("**Client ID:** _not set_")
-
-        if _has_supabase_config():
-            ok = supabase_store.ping()
-            if ok:
-                st.success("Supabase reachable")
-            else:
-                st.warning("Supabase configured but not reachable")
-
-            if st.button("Test Supabase write"):
-                try:
-                    payload = {"test": True, "ts": int(time.time())}
-                    # Ensure we have a client_id; create one server-side if needed
-                    user_id = st.session_state.get("client_id") or settings.get("client_id")
-                    if not user_id:
-                        user_id = str(uuid.uuid4())
-                        settings["client_id"] = user_id
-                        st.session_state["client_id"] = user_id
-                        # Persist the newly-generated client_id into settings
-                        save_settings(settings)
-
-                    res = supabase_store.upsert_document("integration_tests", "last_test", payload, user_id=user_id)
-                    st.success("Supabase write succeeded")
-                    st.write(res)
-                except Exception as e:
-                    st.error(f"Supabase write failed: {e}")
-        else:
-            st.info("Supabase not configured. Add SUPABASE_URL and SUPABASE_KEY to env or st.secrets.")
