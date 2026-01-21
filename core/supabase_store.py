@@ -24,12 +24,17 @@ import streamlit as st
 
 
 def _base_url_from_env() -> str:
-    url = st.secrets.get("SUPABASE_URL")
+    # Prefer environment variables for non-Streamlit runs (scripts, Docker).
+    url = os.environ.get("SUPABASE_URL") or (st.secrets.get("SUPABASE_URL") if hasattr(st, "secrets") else None)
+    if not url:
+        raise EnvironmentError("SUPABASE_URL not set in env or st.secrets")
     return url.rstrip("/")
 
 
 def _key_from_env() -> str:
-    key = st.secrets.get("SUPABASE_KEY")
+    key = os.environ.get("SUPABASE_KEY") or (st.secrets.get("SUPABASE_KEY") if hasattr(st, "secrets") else None)
+    if not key:
+        raise EnvironmentError("SUPABASE_KEY not set in env or st.secrets")
     return key
 
 
@@ -66,9 +71,17 @@ def upsert_document(
     params = {"on_conflict": "doc_type,key_name,user_id"}
     headers = _headers()
     headers["Prefer"] = "resolution=merge-duplicates,return=representation"
-    resp = requests.post(url, headers=headers, params=params, json=[payload])
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        resp = requests.post(url, headers=headers, params=params, json=[payload], timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as exc:
+        # Surface helpful message for debugging in Streamlit context
+        try:
+            st.error(f"Supabase upsert error: {exc}")
+        except Exception:
+            pass
+        raise
 
 
 def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) -> Optional[Any]:
@@ -82,13 +95,20 @@ def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) ->
     else:
         params["user_id"] = f"eq.{user_id}"
 
-    resp = requests.get(url, headers=headers, params=params)
-    if resp.status_code != 200:
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+        arr = resp.json()
+        if not arr:
+            return None
+        return arr[0]["data"]
+    except Exception as exc:
+        try:
+            st.error(f"Supabase get_document error: {exc}")
+        except Exception:
+            pass
         return None
-    arr = resp.json()
-    if not arr:
-        return None
-    return arr[0]["data"]
 
 
 def list_documents(doc_type: str, user_id: Optional[str] = None) -> List[str]:
@@ -101,7 +121,7 @@ def list_documents(doc_type: str, user_id: Optional[str] = None) -> List[str]:
     else:
         params["user_id"] = f"eq.{user_id}"
 
-    resp = requests.get(url, headers=headers, params=params)
+    resp = requests.get(url, headers=headers, params=params, timeout=10)
     resp.raise_for_status()
     return [r["key_name"] for r in resp.json()]
 
@@ -116,6 +136,17 @@ def delete_document(doc_type: str, key_name: str, user_id: Optional[str] = None)
     else:
         params["user_id"] = f"eq.{user_id}"
 
-    resp = requests.delete(url, headers=headers, params=params)
+    resp = requests.delete(url, headers=headers, params=params, timeout=10)
     # 204 No Content or 200 with representation
     return resp.status_code in (200, 204)
+
+
+def ping() -> bool:
+    """Quickly check Supabase connectivity by listing zero rows from table."""
+    try:
+        url = _table_url()
+        headers = _headers()
+        resp = requests.get(url, headers=headers, params={"select": "doc_type", "limit": "1"}, timeout=8)
+        return resp.status_code == 200
+    except Exception:
+        return False

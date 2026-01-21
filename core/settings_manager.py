@@ -1,4 +1,5 @@
 import json
+import streamlit as st
 import os
 from copy import deepcopy
 from pathlib import Path
@@ -84,7 +85,24 @@ def load_settings():
 def save_settings(settings: dict):
     """Persist settings to Supabase if configured, otherwise to local JSON."""
     if _has_supabase_config():
-        return supabase_store.upsert_document("user_settings", "default", settings)
+        # Attempt to persist to Supabase and surface a one-time UI message.
+        try:
+            res = supabase_store.upsert_document("user_settings", "default", settings)
+            # Avoid repeated notifications in the same Streamlit session
+            try:
+                if st and not st.session_state.get("supabase_tested"):
+                    st.success("Settings saved to Supabase successfully.")
+                    st.session_state["supabase_tested"] = True
+            except Exception:
+                pass
+            return res
+        except Exception as exc:
+            try:
+                if st:
+                    st.error(f"Failed to save settings to Supabase: {exc}")
+            except Exception:
+                pass
+            return False
 
     SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
