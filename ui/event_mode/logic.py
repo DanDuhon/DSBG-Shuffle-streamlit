@@ -316,6 +316,10 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+from core import supabase_store
+from core.settings_manager import _has_supabase_config
+
+
 @st.cache_data(show_spinner=False)
 def load_custom_event_decks() -> Dict[str, dict]:
     """
@@ -324,6 +328,29 @@ def load_custom_event_decks() -> Dict[str, dict]:
       { "decks": { "<name>": {"cards": {...}} }, "updated": "..." }
     Legacy support: if file is { "<name>": {...} } treat that as decks mapping.
     """
+    # Supabase-backed: one row per deck with doc_type='event_deck'
+    if _has_supabase_config():
+        client_id = None
+        try:
+            client_id = st.session_state.get("client_id")
+        except Exception:
+            client_id = None
+
+        out: Dict[str, dict] = {}
+        try:
+            names = supabase_store.list_documents("event_deck", user_id=client_id)
+        except Exception:
+            names = []
+
+        for n in names:
+            try:
+                obj = supabase_store.get_document("event_deck", n, user_id=client_id)
+                if isinstance(obj, dict):
+                    out[n] = obj
+            except Exception:
+                continue
+        return out
+
     if not CUSTOM_DECKS_PATH.exists():
         return {}
     data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
@@ -337,6 +364,38 @@ def load_custom_event_decks() -> Dict[str, dict]:
 
 
 def save_custom_event_decks(decks: Dict[str, dict]) -> None:
+    # Supabase-backed: upsert each deck as its own document
+    if _has_supabase_config():
+        client_id = None
+        try:
+            client_id = st.session_state.get("client_id")
+        except Exception:
+            client_id = None
+
+        for name, deck in (decks or {}).items():
+            try:
+                supabase_store.upsert_document("event_deck", name, deck, user_id=client_id)
+            except Exception:
+                pass
+
+        # Remove remote decks that no longer exist locally
+        try:
+            remote = supabase_store.list_documents("event_deck", user_id=client_id)
+            for r in remote:
+                if r not in decks:
+                    try:
+                        supabase_store.delete_document("event_deck", r, user_id=client_id)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        try:
+            load_custom_event_decks.clear()
+        except Exception:
+            pass
+        st.rerun()
+
     CUSTOM_DECKS_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {"decks": decks, "updated": _utc_now_iso()}
     CUSTOM_DECKS_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")

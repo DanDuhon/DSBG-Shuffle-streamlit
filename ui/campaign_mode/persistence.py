@@ -2,6 +2,10 @@ from pathlib import Path
 from typing import Any, Dict
 import json
 import os
+import streamlit as st
+
+from core import supabase_store
+from core.settings_manager import _has_supabase_config
 
 
 DATA_DIR = Path("data")
@@ -59,11 +63,64 @@ def load_json_file(path: Path, *, reload: bool = False):
 
 
 def _load_campaigns(*, reload: bool = False) -> Dict[str, Any]:
-    """Load all saved campaigns as a mapping name -> payload, cached by default."""
+    """Load all saved campaigns as a mapping name -> payload, cached by default.
+
+    When Supabase is configured, campaigns are stored as individual rows
+    with `doc_type = 'campaign'` and `key_name = <campaign name>`.
+    """
+    if _has_supabase_config():
+        client_id = None
+        try:
+            client_id = st.session_state.get("client_id")
+        except Exception:
+            client_id = None
+
+        out: Dict[str, Any] = {}
+        try:
+            names = supabase_store.list_documents("campaign", user_id=client_id)
+        except Exception:
+            names = []
+
+        for n in names:
+            try:
+                obj = supabase_store.get_document("campaign", n, user_id=client_id)
+                if obj is not None:
+                    out[n] = obj
+            except Exception:
+                continue
+        return out
+
     return _load_json_object(CAMPAIGNS_PATH, reload=reload)
 
 
 def _save_campaigns(campaigns: Dict[str, Any]) -> None:
+    # Supabase-backed persistence: upsert each campaign as a separate row.
+    if _has_supabase_config():
+        client_id = None
+        try:
+            client_id = st.session_state.get("client_id")
+        except Exception:
+            client_id = None
+
+        for name, obj in (campaigns or {}).items():
+            try:
+                supabase_store.upsert_document("campaign", name, obj, user_id=client_id)
+            except Exception:
+                pass
+
+        # Delete remote campaigns not present locally
+        try:
+            remote = supabase_store.list_documents("campaign", user_id=client_id)
+            for r in remote:
+                if r not in campaigns:
+                    try:
+                        supabase_store.delete_document("campaign", r, user_id=client_id)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return
+
     CAMPAIGNS_PATH.parent.mkdir(parents=True, exist_ok=True)
     # Write to a temporary file and atomically replace the target to
     # avoid corrupting the campaigns file on interruption.
