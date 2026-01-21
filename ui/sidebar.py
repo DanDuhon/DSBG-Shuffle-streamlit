@@ -357,6 +357,13 @@ def render_sidebar(settings: dict):
 
     # Persistence / Supabase test
     with st.sidebar.expander("💾 Persistence", expanded=False):
+        # Show current client id for debugging persistence behavior
+        client_id_display = st.session_state.get("client_id") or settings.get("client_id") or None
+        if client_id_display:
+            st.markdown(f"**Client ID:** {client_id_display}")
+        else:
+            st.markdown("**Client ID:** _not set_")
+
         if _has_supabase_config():
             ok = supabase_store.ping()
             if ok:
