@@ -105,6 +105,25 @@ if "user_settings" not in st.session_state:
 
 settings = st.session_state.user_settings
 
+# Ensure a single per-client `client_id` exists in session and persisted settings.
+# This avoids multiple different UUIDs being generated across reruns.
+try:
+    client_id = st.session_state.get("client_id") or settings.get("client_id")
+except Exception:
+    client_id = settings.get("client_id") if isinstance(settings, dict) else None
+
+if not client_id:
+    import uuid
+
+    client_id = str(uuid.uuid4())
+    settings["client_id"] = client_id
+    try:
+        st.session_state["client_id"] = client_id
+    except Exception:
+        pass
+    # Persist settings with the new client_id (this will upsert to Supabase when configured)
+    save_settings(settings)
+
 # --- Apply pending campaign snapshot (from Campaign Mode) *before* sidebar widgets ---
 pending = st.session_state.get("pending_campaign_snapshot")
 if pending:
