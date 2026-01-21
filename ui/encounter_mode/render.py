@@ -1,7 +1,9 @@
 from typing import Any, Dict
 import streamlit as st
 
-from ui.encounter_mode import play_tab, setup_tab, events_tab
+from ui.encounter_mode.tabs import setup_tab
+from ui.encounter_mode.tabs import play_tab
+from ui.encounter_mode.tabs import events_tab
 
 
 def render(settings: Dict[str, Any], valid_party: bool, character_count: int) -> None:

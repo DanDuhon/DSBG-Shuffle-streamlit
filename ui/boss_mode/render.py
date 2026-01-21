@@ -8,7 +8,7 @@ from ui.encounter_mode.assets import ENCOUNTER_CARDS_DIR
 
 from ui.encounter_mode.generation import generate_encounter_image
 from ui.campaign_mode.helpers import get_player_count_from_settings
-from ui.campaign_mode.api import card_w as _card_w
+from ui.campaign_mode.public import card_w as _card_w
 from core.ngplus import get_current_ngplus_level
 from core.behavior.assets import (
     BEHAVIOR_CARDS_PATH,

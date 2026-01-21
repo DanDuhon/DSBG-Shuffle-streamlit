@@ -1,11 +1,11 @@
 # ui/campaign_mode/manage_tab_shared.py
 import streamlit as st
 from typing import Any, Dict, Optional
-from ui.campaign_mode.api import (
+from ui.campaign_mode.public import (
     reset_all_encounters_on_bonfire_return,
     record_dropped_souls,
 )
-from ui.encounter_mode.setup_tab import render_original_encounter
+from ui.encounter_mode.tabs.setup_tab import render_original_encounter
 from ui.encounter_mode.generation import load_encounter_data
 from ui.campaign_mode.helpers import get_player_count_from_settings
 
@@ -189,7 +189,7 @@ def _apply_boss_failure(
 
     # Drop souls on the boss, if any
     current_souls = int(state.get("souls") or 0)
-    # Use public API re-export from ui.campaign_mode.api
+    # Use public API re-export from ui.campaign_mode.public
     record_dropped_souls(state, failed_node_id, current_souls)
 
     # Soul cache goes to 0

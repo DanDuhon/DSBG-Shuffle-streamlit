@@ -1,7 +1,7 @@
 #ui/campaign_mode/state.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.api import default_sparks_max
+from ui.campaign_mode.public import default_sparks_max
 from ui.campaign_mode.helpers import get_player_count_from_settings
 
 

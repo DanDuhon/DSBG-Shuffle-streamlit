@@ -1,9 +1,3 @@
-"""Backward-compatible shim.
-
-The implementation moved to `ui.encounter_mode.tabs.setup_tab`.
-"""
-
-from ui.encounter_mode.tabs.setup_tab import *  # noqa: F403
 #ui/encounter_mode/setup_tab.py
 import streamlit as st
 import os

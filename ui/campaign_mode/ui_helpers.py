@@ -2,7 +2,7 @@
 import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, Optional
-from ui.campaign_mode.api import CHARACTERS_DIR
+from ui.campaign_mode.public import CHARACTERS_DIR
 from core.image_cache import get_image_data_uri_cached
 
 

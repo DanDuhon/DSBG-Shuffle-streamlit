@@ -3,7 +3,7 @@ import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, Optional
 from core.settings_manager import save_settings
-from ui.campaign_mode.api import (
+from ui.campaign_mode.public import (
     describe_v1_node_label,
     describe_v2_node_label,
     reset_all_encounters_on_bonfire_return,
@@ -16,7 +16,7 @@ from ui.campaign_mode.state import (
     _ensure_v1_state,
     _ensure_v2_state
 )
-from ui.encounter_mode import play_tab as encounter_play_tab
+from ui.encounter_mode.tabs import play_tab as encounter_play_tab
 from ui.event_mode.logic import (
     load_event_configs,
     initialize_event_deck,

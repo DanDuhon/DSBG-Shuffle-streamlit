@@ -217,7 +217,7 @@
   "edited_encounters_global": false,
   "rules_show_only_in_phase": true,
   "encounter_item_reward_mode": "Similar Soul Cost",
-  "No Safe Haven|Painted World of Ariamis": true,
+  "No Safe Haven|Painted World of Ariamis": false,
   "Trophy Room|The Sunless City": true,
   "The First Bastion|Painted World of Ariamis": true,
   "Abandoned and Forgotten|Painted World of Ariamis": false,

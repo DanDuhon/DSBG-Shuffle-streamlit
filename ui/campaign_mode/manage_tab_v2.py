@@ -3,7 +3,7 @@ import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from core.image_cache import get_image_data_uri_cached
-from ui.campaign_mode.api import (
+from ui.campaign_mode.public import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
     SOULS_TOKEN_PATH,

@@ -1,7 +1,7 @@
 #ui/campaign_mode/setup_tab.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.api import (
+from ui.campaign_mode.public import (
     filter_bosses,
     generate_v1_campaign,
     generate_v2_campaign,

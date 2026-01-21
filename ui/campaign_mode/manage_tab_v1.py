@@ -9,7 +9,7 @@ from core.behavior.generation import (
     render_dual_boss_data_cards,
 )
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
-from ui.campaign_mode.api import (
+from ui.campaign_mode.public import (
     BONFIRE_ICON_PATH,
     SOULS_TOKEN_PATH,
     default_sparks_max,

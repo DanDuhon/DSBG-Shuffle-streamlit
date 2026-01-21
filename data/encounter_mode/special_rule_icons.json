@@ -1,0 +1,1062 @@
+{
+  "EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS": {
+    "Painted World of Ariamis": {
+      "Eye of the Storm": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 378,
+          "y": 510
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 650,
+          "y": 540
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        }
+      ],
+      "Frozen Revolutions": [
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 283,
+          "y": 452
+        },
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 283,
+          "y": 480
+        },
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 700,
+          "y": 478
+        },
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 375,
+          "y": 555
+        }
+      ],
+      "Monstrous Maw": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 416,
+          "y": 394
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 285,
+          "y": 494
+        }
+      ],
+      "The First Bastion": [
+        {
+          "enemy_index": 1,
+          "size": 25,
+          "x": 480,
+          "y": 430
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 480,
+          "y": 463
+        },
+        {
+          "enemy_index": 3,
+          "size": 25,
+          "x": 420,
+          "y": 400
+        },
+        {
+          "enemy_index": 3,
+          "size": 25,
+          "x": 480,
+          "y": 495
+        }
+      ],
+      "Velka's Chosen": [
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 130,
+          "y": 295
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 598,
+          "y": 445
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 420,
+          "y": 495
+        }
+      ]
+    },
+    "The Sunless City": {
+      "Central Plaza": [
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 285,
+          "y": 490
+        }
+      ],
+      "Flooded Fortress": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 433,
+          "y": 400
+        }
+      ],
+      "Grim Reunion": [
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 438,
+          "y": 394
+        },
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 540,
+          "y": 477
+        },
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 573,
+          "y": 587
+        }
+      ],
+      "The Bell Tower": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 647,
+          "y": 450
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 688,
+          "y": 450
+        }
+      ],
+      "The Grand Hall": [
+        {
+          "enemy_index": 7,
+          "size": 28,
+          "x": 360,
+          "y": 453
+        }
+      ],
+      "The Hellkite Bridge": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 620,
+          "y": 500
+        }
+      ],
+      "Trophy Room": [
+        {
+          "enemy_index": 4,
+          "size": 25,
+          "x": 119,
+          "y": 295
+        },
+        {
+          "enemy_index": 4,
+          "size": 25,
+          "x": 420,
+          "y": 447
+        },
+        {
+          "enemy_index": 4,
+          "size": 25,
+          "x": 294,
+          "y": 543
+        },
+        {
+          "enemy_index": 6,
+          "size": 25,
+          "x": 161,
+          "y": 295
+        },
+        {
+          "enemy_index": 6,
+          "size": 25,
+          "x": 462,
+          "y": 447
+        },
+        {
+          "enemy_index": 6,
+          "size": 25,
+          "x": 336,
+          "y": 543
+        }
+      ]
+    }
+  },
+  "GANG_TEXT_POSITIONS": {
+    "The Sunless City": {
+      "Deathly Tolls": [
+        280,
+        495,
+        28
+      ],
+      "Depths of the Cathedral": [
+        280,
+        430,
+        28
+      ],
+      "Flooded Fortress": [
+        280,
+        430,
+        28
+      ],
+      "The Fountainhead": [
+        280,
+        400,
+        28
+      ],
+      "Twilight Falls": [
+        280,
+        430,
+        28
+      ],
+      "Undead Sanctum": [
+        280,
+        430,
+        28
+      ]
+    }
+  },
+  "SPECIAL_RULE_ENEMY_ICON_SLOTS": {
+    "Painted World of Ariamis": {
+      "Abandoned and Forgotten": [
+        {
+          "enemy_index": 0,
+          "size": 45,
+          "x": 573,
+          "y": 445
+        },
+        {
+          "enemy_index": 1,
+          "size": 45,
+          "x": 573,
+          "y": 505
+        },
+        {
+          "enemy_index": 2,
+          "size": 45,
+          "x": 573,
+          "y": 569
+        }
+      ],
+      "Cloak and Feathers": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        }
+      ],
+      "Cold Snap": [
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 430,
+          "y": 465
+        }
+      ],
+      "Corrupted Hovel": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 290,
+          "y": 500
+        }
+      ],
+      "Corvian Host": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 323,
+          "y": 480
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 523,
+          "y": 480
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 533,
+          "y": 505
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 382,
+          "y": 560
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 295,
+          "y": 585
+        }
+      ],
+      "Deathly Freeze": [
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 284,
+          "y": 480
+        }
+      ],
+      "Distant Tower": [
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 434,
+          "y": 429
+        }
+      ],
+      "Eye of the Storm": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 373,
+          "y": 485
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 567,
+          "y": 511
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        }
+      ],
+      "Frozen Revolutions": [
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 283,
+          "y": 458
+        },
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 283,
+          "y": 492
+        },
+        {
+          "enemy_index": 6,
+          "size": 28,
+          "x": 710,
+          "y": 492
+        }
+      ],
+      "Gnashing Beaks": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 634,
+          "y": 469
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 681,
+          "y": 469
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 476,
+          "y": 494
+        }
+      ],
+      "Monstrous Maw": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 420,
+          "y": 394
+        }
+      ],
+      "No Safe Haven": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        }
+      ],
+      "Skeletal Spokes": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 287,
+          "y": 394
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 328,
+          "y": 423
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 328,
+          "y": 483
+        }
+      ],
+      "The First Bastion": [
+        {
+          "enemy_index": 1,
+          "size": 25,
+          "x": 725,
+          "y": 434
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 380,
+          "y": 480
+        },
+        {
+          "enemy_index": 3,
+          "size": 25,
+          "x": 430,
+          "y": 400
+        },
+        {
+          "enemy_index": 3,
+          "size": 25,
+          "x": 500,
+          "y": 505
+        }
+      ],
+      "The Last Bastion": [
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 431,
+          "y": 458
+        },
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 636,
+          "y": 506
+        },
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 679,
+          "y": 533
+        }
+      ],
+      "Trecherous Tower": [
+        {
+          "enemy_index": 2,
+          "size": 45,
+          "x": 573,
+          "y": 445
+        },
+        {
+          "enemy_index": 3,
+          "size": 45,
+          "x": 573,
+          "y": 505
+        },
+        {
+          "enemy_index": 4,
+          "size": 45,
+          "x": 573,
+          "y": 569
+        }
+      ],
+      "Velka's Chosen": [
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 598,
+          "y": 395
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 410,
+          "y": 445
+        }
+      ]
+    },
+    "The Sunless City": {
+      "Aged Sentinel": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 280,
+          "y": 465
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 410,
+          "y": 515
+        }
+      ],
+      "Central Plaza": [
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 285,
+          "y": 530
+        }
+      ],
+      "Dark Alleyway": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        }
+      ],
+      "Deathly Tolls": [
+        {
+          "enemy_index": 7,
+          "size": 28,
+          "x": 362,
+          "y": 458
+        }
+      ],
+      "Depths of the Cathedral": [
+        {
+          "enemy_index": 8,
+          "size": 28,
+          "x": 362,
+          "y": 398
+        }
+      ],
+      "Gleaming Silver": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 280,
+          "y": 550
+        },
+        {
+          "enemy_index": 1,
+          "size": 28,
+          "x": 320,
+          "y": 550
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 360,
+          "y": 550
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 400,
+          "y": 550
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 360,
+          "y": 425
+        }
+      ],
+      "Grim Reunion": [
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 438,
+          "y": 394
+        },
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 540,
+          "y": 517
+        }
+      ],
+      "Parish Church": [
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 359,
+          "y": 398
+        }
+      ],
+      "Parish Gates": [
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 612,
+          "y": 444
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 375,
+          "y": 517
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 285,
+          "y": 568
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 326,
+          "y": 469
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 414,
+          "y": 517
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 326,
+          "y": 568
+        }
+      ],
+      "Shattered Keep": [
+        {
+          "enemy_index": 1,
+          "size": 28,
+          "x": 288,
+          "y": 429
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 329,
+          "y": 429
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 370,
+          "y": 429
+        }
+      ],
+      "Tempting Maw": [
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 445,
+          "y": 295
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 441,
+          "y": 396
+        },
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 698,
+          "y": 505
+        }
+      ],
+      "The Bell Tower": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 647,
+          "y": 392
+        },
+        {
+          "enemy_index": 3,
+          "size": 28,
+          "x": 688,
+          "y": 392
+        }
+      ],
+      "The Grand Hall": [
+        {
+          "enemy_index": 7,
+          "size": 28,
+          "x": 360,
+          "y": 430
+        }
+      ],
+      "The Iron Golem": [
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 375,
+          "y": 394
+        },
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 346,
+          "y": 442
+        }
+      ],
+      "The Shine of Gold": [
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 414,
+          "y": 442
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 563,
+          "y": 514
+        },
+        {
+          "enemy_index": 2,
+          "size": 25,
+          "x": 501,
+          "y": 543
+        },
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 539,
+          "y": 392
+        },
+        {
+          "enemy_index": 1,
+          "size": 25,
+          "x": 500,
+          "y": 392
+        }
+      ],
+      "Trophy Room": [
+        {
+          "enemy_index": 4,
+          "size": 25,
+          "x": 119,
+          "y": 295
+        },
+        {
+          "enemy_index": 4,
+          "size": 25,
+          "x": 420,
+          "y": 397
+        },
+        {
+          "enemy_index": 4,
+          "size": 25,
+          "x": 294,
+          "y": 493
+        },
+        {
+          "enemy_index": 6,
+          "size": 25,
+          "x": 161,
+          "y": 295
+        },
+        {
+          "enemy_index": 6,
+          "size": 25,
+          "x": 462,
+          "y": 397
+        },
+        {
+          "enemy_index": 6,
+          "size": 25,
+          "x": 336,
+          "y": 493
+        }
+      ]
+    },
+    "Tomb of Giants": {
+      "Deathly Magic": [
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 123,
+          "y": 295
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 549,
+          "y": 394
+        }
+      ],
+      "Giant's Coffin": [
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 483,
+          "y": 468
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 571,
+          "y": 468
+        }
+      ],
+      "In Deep Water": [
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 479,
+          "y": 398
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 651,
+          "y": 398
+        }
+      ],
+      "Lakeview Refuge": [
+        {
+          "enemy_index": 8,
+          "size": 28,
+          "x": 430,
+          "y": 461
+        },
+        {
+          "enemy_index": 8,
+          "size": 28,
+          "x": 582,
+          "y": 523
+        },
+        {
+          "enemy_index": 9,
+          "size": 28,
+          "x": 285,
+          "y": 577
+        },
+        {
+          "enemy_index": 10,
+          "size": 28,
+          "x": 326,
+          "y": 577
+        },
+        {
+          "enemy_index": 11,
+          "size": 28,
+          "x": 367,
+          "y": 577
+        },
+        {
+          "enemy_index": 12,
+          "size": 28,
+          "x": 408,
+          "y": 577
+        }
+      ],
+      "Pitch Black": [
+        {
+          "enemy_index": 1,
+          "size": 28,
+          "x": 126,
+          "y": 295
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 453,
+          "y": 295
+        }
+      ],
+      "Puppet Master": [
+        {
+          "enemy_index": 1,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 287,
+          "y": 396
+        }
+      ],
+      "Skeleton Overlord": [
+        {
+          "enemy_index": 1,
+          "size": 28,
+          "x": 461,
+          "y": 394
+        },
+        {
+          "enemy_index": 1,
+          "size": 28,
+          "x": 416,
+          "y": 521
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 622,
+          "y": 394
+        },
+        {
+          "enemy_index": 2,
+          "size": 28,
+          "x": 491,
+          "y": 521
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 630,
+          "y": 469
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 669,
+          "y": 521
+        }
+      ],
+      "The Abandoned Chest": [
+        {
+          "enemy_index": 4,
+          "size": 28,
+          "x": 649,
+          "y": 392
+        },
+        {
+          "enemy_index": 5,
+          "size": 28,
+          "x": 285,
+          "y": 419
+        }
+      ],
+      "The Beast From the Depths": [
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 124,
+          "y": 293
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 440,
+          "y": 400
+        },
+        {
+          "enemy_index": 0,
+          "size": 28,
+          "x": 314,
+          "y": 448
+        }
+      ],
+      "The Locked Grave": [
+        {
+          "enemy_index": 7,
+          "size": 25,
+          "x": 434,
+          "y": 396
+        },
+        {
+          "enemy_index": 7,
+          "size": 25,
+          "x": 616,
+          "y": 444
+        }
+      ],
+      "The Skeleton Ball": [
+        {
+          "enemy_index": 0,
+          "size": 25,
+          "x": 125,
+          "y": 295
+        },
+        {
+          "enemy_index": 5,
+          "size": 25,
+          "x": 455,
+          "y": 295
+        }
+      ]
+    }
+  }
+}
