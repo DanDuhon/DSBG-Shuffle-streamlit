@@ -3,6 +3,7 @@ import streamlit as st
 from core.settings_manager import save_settings, _has_supabase_config
 from core import supabase_store
 import time
+import uuid
 from core.characters import CHARACTER_EXPANSIONS
 from core.ngplus import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
@@ -366,7 +367,16 @@ def render_sidebar(settings: dict):
             if st.button("Test Supabase write"):
                 try:
                     payload = {"test": True, "ts": int(time.time())}
-                    res = supabase_store.upsert_document("integration_tests", "last_test", payload)
+                    # Ensure we have a client_id; create one server-side if needed
+                    user_id = st.session_state.get("client_id") or settings.get("client_id")
+                    if not user_id:
+                        user_id = str(uuid.uuid4())
+                        settings["client_id"] = user_id
+                        st.session_state["client_id"] = user_id
+                        # Persist the newly-generated client_id into settings
+                        save_settings(settings)
+
+                    res = supabase_store.upsert_document("integration_tests", "last_test", payload, user_id=user_id)
                     st.success("Supabase write succeeded")
                     st.write(res)
                 except Exception as e:

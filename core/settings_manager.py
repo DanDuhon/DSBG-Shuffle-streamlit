@@ -1,6 +1,7 @@
 import json
 import streamlit as st
 import os
+import uuid
 from copy import deepcopy
 from pathlib import Path
 
@@ -49,7 +50,19 @@ def load_settings():
 
     # Choose storage backend: Supabase when configured, otherwise local JSON.
     if _has_supabase_config():
-        loaded = supabase_store.get_document("user_settings", "default")
+        # If the session has a client id, prefer per-client settings
+        client_id = None
+        try:
+            client_id = st.session_state.get("client_id")
+        except Exception:
+            client_id = None
+
+        loaded = None
+        if client_id:
+            loaded = supabase_store.get_document("user_settings", "default", user_id=client_id)
+        # Fallback to global (NULL user_id) document
+        if loaded is None:
+            loaded = supabase_store.get_document("user_settings", "default")
     else:
         try:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -85,9 +98,27 @@ def load_settings():
 def save_settings(settings: dict):
     """Persist settings to Supabase if configured, otherwise to local JSON."""
     if _has_supabase_config():
-        # Attempt to persist to Supabase and surface a one-time UI message.
+        # Determine or create a client_id to persist per-client documents.
+        client_id = None
         try:
-            res = supabase_store.upsert_document("user_settings", "default", settings)
+            client_id = st.session_state.get("client_id")
+        except Exception:
+            client_id = None
+
+        if not client_id:
+            client_id = settings.get("client_id")
+
+        if not client_id:
+            client_id = str(uuid.uuid4())
+            settings["client_id"] = client_id
+            try:
+                st.session_state["client_id"] = client_id
+            except Exception:
+                pass
+
+        # Attempt to persist to Supabase using the per-client id and surface a one-time UI message.
+        try:
+            res = supabase_store.upsert_document("user_settings", "default", settings, user_id=client_id)
             # Avoid repeated notifications in the same Streamlit session
             try:
                 if st and not st.session_state.get("supabase_tested"):
