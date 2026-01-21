@@ -99,6 +99,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+from core import client_id as client_id_module
+
+# Ensure client_id from browser localStorage is available before loading settings
+try:
+    cid = client_id_module.get_or_create_client_id()
+    try:
+        st.session_state["client_id"] = cid
+    except Exception:
+        pass
+except Exception:
+    # If client-side helper fails, continue — server-side generation will happen later
+    pass
+
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
     st.session_state.user_settings = load_settings()
