@@ -2,36 +2,32 @@
 import streamlit as st
 from functools import lru_cache
 import os
-from typing import Dict, List, Tuple
+from typing import Dict
 from json import load
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-from ui.encounter_mode.assets import (
-    get_enemy_image_by_id,
-    encounterKeywords,
-    editedEncounterKeywords,
-    keywordText,
-    v1Expansions,
-    v1Level4s,
-    positions,
-    ENCOUNTER_CARDS_DIR,
-    EDITED_ENCOUNTER_CARDS_DIR,
-    ENCOUNTER_ORIGINAL_REWARDS
-)
 from core.behavior.logic import load_behavior
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
+from ui.encounter_mode.assets import (
+    get_enemy_image_by_id,
+    editedEncounterKeywords,
+    ENCOUNTER_CARDS_DIR,
+    EDITED_ENCOUNTER_CARDS_DIR,
+)
+from ui.encounter_mode.data.layout import positions, v1Expansions, v1Level4s
+from ui.encounter_mode.data.keywords import encounterKeywords, keywordText
+from ui.encounter_mode.data.rewards import ENCOUNTER_ORIGINAL_REWARDS
+from ui.encounter_mode.data.special_rule_icons import (
+    SPECIAL_RULE_ENEMY_ICON_SLOTS,
+    GANG_TEXT_POSITIONS,
+    EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS,
+)
 
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
 VALID_SETS_PATH = Path("data/encounters_valid_sets.json")
 
-from ui.encounter_mode.data.special_rule_icons import (
-    SpecialRuleEnemyIcon,
-    SPECIAL_RULE_ENEMY_ICON_SLOTS,
-    GANG_TEXT_POSITIONS,
-    EDITED_SPECIAL_RULE_ENEMY_ICON_SLOTS,
-)
 
 
 def load_valid_sets():

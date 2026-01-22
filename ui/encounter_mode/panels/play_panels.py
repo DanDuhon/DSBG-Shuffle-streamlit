@@ -29,16 +29,16 @@ from core.behavior.assets import BEHAVIOR_CARDS_PATH
 from core.behavior.generation import render_data_card_cached, build_behavior_catalog
 from core.behavior.logic import load_behavior
 from core.behavior.models import BehaviorEntry
-from ui.encounter_mode.panels import invader_panel
-from ui.encounter_mode.assets import (
-    enemyNames,
+from ui.encounter_mode.data.enemies import enemyNames
+from ui.encounter_mode.data.keywords import (
     encounterKeywords,
-    editedEncounterKeywords,
+    EDITED_ENCOUNTER_KEYWORDS_STATIC as editedEncounterKeywords,
     keywordText
 )
+from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.state.play_state import get_player_count, log_entry
-from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, V2_EXPANSIONS, EVENT_REWARDS
+from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, EVENT_REWARDS
 from core.image_cache import get_image_data_uri_cached
 from ui.encounter_mode.helpers import _detect_edited_flag, _get_enemy_display_names
 

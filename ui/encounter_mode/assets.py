@@ -1,16 +1,8 @@
 #ui/encounters_tab/assets.py
-import streamlit as st
-from PIL import Image
 from pathlib import Path
 
 from ui.encounter_mode.data.enemies import enemyNames
-from ui.encounter_mode.data.keywords import (
-    EDITED_ENCOUNTER_KEYWORDS_STATIC,
-    encounterKeywords,
-    keywordText,
-)
-from ui.encounter_mode.data.layout import positions, v1Expansions, v1Level4s
-from ui.encounter_mode.data.rewards import ENCOUNTER_ORIGINAL_REWARDS
+from ui.encounter_mode.data.keywords import EDITED_ENCOUNTER_KEYWORDS_STATIC
 
 
 ENCOUNTER_CARDS_DIR = Path("assets/encounter cards")

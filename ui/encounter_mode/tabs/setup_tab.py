@@ -1,6 +1,5 @@
 #ui/encounter_mode/setup_tab.py
 import streamlit as st
-import os
 from pathlib import Path
 from io import BytesIO
 
@@ -32,7 +31,6 @@ from ui.event_mode.logic import (
     initialize_event_deck,
     draw_event_card,
     DECK_STATE_KEY,
-    RENDEZVOUS_EVENTS,
     _attach_event_to_current_encounter,
 )
 from core.image_cache import get_image_bytes_cached

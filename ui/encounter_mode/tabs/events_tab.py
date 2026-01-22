@@ -8,7 +8,6 @@ from core.settings_manager import save_settings
 from ui.encounter_mode.versioning import is_v1_encounter
 from ui.event_mode.logic import (
     DECK_STATE_KEY,
-    RENDEZVOUS_EVENTS,
     draw_event_card,
     initialize_event_deck,
     list_all_event_cards,
