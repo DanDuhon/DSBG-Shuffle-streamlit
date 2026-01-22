@@ -1,7 +1,9 @@
 import json
+import hashlib
 import os
 import uuid
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 
 from core import supabase_store
@@ -9,6 +11,7 @@ from core import supabase_store
 SETTINGS_FILE = Path("data/user_settings.json")
 
 DEFAULT_SETTINGS = {
+    "ngplus_level": 0,
     "active_expansions": [
         "Painted World of Ariamis",
         "The Sunless City",
@@ -128,6 +131,20 @@ def load_settings():
 
 def save_settings(settings: dict):
     """Persist settings to Supabase if configured, otherwise to local JSON."""
+
+    new_fp = settings_fingerprint(settings)
+
+    # Fast-path: if running under Streamlit and we know these settings were
+    # already persisted, avoid touching any backend (prevents unnecessary
+    # file mtime churn and redundant Supabase writes on reruns).
+    st = _maybe_streamlit()
+    if st is not None:
+        try:
+            if st.session_state.get("_settings_last_saved_fp") == new_fp:
+                return True
+        except Exception:
+            pass
+
     if _has_supabase_config():
         # Determine or create a client_id to persist per-client documents.
         client_id = settings.get("client_id") or _runtime_client_id()
@@ -138,14 +155,61 @@ def save_settings(settings: dict):
         # Attempt to persist to Supabase using the per-client id.
         try:
             res = supabase_store.upsert_document("user_settings", "default", settings, user_id=client_id)
+            _update_streamlit_last_saved_metadata(settings)
             return res
         except Exception as exc:
             return False
 
     SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    # Avoid rewriting the JSON file if the payload is identical.
+    try:
+        if SETTINGS_FILE.exists():
+            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            if isinstance(existing, dict) and settings_fingerprint(existing) == new_fp:
+                return True
+    except Exception:
+        # If the file can't be read/parsed, fall back to rewriting it.
+        pass
+
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2)
+    _update_streamlit_last_saved_metadata(settings)
     return True
+
+
+def settings_fingerprint(settings: dict) -> str:
+    """Return a stable fingerprint for a settings dict."""
+
+    try:
+        payload = json.dumps(
+            settings,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            default=str,
+        )
+    except Exception:
+        payload = repr(settings)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _update_streamlit_last_saved_metadata(settings: dict) -> None:
+    """Best-effort: when running under Streamlit, remember last-saved info.
+
+    This keeps UI affordances (e.g., a disabled/enabled Save button) in sync even
+    if settings are saved from outside the sidebar.
+    """
+
+    st = _maybe_streamlit()
+    if st is None:
+        return
+    try:
+        st.session_state["_settings_last_saved_fp"] = settings_fingerprint(settings)
+        st.session_state["_settings_last_saved_at"] = datetime.now(timezone.utc).isoformat()
+    except Exception:
+        return
 
 
 def _has_supabase_config() -> bool:

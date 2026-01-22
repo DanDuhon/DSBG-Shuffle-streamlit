@@ -1,6 +1,8 @@
 #ui/sidebar.py
 import streamlit as st
-from core.settings_manager import save_settings
+from core.settings_manager import save_settings, settings_fingerprint
+from datetime import datetime, timezone
+from copy import deepcopy
 from core.character.characters import CHARACTER_EXPANSIONS
 from core.ngplus import MAX_NGPLUS_LEVEL, _HP_4_TO_7_BONUS, dodge_bonus_for_level
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
@@ -43,7 +45,9 @@ def _ngplus_level_changed():
 
 
 def _sync_invader_caps():
-    settings = st.session_state.get("user_settings") or {}
+    settings = st.session_state.get("_settings_draft")
+    if not isinstance(settings, dict):
+        settings = st.session_state.get("user_settings") or {}
     caps = settings.get("max_invaders_per_level")
     if not isinstance(caps, dict):
         caps = {}
@@ -51,28 +55,49 @@ def _sync_invader_caps():
     for lvl, mx in INVADER_CAP_CLAMP.items():
         out[str(lvl)] = int(st.session_state.get(f"cap_invaders_lvl_{lvl}", mx))
     settings["max_invaders_per_level"] = out
-    st.session_state["user_settings"] = settings
-    save_settings(settings)
+    st.session_state["_settings_draft"] = settings
 
 
 def render_sidebar(settings: dict):
     st.sidebar.header("Settings")
 
-    # Use the live session copy of user_settings when available so
-    # changes made elsewhere (e.g. toggling an encounter) appear
-    # immediately in the sidebar without waiting for a full rerun.
-    settings = st.session_state.get("user_settings", settings) or {}
+    # Reserve top space for Save UI (rendered later after widgets update draft settings).
+    save_ui = st.sidebar.container()
+
+    applied_settings = st.session_state.get("user_settings", settings) or {}
+    applied_fp = settings_fingerprint(applied_settings)
+
+    draft_settings = st.session_state.get("_settings_draft")
+    draft_base_fp = st.session_state.get("_settings_draft_base_fp")
+    if not isinstance(draft_settings, dict) or draft_base_fp != applied_fp:
+        draft_settings = deepcopy(applied_settings)
+        st.session_state["_settings_draft"] = draft_settings
+        st.session_state["_settings_draft_base_fp"] = applied_fp
+
+    settings = draft_settings
+
+    def _key_safe(text: str) -> str:
+        return "".join(ch.lower() if ch.isalnum() else "_" for ch in str(text))
+
+    # When the applied settings baseline changes (e.g., after clicking Save),
+    # reset checkbox widget state to match the new draft.
+    base_fp = st.session_state.get("_settings_draft_base_fp")
+    old_ui_base_fp = st.session_state.get("_settings_ui_base_fp")
+    ui_base_changed = old_ui_base_fp != base_fp
+    if ui_base_changed:
+        st.session_state["_settings_ui_base_fp"] = base_fp
 
     caps = settings.get("max_invaders_per_level") or {}
 
     # Expansions
     with st.sidebar.expander("🧩 Expansions", expanded=False):
-        active_expansions = st.multiselect(
-            "Active Expansions:",
-            all_expansions,
-            default=settings.get("active_expansions", []),
-            key="active_expansions",
-        )
+        active_set = set(settings.get("active_expansions", []) or [])
+        for exp in all_expansions:
+            k = f"exp_active_{_key_safe(exp)}"
+            if ui_base_changed or k not in st.session_state:
+                st.session_state[k] = exp in active_set
+            st.checkbox(exp, key=k)
+        active_expansions = [exp for exp in all_expansions if st.session_state.get(f"exp_active_{_key_safe(exp)}")]
         settings["active_expansions"] = active_expansions
 
     # Characters
@@ -86,20 +111,44 @@ def render_sidebar(settings: dict):
     if len(still_valid) < len(previous_selection):
         removed = [c for c in previous_selection if c not in still_valid]
         st.sidebar.warning(f"Removed invalid characters: {', '.join(removed)}")
+        for c in removed:
+            st.session_state[f"party_char_{_key_safe(c)}"] = False
         settings["selected_characters"] = still_valid
 
     with st.sidebar.expander("🎭 Party", expanded=False):
-        selected_characters = st.multiselect(
-            "Selected Characters (max 4):",
-            options=available_characters,
-            default=settings.get("selected_characters", []),
-            max_selections=4,
-            key="selected_characters",
-        )
+        def _party_limit_changed(changed_key: str):
+            selected_now = [
+                c
+                for c in available_characters
+                if st.session_state.get(f"party_char_{_key_safe(c)}")
+            ]
+            if len(selected_now) > 4:
+                st.session_state[changed_key] = False
+                st.session_state["_party_max_warning"] = True
+
+        selected_set = set(settings.get("selected_characters", []) or [])
+        for c in available_characters:
+            k = f"party_char_{_key_safe(c)}"
+            if ui_base_changed or k not in st.session_state:
+                st.session_state[k] = c in selected_set
+            st.checkbox(c, key=k, on_change=_party_limit_changed, args=(k,))
+
+        selected_characters = [c for c in available_characters if st.session_state.get(f"party_char_{_key_safe(c)}")]
         settings["selected_characters"] = selected_characters
+
+        if st.session_state.pop("_party_max_warning", False):
+            st.warning("Party is limited to 4 characters.")
 
     # --- New Game+ selection ---
     # (uses module-level `_ngplus_level_changed` to toggle expander open)
+
+    # Keep NG+ as a "live" setting (drives gameplay immediately via session_state),
+    # but also persist it when the user clicks Save by copying it into draft settings.
+    if ui_base_changed or "ngplus_level" not in st.session_state:
+        try:
+            st.session_state["ngplus_level"] = int(settings.get("ngplus_level", 0) or 0)
+        except Exception:
+            st.session_state["ngplus_level"] = 0
 
     current_ng = int(st.session_state.get("ngplus_level", 0))
 
@@ -118,6 +167,10 @@ def render_sidebar(settings: dict):
         )
         lvl = int(level)
 
+        # Persist into draft settings so the Save button can store it.
+        settings["ngplus_level"] = int(lvl)
+        st.session_state["_settings_draft"] = settings
+
         # Compute nodes added at this NG+ level (per-level mapping)
         extra_map = [0, 1, 1, 2, 2, 3]
         nodes_added = extra_map[lvl] if 0 <= lvl < len(extra_map) else 0
@@ -132,8 +185,7 @@ def render_sidebar(settings: dict):
             key="ngplus_increase_nodes",
         )
         settings["ngplus_increase_nodes"] = bool(increase_nodes)
-        st.session_state["user_settings"] = settings
-        save_settings(settings)
+        st.session_state["_settings_draft"] = settings
 
         if lvl > 0:
             dodge_b = dodge_bonus_for_level(lvl)
@@ -222,7 +274,7 @@ def render_sidebar(settings: dict):
 
             # Mirror changes back into settings/session
             settings["enemy_included"] = included
-            st.session_state["user_settings"] = settings
+            st.session_state["_settings_draft"] = settings
 
     # Invaders
     with st.sidebar.expander("⚔️ Encounter Invader Cap", expanded=False):
@@ -260,8 +312,7 @@ def render_sidebar(settings: dict):
                 key="encounter_item_reward_mode",
             )
             settings["encounter_item_reward_mode"] = mode
-            st.session_state["user_settings"] = settings
-            save_settings(settings)
+            st.session_state["_settings_draft"] = settings
 
     # Rules display preference: show phase-only rules/triggers only in their phase
     prev_rules_pref = bool(settings.get("rules_show_only_in_phase", True))
@@ -272,7 +323,7 @@ def render_sidebar(settings: dict):
             key="rules_show_only_in_phase",
         )
         settings["rules_show_only_in_phase"] = bool(rules_pref)
-        st.session_state["user_settings"] = settings
+        st.session_state["_settings_draft"] = settings
 
     # Edited encounters: global toggle + per-encounter status
     with st.sidebar.expander("✏️ Edited Encounters", expanded=False):
@@ -291,8 +342,7 @@ def render_sidebar(settings: dict):
                 widget_key = f"edited_toggle_{enc_name}_{enc_exp}"
                 st.session_state[widget_key] = curr
             settings["edited_encounters_global"] = curr
-            st.session_state["user_settings"] = settings
-            save_settings(settings)
+            st.session_state["_settings_draft"] = settings
 
         prev_global = bool(settings.get("edited_encounters_global", False))
         # Checkbox is persisted in session state so it remains across reruns
@@ -309,9 +359,7 @@ def render_sidebar(settings: dict):
         else:
             # Show list with status emoji
             edited_list = sorted(editedEncounterKeywords, key=lambda t: (t[1], t[0]))
-            # Read toggles from the live session settings so changes elsewhere
-            # are visible immediately.
-            toggles = st.session_state.get("user_settings", {}).get("edited_toggles", {})
+            toggles = settings.get("edited_toggles", {})
             for enc_name, enc_exp in edited_list:
                 k = f"{enc_name}|{enc_exp}"
                 # Prefer the live per-encounter checkbox widget state if present
@@ -347,4 +395,39 @@ def render_sidebar(settings: dict):
 
     # Persist the compact toggle into the settings dict (and session_state)
     settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
-    st.session_state["user_settings"] = settings
+    st.session_state["_settings_draft"] = settings
+
+    # --- Save UI (rendered at the top placeholder) ---
+    current_fp = settings_fingerprint(settings)
+    dirty = bool(current_fp != applied_fp)
+
+    with save_ui:
+        if st.button("Save settings", disabled=not dirty, use_container_width=True, key="save_settings_btn"):
+            old_active_expansions = list(applied_settings.get("active_expansions", []) or [])
+            new_active_expansions = list(settings.get("active_expansions", []) or [])
+
+            committed = deepcopy(settings)
+            st.session_state["user_settings"] = committed
+            st.session_state["_settings_draft"] = deepcopy(committed)
+            st.session_state["_settings_draft_base_fp"] = settings_fingerprint(committed)
+
+            save_settings(committed)
+
+            st.session_state["_settings_just_saved"] = True
+            st.session_state["_settings_old_active_expansions"] = old_active_expansions
+            st.session_state["_settings_new_active_expansions"] = new_active_expansions
+            st.rerun()
+
+        last_saved_at = st.session_state.get("_settings_last_saved_at")
+        if last_saved_at:
+            try:
+                dt = datetime.fromisoformat(str(last_saved_at))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                local_dt = dt.astimezone()
+                save_text = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
+            except Exception:
+                save_text = str(last_saved_at)
+            st.caption(f"Last saved: {save_text}")
+        else:
+            st.caption("Last saved: —")

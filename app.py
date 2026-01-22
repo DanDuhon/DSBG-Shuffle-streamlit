@@ -117,6 +117,37 @@ if "user_settings" not in st.session_state:
 
 settings = st.session_state.user_settings
 
+# NG+ is read by game logic via st.session_state (see core.ngplus.get_current_ngplus_level).
+# Initialize it from persisted settings if not already set.
+if "ngplus_level" not in st.session_state:
+    try:
+        st.session_state["ngplus_level"] = int(settings.get("ngplus_level", 0) or 0)
+    except Exception:
+        st.session_state["ngplus_level"] = 0
+
+# If settings were just saved (manual Save button), clean up state that may now
+# be invalid under the new settings (e.g., current encounter containing enemies
+# from a now-disabled expansion).
+if st.session_state.pop("_settings_just_saved", False):
+    try:
+        old_exp = set(st.session_state.pop("_settings_old_active_expansions", []) or [])
+        new_exp = set(st.session_state.pop("_settings_new_active_expansions", []) or [])
+    except Exception:
+        old_exp, new_exp = set(), set()
+
+    if old_exp != new_exp:
+        for key in [
+            "current_encounter",
+            "last_encounter",
+            "encounter_play",
+            "encounter_events",
+            "encounter_dropdown",
+        ]:
+            try:
+                st.session_state.pop(key, None)
+            except Exception:
+                pass
+
 # Ensure a single per-client `client_id` exists in session and persisted settings.
 # This avoids multiple different UUIDs being generated across reruns.
 try:
@@ -134,7 +165,9 @@ if not client_id:
     except Exception:
         pass
     # Persist settings with the new client_id (this will upsert to Supabase when configured)
+    st.session_state["_settings_allow_save"] = True
     save_settings(settings)
+    st.session_state["_settings_allow_save"] = False
 
 # --- Apply pending campaign snapshot (from Campaign Mode) *before* sidebar widgets ---
 pending = st.session_state.get("pending_campaign_snapshot")
@@ -176,7 +209,9 @@ if pending:
 
     # Persist updated settings
     st.session_state["user_settings"] = settings
+    st.session_state["_settings_allow_save"] = True
     save_settings(settings)
+    st.session_state["_settings_allow_save"] = False
 
     # One-shot notice for Campaign Mode UI
     st.session_state["campaign_load_notice"] = {
@@ -210,7 +245,6 @@ mode = st.sidebar.radio(
 )
 
 render_sidebar(settings)
-save_settings(settings)
 
 # Recompute selected characters and party size after sidebar widgets may have
 # mutated `settings` via `st.session_state` so renderers get current values.
