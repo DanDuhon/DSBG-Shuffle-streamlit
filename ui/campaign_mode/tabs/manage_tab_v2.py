@@ -3,24 +3,24 @@ import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from core.image_cache import get_image_data_uri_cached
-from ui.campaign_mode.public import (
+from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
     SOULS_TOKEN_PATH,
-    default_sparks_max,
-    describe_v2_node_label,
-    v2_compute_allowed_destinations,
-    reset_all_encounters_on_bonfire_return,
-    card_w,
-    v2_pick_scout_ahead_alt_frozen,
+    _default_sparks_max,
+    _describe_v2_node_label,
+    _v2_compute_allowed_destinations,
+    _reset_all_encounters_on_bonfire_return,
+    _card_w,
 )
-from ui.campaign_mode.manage_tab_shared import (
+from ui.campaign_mode.generation import _v2_pick_scout_ahead_alt_frozen
+from ui.campaign_mode.tabs.manage_tab_shared import (
     _frozen_sig,
     _render_boss_outcome_controls,
     _is_stage_closed_for_node,
     _render_campaign_encounter_card,
 )
-from ui.campaign_mode.manage_tab_v1 import _render_v1_current_panel
+from ui.campaign_mode.tabs.manage_tab_v1 import _render_v1_current_panel
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
 
@@ -134,7 +134,7 @@ def _v2_ensure_scout_ahead_alt_option(
         if sig is not None:
             exclude.add(sig)
 
-    cand = v2_pick_scout_ahead_alt_frozen(
+    cand = _v2_pick_scout_ahead_alt_frozen(
         settings=settings,
         level=lvl_int,
         exclude_signatures=exclude,
@@ -263,7 +263,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             _render_party_icons(settings)
 
             player_count = _get_player_count(settings)
-            sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
+            sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
 
             sparks_key = "campaign_v2_sparks_campaign"
             if sparks_key not in st.session_state:
@@ -293,11 +293,11 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         st.markdown("---")
         st.markdown(
             f"**Current location:** "
-            f"{describe_v2_node_label(campaign, current_node)}"
+            f"{_describe_v2_node_label(campaign, current_node)}"
         )
 
         # When standing on an encounter space, restrict legal destinations.
-        allowed_destinations = v2_compute_allowed_destinations(campaign)
+        allowed_destinations = _v2_compute_allowed_destinations(campaign)
 
         # If the party is currently on an encounter space that has not yet had a
         # choice made (choice_index is None), disable all other travel/return
@@ -403,7 +403,7 @@ def _render_v2_campaign_compact(
     current_node: Dict[str, Any],
 ) -> None:
     player_count = _get_player_count(settings)
-    sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
+    sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
 
     sparks_key = "campaign_v2_sparks_campaign"
     if sparks_key not in st.session_state:
@@ -433,13 +433,13 @@ def _render_v2_campaign_compact(
     _render_party_events_panel(state)
 
     st.markdown(
-            f"**Current location:** " f"{describe_v2_node_label(campaign, current_node)}"
+            f"**Current location:** " f"{_describe_v2_node_label(campaign, current_node)}"
     )
 
-    allowed_destinations = v2_compute_allowed_destinations(campaign)
+    allowed_destinations = _v2_compute_allowed_destinations(campaign)
 
     def _label_for_node(node: Dict[str, Any]) -> str:
-        base = describe_v2_node_label(campaign, node)
+        base = _describe_v2_node_label(campaign, node)
         rv = node.get("rendezvous_event")
         if node.get("kind") == "encounter" and isinstance(rv, dict):
             rv_name = str(rv.get("name") or rv.get("id") or "").strip()
@@ -519,7 +519,7 @@ def _render_v2_campaign_compact(
                 node_id = dest_node.get("id")
 
                 if k == "bonfire":
-                    reset_all_encounters_on_bonfire_return(campaign)
+                    _reset_all_encounters_on_bonfire_return(campaign)
 
                     sparks_cur = int(state.get("sparks") or 0)
                     state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
@@ -621,7 +621,7 @@ def _render_v2_path_row(
     allowed_destinations: Optional[Set[str]] = None,
     disable_travel: bool = False,
 ) -> None:
-    label = describe_v2_node_label(campaign, node)
+    label = _describe_v2_node_label(campaign, node)
     rv = node.get("rendezvous_event")
     if node.get("kind") == "encounter" and isinstance(rv, dict):
         rv_name = str(rv.get("name") or rv.get("id") or "").strip()
@@ -682,7 +682,7 @@ def _render_v2_path_row(
             ):
                 # Returning to the bonfire clears completion for all encounters
                 # in this campaign. Shortcuts remain valid.
-                reset_all_encounters_on_bonfire_return(campaign)
+                _reset_all_encounters_on_bonfire_return(campaign)
 
                 # Spend a Spark, but not below zero
                 sparks_cur = int(state.get("sparks") or 0)
@@ -835,7 +835,7 @@ def _render_v2_current_panel(
 
             # Always show attached rendezvous card under the encounter card(s)
             if isinstance(rv, dict) and rv.get("path"):
-                w = card_w()
+                w = _card_w()
                 p = Path(rv["path"])
                 src = get_image_data_uri_cached(str(p))
 
@@ -915,7 +915,7 @@ def _render_v2_current_panel(
 
                     # Scout Ahead card under the encounter card(s)
                     if isinstance(rv, dict) and rv.get("path"):
-                        w = card_w()
+                        w = _card_w()
                         img_src = rv["path"]
                         src = get_image_data_uri_cached(img_src)
                         if src:
@@ -930,7 +930,7 @@ def _render_v2_current_panel(
 
         # Always show attached rendezvous card under the encounter card
         if isinstance(rv, dict) and rv.get("path"):
-            w = card_w()
+            w = _card_w()
             img_src = rv["path"]
             src = get_image_data_uri_cached(img_src)
             if src:

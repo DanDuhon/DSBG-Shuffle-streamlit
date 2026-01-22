@@ -1,8 +1,8 @@
 # ui/campaign_mode/manage_tab.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.manage_tab_v1 import _render_v1_campaign
-from ui.campaign_mode.manage_tab_v2 import _render_v2_campaign
+from ui.campaign_mode.tabs.manage_tab_v1 import _render_v1_campaign
+from ui.campaign_mode.tabs.manage_tab_v2 import _render_v2_campaign
 
 
 def _render_campaign_tab(

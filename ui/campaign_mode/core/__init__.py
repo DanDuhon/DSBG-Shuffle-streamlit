@@ -1,8 +1,13 @@
 #ui/campaign_mode/core.py
+from __future__ import annotations
+
+import json
 import streamlit as st
-import random
+from collections.abc import Iterator, Mapping
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Optional
+
 from ui.event_mode.logic import V2_EXPANSIONS
 
 
@@ -12,49 +17,58 @@ SOULS_TOKEN_PATH = ASSETS_DIR / "souls_token.png"
 BONFIRE_ICON_PATH = ASSETS_DIR / "bonfire.gif"
 CHARACTERS_DIR = ASSETS_DIR / "characters"
 V2_EXPANSIONS_SET = set(V2_EXPANSIONS)
-ENCOUNTER_GRAVESTONES = {
-    "Frozen Sentries": 1,
-    "No Safe Haven": 1,
-    "Painted Passage": 1,
-    "Cold Snap": 2,
-    "Distant Tower": 1,
-    "Inhospitable Ground": 1,
-    "Central Plaza": 2,
-    "Deathly Freeze": 1,
-    "Draconic Decay": 1,
-    "Eye of the Storm": 1,
-    "The Last Bastion": 1,
-    "Trecherous Tower": 1,
-    "Velka's Chosen": 1,
-    "Aged Sentinel": 2,
-    "Undead Sanctum": 1,
-    "Deathly Tolls": 1,
-    "Parish Church": 1,
-    "The Fountainhead": 1,
-    "The Shine of Gold": 1,
-    "Depths of the Cathedral": 1,
-    "The Grand Hall": 1,
-    "Trophy Room": 1,
-    "Twilight Falls": 2,
-    "Dark Resurrection": 1,
-    "Grave Matters": 1,
-    "Last Rites": 1,
-    "The Beast From the Depths": 1,
-    "Altar of Bones": 1,
-    "In Deep Water": 1,
-    "Lost Chapel": 1,
-    "Maze of the Dead": 1,
-    "Pitch Black": 2,
-    "The Abandonded Chest": 1,
-    "A Trusty Ally": 2,
-    "Death's Precipice": 2,
-    "Giant's Coffin": 1,
-    "Honour Guard": 1,
-    "Lakeview Refuge": 1,
-    "Skeleton Overlord": 1,
-    "The Locked Grave": 1,
-    "The Skeleton Ball": 1,
-}
+
+
+_GRAVESTONES_PATH = Path("data/campaign_mode/encounter_gravestones.json")
+
+
+@lru_cache(maxsize=16)
+def _load_json_cached(path_str: str, mtime: float) -> Any:
+    path = Path(path_str)
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _gravestones_mtime() -> float:
+    try:
+        return _GRAVESTONES_PATH.stat().st_mtime
+    except FileNotFoundError:
+        return -1.0
+
+
+def _load_gravestones() -> dict[str, int]:
+    mtime = _gravestones_mtime()
+    if mtime < 0:
+        return {}
+
+    data = _load_json_cached(str(_GRAVESTONES_PATH), mtime)
+    if not isinstance(data, dict):
+        return {}
+
+    out: dict[str, int] = {}
+    for k, v in data.items():
+        try:
+            out[str(k)] = int(v)
+        except Exception:
+            continue
+    return out
+
+
+class _LazyGravestonesMapping(Mapping[str, int]):
+    def __getitem__(self, key: str) -> int:
+        return _load_gravestones()[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(_load_gravestones())
+
+    def __len__(self) -> int:
+        return len(_load_gravestones())
+
+    def get(self, key: str, default: int = 0) -> int:  # noqa: A003
+        return int(_load_gravestones().get(key, default) or 0)
+
+
+ENCOUNTER_GRAVESTONES: Mapping[str, int] = _LazyGravestonesMapping()
 
 
 def _card_w() -> int:

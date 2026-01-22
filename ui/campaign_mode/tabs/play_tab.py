@@ -3,12 +3,12 @@ import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, Optional
 from core.settings_manager import save_settings
-from ui.campaign_mode.public import (
-    describe_v1_node_label,
-    describe_v2_node_label,
-    reset_all_encounters_on_bonfire_return,
-    record_dropped_souls,
-    campaign_find_next_encounter_node,
+from ui.campaign_mode.core import (
+    _describe_v1_node_label,
+    _describe_v2_node_label,
+    _reset_all_encounters_on_bonfire_return,
+    _record_dropped_souls,
+    _campaign_find_next_encounter_node,
 )
 from ui.campaign_mode.state import (
     _get_player_count,
@@ -180,7 +180,7 @@ def _draw_and_apply_campaign_events(
             state["souls"] = int(state.get("souls") or 0) + souls_delta
 
         if kind == "rendezvous":
-            target = campaign_find_next_encounter_node(campaign, from_node_id)
+            target = _campaign_find_next_encounter_node(campaign, from_node_id)
             if target is None:
                 state.setdefault("orphaned_rendezvous_events", [])
                 state["orphaned_rendezvous_events"].append(ev)
@@ -365,9 +365,9 @@ def _render_campaign_play_tab(
     # Only the encounter spaces have something to play here.
     if kind != "encounter":
         label = (
-                describe_v2_node_label(campaign, current_node)
+                _describe_v2_node_label(campaign, current_node)
                 if active_version == "V2"
-                else describe_v1_node_label(campaign, current_node)
+                else _describe_v1_node_label(campaign, current_node)
             )
         st.info(f"There is no regular encounter to play here.")
         return
@@ -379,7 +379,7 @@ def _render_campaign_play_tab(
     # In V2, an encounter space with no choice selected yet is not playable.
     if not has_valid_encounter:
         if active_version == "V2":
-            label = describe_v2_node_label(campaign, current_node)
+            label = _describe_v2_node_label(campaign, current_node)
             st.info(
                 f"Choose an encounter for this space on the Campaign tab before playing it."
             )
@@ -586,7 +586,7 @@ def _render_campaign_play_tab(
             current_souls = int(state.get("souls") or 0)
 
             # Record dropped souls for this encounter; overwrite any previous data.
-            record_dropped_souls(state, failed_node_id, current_souls)
+            _record_dropped_souls(state, failed_node_id, current_souls)
 
             # Reset soul cache to 0 on failure (dropped souls stay on the map instead)
             state["souls"] = 0
@@ -608,7 +608,7 @@ def _render_campaign_play_tab(
 
             # When the party returns to the bonfire, all encounters that
             # were marked complete become incomplete again. Shortcuts remain.
-            reset_all_encounters_on_bonfire_return(campaign)
+            _reset_all_encounters_on_bonfire_return(campaign)
 
             # Move the party back to the bonfire
             campaign["current_node_id"] = "bonfire"

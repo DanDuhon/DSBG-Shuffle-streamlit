@@ -1,13 +1,15 @@
 #ui/campaign_mode/setup_tab.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.public import (
-    filter_bosses,
-    generate_v1_campaign,
-    generate_v2_campaign,
+from ui.campaign_mode.core import _default_sparks_max
+from ui.campaign_mode.generation import (
+    _filter_bosses,
+    _generate_v1_campaign,
+    _generate_v2_campaign,
+)
+from ui.campaign_mode.persistence import(
     get_campaigns,
-    save_campaigns,
-    default_sparks_max,
+    _save_campaigns,
 )
 from ui.campaign_mode.state import _get_player_count, _ensure_v1_state, _ensure_v2_state
 
@@ -44,17 +46,17 @@ def _render_v1_setup(
     state = _ensure_v1_state(player_count)
     active_expansions = settings.get("active_expansions") or []
 
-    mini_bosses = filter_bosses(
+    mini_bosses = _filter_bosses(
         bosses_by_name,
         boss_type="mini boss",
         active_expansions=active_expansions,
     )
-    main_bosses = filter_bosses(
+    main_bosses = _filter_bosses(
         bosses_by_name,
         boss_type="main boss",
         active_expansions=active_expansions,
     )
-    mega_bosses = filter_bosses(
+    mega_bosses = _filter_bosses(
         bosses_by_name,
         boss_type="mega boss",
         active_expansions=active_expansions,
@@ -141,10 +143,10 @@ def _render_v1_setup(
 
     if st.button("Generate campaign ⚙️", key="campaign_v1_generate", width="stretch"):
         with st.spinner("Generating campaign..."):
-            campaign = generate_v1_campaign(bosses_by_name, settings, state)
+            campaign = _generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
         player_count = _get_player_count(settings)
-        sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
+        sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
         sparks_key = "campaign_v1_sparks_campaign"
@@ -184,17 +186,17 @@ def _render_v2_setup(
     state = _ensure_v2_state(player_count)
     active_expansions = settings.get("active_expansions") or []
 
-    mini_bosses = filter_bosses(
+    mini_bosses = _filter_bosses(
         bosses_by_name,
         boss_type="mini boss",
         active_expansions=active_expansions,
     )
-    main_bosses = filter_bosses(
+    main_bosses = _filter_bosses(
         bosses_by_name,
         boss_type="main boss",
         active_expansions=active_expansions,
     )
-    mega_bosses = filter_bosses(
+    mega_bosses = _filter_bosses(
         bosses_by_name,
         boss_type="mega boss",
         active_expansions=active_expansions,
@@ -283,10 +285,10 @@ def _render_v2_setup(
             if "only_original_enemies" not in state:
                 state["only_original_enemies"] = False
             settings["only_original_enemies_for_campaigns"] = bool(state.get("only_original_enemies", False))
-            campaign = generate_v2_campaign(bosses_by_name, settings, state)
+            campaign = _generate_v2_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
         player_count = _get_player_count(settings)
-        sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
+        sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
         sparks_key = "campaign_v2_sparks_campaign"
@@ -368,7 +370,7 @@ def _render_save_load_section(
                         },
                     }
                     campaigns[name] = snapshot
-                    save_campaigns(campaigns)
+                    _save_campaigns(campaigns)
                     st.success(f"Saved campaign '{name}'.")
 
     # ----- LOAD / DELETE -----
@@ -413,7 +415,7 @@ def _render_save_load_section(
                         st.error("Select a campaign to delete.")
                     else:
                         campaigns.pop(selected_name, None)
-                        save_campaigns(campaigns)
+                        _save_campaigns(campaigns)
                         st.success(f"Deleted campaign '{selected_name}'.")
                         st.rerun()
         else:

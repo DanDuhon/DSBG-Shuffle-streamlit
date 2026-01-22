@@ -9,14 +9,14 @@ from core.behavior.generation import (
     render_dual_boss_data_cards,
 )
 from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
-from ui.campaign_mode.public import (
+from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     SOULS_TOKEN_PATH,
-    default_sparks_max,
-    describe_v1_node_label,
-    reset_all_encounters_on_bonfire_return,
+    _default_sparks_max,
+    _describe_v1_node_label,
+    _reset_all_encounters_on_bonfire_return,
 )
-from ui.campaign_mode.manage_tab_shared import (
+from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_boss_outcome_controls,
     _render_campaign_encounter_card,
 )
@@ -74,7 +74,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
             # Sparks: editable numeric input
             player_count = _get_player_count(settings)
-            sparks_max = int(state.get("sparks_max", default_sparks_max(player_count)))
+            sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
 
             sparks_key = "campaign_v1_sparks_campaign"
             # Seed the widget from state only once, when the key does not exist yet.
@@ -106,7 +106,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         st.markdown("---")
         st.markdown(
             f"**Current location:** "
-            f"{describe_v1_node_label(campaign, current_node)}"
+            f"{_describe_v1_node_label(campaign, current_node)}"
         )
 
         st.markdown("#### Path")
@@ -361,7 +361,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             width="stretch",
             disabled=disable_return_button,
         ):
-            reset_all_encounters_on_bonfire_return(campaign)
+            _reset_all_encounters_on_bonfire_return(campaign)
             sparks_cur = int(state.get("sparks") or 0)
             state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
             campaign["current_node_id"] = "bonfire"

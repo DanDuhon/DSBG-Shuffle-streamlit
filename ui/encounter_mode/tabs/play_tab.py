@@ -11,7 +11,8 @@ import streamlit as st
 from core.encounter import timer as timer_mod
 from core.encounter_rules import get_rules_for_encounter, make_encounter_key
 from core.image_cache import get_image_bytes_cached
-from ui.campaign_mode.public import ENCOUNTER_GRAVESTONES, v2_pick_scout_ahead_alt_frozen
+from ui.campaign_mode.core import ENCOUNTER_GRAVESTONES
+from ui.campaign_mode.generation import _v2_pick_scout_ahead_alt_frozen
 from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode.panels import play_panels
 from ui.encounter_mode.state import play_state
@@ -378,7 +379,7 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                             if s is not None:
                                 exclude.add(s)
 
-                        cand = v2_pick_scout_ahead_alt_frozen(
+                        cand = _v2_pick_scout_ahead_alt_frozen(
                             settings=settings,
                             level=lvl_int,
                             exclude_signatures=exclude,
