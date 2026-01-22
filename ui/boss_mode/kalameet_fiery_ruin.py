@@ -20,6 +20,7 @@ from ui.boss_mode.aoe_pattern_utils import (
 )
 import streamlit as st
 from core.ngplus import get_current_ngplus_level
+from ui.boss_mode.data.json_tables import LazyJsonSequence, boss_mode_data_path
 
 Coord = Tuple[int, int]
 
@@ -28,99 +29,12 @@ KALAMEET_HELLFIRE_PREFIX = "Hellfire"
 KALAMEET_FIERY_RUIN_NAME = "Fiery Ruin"
 
 # ---------------------------------------------------------------------------
-# Standard AoE patterns
-#   Coords are (x, y) with 0-based rows & columns:
-#     - "Rows 1–3" => x in {1, 2, 3}
-#     - "Columns 1–3" => y in {1, 2, 3}
+# Standard AoE patterns (JSON-backed)
 # ---------------------------------------------------------------------------
 
-_KALAMEET_PATTERN_1: List[Coord] = [
-    (0, 0),
-    (1, 1),
-    (0, 2),
-    (2, 2),
-    (1, 3),
-    (3, 3),
-    (0, 4),
-    (2, 4),
-    (4, 4),
-    (1, 5),
-    (3, 5),
-    (5, 5),
-    (2, 6),
-    (4, 6),
-    (6, 6),
-]
-
-_KALAMEET_PATTERN_2: List[Coord] = [
-    (0, 0),
-    (2, 0),
-    (4, 0),
-    (1, 1),
-    (1, 3),
-    (1, 5),
-    (2, 2),
-    (2, 4),
-    (2, 6),
-    (3, 3),
-    (5, 3),
-    (4, 4),
-    (4, 6),
-    (5, 5),
-    (6, 6),
-]
-
-
-def _row_index(node: Coord) -> int:
-    """Row index (0-based) == x coordinate."""
-    return node[0]
-
-
-def _col_index(node: Coord) -> int:
-    """Column index (0-based) == y coordinate."""
-    return node[1]
-
-
-# 3) Rows 1–3  (x in {1, 2, 3})
-_KALAMEET_PATTERN_ROWS_1_3: List[Coord] = [
-    n for n in NODE_COORDS if 1 <= _row_index(n) <= 3
-]
-
-# 4) Rows 2–4  (x in {2, 3, 4})
-_KALAMEET_PATTERN_ROWS_2_4: List[Coord] = [
-    n for n in NODE_COORDS if 2 <= _row_index(n) <= 4
-]
-
-# 5) Rows 3–5  (x in {3, 4, 5})
-_KALAMEET_PATTERN_ROWS_3_5: List[Coord] = [
-    n for n in NODE_COORDS if 3 <= _row_index(n) <= 5
-]
-
-# 6) Columns 1–3  (y in {1, 2, 3})
-_KALAMEET_PATTERN_COLS_1_3: List[Coord] = [
-    n for n in NODE_COORDS if 1 <= _col_index(n) <= 3
-]
-
-# 7) Columns 2,4  (y in {2, 4})
-_KALAMEET_PATTERN_COLS_2_4: List[Coord] = [
-    n for n in NODE_COORDS if _col_index(n) in (2, 4)
-]
-
-# 8) Columns 3–5  (y in {3, 4, 5})
-_KALAMEET_PATTERN_COLS_3_5: List[Coord] = [
-    n for n in NODE_COORDS if 3 <= _col_index(n) <= 5
-]
-
-KALAMEET_STANDARD_PATTERNS: List[Dict[str, List[Coord]]] = [
-    {"aoe": sorted(_KALAMEET_PATTERN_1)},
-    {"aoe": sorted(_KALAMEET_PATTERN_2)},
-    {"aoe": sorted(_KALAMEET_PATTERN_ROWS_1_3)},
-    {"aoe": sorted(_KALAMEET_PATTERN_ROWS_2_4)},
-    {"aoe": sorted(_KALAMEET_PATTERN_ROWS_3_5)},
-    {"aoe": sorted(_KALAMEET_PATTERN_COLS_1_3)},
-    {"aoe": sorted(_KALAMEET_PATTERN_COLS_2_4)},
-    {"aoe": sorted(_KALAMEET_PATTERN_COLS_3_5)},
-]
+KALAMEET_STANDARD_PATTERNS = LazyJsonSequence(
+    boss_mode_data_path("kalameet_fiery_ruin_standard_patterns.json")
+)
 
 
 # ---------------------------------------------------------------------------

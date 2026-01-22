@@ -20,6 +20,7 @@ from ui.boss_mode.aoe_pattern_utils import (
 )
 import streamlit as st
 from core.ngplus import get_current_ngplus_level
+from ui.boss_mode.data.json_tables import LazyJsonSequence, boss_mode_data_path
 
 Coord = Tuple[int, int]
 
@@ -43,28 +44,9 @@ EC_NODE_COORDS: List[Coord] = [c for c in NODE_COORDS if c != (3, 3)]
 #    {"pattern": [(5,1),(6,2),(5,3),(6,4),(5,5)], "start": (5,5), "destination": (5,1)}]
 # ---------------------------------------------------------------------------
 
-EC_STANDARD_PATTERNS: List[Dict[str, object]] = [
-    {
-        "dest": (1, 1),
-        "start": (5, 1),
-        "aoe": [(1, 1), (2, 0), (4, 0), (3, 1), (5, 1)],
-    },
-    {
-        "dest": (1, 5),
-        "start": (1, 1),
-        "aoe": [(1, 1), (0, 2), (1, 3), (0, 4), (1, 5)],
-    },
-    {
-        "dest": (5, 5),
-        "start": (1, 5),
-        "aoe": [(1, 5), (2, 6), (3, 5), (4, 6), (5, 5)],
-    },
-    {
-        "dest": (5, 1),
-        "start": (5, 5),
-        "aoe": [(5, 1), (6, 2), (5, 3), (6, 4), (5, 5)],
-    },
-]
+EC_STANDARD_PATTERNS = LazyJsonSequence(
+    boss_mode_data_path("executioners_chariot_death_race_standard_patterns.json")
+)
 
 
 # ---------------------------------------------------------------------------

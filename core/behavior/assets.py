@@ -67,17 +67,17 @@ BOSS_CATEGORY_MAP = {
 # -----------------------------------------------------------
 coords_map = {
     "attack_physical": {
-        "left": (44, 737),
+        "left": (37, 737),
         "middle": (291, 737),
         "right": (545, 737),
     },
     "attack_move": {
-        "left": (57, 760),
+        "left": (50, 760),
         "middle": (304, 760),
         "right": (567, 760),
     },
     "attack_magic": {
-        "left": (40, 735),
+        "left": (33, 735),
         "middle": (287, 735),
         "right": (541, 735),
     },

@@ -21,6 +21,7 @@ from ui.boss_mode.aoe_pattern_utils import (
 )
 import streamlit as st
 from core.ngplus import get_current_ngplus_level
+from ui.boss_mode.data.json_tables import LazyJsonSequence, boss_mode_data_path
 
 
 Coord = Tuple[int, int]
@@ -30,57 +31,10 @@ GUARDIAN_FIERY_BREATH_NAME = "Fiery Breath"
 GUARDIAN_CAGE_PREFIX = "Cage Grasp Inferno"
 GUARDIAN_FIERY_DECK_SIZE = 4
 
-# Same 4 standard printed patterns as before.
-GUARDIAN_STANDARD_PATTERNS = [
-    {
-        "dest": (0, 0),
-        "aoe": [
-            (2, 0),
-            (1, 1),
-            (0, 2),
-            (1, 3),
-            (2, 2),
-            (3, 1),
-            (3, 3),
-        ],
-    },
-    {
-        "dest": (6, 0),
-        "aoe": [
-            (4, 0),
-            (3, 1),
-            (5, 1),
-            (4, 2),
-            (6, 2),
-            (3, 3),
-            (5, 3),
-        ],
-    },
-    {
-        "dest": (6, 6),
-        "aoe": [
-            (4, 6),
-            (3, 5),
-            (5, 5),
-            (4, 4),
-            (6, 4),
-            (3, 3),
-            (5, 3),
-        ],
-    },
-    {
-        "dest": (0, 6),
-        "aoe": [
-            (2, 6),
-            (1, 5),
-            (3, 5),
-            (0, 4),
-            (2, 4),
-            (1, 3),
-            (3, 3),
-        ],
-    },
-]
+# Same 4 standard printed patterns as before, but JSON-backed.
+GUARDIAN_STANDARD_PATTERNS = LazyJsonSequence(
+    boss_mode_data_path("guardian_fiery_breath_standard_patterns.json")
+)
 
 
 def _guardian_pattern_is_valid(dest: Coord, aoe_nodes: Sequence[Coord]) -> bool:

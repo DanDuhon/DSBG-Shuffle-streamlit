@@ -19,6 +19,7 @@ from ui.boss_mode.aoe_pattern_utils import (
 import streamlit as st
 from ui.boss_mode.aoe_pattern_utils import candidate_nodes_for_dest, manhattan
 from core.ngplus import get_current_ngplus_level
+from ui.boss_mode.data.json_tables import LazyJsonSequence, boss_mode_data_path
 
 Coord = Tuple[int, int]
 
@@ -45,92 +46,13 @@ OIK_NODE_COORDS: List[Coord] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Printed Blasted Nodes patterns (6 cards, 3 destinations x2)
+# Printed Blasted Nodes patterns (JSON-backed)
 # Coordinates are (x, y); destination node is included in the AoE list.
 # ---------------------------------------------------------------------------
 
-OIK_STANDARD_PATTERNS: List[Dict[str, object]] = [
-    {
-        "dest": (1, 3),
-        "aoe": [
-            (0, 6),
-            (5, 1),
-            (3, 1),
-            (2, 2),
-            (4, 2),
-            (1, 3),
-            (3, 3),
-            (2, 4),
-        ],
-    },
-    {
-        "dest": (1, 3),
-        "aoe": [
-            (2, 2),
-            (1, 3),
-            (3, 3),
-            (2, 4),
-            (4, 4),
-            (3, 5),
-            (5, 5),
-            (4, 6),
-            (6, 6),
-        ],
-    },
-    {
-        "dest": (5, 3),
-        "aoe": [
-            (0, 0),
-            (1, 1),
-            (1, 3),
-            (2, 2),
-            (4, 2),
-            (3, 3),
-            (5, 3),
-            (4, 4),
-        ],
-    },
-    {
-        "dest": (5, 3),
-        "aoe": [
-            (4, 2),
-            (3, 3),
-            (5, 3),
-            (2, 4),
-            (4, 4),
-            (1, 5),
-            (3, 5),
-            (0, 6),
-            (2, 6),
-        ],
-    },
-    {
-        "dest": (3, 1),
-        "aoe": [
-            (3, 1),
-            (2, 2),
-            (4, 2),
-            (3, 3),
-            (5, 3),
-            (4, 4),
-            (5, 5),
-            (6, 6),
-        ],
-    },
-    {
-        "dest": (3, 1),
-        "aoe": [
-            (3, 1),
-            (2, 2),
-            (4, 2),
-            (1, 3),
-            (3, 3),
-            (2, 4),
-            (1, 5),
-            (0, 6),
-        ],
-    },
-]
+OIK_STANDARD_PATTERNS = LazyJsonSequence(
+    boss_mode_data_path("old_iron_king_blasted_nodes_standard_patterns.json")
+)
 
 # ---------------------------------------------------------------------------
 # Validity rules
