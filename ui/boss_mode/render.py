@@ -1,8 +1,8 @@
 # ui/boss_mode_tab.py
 import streamlit as st
 
-from core.behavior.logic import _ensure_state
-from core.behavior.render import render_health_tracker
+from ui.shared.health_tracker import render_health_tracker
+from ui.shared.behavior_session_state import ensure_behavior_session_state
 
 from ui.boss_mode.state import ensure_boss_state
 from ui.boss_mode.panels.combat_controls import render_combat_controls
@@ -22,7 +22,7 @@ BOSS_MODE_CATEGORIES = ["Mini Bosses", "Main Bosses", "Mega Bosses"]
 
 
 def render():
-    _ensure_state()
+    ensure_behavior_session_state()
 
     catalog = get_or_build_catalog()
     apply_pending_boss_preselect(catalog)

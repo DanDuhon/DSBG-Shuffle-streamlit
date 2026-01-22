@@ -1,6 +1,6 @@
 import streamlit as st
 
-from core.behavior.render import render_health_tracker
+from ui.shared.health_tracker import render_health_tracker
 
 from ui.boss_mode.panels.data_card_cases.chariot import try_render_chariot_data_card
 from ui.boss_mode.panels.data_card_cases.default import render_default_data_card

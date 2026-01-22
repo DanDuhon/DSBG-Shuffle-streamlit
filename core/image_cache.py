@@ -13,8 +13,33 @@ Provides disk-persistent caching for:
 from pathlib import Path
 from PIL import Image
 import io
-import streamlit as st
 import base64
+from functools import lru_cache
+
+
+try:
+    import streamlit as st  # type: ignore
+
+    def cache_data(*args, **kwargs):
+        return st.cache_data(*args, **kwargs)
+
+    def cache_resource(*args, **kwargs):
+        return st.cache_resource(*args, **kwargs)
+
+except Exception:  # pragma: no cover
+    st = None
+
+    def cache_data(*_args, **_kwargs):
+        def _decorator(fn):
+            return lru_cache(maxsize=None)(fn)
+
+        return _decorator
+
+    def cache_resource(*_args, **_kwargs):
+        def _decorator(fn):
+            return lru_cache(maxsize=None)(fn)
+
+        return _decorator
 
 # -------------------------------------------------------------
 # Paths and cache directories
@@ -39,7 +64,7 @@ def _stat_mtime_ns(path: Path) -> int:
     return int(path.stat().st_mtime_ns)
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def _get_image_bytes_cached(path_str: str, mtime_ns: int) -> bytes:
     """Internal cached reader keyed by (path, mtime).
 
@@ -57,7 +82,7 @@ def get_image_bytes_cached(path: str) -> bytes:
     return _get_image_bytes_cached(str(p), _stat_mtime_ns(p))
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def bytes_to_data_uri(data: object, mime: str = "image/png") -> str:
     """Convert raw bytes or a PIL Image to a data URI (cached by content hash).
 
@@ -105,7 +130,7 @@ def get_image_data_uri_cached(path: str) -> str:
 # -------------------------------------------------------------
 # PIL Image helpers (cached by file mtime)
 # -------------------------------------------------------------
-@st.cache_resource(show_spinner=False)
+@cache_resource(show_spinner=False)
 def _load_pil_image_cached_raw(
     path_str: str, mtime_ns: int, convert: str | None = None
 ) -> Image.Image:

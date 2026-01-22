@@ -1,10 +1,96 @@
 #ui/behavior_decks_tab/logic.py
-import streamlit as st
+try:
+    import streamlit as st  # type: ignore
+except Exception:  # pragma: no cover
+    class _StreamlitStub:
+        """Minimal Streamlit stub.
+
+        Allows importing this module in non-Streamlit contexts.
+        UI-centric operations (like rerun) will raise.
+        """
+
+        session_state: dict = {}
+
+        @staticmethod
+        def cache_data(*_args, **_kwargs):
+            def _decorator(fn):
+                return fn
+
+            return _decorator
+
+        @staticmethod
+        def rerun():
+            raise RuntimeError("st.rerun() called outside Streamlit")
+
+    st = _StreamlitStub()  # type: ignore
 import random
 import json
 from pathlib import Path
 from copy import deepcopy
-from typing import List, Dict, Any
+from typing import Any, Callable, Dict, List, MutableMapping
+
+
+BehaviorSessionState = MutableMapping[str, Any]
+
+_SESSION_STATE_OVERRIDE: BehaviorSessionState | None = None
+_RERUN_OVERRIDE: Callable[[], None] | None = None
+
+
+def set_behavior_runtime(
+    session_state: BehaviorSessionState | None = None,
+    *,
+    rerun: Callable[[], None] | None = None,
+) -> None:
+    """Override Streamlit runtime integration.
+
+    This is primarily for running `core.behavior.logic` in non-Streamlit contexts
+    (tests, scripts). If `session_state` is provided, it becomes the backing
+    store for all session reads/writes.
+    """
+
+    global _SESSION_STATE_OVERRIDE, _RERUN_OVERRIDE
+    _SESSION_STATE_OVERRIDE = session_state
+    _RERUN_OVERRIDE = rerun
+
+
+def _ss() -> BehaviorSessionState:
+    if _SESSION_STATE_OVERRIDE is not None:
+        return _SESSION_STATE_OVERRIDE
+
+    # Streamlit provides a dict-like proxy at st.session_state. Our stub provides
+    # a plain dict.
+    try:
+        return st.session_state  # type: ignore[attr-defined]
+    except Exception:
+        return {}
+
+
+def cache_data(*args, **kwargs):
+    """Streamlit cache decorator when available; no-op otherwise."""
+
+    try:
+        return st.cache_data(*args, **kwargs)  # type: ignore[attr-defined]
+    except Exception:
+        def _decorator(fn):
+            return fn
+
+        return _decorator
+
+
+def rerun() -> None:
+    """Request a Streamlit rerun, or use the injected override."""
+
+    if _RERUN_OVERRIDE is not None:
+        _RERUN_OVERRIDE()
+        return
+
+    if hasattr(st, "rerun"):
+        st.rerun()  # type: ignore[attr-defined]
+        return
+    if hasattr(st, "experimental_rerun"):
+        st.experimental_rerun()  # type: ignore[attr-defined]
+        return
+    raise RuntimeError("rerun() called without Streamlit; pass rerun callback via set_behavior_runtime()")
 
 from core.behavior.models import BehaviorConfig, Entity, Heatup
 from core.behavior.assets import _path, _strip_behavior_suffix
@@ -16,26 +102,14 @@ DECK_SETUP_RULES = {}
 
 
 def _ensure_state():
-    """Guarantee required Streamlit session_state keys exist."""
-    defaults = {
-        "behavior_deck": None,
-        "behavior_state": None,
-        "hp_tracker": {},
-        "last_edit": {},
-        "deck_reset_id": 0,
-        "chariot_heatup_done": False,
-        "heatup_done": False,
-        "pending_heatup_prompt": False,
-        "old_dragonslayer_heatups": 0,
-        "old_dragonslayer_pending": False,
-        "old_dragonslayer_confirmed": False,
-        "vordt_attack_heatup_done": False,
-        "vordt_move_heatup_done": False,
-    }
+    """Compatibility shim.
 
-    for key, val in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = val
+    Behavior Deck session-state defaults now live in `ui.shared.behavior_session_state`.
+    """
+
+    from ui.shared.behavior_session_state import ensure_behavior_session_state
+
+    return ensure_behavior_session_state()
 
 
 def _new_state_from_file(fpath: str, cfg: BehaviorConfig | None = None):
@@ -87,10 +161,15 @@ def _load_cfg_for_state(state):
 
 
 def _clear_heatup_prompt():
-    """Fully clear any pending heat-up UI flags."""
-    st.session_state["pending_heatup_prompt"] = False
-    st.session_state["pending_heatup_target"] = None
-    st.session_state["pending_heatup_type"] = None
+    """Compatibility shim.
+
+    Heat-up prompt flags are a Streamlit UI concern; implementation now lives in
+    `ui.shared.behavior_session_state`.
+    """
+
+    from ui.shared.behavior_session_state import clear_heatup_prompt
+
+    return clear_heatup_prompt()
     
 
 def _draw_card(state):
@@ -140,10 +219,11 @@ def _draw_card(state):
         if cfg and cfg.name == "The Four Kings":
             summons = state.get("four_kings_summons", 0)
             if summons < 3:
-                if not st.session_state.get("four_kings_summon_in_progress", False):
-                    st.session_state["four_kings_summon_in_progress"] = True
+                ss = _ss()
+                if not ss.get("four_kings_summon_in_progress", False):
+                    ss["four_kings_summon_in_progress"] = True
                     _four_kings_summon(cfg, state, random.Random())
-                    st.session_state["four_kings_summon_in_progress"] = False
+                    ss["four_kings_summon_in_progress"] = False
             else:
                 # After third summons, recycle normally
                 recycle_deck(state)
@@ -216,11 +296,11 @@ def _reset_deck(state, cfg):
     elif cfg.name == "Great Grey Wolf Sif":
         state["sif_limping"] = False
         state["sif_limping_active"] = False
-        st.session_state.pop("sif_limping_triggered", None)
+        _ss().pop("sif_limping_triggered", None)
     elif cfg.name == "The Four Kings":
         state["four_kings_summons"] = 0
         state["enabled_kings"] = 1
-        st.session_state["enabled_kings"] = 1
+        _ss()["enabled_kings"] = 1
         # restore all kings to full hp
         for ent in cfg.entities:
             ent.hp = ent.hp_max
@@ -233,7 +313,7 @@ def _reset_deck(state, cfg):
             "ornstein_smough_phase", "os_phase_shuffled_once",
             "pending_heatup_prompt", "pending_heatup_target",
         ]:
-            st.session_state.pop(k, None)
+            _ss().pop(k, None)
         state["ornstein_smough_phase"] = None
     else:
         # Clean up any leftover special keys
@@ -262,26 +342,28 @@ def _reset_deck(state, cfg):
     for ent in cfg.entities:
         ent.hp = ent.hp_max
         ent.crossed = []
-        st.session_state.pop(f"hp_{ent.id}", None)
+        _ss().pop(f"hp_{ent.id}", None)
 
     # --- Clear UI caches / flags
-    st.session_state.pop("hp_tracker", None)
-    st.session_state.pop("last_edit", None)
-    st.session_state["deck_reset_id"] = st.session_state.get("deck_reset_id", 0) + 1
-    st.session_state["chariot_heatup_done"] = False
-    st.session_state["pending_heatup_prompt"] = False
-    st.session_state["heatup_done"] = False
-    st.session_state["behavior_cfg"] = cfg
+    ss = _ss()
+    ss.pop("hp_tracker", None)
+    ss.pop("last_edit", None)
+    ss["deck_reset_id"] = ss.get("deck_reset_id", 0) + 1
+    ss["chariot_heatup_done"] = False
+    ss["pending_heatup_prompt"] = False
+    ss["heatup_done"] = False
+    ss["behavior_cfg"] = cfg
 
 def _manual_heatup(state):
     cfg = _load_cfg_for_state(state)
     if not cfg:
         return
     rng = random.Random()
+    ss = _ss()
 
     # --- Special case: Executioner's Chariot
     if cfg.name == "Executioner's Chariot":
-        st.session_state["chariot_heatup_done"] = True
+        ss["chariot_heatup_done"] = True
 
         # Rebuild from 4 regular + 1 heat-up card
         base_cards = [b for b in cfg.deck if not cfg.behaviors.get(b, {}).get("heatup", False) and "Death Race" not in b and "Mega Boss Setup" not in b]
@@ -296,35 +378,36 @@ def _manual_heatup(state):
         _ornstein_smough_heatup_ui(state, cfg)
     else:
         apply_heatup(state, cfg, rng, reason="manual")
-        st.session_state["pending_heatup_prompt"] = False
-        st.session_state["pending_heatup_target"] = None
-        st.session_state["pending_heatup_type"] = None
+        ss["pending_heatup_prompt"] = False
+        ss["pending_heatup_target"] = None
+        ss["pending_heatup_type"] = None
         if cfg.name not in {"Old Dragonslayer", "Ornstein & Smough", "Vordt of the Boreal Valley"}:
-            st.session_state["heatup_done"] = True
+            ss["heatup_done"] = True
         
 
 def _ornstein_smough_heatup_ui(state, cfg):
     rng = random.Random()
+    ss = _ss()
 
     # Decide who died and who survives, with heal amount
-    if st.session_state.get("smough_dead_pending"):
+    if ss.get("smough_dead_pending"):
         dead = "Smough"
         survivor_label = "Ornstein"
         heal_amt = 10
-        st.session_state["smough_dead_pending"] = False
-        st.session_state["smough_dead"] = True
-    elif st.session_state.get("ornstein_dead_pending"):
+        ss["smough_dead_pending"] = False
+        ss["smough_dead"] = True
+    elif ss.get("ornstein_dead_pending"):
         dead = "Ornstein"
         survivor_label = "Smough"
         heal_amt = 15
-        st.session_state["ornstein_dead_pending"] = False
-        st.session_state["ornstein_dead"] = True
+        ss["ornstein_dead_pending"] = False
+        ss["ornstein_dead"] = True
     else:
         dead = None
         survivor_label = None
         heal_amt = 0
 
-    state = st.session_state["behavior_deck"]
+    state = ss["behavior_deck"]
 
     # --- Heal survivor FIRST, from tracker (source of truth), then sync everywhere
     if survivor_label:
@@ -334,7 +417,7 @@ def _ornstein_smough_heatup_ui(state, cfg):
 
         if surv_state and surv_cfg:
             surv_id = surv_state["id"]
-            tracker = st.session_state.setdefault("hp_tracker", {})
+            tracker = ss.setdefault("hp_tracker", {})
             # current HP from tracker if present, else from state entity
             cur_hp = int(tracker.get(surv_id, {}).get("hp", surv_state["hp"]))
             new_hp = min(cur_hp + heal_amt, int(surv_state["hp_max"]))
@@ -349,9 +432,9 @@ def _ornstein_smough_heatup_ui(state, cfg):
         _ornstein_smough_heatup(state, cfg, dead, rng)
 
     # close the prompt
-    st.session_state["pending_heatup_prompt"] = False
-    st.session_state["pending_heatup_target"] = None
-    st.rerun()
+    ss["pending_heatup_prompt"] = False
+    ss["pending_heatup_target"] = None
+    rerun()
 
 def _four_kings_summon(cfg, state, rng):
     """Perform a Royal Summons (max 3)."""
@@ -366,7 +449,7 @@ def _four_kings_summon(cfg, state, rng):
     enabled_before = state.get("enabled_kings", 1)
     enabled_after = min(enabled_before + 1, 4)
     state["enabled_kings"] = enabled_after
-    st.session_state["enabled_kings"] = enabled_after
+    _ss()["enabled_kings"] = enabled_after
 
     # --- combine current + discard back into deck
     draw = state["draw_pile"]
@@ -397,7 +480,7 @@ def _four_kings_summon(cfg, state, rng):
     rng.shuffle(draw)
     
     # --- Persist enabled_kings into state for stable reloads
-    state["enabled_kings"] = st.session_state.get("enabled_kings", 1)
+    state["enabled_kings"] = _ss().get("enabled_kings", 1)
 
 
 def list_behavior_files() -> List[Path]:
@@ -419,7 +502,7 @@ def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
 # ------------------------
 # JSON Importer
 # ------------------------
-@st.cache_data
+@cache_data(show_spinner=False)
 def _read_behavior_json(path_str: str) -> dict:
     with open(path_str, "r", encoding="utf-8") as f:
         return json.load(f)
@@ -835,7 +918,7 @@ def _apply_sif_limping_mode(state, cfg):
     # Track that we've entered limping mode
     state["sif_limping"] = True
     state["sif_limping_active"] = True
-    st.session_state["sif_limping_triggered"] = True
+    _ss()["sif_limping_triggered"] = True
 
 
 def _revert_sif_limping_mode(state, cfg):
@@ -849,7 +932,7 @@ def _revert_sif_limping_mode(state, cfg):
 
     state["sif_limping"] = False
     state["sif_limping_active"] = False
-    st.session_state.pop("sif_limping_triggered", None)
+    _ss().pop("sif_limping_triggered", None)
 
 
 def _ornstein_smough_heatup(state, cfg, dead_boss, rng):
@@ -1128,10 +1211,11 @@ def _apply_vordt_heatup_special(cfg, state, rng, manual: bool) -> None:
     - Manual button heatups:
         we infer which stage(s) to apply based on vordt_*_heatup_done flags.
     """
-    pending_type = st.session_state.get("pending_heatup_type")
+    ss = _ss()
+    pending_type = ss.get("pending_heatup_type")
 
-    attack_done = st.session_state.get("vordt_attack_heatup_done", False)
-    move_done   = st.session_state.get("vordt_move_heatup_done", False)
+    attack_done = ss.get("vordt_attack_heatup_done", False)
+    move_done   = ss.get("vordt_move_heatup_done", False)
 
     if manual and not pending_type:
         # Manual heatup with no HP context: choose first unfinished stage(s)
@@ -1146,20 +1230,20 @@ def _apply_vordt_heatup_special(cfg, state, rng, manual: bool) -> None:
     # Apply to the appropriate deck(s)
     if pending_type in ("vordt_attack", "vordt_both"):
         _apply_vordt_heatup(cfg, state, rng, which="attack")
-        st.session_state["vordt_attack_heatup_done"] = True
+        ss["vordt_attack_heatup_done"] = True
 
     if pending_type in ("vordt_move", "vordt_both"):
         _apply_vordt_heatup(cfg, state, rng, which="move")
-        st.session_state["vordt_move_heatup_done"] = True
+        ss["vordt_move_heatup_done"] = True
         
     # Show Frostbreath on the next draw after any heatup
     if pending_type in ("vordt_attack", "vordt_move", "vordt_both"):
         state["vordt_frostbreath_pending"] = True
 
     # Clear prompt flags (used for HP-driven prompts)
-    st.session_state["pending_heatup_prompt"] = False
-    st.session_state["pending_heatup_target"] = None
-    st.session_state["pending_heatup_type"] = None
+    ss["pending_heatup_prompt"] = False
+    ss["pending_heatup_target"] = None
+    ss["pending_heatup_type"] = None
 
 
 def apply_maldron_heatup(cfg, state, rng):
@@ -1175,7 +1259,7 @@ def apply_maldron_heatup(cfg, state, rng):
         if "Maldron" in ent.label:
             ent.hp = ent.hp_max
 
-    tracker = st.session_state.setdefault("hp_tracker", {})
+    tracker = _ss().setdefault("hp_tracker", {})
 
     for ent in cfg.entities:
         ent_id = ent.id

@@ -11,7 +11,6 @@ from core.behavior.generation import (
     render_behavior_card_cached,
 )
 from core.behavior.logic import (
-    _ensure_state,
     _new_state_from_file,
     _load_cfg_for_state,
     _draw_card,
@@ -21,6 +20,7 @@ from core.behavior.logic import (
 from core.behavior.models import BehaviorEntry, BehaviorConfig
 from ui.encounter_mode.state import play_state
 from core.ngplus import get_current_ngplus_level
+from ui.shared.behavior_session_state import ensure_behavior_session_state
 
 
 # ---------------------------------------------------------------------------
@@ -36,7 +36,7 @@ def render_invaders_tab(encounter: dict) -> None:
     - If exactly one, render that invader directly.
     - If multiple, show a radio to select which invader to control.
     """
-    _ensure_state()  # make sure hp_tracker / heatup flags exist
+    ensure_behavior_session_state()  # make sure hp_tracker / heatup flags exist
 
     entries = _get_invader_behavior_entries_for_encounter(encounter)
     if not entries:

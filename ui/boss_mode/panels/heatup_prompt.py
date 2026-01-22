@@ -2,7 +2,8 @@ import random
 
 import streamlit as st
 
-from core.behavior.logic import apply_heatup, _clear_heatup_prompt, _ornstein_smough_heatup_ui
+from core.behavior.logic import apply_heatup, _ornstein_smough_heatup_ui
+from ui.shared.behavior_session_state import clear_heatup_prompt
 
 
 def render_heatup_prompt(*, cfg, state) -> None:
@@ -32,7 +33,7 @@ def render_heatup_prompt(*, cfg, state) -> None:
                 rng = random.Random()
                 apply_heatup(state, cfg, rng, reason="auto")
 
-                _clear_heatup_prompt()
+                clear_heatup_prompt()
                 st.session_state["pending_heatup_prompt"] = False
                 st.session_state["pending_heatup_target"] = None
                 st.session_state["pending_heatup_type"] = None
@@ -47,7 +48,7 @@ def render_heatup_prompt(*, cfg, state) -> None:
 
         with confirm_cols[1]:
             if st.button("Cancel ❌", key="boss_mode_cancel_heatup", width="stretch"):
-                _clear_heatup_prompt()
+                clear_heatup_prompt()
                 st.session_state["heatup_done"] = False
                 st.rerun()
 
@@ -62,12 +63,12 @@ def render_heatup_prompt(*, cfg, state) -> None:
                     "Confirm Heat-Up 🔥", key="boss_mode_ods_confirm", width="stretch"
                 ):
                     state["old_dragonslayer_confirmed"] = True
-                    _clear_heatup_prompt()
+                    clear_heatup_prompt()
                     apply_heatup(state, cfg, random.Random(), reason="manual")
                     st.rerun()
             with c2:
                 if st.button("Cancel ❌", key="boss_mode_ods_cancel", width="stretch"):
-                    _clear_heatup_prompt()
+                    clear_heatup_prompt()
                     state["old_dragonslayer_pending"] = False
                     state["old_dragonslayer_confirmed"] = False
                     st.rerun()

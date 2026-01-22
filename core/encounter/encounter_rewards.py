@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, TypedDict, Literal
 
-from core.encounter_rules import make_encounter_key
+from core.encounter.encounter_rules import make_encounter_key
 
 
 RewardType = Literal[

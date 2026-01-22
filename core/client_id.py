@@ -6,7 +6,10 @@ try:
 except Exception:
     st_javascript = None
 
-import streamlit as st
+try:
+    import streamlit as st  # type: ignore
+except Exception:  # pragma: no cover
+    st = None
 
 LOCALSTORAGE_KEY = "dsbg_client_id"
 
@@ -18,6 +21,8 @@ def get_or_create_client_id() -> str:
     generated UUID stored in `st.session_state` if the JS bridge is not
     available.
     """
+    if st is None:
+        raise RuntimeError("core.client_id.get_or_create_client_id requires Streamlit")
     # 1) Prefer value already in session state
     try:
         cid = st.session_state.get("client_id")

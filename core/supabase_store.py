@@ -20,19 +20,35 @@ from typing import Any, Dict, List, Optional
 import os
 import json
 import requests
-import streamlit as st
+
+
+def _maybe_streamlit():
+    try:
+        import streamlit as st  # type: ignore
+
+        return st
+    except Exception:
+        return None
 
 
 def _base_url_from_env() -> str:
     # Prefer environment variables for non-Streamlit runs (scripts, Docker).
-    url = os.environ.get("SUPABASE_URL") or (st.secrets.get("SUPABASE_URL") if hasattr(st, "secrets") else None)
+    url = os.environ.get("SUPABASE_URL")
+    if not url:
+        st = _maybe_streamlit()
+        if st is not None and hasattr(st, "secrets"):
+            url = st.secrets.get("SUPABASE_URL")
     if not url:
         raise EnvironmentError("SUPABASE_URL not set in env or st.secrets")
     return url.rstrip("/")
 
 
 def _key_from_env() -> str:
-    key = os.environ.get("SUPABASE_KEY") or (st.secrets.get("SUPABASE_KEY") if hasattr(st, "secrets") else None)
+    key = os.environ.get("SUPABASE_KEY")
+    if not key:
+        st = _maybe_streamlit()
+        if st is not None and hasattr(st, "secrets"):
+            key = st.secrets.get("SUPABASE_KEY")
     if not key:
         raise EnvironmentError("SUPABASE_KEY not set in env or st.secrets")
     return key
@@ -75,12 +91,7 @@ def upsert_document(
         resp = requests.post(url, headers=headers, params=params, json=[payload], timeout=10)
         resp.raise_for_status()
         return resp.json()
-    except Exception as exc:
-        # Surface helpful message for debugging in Streamlit context
-        try:
-            st.error(f"Supabase upsert error: {exc}")
-        except Exception:
-            pass
+    except Exception:
         raise
 
 
@@ -103,11 +114,7 @@ def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) ->
         if not arr:
             return None
         return arr[0]["data"]
-    except Exception as exc:
-        try:
-            st.error(f"Supabase get_document error: {exc}")
-        except Exception:
-            pass
+    except Exception:
         return None
 
 

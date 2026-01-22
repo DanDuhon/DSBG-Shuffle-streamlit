@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Dict
-from core.encounter_rules import make_encounter_key
-from core.encounter_triggers import get_triggers_for_encounter
+from core.encounter.encounter_rules import make_encounter_key
+from core.encounter.encounter_triggers import get_triggers_for_encounter
 
 
 # ---------------------------------------------------------------------

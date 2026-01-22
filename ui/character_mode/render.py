@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 from typing import Any, Dict, List, Set
 import itertools
-from core.character_stats import CLASS_TIERS, TIERS
+from core.character.character_stats import CLASS_TIERS, TIERS
 from ui.character_mode.build import _build_stats, _validate_build, _eligibility_issues
 from ui.character_mode.constants import (
     HAND_CONDITION_OPTIONS,

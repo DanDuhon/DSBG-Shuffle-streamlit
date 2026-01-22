@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 import streamlit as st
 
 from core.encounter import timer as timer_mod
-from core.encounter_rules import get_rules_for_encounter, make_encounter_key
+from core.encounter.encounter_rules import get_rules_for_encounter, make_encounter_key
 from core.image_cache import get_image_bytes_cached
 from ui.campaign_mode.core import ENCOUNTER_GRAVESTONES
 from ui.campaign_mode.generation import _v2_pick_scout_ahead_alt_frozen

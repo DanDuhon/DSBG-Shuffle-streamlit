@@ -3,7 +3,10 @@ import math
 from copy import deepcopy
 from typing import Any, Dict, Optional
 
-import streamlit as st
+try:
+    import streamlit as st  # type: ignore
+except Exception:  # pragma: no cover
+    st = None  # type: ignore
 
 MAX_NGPLUS_LEVEL = 5
 
@@ -27,7 +30,10 @@ def get_current_ngplus_level() -> int:
     Return the currently selected NG+ level from Streamlit state.
     Defaults to 0 (base game).
     """
-    level = int(st.session_state.get("ngplus_level", 0))
+    if st is None:
+        level = 0
+    else:
+        level = int(st.session_state.get("ngplus_level", 0))
     return max(0, min(MAX_NGPLUS_LEVEL, level))
 
 

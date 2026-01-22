@@ -1,6 +1,20 @@
 from typing import Any, Dict, List, Optional, Set
 from ui.character_mode.attacks import _attack_has_dice
-from ui.character_mode.item_fields import _armor_dodge_int, _armor_has_special_rules, _armor_upgrade_slots_int, _hand_dodge_int, _hand_hands_required_int, _hand_range_str, _hand_upgrade_slots_int, _immunities_set, _is_legendary, _item_expansions, _item_requirements, _meets_requirements, _src_str
+from ui.character_mode.item_fields import (
+    _armor_dodge_int,
+    _armor_has_special_rules,
+    _armor_upgrade_slots_int,
+    _hand_dodge_int,
+    _hand_hands_required_int,
+    _hand_range_str,
+    _hand_upgrade_slots_int,
+    _immunities_set,
+    _is_legendary,
+    _item_expansions,
+    _item_requirements,
+    _meets_requirements,
+    _src_str
+)
 
 
 def _hand_has_attacks_with_dice(item: Dict[str, Any]) -> bool:

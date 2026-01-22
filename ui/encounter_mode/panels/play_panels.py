@@ -7,8 +7,8 @@ import streamlit as st
 import re
 
 from core.encounter import templates, objectives as obj_mod
-from core.encounter_rewards import get_v1_reward_config_for_encounter
-from core.encounter_rules import (
+from core.encounter.encounter_rewards import get_v1_reward_config_for_encounter
+from core.encounter.encounter_rules import (
     make_encounter_key,
     get_rules_for_encounter,
     get_upcoming_rules_for_encounter,
@@ -17,7 +17,7 @@ from core.encounter_rules import (
     get_all_rules_for_encounter,
     get_all_rules_for_event,
 )
-from core.encounter_triggers import (
+from core.encounter.encounter_triggers import (
     EncounterTrigger,
     get_triggers_for_encounter,
     get_triggers_for_event,
@@ -348,7 +348,7 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     souls_multipliers: list[int] = []
 
     # ---- Encounter-level rewards ----
-    from core.encounter_rewards import get_reward_config_for_key  # local import to avoid cycles
+    from core.encounter.encounter_rewards import get_reward_config_for_key  # local import to avoid cycles
 
     if is_v1:
         enc_cfg = get_v1_reward_config_for_encounter(encounter)

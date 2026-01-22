@@ -1,5 +1,4 @@
 import json
-import streamlit as st
 import os
 import uuid
 from copy import deepcopy
@@ -44,18 +43,50 @@ DEFAULT_SETTINGS = {
     },
 }
 
+
+def _maybe_streamlit():
+    """Return the imported streamlit module if available, else None.
+
+    Keeping this optional allows non-Streamlit scripts/tools to import this module
+    without hard-depending on Streamlit.
+    """
+
+    try:
+        import streamlit as st  # type: ignore
+
+        return st
+    except Exception:
+        return None
+
+
+def _runtime_client_id() -> str | None:
+    """Best-effort client id lookup.
+
+    Order:
+    - env var (for scripts): DSBG_CLIENT_ID
+    - Streamlit session_state["client_id"] when running in Streamlit
+    """
+
+    cid = os.environ.get("DSBG_CLIENT_ID")
+    if cid:
+        return cid
+
+    st = _maybe_streamlit()
+    if st is None:
+        return None
+    try:
+        return st.session_state.get("client_id")
+    except Exception:
+        return None
+
 def load_settings():
     """Load saved user settings, merged with defaults."""
     merged = deepcopy(DEFAULT_SETTINGS)
 
     # Choose storage backend: Supabase when configured, otherwise local JSON.
     if _has_supabase_config():
-        # If the session has a client id, prefer per-client settings
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        # Prefer per-client settings when we can determine a client_id.
+        client_id = _runtime_client_id()
 
         loaded = None
         if client_id:
@@ -99,40 +130,16 @@ def save_settings(settings: dict):
     """Persist settings to Supabase if configured, otherwise to local JSON."""
     if _has_supabase_config():
         # Determine or create a client_id to persist per-client documents.
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
-
-        if not client_id:
-            client_id = settings.get("client_id")
-
+        client_id = settings.get("client_id") or _runtime_client_id()
         if not client_id:
             client_id = str(uuid.uuid4())
             settings["client_id"] = client_id
-            try:
-                st.session_state["client_id"] = client_id
-            except Exception:
-                pass
 
-        # Attempt to persist to Supabase using the per-client id and surface a one-time UI message.
+        # Attempt to persist to Supabase using the per-client id.
         try:
             res = supabase_store.upsert_document("user_settings", "default", settings, user_id=client_id)
-            # Avoid repeated notifications in the same Streamlit session
-            try:
-                if st and not st.session_state.get("supabase_tested"):
-                    st.success("Settings saved to Supabase successfully.")
-                    st.session_state["supabase_tested"] = True
-            except Exception:
-                pass
             return res
         except Exception as exc:
-            try:
-                if st:
-                    st.error(f"Failed to save settings to Supabase: {exc}")
-            except Exception:
-                pass
             return False
 
     SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)

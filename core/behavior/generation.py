@@ -1,5 +1,4 @@
 # ui/behavior_decks_tab/generation.py
-import streamlit as st
 import json
 import hashlib
 import io
@@ -7,6 +6,23 @@ from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 from typing import Dict, Any, Optional
 from collections import defaultdict
+
+try:
+    import streamlit as st  # type: ignore
+except Exception:  # pragma: no cover
+    st = None  # type: ignore
+
+
+def cache_data(*args, **kwargs):
+    """Streamlit cache decorator when available; no-op otherwise."""
+
+    if st is not None:
+        return st.cache_data(*args, **kwargs)
+
+    def decorator(func):
+        return func
+
+    return decorator
 
 from core.behavior.assets import (
     ICONS_DIR,
@@ -24,7 +40,7 @@ from core.behavior.logic import load_behavior, list_behavior_files
 from core.ngplus import get_current_ngplus_level
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def render_data_card_cached(
     base_path: str,
     raw_json: Dict[str, Any],
@@ -41,7 +57,7 @@ def render_data_card_cached(
     return render_data_card(base_path, raw_json, is_boss, no_edits)
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def render_behavior_card_cached(
     base_path: str,
     behavior_json: Dict[str, Any],
@@ -82,7 +98,7 @@ def infer_category(cfg) -> str:
     return BOSS_CATEGORY_MAP.get(cfg.name, "Main Bosses")
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
     """Scan behavior JSON files and group them by category for the UI.
 
@@ -242,7 +258,7 @@ def _overlay_push_node_icon(
     base.alpha_composite(icon, (x, y))
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def render_data_card(
     base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
 ) -> bytes:
@@ -362,7 +378,7 @@ def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
     return buf_o.getvalue(), buf_s.getvalue()
 
 
-@st.cache_data(show_spinner=False)
+@cache_data(show_spinner=False)
 def render_behavior_card(
     base_path: str, behavior_json: dict, *, is_boss: bool, base_card: Image = None
 ) -> bytes:
