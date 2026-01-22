@@ -1,33 +1,9 @@
-# ui/event_mode/event_card_type.py
-EVENT_CARD_TYPE: dict[str, str] = {
-    "Alluring Skull": "Consumable",
-    "Big Pilgrim's Key": "Rendezvous",
-    "Blacksmith's Trial": "Consumable",
-    "Bleak Bonfire Ascetic": "Rendezvous",
-    "Bloodstained Bonfire Ascetic": "Rendezvous",
-    "Cracked Bonfire Ascetic": "Rendezvous",
-    "Firekeeper's Boon": "Immediate",
-    "Fleeting Glory": "Consumable",
-    "Forgotten Supplies": "Immediate",
-    "Frozen Bonfire Ascetic": "Rendezvous",
-    "Green Blossom": "Consumable",
-    "Hearty Bonfire Ascetic": "Rendezvous",
-    "Lifegem": "Consumable",
-    "Lost Envoy": "Rendezvous",
-    "Lost to Time": "Immediate",
-    "Martial Bonfire Ascetic": "Rendezvous",
-    "Obscured Knowledge": "Immediate",
-    "Pine Resin": "Consumable",
-    "Princess Guard": "Consumable",
-    "Rare Vagrant": "Rendezvous",
-    "Repair Powder": "Consumable",
-    "Rite of Rekindling": "Consumable",
-    "Scout Ahead": "Rendezvous",
-    "Scrying Stone": "Immediate",
-    "Skeletal Reforging": "Immediate",
-    "Stolen Artifact": "Immediate",
-    "Trustworthy Promise": "Rendezvous",
-    "Undead Merchant": "Rendezvous",
-    "Unhallowed Offering": "Immediate",
-    "Virulent Bonfire Ascetic": "Rendezvous",
-}
+"""Event card type/category (JSON-backed).
+
+Kept as a module-level dict for backward-compatible imports.
+"""
+
+from ui.event_mode.event_card_meta import get_event_card_type_map
+
+
+EVENT_CARD_TYPE: dict[str, str] = get_event_card_type_map()

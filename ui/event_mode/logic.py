@@ -8,9 +8,14 @@ from typing import Any, Dict, List, Optional
 from collections import defaultdict
 from datetime import datetime, timezone
 from core import supabase_store
-from core.settings_manager import _has_supabase_config
+from core.settings_manager import _has_supabase_config, save_settings
 from ui.event_mode.event_card_text import EVENT_CARD_TEXT
 from ui.event_mode.event_card_type import EVENT_CARD_TYPE
+from ui.event_mode.event_card_meta import (
+    get_event_behavior_modifiers_map,
+    get_event_draw_rewards_map,
+    get_event_rewards_map,
+)
 
 
 DATA_DIR = Path("data/events")
@@ -26,292 +31,14 @@ V2_EXPANSIONS = [
 CUSTOM_DECKS_PATH = Path("data/custom_event_decks.json")
 CUSTOM_PREFIX = "Custom: "
 
-RENDEZVOUS_EVENTS = {
-    "Big Pilgrim's Key",
-    "Bleak Bonfire Ascetic",
-    "Bloodstained Bonfire Ascetic",
-    "Cracked Bonfire Ascetic",
-    "Frozen Bonfire Ascetic",
-    "Hearty Bonfire Ascetic",
-    "Lost Envoy",
-    "Martial Bonfire Ascetic",
-    "Rare Vagrant",
-    "Scout Ahead",
-    "Trustworthy Promise",
-    "Undead Merchant",
-    "Virulent Bonfire Ascetic"
-}
+# Event categories are derived from EVENT_CARD_TYPE to avoid drift.
+RENDEZVOUS_EVENTS = {name for name, t in EVENT_CARD_TYPE.items() if t == "Rendezvous"}
+CONSUMABLE_EVENTS = {name for name, t in EVENT_CARD_TYPE.items() if t == "Consumable"}
+IMMEDIATE_EVENTS = {name for name, t in EVENT_CARD_TYPE.items() if t == "Immediate"}
 
-CONSUMABLE_EVENTS = {
-    "Alluring Skull",
-    "Blacksmith's Trial",
-    "Fleeting Glory",
-    "Green Blossom",
-    "Lifegem",
-    "Pine Resin",
-    "Princess Guard",
-    "Repair Powder",
-    "Rite of Rekindling"
-}
-
-IMMEDIATE_EVENTS = {
-    "Firekeeper's Boon",
-    "Forgotten Supplies",
-    "Lost to Time",
-    "Obscured Knowledge",
-    "Scrying Stone",
-    "Skeletal Reforging",
-    "Stolen Artifact",
-    "Unhallowed Offering"
-}
-
-EVENT_BEHAVIOR_MODIFIERS = {
-    "Bleak Bonfire Ascetic": [
-        {
-            "id": "bleak_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "bleak_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "dodge_difficulty",
-            "op": "add",
-            "value": 1,
-            "description": "+1 dodge difficulty from Bleak Bonfire Ascetic event"
-        }
-    ],
-    "Bloodstained Bonfire Ascetic": [
-        {
-            "id": "bloodstained_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "bloodstained_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "bleed",
-            "op": "flag",
-            "value": True,
-            "description": "Bleed from Bloodstained Bonfire Ascetic event"
-        }
-    ],
-    "Cracked Bonfire Ascetic": [
-        {
-            "id": "cracked_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "cracked_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "stagger",
-            "op": "flag",
-            "value": True,
-            "description": "Stagger from Cracked Bonfire Ascetic event"
-        }
-    ],
-    "Frozen Bonfire Ascetic": [
-        {
-            "id": "frozen_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "frozen_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "frostbite",
-            "op": "flag",
-            "value": True,
-            "description": "Frostbite from Frozen Bonfire Ascetic event"
-        }
-    ],
-    "Hearty Bonfire Ascetic": [
-        {
-            "id": "hearty_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "hearty_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "health",
-            "op": "add",
-            "value": 1,
-            "description": "+1 max HP from Hearty Bonfire Ascetic event"
-        }
-    ],
-    "Martial Bonfire Ascetic": [
-        {
-            "id": "martial_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "martial_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "damage",
-            "op": "add",
-            "value": 1,
-            "description": "+1 damage from Martial Bonfire Ascetic event"
-        }
-    ],
-    "Virulent Bonfire Ascetic": [
-        {
-            "id": "virulent_bonfire_ascetic_effect",
-            "source": "event",
-            "source_id": "virulent_bonfire_ascetic",
-            "target": "all_enemies",
-            "stat": "poison",
-            "op": "flag",
-            "value": True,
-            "description": "Poison from Virulent Bonfire Ascetic event"
-        }
-    ],
-}
-
-EVENT_REWARDS: Dict[str, List[dict]] = {
-    "Blacksmith's Trial": [
-        {
-            "type": "text",
-            "text": "Search the treasure deck until an upgrade card is revealed, then either add it to the inventory or use it to upgrade a card. Then, shuffle the treasure deck."
-        },
-    ],
-    "Big Pilgrim's Key": [
-        {
-            "type": "shortcut",
-        }
-    ],
-    "Bleak Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Bloodstained Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Cracked Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Frozen Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Hearty Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Martial Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Virulent Bonfire Ascetic": [
-        {
-            "type": "souls",
-            "per_player": 1,
-            "flat": 2
-        },
-    ],
-    "Trustworthy Promise": [
-        {
-            "type": "text",
-            "text": "Toss the Patches token. If it lands bright side face up, double the amount of souls the characters earn from the encounter. If it lands with the corroded side face up, the characters do not earn any souls from the encounter."
-        },
-    ],
-    "Undead Merchant": [
-        {
-            "type": "text",
-            "text": "The party can purchase treasure."
-        },
-    ],
-}
-
-# Rewards that resolve immediately when an event card is drawn
-# (before the encounter is played). These are separate from
-# EVENT_REWARDS, which are applied as part of the encounter’s
-# end-of-fight reward calculation.
-#
-# Keys MUST match the card's base filename / event id:
-#   base = os.path.splitext(os.path.basename(card_path))[0]
-# which is exactly what _attach_event_to_current_encounter uses
-# for "id"/"name", and what EVENT_REWARDS is keyed on.
-#
-# Schema for each entry (same as EVENT_REWARDS):
-#   {
-#       "type": "souls" | "treasure" | "text" | "shortcut",
-#       # For "souls":
-#       "per_player": int,    # optional, souls per character
-#       "flat": int,          # optional, flat souls
-#       # For "treasure":
-#       "flat": int,          # number of treasure cards to draw
-#       # For "text":
-#       "text": str,          # descriptive/manual effect
-#   }
-#
-# Example entries; replace with real data.
-EVENT_DRAW_REWARDS: Dict[str, List[dict]] = {
-    "Firekeeper's Boon": [
-        {
-            "type": "text",
-            "text": "Choose a character. That character can upgrade a stat without spending souls."
-        }
-    ],
-    "Forgotten Supplies": [
-        {
-            "type": "text",
-            "text": "Choose a character. That character can upgrade a stat without spending souls."
-        }
-    ],
-    "Lost to Time": [
-        {
-            "type": "text",
-            "text": "One at a time, roll 1 black die for each card in the inventory. The first time a blank result is rolled, discard the treasure card."
-        }
-    ],
-    "Obscured Knowledge": [
-        {
-            "type": "text",
-            "text": "Choose a character. This character can immediately equip a card in the inventory, ignoring the card's minimum stat requirements."
-        }
-    ],
-    "Rite of Rekindling": [
-        {
-            "type": "text",
-            "text": "The next time the party returns to the bonfire, each character can undo any number of their upgraded stats, and return the number of souls spent upgrading them to the soul cache."
-        }
-    ],
-    "Scrying Stone": [
-        {
-            "type": "text",
-            "text": "Look at the top three cards from the event deck, return each to either the top or bottom of the deck in an order of your choosing."
-        }
-    ],
-    "Skeletal Reforging": [
-        {
-            "type": "text",
-            "text": "Discard up to three cards from the inventory. Gain one soul for each card discarded."
-        }
-    ],
-    "Stolen Artifact": [
-        {
-            "type": "text",
-            "text": "Draw five treasure cards from the treasure deck. Place one card in the inventory, then return the remaining cards to the bottom of the deck."
-        }
-    ],
-    "Undead Merchant": [
-        {
-            "type": "text",
-            "text": "The party can purchase treasure."
-        }
-    ],
-    "Unhallowed Offering": [
-        {
-            "type": "text",
-            "text": "Each character can flip any number of their player tokens to their used face. Add a soul to the soul cache for each token that was flipped."
-        }
-    ],
-}
+EVENT_BEHAVIOR_MODIFIERS = get_event_behavior_modifiers_map()
+EVENT_REWARDS: Dict[str, List[dict]] = get_event_rewards_map()
+EVENT_DRAW_REWARDS: Dict[str, List[dict]] = get_event_draw_rewards_map()
 
 
 def _utc_now_iso() -> str:
@@ -621,6 +348,52 @@ def _ensure_deck_state(settings: Dict[str, Any]) -> Dict[str, Any]:
     state = {"draw_pile": [], "discard_pile": [], "current_card": None, "preset": None}
     st.session_state[DECK_STATE_KEY] = state
     return state
+
+
+def ensure_event_deck_ready(
+    settings: Dict[str, Any],
+    *,
+    configs: Optional[Dict[str, Any]] = None,
+    preset: Optional[str] = None,
+) -> Optional[str]:
+    """Ensure an initialized event deck exists and is persisted.
+
+    Used by non-Event-Mode flows (e.g. Campaign/Encounter) that need to draw
+    events without rendering the full simulator UI.
+
+    - Ensures a deck state exists in `st.session_state`
+    - Chooses a preset (argument > session > settings > first available)
+    - Initializes deck if preset changed or draw pile empty
+    - Persists `settings['event_deck']` via `save_settings`
+
+    Keeps behavior consistent with Event Mode and avoids duplicated init code.
+    """
+
+    if configs is None:
+        configs = load_event_configs()
+
+    deck_state = _ensure_deck_state(settings)
+    saved_deck_cfg = settings.get("event_deck") or {}
+
+    chosen = (
+        preset
+        or deck_state.get("preset")
+        or (saved_deck_cfg.get("preset") if isinstance(saved_deck_cfg, dict) else None)
+    )
+
+    if not chosen:
+        opts = list_event_deck_options(configs=configs)
+        chosen = opts[0] if opts else None
+
+    if not chosen:
+        return None
+
+    if deck_state.get("preset") != chosen or not list(deck_state.get("draw_pile") or []):
+        initialize_event_deck(chosen, configs=configs)
+
+    settings["event_deck"] = st.session_state.get(DECK_STATE_KEY)
+    save_settings(settings)
+    return chosen
 
 
 def _attach_event_to_current_encounter(*args) -> None:

@@ -19,14 +19,13 @@ from ui.campaign_mode.state import (
 from ui.encounter_mode.tabs import play_tab as encounter_play_tab
 from ui.event_mode.logic import (
     load_event_configs,
-    initialize_event_deck,
+    ensure_event_deck_ready,
     draw_event_card,
     DECK_STATE_KEY,
     compute_draw_rewards_for_card,
     RENDEZVOUS_EVENTS,
     CONSUMABLE_EVENTS,
     IMMEDIATE_EVENTS,
-    list_event_deck_options,
 )
 
 
@@ -58,34 +57,8 @@ def _event_kind_for_card(base_id: str, configs: Dict[str, Any]) -> str:
 
 
 def _ensure_event_deck_ready(settings: Dict[str, Any], configs: Dict[str, Any]) -> Optional[str]:
-    deck_state = st.session_state.get(DECK_STATE_KEY)
-    if not deck_state:
-        deck_state = settings.get("event_deck") or {
-            "draw_pile": [],
-            "discard_pile": [],
-            "current_card": None,
-            "preset": None,
-        }
-        st.session_state[DECK_STATE_KEY] = deck_state
-
-    saved_deck_cfg = settings.get("event_deck") or {}
-    preset = deck_state.get("preset") or saved_deck_cfg.get("preset")
-    if not preset:
-        opts = list_event_deck_options(configs=configs)
-        preset = opts[0] if opts else None
-    if not preset:
-        return None
-
-    if deck_state.get("preset") != preset or not deck_state.get("draw_pile"):
-        initialize_event_deck(preset, configs=configs)
-
-    # Persist whatever the deck is now
-    deck_state = st.session_state.get(DECK_STATE_KEY)
-    if deck_state:
-        settings["event_deck"] = deck_state
-        save_settings(settings)
-
-    return preset
+    # Backward-compatible wrapper around the shared helper.
+    return ensure_event_deck_ready(settings, configs=configs)
 
 
 def _consume_fight_attached_events(state: Dict[str, Any], current_node: Dict[str, Any]) -> None:

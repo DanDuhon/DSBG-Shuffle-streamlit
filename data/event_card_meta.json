@@ -1,0 +1,341 @@
+{
+  "schema_version": 1,
+  "cards": {
+    "Alluring Skull": {
+      "type": "Consumable",
+      "text": "+1 dodge."
+    },
+    "Big Pilgrim's Key": {
+      "type": "Rendezvous",
+      "text": "Add a shortcut.",
+      "encounter_rewards": [
+        {
+          "type": "shortcut"
+        }
+      ]
+    },
+    "Blacksmith's Trial": {
+      "type": "Consumable",
+      "text": "Reroll an attack/defence roll, gain an upgrade treasure if you don't.",
+      "encounter_rewards": [
+        {
+          "type": "text",
+          "text": "Search the treasure deck until an upgrade card is revealed, then either add it to the inventory or use it to upgrade a card. Then, shuffle the treasure deck."
+        }
+      ]
+    },
+    "Bleak Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemies get +1 dodge difficulty.",
+      "behavior_modifiers": [
+        {
+          "id": "bleak_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "bleak_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "dodge_difficulty",
+          "op": "add",
+          "value": 1,
+          "description": "+1 dodge difficulty from Bleak Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    },
+    "Bloodstained Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemy attacks gain Bleed.",
+      "behavior_modifiers": [
+        {
+          "id": "bloodstained_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "bloodstained_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "bleed",
+          "op": "flag",
+          "value": true,
+          "description": "Bleed from Bloodstained Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    },
+    "Cracked Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemy attacks gain Stagger.",
+      "behavior_modifiers": [
+        {
+          "id": "cracked_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "cracked_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "stagger",
+          "op": "flag",
+          "value": true,
+          "description": "Stagger from Cracked Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    },
+    "Firekeeper's Boon": {
+      "type": "Immediate",
+      "text": "Upgrade a stat for free.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Choose a character. That character can upgrade a stat without spending souls."
+        }
+      ]
+    },
+    "Fleeting Glory": {
+      "type": "Consumable",
+      "text": "Double or nothing souls. Full heal instead of dying."
+    },
+    "Forgotten Supplies": {
+      "type": "Immediate",
+      "text": "Refresh all tokens.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Choose a character. That character can upgrade a stat without spending souls."
+        }
+      ]
+    },
+    "Frozen Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemy attacks gain Frostbite.",
+      "behavior_modifiers": [
+        {
+          "id": "frozen_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "frozen_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "frostbite",
+          "op": "flag",
+          "value": true,
+          "description": "Frostbite from Frozen Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    },
+    "Green Blossom": {
+      "type": "Consumable",
+      "text": "Move without spending stamina."
+    },
+    "Hearty Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemies get +1 health.",
+      "behavior_modifiers": [
+        {
+          "id": "hearty_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "hearty_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "health",
+          "op": "add",
+          "value": 1,
+          "description": "+1 max HP from Hearty Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    },
+    "Lifegem": {
+      "type": "Consumable",
+      "text": "Heal 1 at the start of each turn."
+    },
+    "Lost Envoy": {
+      "type": "Rendezvous",
+      "text": "One character isn't placed until a certain Timer value."
+    },
+    "Lost to Time": {
+      "type": "Immediate",
+      "text": "Potentially lose an item from the inventory.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "One at a time, roll 1 black die for each card in the inventory. The first time a blank result is rolled, discard the treasure card."
+        }
+      ]
+    },
+    "Martial Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemy attacks get +1 damage.",
+      "behavior_modifiers": [
+        {
+          "id": "martial_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "martial_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "damage",
+          "op": "add",
+          "value": 1,
+          "description": "+1 damage from Martial Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    },
+    "Obscured Knowledge": {
+      "type": "Immediate",
+      "text": "Equip an item, ignoring stats.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Choose a character. This character can immediately equip a card in the inventory, ignoring the card's minimum stat requirements."
+        }
+      ]
+    },
+    "Pine Resin": {
+      "type": "Consumable",
+      "text": "+1 damage."
+    },
+    "Princess Guard": {
+      "type": "Consumable",
+      "text": "Ignore a fatal attack, gain an Ember if you don't."
+    },
+    "Rare Vagrant": {
+      "type": "Rendezvous",
+      "text": "Draw 2 treasure."
+    },
+    "Repair Powder": {
+      "type": "Consumable",
+      "text": "-1 damage from enemy attacks."
+    },
+    "Rite of Rekindling": {
+      "type": "Consumable",
+      "text": "Undo stat upgrades.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "The next time the party returns to the bonfire, each character can undo any number of their upgraded stats, and return the number of souls spent upgrading them to the soul cache."
+        }
+      ]
+    },
+    "Scout Ahead": {
+      "type": "Rendezvous",
+      "text": "Get another encounter option."
+    },
+    "Scrying Stone": {
+      "type": "Immediate",
+      "text": "You may discard any of the next 3 event cards.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Look at the top three cards from the event deck, return each to either the top or bottom of the deck in an order of your choosing."
+        }
+      ]
+    },
+    "Skeletal Reforging": {
+      "type": "Immediate",
+      "text": "Discard up to 3 items for 1 soul each.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Discard up to three cards from the inventory. Gain one soul for each card discarded."
+        }
+      ]
+    },
+    "Stolen Artifact": {
+      "type": "Immediate",
+      "text": "Draw 5 treasure, keep 1.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Draw five treasure cards from the treasure deck. Place one card in the inventory, then return the remaining cards to the bottom of the deck."
+        }
+      ]
+    },
+    "Trustworthy Promise": {
+      "type": "Rendezvous",
+      "text": "Double or nothing souls.",
+      "encounter_rewards": [
+        {
+          "type": "text",
+          "text": "Toss the Patches token. If it lands bright side face up, double the amount of souls the characters earn from the encounter. If it lands with the corroded side face up, the characters do not earn any souls from the encounter."
+        }
+      ]
+    },
+    "Undead Merchant": {
+      "type": "Rendezvous",
+      "text": "Purchase treasure.",
+      "encounter_rewards": [
+        {
+          "type": "text",
+          "text": "The party can purchase treasure."
+        }
+      ],
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "The party can purchase treasure."
+        }
+      ]
+    },
+    "Unhallowed Offering": {
+      "type": "Immediate",
+      "text": "Consume tokens for 1 soul each.",
+      "draw_rewards": [
+        {
+          "type": "text",
+          "text": "Each character can flip any number of their player tokens to their used face. Add a soul to the soul cache for each token that was flipped."
+        }
+      ]
+    },
+    "Virulent Bonfire Ascetic": {
+      "type": "Rendezvous",
+      "text": "Enemy attacks gain Poison.",
+      "behavior_modifiers": [
+        {
+          "id": "virulent_bonfire_ascetic_effect",
+          "source": "event",
+          "source_id": "virulent_bonfire_ascetic",
+          "target": "all_enemies",
+          "stat": "poison",
+          "op": "flag",
+          "value": true,
+          "description": "Poison from Virulent Bonfire Ascetic event"
+        }
+      ],
+      "encounter_rewards": [
+        {
+          "type": "souls",
+          "per_player": 1,
+          "flat": 2
+        }
+      ]
+    }
+  }
+}

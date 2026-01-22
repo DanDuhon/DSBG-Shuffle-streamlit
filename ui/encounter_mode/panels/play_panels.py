@@ -693,7 +693,7 @@ def _render_rules(encounter: dict, settings: dict, play_state: dict) -> None:
 
         # Keywords subsection (top of Rules) — always visible expanders
         if keyword_rules:
-            st.markdown("**Keywords**")
+            st.markdown("**Keywords & Events**")
             for label, text in keyword_rules:
                 head, _sep, tail = text.partition(":")
                 title = head.strip()

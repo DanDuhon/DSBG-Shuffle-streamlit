@@ -28,11 +28,12 @@ from ui.encounter_mode.logic import (
 )
 from ui.event_mode.logic import (
     load_event_configs,
-    initialize_event_deck,
+    ensure_event_deck_ready,
     draw_event_card,
     DECK_STATE_KEY,
     _attach_event_to_current_encounter,
 )
+from ui.event_mode.panels.deck_selector import render_active_event_deck_selector
 from core.image_cache import get_image_bytes_cached
 
 
@@ -628,6 +629,15 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         with col_event.container():
             st.markdown("#### Events")
 
+            configs = load_event_configs()
+            render_active_event_deck_selector(
+                settings=settings,
+                configs=configs,
+                label="Active event deck",
+                key="enc_setup_active_event_deck",
+                rerun_on_change=False,
+            )
+
             events = st.session_state.get("encounter_events", [])
 
             # Event controls (attach / clear) in this column
@@ -638,31 +648,13 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     width="stretch",
                     key="enc_attach_random_event",
                 ):
-                    # Ensure event deck exists and has a preset
-                    if DECK_STATE_KEY not in st.session_state:
-                        st.session_state[DECK_STATE_KEY] = {
-                            "draw_pile": [],
-                            "discard_pile": [],
-                            "current_card": None,
-                            "preset": None,
-                        }
-
-                    deck_state = st.session_state[DECK_STATE_KEY]
-                    configs = load_event_configs()
-
-                    preset = (
-                        deck_state.get("preset")
-                        or settings.get("event_deck", {}).get("preset")
-                    )
-
-                    # Initialize if empty or preset changed
-                    if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
-                        initialize_event_deck(preset, configs=configs)
+                    ensure_event_deck_ready(settings, configs=configs)
 
                     # Draw and attach
                     draw_event_card()
+                    settings["event_deck"] = st.session_state.get(DECK_STATE_KEY)
                     save_settings(settings)
-                    deck_state = st.session_state[DECK_STATE_KEY]
+                    deck_state = st.session_state.get(DECK_STATE_KEY)
                     card_path = deck_state.get("current_card")
                     if card_path:
                         _attach_event_to_current_encounter(card_path)
@@ -1039,6 +1031,15 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
         st.markdown("#### Events")
 
+        configs = load_event_configs()
+        render_active_event_deck_selector(
+            settings=settings,
+            configs=configs,
+            label="Active event deck",
+            key="enc_setup_active_event_deck",
+            rerun_on_change=False,
+        )
+
         events = st.session_state.get("encounter_events", [])
         
         if st.button(
@@ -1046,31 +1047,13 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             width="stretch",
             key="enc_attach_random_event",
         ):
-            # Ensure event deck exists and has a preset
-            if DECK_STATE_KEY not in st.session_state:
-                st.session_state[DECK_STATE_KEY] = {
-                    "draw_pile": [],
-                    "discard_pile": [],
-                    "current_card": None,
-                    "preset": None,
-                }
-
-            deck_state = st.session_state[DECK_STATE_KEY]
-            configs = load_event_configs()
-
-            preset = (
-                deck_state.get("preset")
-                or settings.get("event_deck", {}).get("preset")
-            )
-
-            # Initialize if empty or preset changed
-            if deck_state.get("preset") != preset or not deck_state["draw_pile"]:
-                initialize_event_deck(preset, configs=configs)
+            ensure_event_deck_ready(settings, configs=configs)
 
             # Draw and attach
             draw_event_card()
+            settings["event_deck"] = st.session_state.get(DECK_STATE_KEY)
             save_settings(settings)
-            deck_state = st.session_state[DECK_STATE_KEY]
+            deck_state = st.session_state.get(DECK_STATE_KEY)
             card_path = deck_state.get("current_card")
             if card_path:
                 _attach_event_to_current_encounter(card_path)
