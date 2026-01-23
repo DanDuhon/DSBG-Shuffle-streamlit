@@ -157,8 +157,13 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         # Update last-seen completion map
         state["_stage_completed"] = stage_completed
 
-        # Cache per-stage layouts under state['_last_layouts'] to avoid
-        # regenerating when ephemeral metadata changes.
+        # Layout cache:
+        # `_generate_v1_layout(...)` is moderately expensive and sensitive to transient
+        # node metadata. Cache one layout per stage under:
+        #   state["_last_layouts"][stage] = {"key": <layout_key>, "layout": <tiles>}
+        # where `layout_key` is a stable fingerprint of the node identities + frozen
+        # encounter labels for that stage. Cached tiles are stored JSON-friendly
+        # (e.g., door sets become lists) and rehydrated on read.
         if "_last_layouts" not in state or not isinstance(state.get("_last_layouts"), dict):
             state["_last_layouts"] = {}
 
@@ -273,6 +278,9 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                             tile["label"] = f"{e} {name}"
                         souls_token_node_id = state.get("souls_token_node_id")
                         if souls_token_node_id is not None and tid == souls_token_node_id:
+                            # Insert a unique placeholder token into the ASCII label so we can
+                            # replace it with an <img> tag after HTML rendering (avoids trying
+                            # to embed images while building the text grid).
                             token = f"__SOULS_IMG_{tid}__"
                             tile["label"] = f"{tile.get('label')} {token}"
                             if "_soul_img_tokens" not in locals():
@@ -291,6 +299,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                             tile["label"] = f"{em} {boss_label_map.get(stage, tile.get('label') or 'Boss')}"
                         souls_token_node_id = state.get("souls_token_node_id")
                         if souls_token_node_id is not None and tid == souls_token_node_id:
+                            # Same placeholder trick for boss nodes.
                             token = f"__SOULS_IMG_{tid}__"
                             tile["label"] = f"{tile.get('label')} {token}"
                             if "_soul_img_tokens" not in locals():
@@ -309,6 +318,8 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
                 tokens = globals().get("_soul_img_tokens") or locals().get("_soul_img_tokens") or {}
                 if tokens:
+                    # Post-process rendered HTML: replace placeholder tokens (and the legacy "◈")
+                    # with the Souls token image so the map can show dropped-souls locations.
                     src = get_image_data_uri_cached(str(SOULS_TOKEN_PATH))
                     if not src:
                         p = Path(SOULS_TOKEN_PATH)
@@ -378,6 +389,13 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         reachable_paths: Dict[str, List[str]] = {}
         if isinstance(tiles.get(cur_node_id), dict):
             from collections import deque
+
+            # Reachability BFS:
+            # - Targets are *incomplete* encounter/boss nodes adjacent via `tiles[*]["connected"]`.
+            # - Traversal may pass through the bonfire and nodes with status == "complete".
+            # - Traversal stops at the first incomplete encounter/boss (it is a target, but we
+            #   do not continue beyond it), preventing "skipping" unresolved nodes.
+            # - `reachable_paths[target]` stores the reconstructed node-id path for UI hints.
 
             q = deque([cur_node_id])
             visited = {cur_node_id}

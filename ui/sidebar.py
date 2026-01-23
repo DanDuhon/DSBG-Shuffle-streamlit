@@ -59,8 +59,20 @@ def _sync_invader_caps():
 
 
 def render_sidebar(settings: dict):
-    st.sidebar.header("Settings")
+    """Render the Settings sidebar using a draft/commit model.
 
+    Draft-save contract:
+    - `st.session_state["user_settings"]` is the last applied (committed) settings dict.
+    - The sidebar edits a *draft* copy stored at `st.session_state["_settings_draft"]`.
+    - Clicking Save deep-copies the draft into `st.session_state["user_settings"]` and
+      persists via `core.settings_manager.save_settings(...)`.
+
+    Session keys touched (high-level):
+    - Applied/draft: "user_settings", "_settings_draft", "_settings_draft_base_fp", "_settings_ui_base_fp"
+    - Save metadata: "_settings_last_saved_fp", "_settings_last_saved_at"
+    - Representative widget keys: "ngplus_level", "ui_card_width", "ui_compact" (plus many dynamic keys)
+    """
+    st.sidebar.header("Settings")
     # Reserve top space for Save UI (rendered later after widgets update draft settings).
     save_ui = st.sidebar.container()
 
@@ -291,7 +303,9 @@ def render_sidebar(settings: dict):
                 on_change=_sync_invader_caps,
             )
 
-    # One-time init for the widget key (must happen BEFORE st.slider is created)
+    # One-time init for widget-backed session keys that must exist before widget
+    # creation. This pattern prevents Streamlit from constantly resetting widget
+    # values on rerun when `settings` baseline changes.
     if "ui_card_width" not in st.session_state:
         st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
 
@@ -397,6 +411,8 @@ def render_sidebar(settings: dict):
     settings["ui_compact"] = bool(st.session_state.get("ui_compact", False))
     st.session_state["_settings_draft"] = settings
 
+    # Save UI is rendered in the reserved top container, but it depends on the final
+    # post-widget draft state computed below (so the dirty flag is accurate).
     # --- Save UI (rendered at the top placeholder) ---
     current_fp = settings_fingerprint(settings)
     dirty = bool(current_fp != applied_fp)
@@ -431,3 +447,4 @@ def render_sidebar(settings: dict):
             st.caption(f"Last saved: {save_text}")
         else:
             st.caption("Last saved: —")
+

@@ -358,6 +358,28 @@ if not client_id:
     save_settings(settings)
     st.session_state["_settings_allow_save"] = False
 
+# --- One-shot cross-tab handoff: Campaign Mode -> app bootstrap ---
+# Campaign Setup tab cannot safely overwrite sidebar widget keys after widgets
+# are instantiated on the current run. Instead it sets:
+#
+#   st.session_state["pending_campaign_snapshot"] = {"name": <str>, "snapshot": <dict>}
+#
+# On the next run, `app.py` applies the snapshot *before* creating any sidebar
+# widgets so it can seed widget-backed session keys (expansions/party/NG+).
+# This also restores the correct campaign state dict under:
+#   - "campaign_v1_state" when snapshot["rules_version"] == "V1"
+#   - "campaign_v2_state" otherwise
+# The key is deleted after applying so it behaves as a one-shot.
+#
+# Session keys touched (high-level):
+# - Reads: pending_campaign_snapshot
+# - Writes: campaign_rules_version, campaign_v1_state/campaign_v2_state,
+#   active_expansions, selected_characters, ngplus_level, user_settings,
+#   campaign_load_notice
+# - Deletes: pending_campaign_snapshot
+#
+# NOTE: `_settings_allow_save` is currently advisory; save_settings(...) does not
+# consult it (it exists as a potential future gate for UI-driven saves).
 # --- Apply pending campaign snapshot (from Campaign Mode) *before* sidebar widgets ---
 pending = st.session_state.get("pending_campaign_snapshot")
 if pending:
@@ -418,8 +440,13 @@ character_count = len(selected_characters)
 valid_party = 0 < character_count <= 4
 st.session_state["player_count"] = character_count
 
-# If Campaign Mode requested a boss fight, switch to Boss Mode and
-# tell Boss Mode which boss to preselect on this run.
+# --- One-shot cross-tab handoff: Campaign Mode -> Boss Mode ---
+# Campaign Mode can request an immediate Boss Mode view (e.g., after a boss node
+# is selected). Contract:
+#   st.session_state["pending_boss_mode_from_campaign"] = {"boss_name": <str>}
+# `app.py` switches `mode` and provides Boss Mode a preselection via
+# `st.session_state["boss_mode_pending_name"]`. The pending key is always
+# deleted after processing.
 pending_boss = st.session_state.get("pending_boss_mode_from_campaign")
 if pending_boss:
     boss_name = pending_boss.get("boss_name")

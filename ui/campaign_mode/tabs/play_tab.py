@@ -76,6 +76,17 @@ def _inject_fight_events_into_session(
     state: Dict[str, Any],
     current_node: Dict[str, Any],
 ) -> None:
+    """Bridge Campaign-attached events into Encounter Mode's expected session keys.
+
+    Writes:
+    - `st.session_state["encounter_events"]`: list[dict]
+      Each dict includes a "path" to an event card image and flags like:
+        - "is_rendezvous" (attached to this encounter node)
+        - "is_consumable" (party-held; applies to next fight)
+
+    Encounter Mode's Play tab reads `encounter_events` to display/apply events as
+    part of the fight UI.
+    """
     events = []
 
     rv = current_node.get("rendezvous_event")
@@ -113,6 +124,10 @@ def _draw_and_apply_campaign_events(
 
     Returns counters: {"drawn": x, "rendezvous": a, "consumable": b, "instant": c}
     """
+    # Routing rules:
+    # - rendezvous cards attach to the next *encounter* node (never bosses)
+    # - consumables attach to party state for the next fight
+    # - instants are recorded for later resolution
     out = {
         "drawn": 0, "rendezvous": 0, "consumable": 0, "instant": 0,
         "instant_events": [], "consumable_events": [], "rendezvous_events": [],
@@ -181,12 +196,20 @@ def _draw_and_apply_campaign_events(
 
 
 def _sync_current_encounter_from_campaign_for_play(*_args, **_kwargs) -> bool:
-    """
-    Ensure st.session_state.current_encounter reflects the encounter
-    at the party's current campaign node (if any).
+    """Ensure Encounter Mode is pointed at the encounter for the party's current campaign node.
 
-    Returns True if we loaded a campaign encounter into current_encounter,
-    False if there is no valid encounter at the current node.
+    Reads:
+    - `st.session_state["campaign_rules_version"]` to choose V1/V2 state
+    - `st.session_state["campaign_v1_state"]` / `st.session_state["campaign_v2_state"]`
+
+    Writes (Encounter Mode bridge):
+    - `st.session_state.current_encounter`: encounter dict shaped like Encounter Mode expects
+    - `st.session_state["last_encounter"]`: metadata used by timers/labels/reward accounting
+    - Initializes `st.session_state.encounter_events` if missing (events are injected separately)
+
+    Returns:
+    - True if a valid encounter node was resolved and loaded
+    - False if the party is at bonfire/boss/non-encounter, or if V2 has no choice selected yet
     """
     version = st.session_state.get("campaign_rules_version", "V1")
     state_key = "campaign_v1_state" if version == "V1" else "campaign_v2_state"

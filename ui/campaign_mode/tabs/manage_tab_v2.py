@@ -49,17 +49,19 @@ def _consume_scout_ahead(current_node: Dict[str, Any]) -> None:
 
 
 def _v2_cleanup_scout_ahead_if_unpicked(node: Dict[str, Any]) -> None:
-    """
-    settings = _get_settings()
+    """Remove stale Scout Ahead state when the event is no longer applicable.
 
-    campaign = state.get("campaign")
-    if not isinstance(campaign, dict):
-        st.info("Generate a V2 campaign in the Setup tab to begin.")
-        return
-    If Scout Ahead was attached and we already appended an extra option, but the
-    node still has no choice selected (choice_index is None), and the Scout Ahead
-    rendezvous is no longer present, remove the extra option so the user can't
-    pick it without the event.
+    This is a safety cleanup for encounter nodes that previously had Scout Ahead
+    attached (and therefore may have had an extra encounter option appended).
+
+    Cleanup rules:
+    - Only runs when the node is still unpicked (`node["choice_index"] is None`).
+    - If `node["scout_ahead"]["base_options_count"]` is present, truncate
+      `node["options"]` back to that original length.
+    - Always remove `node["scout_ahead"]` afterwards.
+
+    This prevents users from selecting the extra "Scout Ahead" option after the
+    rendezvous event has been consumed/removed.
     """
     if not isinstance(node, dict):
         return
@@ -84,11 +86,26 @@ def _v2_ensure_scout_ahead_alt_option(
     settings: Dict[str, Any],
     campaign: Optional[Dict[str, Any]] = None,
 ) -> Optional[int]:
-    """
-    Ensure a Scout Ahead node has a persistent additional option appended to
-    node['options'] and return its choice index.
+    """Ensure Scout Ahead provides a persistent extra encounter choice for a V2 encounter node.
 
-    Persists under node['scout_ahead'].
+    Expected V2 encounter-node schema (relevant fields):
+    - node["options"]: list[dict] frozen encounter candidates for this space
+    - node["choice_index"]: int | None (selected option index)
+    - node["rendezvous_event"]: dict | None (Scout Ahead is detected here)
+    - node["scout_ahead"]: dict (managed by this helper while the node is unpicked)
+
+    `node["scout_ahead"]` schema/invariants:
+    - "base_options_count": int
+        Number of options that existed before appending the Scout Ahead alternative.
+    - "alt_frozen": dict
+        The generated alternative frozen encounter.
+    - "alt_choice_index": int
+        Index of alt_frozen inside node["options"] (may be recomputed by signature).
+    - "base_choice_index": int (optional; written when the user picks a non-alt choice)
+        Used for later comparisons/UX around the Scout Ahead selection.
+
+    Returns the choice index of the Scout Ahead alternative option, or None if
+    the node has no options to extend.
     """
     options = node.get("options") or []
     if not isinstance(options, list) or not options:

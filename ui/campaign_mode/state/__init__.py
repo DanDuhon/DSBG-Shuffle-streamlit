@@ -18,6 +18,17 @@ def _get_player_count(settings: Dict[str, Any]) -> int:
 
 
 def _ensure_campaign_event_state(state: Dict[str, Any]) -> None:
+    """Ensure campaign event-related state lists exist (in-place).
+
+    Keys maintained:
+    - "party_consumable_events": list[dict]
+        Consumable events held by the party; applied to the *next* fight and then cleared.
+    - "instant_events_unresolved": list[dict]
+        Instant events that were drawn and need resolution/acknowledgement.
+    - "orphaned_rendezvous_events": list[dict]
+        Rendezvous events that could not be attached to a future encounter node.
+    """
+
     # Consumables held by party, apply to next fight (encounter or boss)
     if not isinstance(state.get("party_consumable_events"), list):
         state["party_consumable_events"] = []
@@ -32,6 +43,17 @@ def _ensure_campaign_event_state(state: Dict[str, Any]) -> None:
     
 
 def _ensure_v1_state(player_count: int) -> Dict[str, Any]:
+    """Ensure Campaign V1 state exists in Streamlit session.
+
+    Session key: "campaign_v1_state"
+
+    Normalized schema (minimum):
+    - "bosses": {"mini": str, "main": str, "mega": str}
+    - "souls": int
+    - "sparks_max": int (derived from player_count)
+    - "sparks": int (clamped to <= sparks_max)
+    Plus campaign event lists via `_ensure_campaign_event_state(...)`.
+    """
     key = "campaign_v1_state"
     state = st.session_state.get(key)
     if not isinstance(state, dict):
@@ -64,9 +86,15 @@ def _ensure_v1_state(player_count: int) -> Dict[str, Any]:
 
 
 def _ensure_v2_state(player_count: int) -> Dict[str, Any]:
-    """
-    V2 state is structurally similar to V1 for now (sparks + souls + bosses),
-    but backed by its own session key.
+    """Ensure Campaign V2 state exists in Streamlit session.
+
+    Session key: "campaign_v2_state"
+
+    V2 is intentionally similar to V1 (sparks/souls/bosses), but it uses a
+    separate session key and slightly different sparks handling:
+    - "sparks_max" is recomputed from player_count each run.
+    - If sparks already exists, it is preserved as-is (no clamp here).
+    Campaign event lists are also ensured via `_ensure_campaign_event_state(...)`.
     """
     key = "campaign_v2_state"
     state = st.session_state.get(key)

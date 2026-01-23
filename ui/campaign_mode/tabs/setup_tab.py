@@ -15,6 +15,13 @@ from ui.campaign_mode.state import _get_player_count, _ensure_v1_state, _ensure_
 
 
 def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
+    """Render Campaign setup header controls.
+
+    Session keys touched:
+    - Reads/writes: "campaign_rules_version" (authoritative rule version)
+    - Widget-only: "campaign_rules_version_widget" (separate key to avoid Streamlit
+      widget-state conflicts when programmatically mutating the authoritative key)
+    """
     player_count = _get_player_count(settings)
     options = ["V1", "V2"]
     current = st.session_state.get("campaign_rules_version", "V1")
@@ -358,6 +365,13 @@ def _render_save_load_section(
                     )
                 else:
                     current_state["name"] = name
+                    # Snapshot round-trip:
+                    # - `state` captures the campaign version-specific runtime state dict.
+                    # - `sidebar_settings` captures only the settings that must be applied
+                    #   *before* sidebar widgets are created on the next run
+                    #   (expansions/party/NG+).
+                    # The load path hands this snapshot back to `app.py` via a one-shot
+                    # session key.
                     snapshot = {
                         "rules_version": version,
                         "state": current_state,
@@ -399,6 +413,12 @@ def _render_save_load_section(
                 ):
                     if selected_name != "<none>":
                         snapshot = campaigns[selected_name]
+                        # One-shot load handoff:
+                        # We cannot safely overwrite sidebar widget keys mid-run, so we
+                        # stash the chosen snapshot under `pending_campaign_snapshot` and
+                        # trigger `st.rerun()`. `app.py` consumes this flag early on the next
+                        # run, restores campaign state, seeds sidebar session keys, persists
+                        # settings, and then deletes the flag.
                         st.session_state["pending_campaign_snapshot"] = {
                             "name": selected_name,
                             "snapshot": snapshot,
@@ -434,3 +454,4 @@ def _render_save_load_section(
                 )
             else:
                 st.success(f"Loaded campaign '{name}' (no sidebar changes).")
+

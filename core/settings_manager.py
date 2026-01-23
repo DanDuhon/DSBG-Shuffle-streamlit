@@ -155,7 +155,26 @@ def _runtime_client_id() -> str | None:
         return None
 
 def load_settings():
-    """Load saved user settings, merged with defaults."""
+    """Load persisted user settings and merge them onto DEFAULT_SETTINGS.
+
+    Persistence precedence:
+    - If Supabase is configured, prefer per-client settings when a client id is available:
+        1) `DSBG_CLIENT_ID` env var (scripts/tools), else
+        2) Streamlit `st.session_state["client_id"]` (app runtime)
+      If no per-client doc exists, fall back to the global (NULL user_id) document.
+    - Otherwise, read local JSON from `data/user_settings.json`.
+    - If nothing can be loaded, returns a deepcopy of DEFAULT_SETTINGS.
+
+    Merge / cleanup rules:
+    - Top-level keys from the loaded payload overwrite defaults.
+    - Known nested dicts are merged rather than replaced:
+        - "edited_toggles"
+        - "max_invaders_per_level"
+    - Clamp "max_invaders_per_level" to supported maxima and non-negative values.
+    - Prune/normalize edited-encounter flags:
+        - remove accidental top-level "<Encounter>|<Expansion>" bool keys
+        - keep only `edited_toggles` entries that still have an edited card on disk
+    """
     merged = deepcopy(DEFAULT_SETTINGS)
 
     # Choose storage backend: Supabase when configured, otherwise local JSON.
@@ -207,7 +226,24 @@ def load_settings():
     return merged
 
 def save_settings(settings: dict):
-    """Persist settings to Supabase if configured, otherwise to local JSON."""
+    """Persist settings (Supabase when configured, otherwise local JSON).
+
+    Behavior:
+    - Applies the same cleanup as `load_settings()` before writing:
+        - remove stray top-level edited-toggle keys
+        - prune `settings["edited_toggles"]` to encounters that have edited assets
+    - Avoids redundant writes:
+        - under Streamlit, returns early if `_settings_last_saved_fp` matches
+        - for local JSON, skips rewriting the file if the fingerprint is unchanged
+    - When Supabase is enabled, attempts a per-client upsert (creating a UUID
+      `client_id` in the settings dict if needed).
+
+    Streamlit metadata keys (best-effort):
+    - `_settings_last_saved_fp`: fingerprint of the last payload persisted
+    - `_settings_last_saved_at`: ISO timestamp (UTC) of the last save
+    These are used by the sidebar Save UI to compute "dirty" state and show
+    last-saved time even when saves happen outside the sidebar.
+    """
 
     # Keep the persisted payload tidy: only store per-encounter edited flags
     # for encounters that actually have edited cards available.
@@ -278,10 +314,14 @@ def settings_fingerprint(settings: dict) -> str:
 
 
 def _update_streamlit_last_saved_metadata(settings: dict) -> None:
-    """Best-effort: when running under Streamlit, remember last-saved info.
+    """Best-effort Streamlit-only bookkeeping for the sidebar Save UI.
 
-    This keeps UI affordances (e.g., a disabled/enabled Save button) in sync even
-    if settings are saved from outside the sidebar.
+    Writes:
+    - `st.session_state["_settings_last_saved_fp"]`
+    - `st.session_state["_settings_last_saved_at"]` (UTC ISO string)
+
+    This is intentionally non-critical: failures are swallowed so tools/scripts
+    can call settings_manager without requiring Streamlit.
     """
 
     st = _maybe_streamlit()
