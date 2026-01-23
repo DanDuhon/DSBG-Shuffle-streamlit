@@ -10,7 +10,9 @@
     "health": 20,
     "heatup": 10,
     "armor": 3,
+	"cards": 4,
     "resist": 2,
+	"text": "Once they were proud silver knights who stood against the First Flame’s enemies; now they wander as charred husks, their armor scorched black and their purpose long since twisted. A Black Knight moves with a slow, deliberate menace, every footfall ringing like a funeral bell through ruined halls. Its weapon—be it sword, axe, or greatsword—swings not in wild fury, but with the cold certainty of a veteran who has butchered countless foes.\n\nThey do not speak, do not bargain, and do not relent. To face a Black Knight is to confront the lingering will of an age long dead, a remnant that refuses to fade quietly into ash. Victory over such an ancient terror is never clean; even as it falls, you cannot shake the feeling that you’ve merely borrowed its place in a cycle of endless, burning duty.",
     "Heavy Slash": {
         "dodge": 1,
         "left": {

@@ -1,106 +1,65 @@
-# Dark Souls Board Game Web Companion
+# DSBG-Shuffle (Streamlit)
 
-This is a Streamlit web app for managing Dark Souls: The Board Game encounters, events, behaviors, and campaign tracking.
-Originally a Tkinter desktop app called DSBG-Shuffle, it is being refactored into a modular web companion.
+A Streamlit companion app for **Dark Souls: The Board Game** with local/offline and Streamlit Cloud options.
 
-# 🚀 Features (current & planned)
+The app has a variety of modules that can enhance your DSBG experience either in preparation for play or at the table.
+- 
 
-## ✅ Encounters Tab –
-- Browse encounters by expansion
-- Mix enemies together in existing encounters
-- Toggle original/edited keywords with tooltips
-- Party filtering (up to 4 characters)
+## Quickstart (Local)
 
-## 🃏 Events Tab (coming soon) –
-- View event cards
-- Simulate event card decks
+Prereqs:
+- Python 3.11+ recommended
 
-## 📜 Campaign Tab (coming soon) –
-- Build or track campaigns
-- Save & load campaign state
+From the repo root:
 
-## ⚔️ Behavior Variants Tab (coming soon) –
-- Scale enemy difficulty with prebuilt variants
-
-## 🧩 Behavior Decks Tab (coming soon) –
-- Simulate enemy behavior decks
-- Track health, heat-up, invaders, bosses
-
-# 🛠️ Installation
-## Local (no Docker)
-```
-# clone repo
-git clone https://github.com/yourusername/dsbg-web.git
-cd dsbg-web
-
-# install dependencies
+```bash
 pip install -r requirements.txt
-
-# run app
 streamlit run app.py
 ```
 
-## 🐳 Docker Options
-You can run the app in two ways (but only one at a time unless you give them different ports):
-### Lightweight (fast, dev-friendly)
-- Small image, skips large data/ and assets/ during build.
-- Requires you to mount them at runtime.
-```
-docker build -f Dockerfile.light -t dsbg-web:light .
-docker run -p 8501:8501 -v $(pwd)/data:/app/data -v $(pwd)/assets:/app/assets dsbg-web:light
+Open http://localhost:8501
+
+Important: the app uses relative paths and expects to run from the **repository root**.
+
+## Quickstart (Docker)
+
+The container binds Streamlit on port **8501** and persists `data/` via a named Docker volume.
+
+```bash
+docker compose up --build
 ```
 
-### Full Offline (self-contained)
-- Larger image, but includes all JSON + images.
-- Runs anywhere with no mounted volumes needed.
-```
-docker build -f Dockerfile.full -t dsbg-web:full .
-docker run -p 8501:8501 dsbg-web:full
+Open:
+- http://localhost:8501 (same machine)
+- http://<your-lan-ip>:8501 (other devices on your LAN)
+
+Resetting persisted data (this deletes saved settings/campaigns/encounters stored under `data/`):
+
+```bash
+docker compose down
+docker volume rm dsbg-shuffle-streamlit_dsbg_data
 ```
 
-### Docker Compose
-To simplify switching between builds, use docker-compose.yml.
+Windows LAN note: if other devices can’t connect, allow inbound TCP **8501** in Windows Defender Firewall.
 
-**Run lightweight build**
-`docker compose up dsbg-light`
-- Runs on http://localhost:8501
-- Fast rebuilds
-- Requires local `./data` + `./assets` folders
+## What’s In The App
 
-**Run full offline build**
-`docker compose up dsbg-full`
-- Runs on http://localhost:8501
-- Larger image, but 100% portable
+In the sidebar you’ll choose a **Mode**:
 
-# 📂 Project Structure
-```
-dsbg-app/
-│
-├── app.py                # orchestrates tabs
-│
-├── ui/                   # tab UIs
-│   ├── sidebar.py
-│   ├── encounters.py
-│   ├── encounter_helpers.py
-│   ├── events.py
-│   ├── campaign.py
-│   ├── variants.py
-│   └── decks.py
-│
-├── core/                 # data + logic
-│   ├── encounters.py
-│   ├── enemyNames.py
-│   ├── characters.py
-│   ├── encounterKeywords.py
-│   ├── editedEncounterKeywords.py
-│   └── settings_manager.py
-│
-├── data/                 # JSON encounter + event data
-├── assets/               # images (enemy icons, encounter cards, keywords)
-├── requirements.txt
-├── Dockerfile.light
-├── Dockerfile.full
-├── docker-compose.yml
-├── .dockerignore
-└── README.md
-```
+- **Encounter Mode**: Setup / Events / Play tabs for encounters.
+- **Event Mode**: Event deck builder plus an event card viewer.
+- **Boss Mode**: Boss selector + behavior deck controls, heat-up, and trackers.
+- **Campaign Mode**: Campaign setup and play encounters from the campaign.
+- **Character Mode**: Character build tool.
+- **Behavior Card Viewer**: Quick viewer for behavior cards.
+
+## Data & Persistence
+
+The app ships with JSON and image assets in the repo:
+
+- `data/`: game data, user settings, saved encounters, campaign data, etc.
+- `assets/`: images used throughout the UI
+
+Settings:
+- Local runs persist to `data/user_settings.json`.
+- Docker runs persist `data/` in a volume (so updates/rebuilds keep your data).

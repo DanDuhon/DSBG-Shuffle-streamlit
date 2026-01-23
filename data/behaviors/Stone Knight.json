@@ -1,13 +1,17 @@
 {
     "behavior": {
         "dodge": 1,
+		"left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "magic",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "right": {}
     },
     "health": 5,
     "armor": 3,
-    "resist": 2
+    "resist": 2,
+	"order_num": 7,
+	"range": 0
 }

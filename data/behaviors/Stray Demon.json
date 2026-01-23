@@ -12,6 +12,7 @@
     "heatup": 16,
     "armor": 4,
     "resist": 3,
+	"text": "Beneath the crumbling stones of the Undead Asylum, the Stray Demon broods in a forgotten pit, a failed guardian cast aside rather than destroyed. Its form mirrors that of its hulking kin, but the flesh hangs heavier, the wings more tattered, and its eyes burn not with purpose, but with a bitter, simmering rage. The great hammer it wields crashes down with volcanic force, sending cracks spiderwebbing through the ancient floor as if the very earth resents its presence.\n\nThere is no grand duty binding this creature, no noble charge—only abandonment and fury. Every explosive shockwave it unleashes feels like a tantrum thrown by a discarded weapon, lashing out at whatever unfortunate soul stumbles into its oubliette. To face the Stray Demon is to intrude on something that was meant to be forgotten, and it will gladly bury you here as proof that the outside world has no place in its forsaken tomb.",
     "Leaping Hammer Smash": {
         "dodge": 2,
         "left": {

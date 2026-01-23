@@ -12,6 +12,7 @@
     "heatup": 28,
     "armor": 3,
     "resist": 3,
+	"text": "It is told in the legends of the fallen kingdom of Oolacile how adherence to the word of a serpent led the people to upturn the grave of Primeval Man and thus unleash the vengeful wrath of Manus. In his rage, he created the Abyss, threatening to consume Oolacile. Only the legendary knight Artorias, one of the Four Knights of Lord Gwyn, dared to stand before the Father of the Abyss. Sir Artorias defeated Manus, but not even he could withstand the taint of such evil. So it was that the people of Oolacile, victims of their own folly, brought calamity upon themselves and doomed their kingdom to a future of ashes despite the knight’s sacrifice.\n\nIf you wish to halt the spread of the Dark, as noble Sir Artorias once did, then you must also face Manus, Father of the Abyss. You may find him at the bottom of the Chasm, still standing vigil over his desecrated resting place, a stone circle surrounding his grave.\n\nBeware, though, for the corruption of evil was ultimately too much even for one as stalwart as great Artorias. Overcoming such an enemy will not be an easy task for any who does not prove worthy enough to withstand the might of a creature that emanates the Dark itself.",
     "Diving Slam": {
         "dodge": 1,
         "left": {

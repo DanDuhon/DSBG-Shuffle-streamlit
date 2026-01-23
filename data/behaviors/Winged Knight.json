@@ -12,6 +12,7 @@
     "heatup": 12,
     "armor": 3,
     "resist": 1,
+	"text": "Armored in layers of gleaming, over-ornamented plate, the Winged Knight strides forward like a walking cathedral—beautiful, heavy, and utterly merciless. Great metal “wings” flare from its back, not for flight, but as emblems of a twisted, hollowed chivalry. Each step makes the earth tremble, the enormous halberd held ready to sweep aside the unworthy in a single, crushing arc.\n\nOnce sworn to noble houses and sacred oaths, these knights have long since traded purpose for blind devotion. They guard empty halls and forgotten plazas with fanatical zeal, as though the very stones beneath their boots still held divine authority. To stand against a Winged Knight is to be weighed, judged, and found wanting by a relic of a faith that has already failed—yet still insists on grinding all challengers beneath its gilded heel.",
     "Overhand Smash": {
         "dodge": 2,
         "middle": {

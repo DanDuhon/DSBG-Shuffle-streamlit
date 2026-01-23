@@ -13,6 +13,7 @@
     "heatup": 11,
     "armor": 4,
     "resist": 3,
+	"text": "Born of cursed steel and a soul set ablaze, the Smelter Demon is less a creature and more a furnace given hateful form. It rises from the coals of the Iron Keep like a living crucible, jagged armor fused to molten flesh, every movement shedding sparks and embers. Its greatsword is a bar of living fire, heated in its own chest and drawn forth in a shower of slag, each swing turning the very air into a killing heat.\n\nThere is no subtlety here, no clever trick—only overwhelming force and a suffocating aura of burning metal that sears flesh before the blade ever lands. The Smelter Demon stands as a monument to the Old Iron King’s ambition, a reminder that some powers, once kindled, consume everything around them. To defeat it is to endure the forge itself and emerge, if not unscathed, at least unbroken.",
     "Overhead Chop": {
         "dodge": 2,
         "middle": {

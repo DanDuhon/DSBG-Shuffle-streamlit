@@ -1,0 +1,247 @@
+#ui/behavior_decks_tab/assets.py
+import io
+import re
+from PIL import Image, ImageFont, ImageOps
+from pathlib import Path
+
+
+BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
+ICONS_DIR = Path("assets/behavior icons")
+CARD_BACK = Path("assets/behavior cards/Back.jpg")
+FONT_PATH_NUMBER = Path("assets/OptimusPrinceps.ttf")
+FONT_PATH_TEXT = Path("assets/AdobeCaslonProSemibold.ttf")
+CATEGORY_ORDER = [
+    "Regular Enemies",
+    "Invaders",
+    "Mini Bosses",
+    "Main Bosses",
+    "Mega Bosses",
+]
+CATEGORY_EMOJI = {
+    "Regular Enemies": "🗡️",
+    "Invaders":        "👤",
+    "Mini Bosses":     "⚔️",
+    "Main Bosses":     "🐺",
+    "Mega Bosses":     "🐉",
+}
+BOSS_CATEGORY_MAP = {
+    # Mini bosses
+    "Asylum Demon": "Mini Bosses",
+    "Black Knight": "Mini Bosses",
+    "Boreal Outrider Knight": "Mini Bosses",
+    "Gargoyle": "Mini Bosses",
+    "Heavy Knight": "Mini Bosses",
+    "Old Dragonslayer": "Mini Bosses",
+    "Titanite Demon": "Mini Bosses",
+    "Winged Knight": "Mini Bosses",
+
+    # Main bosses
+    "Artorias": "Main Bosses",
+    "Crossbreed Priscilla": "Main Bosses",
+    "Dancer of the Boreal Valley": "Main Bosses",
+    "Gravelord Nito": "Main Bosses",
+    "Great Grey Wolf Sif": "Main Bosses",
+    "Ornstein & Smough": "Main Bosses",
+    "Sir Alonne": "Main Bosses",
+    "Smelter Demon": "Main Bosses",
+    "The Puruser": "Main Bosses",
+
+    # Mega bosses
+    "Black Dragon Kalameet": "Mega Bosses",
+    "Executioner's Chariot": "Mega Bosses",
+    "Gaping Dragon": "Mega Bosses",
+    "Guardian Dragon": "Mega Bosses",
+    "Manus, Father of the Abyss": "Mega Bosses",
+    "Old Iron King": "Mega Bosses",
+    "Stray Demon": "Mega Bosses",
+    "The Four Kings": "Mega Bosses",
+    "The Last Giant": "Mega Bosses",
+    "Vordt of the Boreal Valley": "Mega Bosses",
+}
+
+# -----------------------------------------------------------
+# COORDS
+#   - enemy_* : regular enemy placements
+#   - boss_*  : invaders/bosses
+#   - repeat  : separate because bosses place it differently
+# -----------------------------------------------------------
+coords_map = {
+    "attack_physical": {
+        "left": (37, 737),
+        "middle": (291, 737),
+        "right": (545, 737),
+    },
+    "attack_move": {
+        "left": (50, 760),
+        "middle": (304, 760),
+        "right": (567, 760),
+    },
+    "attack_magic": {
+        "left": (33, 735),
+        "middle": (287, 735),
+        "right": (541, 735),
+    },
+    "attack_push": {
+        "left": (40, 739),
+        "middle": (294, 739),
+        "right": (548, 739),
+    },
+    "effects": {
+        1: {"left": (190, 880), "middle": (430, 880), "right": (520, 880)},
+        2: {
+            "left": [(215, 875), (180, 920)],
+            "middle": [(455, 875), (420, 920)],
+            "right": [(500, 740), (550, 770)]
+        }
+    },
+
+    # -------- STATS: enemy data card --------
+    "enemy_armor": (350, 615),
+    "enemy_health": (689, 96),
+    "enemy_resist": (415, 615),
+    "enemy_dodge": (710, 605),
+    "enemy_range": (80, 630),
+    "text": (95, 860),
+
+    # -------- STATS: boss/invader data card --------
+    # put them wherever your boss data card has the boxes
+    "boss_armor": (350, 635),
+    "boss_health": (676, 95),
+    "boss_resist": (415, 635),
+    "boss_heatup": (655, 640),
+
+    # -------- PUSH ICONS --------
+    "push": {
+        "left": (40, 735),
+        "middle": (287, 735),
+        "right": (440, 735),
+    },
+
+    # -------- NODE ATTACK ICONS --------
+    "node": {
+        "left": (50, 895),
+        "middle": (297, 895),
+        "right": (450, 895),
+    },
+
+    # -------- REPEAT ICONS --------
+    # regular enemy repeat
+    "enemy_repeat": {
+        "middle": (344, 786),
+        "right": (600, 790),
+    },
+    # boss / invader repeat
+    "boss_repeat": (344, 588),
+    "boss_dodge": (710, 605),
+    
+    # Ornstein & Smough
+    "dual_ornstein": {
+        "attack_physical": {
+            "left": (223, 169),
+            "right": (545, 169),
+        },
+        "attack_magic": {
+            "left": (285, 167),
+            "right": (541, 167),
+        },
+        "repeat": (46, 216),
+    },
+    "dual_smough": {
+        "attack_physical": {
+            "left": (36, 639),
+            "right": (290, 635),
+        },
+        "attack_push": {
+            "left": (41, 636),
+            "right": (440, 636),
+        },
+    }
+}
+
+# -----------------------------------------------------------
+# TEXT STYLES
+# -----------------------------------------------------------
+text_styles = {
+    "armor":  {"size": 85, "fill": "white", "font": FONT_PATH_NUMBER},
+    "health": {"size": 60, "fill": "white", "font": FONT_PATH_NUMBER},
+    "resist": {"size": 85, "fill": "black", "font": FONT_PATH_NUMBER},
+    "dodge":  {"size": 70, "fill": "black", "font": FONT_PATH_NUMBER},
+    "range":  {"size": 85, "fill": "black", "font": FONT_PATH_NUMBER},
+    "heatup": {"size": 60, "fill": "black", "font": FONT_PATH_NUMBER},
+    "text":   {"size": 36, "fill": "black", "font": FONT_PATH_TEXT}
+}
+
+
+def _load_fonts():
+    return {
+        name: ImageFont.truetype(str(style["font"]), style["size"])
+        for name, style in text_styles.items()
+    }
+    
+
+FONTS = _load_fonts()
+
+
+def _behavior_image_path(cfg, behavior_name: str) -> str:
+    """Map a behavior name (or pair of names) to its corresponding image path(s)."""
+    if isinstance(behavior_name, tuple):
+        # Return list of paths for both movement & attack cards
+        paths = []
+        for name in behavior_name:
+            clean_name = _strip_behavior_suffix(str(name))
+            paths.append(f"{BEHAVIOR_CARDS_PATH}{cfg.name} - {clean_name}.jpg")
+        return paths
+    else:
+        clean_name = _strip_behavior_suffix(str(behavior_name))
+        return f"{BEHAVIOR_CARDS_PATH}{cfg.name} - {clean_name}.jpg"
+
+
+def _strip_behavior_suffix(name: str) -> str:
+    """
+    Strip numeric or trailing copy markers from behavior names.
+    Example:
+        "Stomach Slam 1" -> "Stomach Slam"
+        "Stomach Slam 2" -> "Stomach Slam"
+        "Death Race 4"   -> "Death Race"
+    """
+    return re.sub(r"\s+\d+$", "", name.strip())
+
+
+def _path(img_rel: str) -> str:
+    return str(Path("assets") / "behavior cards" / img_rel)
+    
+
+def _dim_greyscale(img_bytes: bytes) -> bytes:
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+    gray = ImageOps.grayscale(img).convert("RGBA")
+    # darken a bit for clarity
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 110))
+    out = Image.alpha_composite(gray, overlay)
+    buf = io.BytesIO()
+    out.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def build_icon_filename(spec: dict) -> str | None:
+    t = spec.get("type")
+    dmg = spec.get("damage")
+    repeat = spec.get("repeat")
+
+    if repeat:
+        return f"repeat_{repeat}.png"
+
+    if not t:
+        return None
+
+    if t in ("physical", "magic", "push"):
+        return f"attack_{t}_{dmg}.png"
+
+    # movement: spec should include direction ("away" | "towards") and distance (1..3)
+    # e.g. in JSON slot: { "type": "move", "direction": "away", "distance": 2 }
+    if t == "move":
+        direction = spec.get("direction", "away")
+        distance = spec.get("distance", 1)
+        return f"move_{direction}_{distance}.png"
+
+    # status effects (bleed, stagger, etc.)
+    return f"{t}.png"

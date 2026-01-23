@@ -14,6 +14,7 @@
     "heatup": 13,
     "armor": 2,
     "resist": 3,
+	"text": "Once sworn to Irithyll’s cold majesty, the Boreal Outrider Knight now roams as a feral hound of Pontiff Sulyvahn, more beast than man. Frost steams from its armor with every breath, and its twisted blade carves traces of rime into the stone it strikes. It moves in lurching bursts of speed, a blur of metal and claws, as if barely leashed by the tatters of its former discipline.\n\nThere is no negotiation, no warning, only the suffocating presence of a predator that has forgotten the meaning of mercy. To stand against the Outrider Knight is to step into the jaws of the Pontiff’s madness, where loyalty is rewarded with corruption and the only escape from the chill is to bring it down—or fall and join the frozen dead it leaves behind.",
     "Overhand Slash": {
         "dodge": 1,
         "middle": {

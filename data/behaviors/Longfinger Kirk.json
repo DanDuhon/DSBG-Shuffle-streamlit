@@ -2,8 +2,10 @@
     "Rolling Barbs": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 4,
+            "type": "move",
+			"direction": "towards",
+			"distance": 2,
+            "push": 4,
             "effect": ["bleed"]
         },
         "middle": {},
@@ -17,6 +19,7 @@
     "resist": 2,
     "Lunging Stab": {
         "dodge": 3,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 5,
@@ -26,9 +29,12 @@
     },
     "Cleave": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 6
+            "damage": 6,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -46,7 +52,8 @@
         "repeat": 2,
         "left": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "middle": {},
         "right": {}

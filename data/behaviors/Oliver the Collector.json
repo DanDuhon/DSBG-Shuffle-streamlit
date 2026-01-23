@@ -2,9 +2,11 @@
     "Bone Fist Punches": {
         "dodge": 2,
         "repeat": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
         "right": {}
     },
@@ -17,8 +19,10 @@
     "Minotaur Helm Charge": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 5,
+            "type": "move",
+			"direction": "towards",
+			"distance": 2,
+            "push": 5,
             "effect": ["stagger"]
         },
         "middle": {},
@@ -26,6 +30,7 @@
     },
     "Puzzling Stone Sword Strike": {
         "dodge": 3,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4
@@ -35,13 +40,16 @@
     "Majestic Greatsword Slash": {
         "dodge": 2,
         "left": {
-            "type": "push",
-            "damage": 4
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 4
         },
-        "middle": {}
+        "middle": {"type": "move", "direction": "away", "distance": 1}
     },
     "Santier's Spear Lunge": {
         "dodge": 1,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 5,
@@ -54,7 +62,9 @@
         "repeat": 3,
         "left": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "middle": {},
         "right": {}
@@ -65,6 +75,6 @@
             "type": "physical",
             "damage": 4
         },
-        "middle": {}
+		"middle": {"type": "move", "direction": "away", "distance": 1}
     }
 }

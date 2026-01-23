@@ -1,0 +1,671 @@
+# core/encounter_triggers.py
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal, Optional, Dict, List
+
+Phase = Literal["enemy", "player", "any"]
+TriggerKind = Literal["checkbox", "counter", "numeric", "timer_objective"]
+
+
+@dataclass(frozen=True)
+class EncounterTrigger:
+    id: str
+
+    # Short UI text on the widget ("Lever activations", "Chest opened", etc.)
+    label: str
+
+    kind: TriggerKind  # "checkbox" | "counter" | "numeric" | "timer_objective"
+
+    # Optional status text shown next to label (can contain {value}, {enemy1}, etc.)
+    template: Optional[str] = None
+
+    # Optional one-shot effect text for checkboxes, when they flip False -> True
+    effect_template: Optional[str] = None
+
+    # Optional per-step effect for counters:
+    # {1: "Spawn a {enemy2}...", 2: "Spawn a {enemy3}...", ...}
+    step_effects: Optional[Dict[int, str]] = None
+
+    phase: Phase = "any"
+    min_value: int = 0
+    max_value: Optional[int] = None
+    default_value: Optional[int | bool] = None
+    timer_target: Optional[int] = None
+    stop_on_complete: bool = False
+
+
+# outer key   -> encounter identifier, e.g. "The First Bastion|Painted World of Ariamis"
+# inner key   -> variant: "default" (non-edited) or "edited"
+# list value  -> EncounterTrigger definitions for that variant
+EncounterTriggersMap = Dict[str, Dict[str, List[EncounterTrigger]]]
+EventTriggersMap = Dict[str, List[EncounterTrigger]]
+
+
+def get_triggers_for_encounter(
+    *,
+    encounter_key: str,
+    edited: bool,
+) -> List[EncounterTrigger]:
+    """
+    Return the triggers for a given encounter.
+
+    - If an "edited" triggers list exists and `edited` is True, it is used.
+    - Otherwise, the "default" triggers list is used.
+    """
+    variants = ENCOUNTER_TRIGGERS.get(encounter_key)
+    if not variants:
+        return []
+
+    if edited and "edited" in variants:
+        return variants["edited"]
+
+    return variants.get("default", [])
+
+
+def get_triggers_for_event(*, event_key: str) -> List[EncounterTrigger]:
+    """
+    Return the triggers defined for a specific event card.
+
+    `event_key` should match the key used in EVENT_TRIGGERS (usually the
+    event's id, but you can also use the printed name if you prefer).
+    """
+    return EVENT_TRIGGERS.get(event_key, [])
+
+
+ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
+    "The First Bastion|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="the_first_bastion_lever",
+                label="Lever activations",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+                default_value=0,
+                phase="player",
+                step_effects={
+                    1: "Spawn a {enemy2} on Tile 1, Enemy Spawn Node 1.",
+                    2: "Spawn a {enemy3} on Tile 1, Enemy Spawn Node 2.",
+                    3: "Spawn a {enemy4} on Tile 1, Enemy Spawn Node 1.",
+                },
+            ),
+            EncounterTrigger(
+                id="the_first_bastion_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="the_first_bastion_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Promised Respite|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="promised_respite_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="promised_respite_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Abandoned and Forgotten|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="abandoned_and_forgotten_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="abandoned_and_forgotten_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Trecherous Tower|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="trecherous_tower_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="trecherous_tower_face_down_traps",
+                label="Face down trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Central Plaza|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="central_plaza_tiles_cleared",
+                label="Tiles cleared of enemies",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="central_plaza_tiles_cleared",
+                label="Tiles cleared of enemies",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+                phase="player",
+            ),
+        ],
+    },
+    "Corrupted Hovel|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="corrupted_hovel_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Gnashing Beaks|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="gnashing_beaks_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="gnashing_beaks_chest",
+                label="Chest opened",
+                effect_template="Spawn a {enemy_list:4,5} on Tile 1, Enemy Spawn Node 1 and a {enemy6} on Tile 1, Enemy Spawn Node 2.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Distant Tower|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="distant_tower_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Cold Snap|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="cold_snap_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Corvian Host|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="corvian_host_spawn",
+                label="",
+                template="Killed {enemy_list:3,3}",
+                effect_template="Spawn a {enemy7} on Tile 3, both Enemy Spawn Nodes.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Eye of the Storm|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="eye_of_the_storm_spawn",
+                label="",
+                template="Killed {enemy_list:1,2,3,4}",
+                effect_template="Spawn a {enemy6} on Tile 3, Enemy Spawn Node 2.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+        "edited": [
+            EncounterTrigger(
+                id="eye_of_the_storm_spawn",
+                label="",
+                template="Killed {enemy_list:1,2,3,4}",
+                effect_template="Spawn a {enemy6} on Tile 3, Enemy Spawn Node 2.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Frozen Revolutions|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="frozen_revolutions_trial",
+                label="Trial complete",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Last Bastion|Painted World of Ariamis": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Broken Passageway|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="broken_passageway_kills",
+                label="Enemies killed",
+                kind="counter",
+                phase="player",
+            ),
+        ],
+    },
+    "The Bell Tower|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="bell_tower_lever",
+                label="Lever activations",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                default_value=0,
+                phase="player",
+                step_effects={
+                    1: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                    2: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                    3: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                    4: "Spawn {enemy_list:3,4} on the closest Enemy Spawn Node to the character that activated the lever.",
+                },
+            ),
+            EncounterTrigger(
+                id="the_bell_tower_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Kingdom's Messengers|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="kingdoms_messengers_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Tempting Maw|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="tempting_maw_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Deathly Tolls|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="deathly_tolls_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Gleaming Silver|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="gleaming_silver_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Parish Church|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="parish_church_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Parish Gates|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="parish_gates_trial",
+                label="Remove Tile 1 from play. Any models on Tile 1 when it's removed are killed. Then, spawn a {enemy4} on Tile 2, Enemy Spawn Node 1 and {enemy5} on Tile 2, Enemy Spawn Node 2.",
+                template="Lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Archive Entrance|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="archive_entrance_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Central Plaza|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="central_plaza_lever",
+                label="Lever activations",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                default_value=0,
+                phase="player",
+                step_effects={
+                    1: "Respawn all enemies.",
+                    2: "Respawn all enemies. Spawn a {enemy5} on Enemy Spawn Node 1.",
+                    3: "Respawn all enemies.",
+                    4: "Respawn all enemies.",
+                },
+            ),
+        ],
+    },
+    "Depths of the Cathedral|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="depths_of_the_cathedral_tiles_cleared",
+                label="Tiles cleared of enemies",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=3,
+                phase="player",
+            ),
+        ],
+    },
+    "Grim Reunion|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="grim_reunion_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="grim_reunion_chest",
+                label="",
+                template="Instead of drawing a card from the treasure deck, replace the chest token with the {enemy11} model.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Hanging Rafters|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="hanging_rafters_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Grand Hall|The Sunless City": {
+        "default": [
+            EncounterTrigger(
+                id="the_grand_hall_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Bridge Too Far|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_lever",
+                label="Lever activated.",
+                template="Respawn all enemies.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Beast From the Depths|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_beast_from_the_depths_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Altar of Bones|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="altar_of_bones_occupy",
+                label="Turns shrine occupied",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Far From the Sun|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="far_from_the_sun_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
+        ],
+    },
+    "Maze of the Dead|Tomb of Giants": {
+        "edited": [
+            EncounterTrigger(
+                id="maze_of_the_dead_lever1",
+                label="",
+                template="Tile 1 lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="maze_of_the_dead_lever2",
+                label="",
+                template="Tile 2 lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="maze_of_the_dead_lever3",
+                label="",
+                template="Tile 3 lever activated",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "The Abandoned Chest|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_abandoned_chest_chest",
+                label="Chest opened",
+                template="Spawn {enemy_list:5,6} on the Enemy Spawn Node closest to the chest.",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Giant's Coffin|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_last_bastion_trial",
+                label="",
+                template="Trial completed",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Lakeview Refuge|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="lakeview_refuge_torch",
+                label="Character placed on the same node as the torch token for the first time.",
+                template="Spawn a {enemy10} on Tile 3, Enemy Spawn Node 1. Spawn {enemy_list:11,12,13,14} on Tile 2, Enemy Spawn Node 2",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+    "Last Shred of Light|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="last_shred_of_light_lever",
+                label="Respawn Tile 2 enemies.",
+                kind="counter",
+                template="Lever activations",
+                min_value=0,
+                max_value=3,
+            ),
+        ],
+    },
+    "The Locked Grave|Tomb of Giants": {
+        "default": [
+            EncounterTrigger(
+                id="the_locked_grave_trial",
+                label="",
+                template="Trial complete",
+                kind="checkbox",
+                phase="player",
+            ),
+            EncounterTrigger(
+                id="the_locked_grave_lever",
+                label="Spawn a {enemy8} on Tile 3, the closest Enemy Spawn Node to the character.",
+                template="Trial complete",
+                kind="checkbox",
+                phase="player",
+            ),
+        ],
+    },
+}
+
+EVENT_TRIGGERS: EventTriggersMap = {
+    "Blacksmith's Trial": [
+        EncounterTrigger(
+            id="blacksmiths_trial",
+            label="",
+            template="Blacksmith's Trial event: Rerolled an attack or defense roll",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
+    "Fleeting Glory": [
+        EncounterTrigger(
+            id="fleeting_glory",
+            label="",
+            template="Fleeting Glory event: Instead of dying, a character cleared their endurance bar",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
+    "Princess Guard": [
+        EncounterTrigger(
+            id="princess_guard",
+            label="",
+            template="Princess Guard event: A character ignored a fatal attack",
+            kind="checkbox",
+            phase="player",
+        ),
+    ],
+}

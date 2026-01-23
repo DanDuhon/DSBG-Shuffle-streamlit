@@ -2,13 +2,16 @@
     "behavior": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 2,
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 2,
             "effect": ["bleed"]
         },
         "middle": {}
     },
     "health": 1,
     "armor": 2,
-    "resist": 1
+    "resist": 1,
+	"order_num": 5
 }

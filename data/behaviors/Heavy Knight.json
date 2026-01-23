@@ -12,6 +12,7 @@
     "heatup": 15,
     "armor": 2,
     "resist": 2,
+	"text": "Encased in plate thick enough to turn aside all but the most determined blows, the Heavy Knight advances with the inevitability of a collapsing tower. Each step grinds stone to dust, shield raised, weapon held in a patient guard that promises crushing retaliation. There is no wasted motion in its approach—no bravado, no roar—just the steady march of a soldier who has outlived his orders but not his duty.\n\nBehind the visor, whatever humanity once lived has long since been smothered by obedience and time. The Heavy Knight does not chase; it corners. It waits for you to break against its shield, to falter beneath the sheer weight of its presence and its armor. To defeat it, you must do more than pierce steel—you must overcome the fear that every swing you make will bounce harmlessly away, while its next blow might be the one that leaves you as another forgotten stain on the fortress floor.",
     "Charging Chop": {
         "dodge": 2,
         "middle": {

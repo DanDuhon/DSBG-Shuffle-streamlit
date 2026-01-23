@@ -5,9 +5,11 @@
             "type": "physical",
             "damage": 4
         },
+		"middle": {"type": "move", "direction": "away", "distance": 2},
         "right": {}
     },
     "health": 1,
     "armor": 1,
-    "resist": 1
+    "resist": 1,
+	"order_num": 3
 }

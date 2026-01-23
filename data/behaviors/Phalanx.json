@@ -3,11 +3,14 @@
         "dodge": 1,
         "left": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"node": true
         },
+		"middle": {"type": "move", "direction": "towards", "distance": 1},
         "right": {}
     },
     "health": 5,
     "armor": 1,
-    "resist": 1
+    "resist": 1,
+	"order_num": 4
 }

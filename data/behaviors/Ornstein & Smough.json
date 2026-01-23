@@ -12,6 +12,7 @@
         "heatup": 0
     },
     "cards": 5,
+	"text": "In the echoing vastness of Anor Londo’s great hall, two figures stand as the last, terrible line between you and the gods’ abandoned throne. Dragonslayer Ornstein moves with predatory grace, his golden armor catching the dim light like a fading sun, spear poised to strike with the speed of a lightning bolt. At his side lumbers Executioner Smough, a grotesque titan in dented plate, his massive hammer promising a swift and brutal end to anything caught beneath it. Where Ornstein is precision, Smough is cruelty; where one is a hunter, the other is a butcher.\n\nThey do not fight as mere guardians, but as executioners presiding over the trial of a trespasser. Ornstein’s darting feints and sudden lunges drive you into Smough’s crushing swings, the cathedral floor cracking beneath their combined fury. And when one finally falls, the other does not mourn—he consumes the strength of his fallen partner, becoming something even more monstrous. This is not just a battle; it is the gods’ final, mocking laugh, delivered through the twin instruments of their fading authority.",
     "Gliding Stab & Hammer Smash": {
         "Gliding Stab": {
             "dodge": 3,

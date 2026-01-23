@@ -1,31 +1,40 @@
 {
     "Death Blow": {
         "dodge": 1,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
     "is_invader": true,
     "health": 18,
+    "text": "If Mildred's attack damages one or more\ncharacters, she gains 1 health.",
     "cards": 3,
     "heatup": 10,
     "armor": 0,
     "resist": 0,
     "Executioner Strike": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
     "Guillotine": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 5,
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 5,
             "effect": ["stagger"]
         },
         "middle": {},
@@ -33,19 +42,24 @@
     },
     "Butcher Chop": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"node": true
         },
         "right": {}
     },
     "Butchery": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
             "damage": 4,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "right": {}
     }

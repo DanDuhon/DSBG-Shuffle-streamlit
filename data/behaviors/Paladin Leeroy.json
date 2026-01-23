@@ -1,10 +1,13 @@
 {
     "Advancing Grant Slam": {
         "dodge": 1,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 6,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "right": {}
     },
@@ -14,28 +17,35 @@
     "heatup": 8,
     "armor": 2,
     "resist": 1,
+	"text": "The first time Leeroy's health would be\nreduced to 0, set his health to 2 instead.",
     "Grant Slam Withdrawal": {
         "dodge": 1,
         "left": {
             "type": "physical",
             "damage": 6,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
-        "middle": {}
+        "middle": {"type": "move", "direction": "away", "distance": 1}
     },
     "Sanctus Shield Slam": {
         "dodge": 3,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "right": {}
     },
     "Sanctus Shield Dash": {
         "dodge": 2,
         "left": {
-            "type": "push",
-            "damage": 4
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 4
         },
         "middle": {},
         "right": {}
@@ -44,7 +54,9 @@
         "dodge": 2,
         "left": {
             "type": "magic",
-            "damage": 5
+            "damage": 5,
+			"push": true,
+			"node": true
         },
         "middle": {},
         "right": {}
