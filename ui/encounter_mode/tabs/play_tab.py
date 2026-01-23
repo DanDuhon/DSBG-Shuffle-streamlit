@@ -20,6 +20,28 @@ from ui.encounter_mode.tabs.setup_tab import render_original_encounter
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
 
 
+# Streamlit 1.50 supports fragments. Use them to keep the heavy Enemy Behavior
+# cards render from re-running on every Play interaction (timer/phase/log).
+if hasattr(st, "fragment"):
+
+    @st.fragment
+    def _enemy_cards_fragment(encounter_id: str, *, columns: int = 2) -> None:
+        enc = st.session_state.get("current_encounter")
+        if not isinstance(enc, dict):
+            return
+        if play_state.get_encounter_id(enc) != encounter_id:
+            return
+        play_panels._render_enemy_behaviors(enc, columns=columns)
+
+else:
+
+    def _enemy_cards_fragment(encounter_id: str, *, columns: int = 2) -> None:
+        enc = st.session_state.get("current_encounter")
+        if not isinstance(enc, dict):
+            return
+        play_panels._render_enemy_behaviors(enc, columns=columns)
+
+
 def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict) -> None:
     name = str((encounter or {}).get("encounter_name") or (encounter or {}).get("name") or "").strip()
     n = int(ENCOUNTER_GRAVESTONES.get(name, 0) or 0)
@@ -494,18 +516,19 @@ def render(settings: dict, campaign: bool = False) -> None:
         play_panels._render_current_rules(encounter, settings, play)
         play_panels._render_keywords_summary(encounter, settings)
 
-        tab_enemies, tab_invaders, tab_rules, tab_other = st.tabs(["Enemies", "Invaders", "Rules", "Other"])
+        view = st.radio(
+            "Play view",
+            ["Enemies", "Rules", "Other"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key=f"enc_play_view_{encounter_id}",
+        )
 
-        with tab_enemies:
-            play_panels._render_enemy_behaviors(encounter)
-
-        with tab_invaders:
-            invader_panel.render_invaders_tab(encounter)
-
-        with tab_rules:
+        if view == "Enemies":
+            _enemy_cards_fragment(encounter_id, columns=1)
+        elif view == "Rules":
             play_panels._render_rules(encounter, settings, play)
-
-        with tab_other:
+        else:
             play_panels._render_objectives(encounter, settings)
             play_panels._render_rewards(encounter, settings, play)
             play_panels._render_attached_events(encounter)
@@ -552,10 +575,4 @@ def render(settings: dict, campaign: bool = False) -> None:
             play_panels._render_rewards(encounter, settings, play)
 
     with col_right.container():
-        tab_enemies, tab_invaders = st.tabs(["Encounter Enemies", "Invaders"])
-
-        with tab_enemies:
-            play_panels._render_enemy_behaviors(encounter, columns=2)
-
-        with tab_invaders:
-            invader_panel.render_invaders_tab(encounter)
+        _enemy_cards_fragment(encounter_id, columns=2)

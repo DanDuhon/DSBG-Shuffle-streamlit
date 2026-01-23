@@ -29,6 +29,9 @@ def ensure_play_state(encounter_id):
             "encounter_id": encounter_id,
             "phase": "enemy",   # "enemy" | "player"
             "timer": 0,         # starts at 0, increments after player phase
+            # Monotonic counter that increments each time we ENTER Enemy Phase
+            # via normal forward play or reset. Used for one-shot triggers.
+            "enemy_phase_entry": 1,
             "log": [],
             # Internal flag: freshly initialized state for this encounter.
             "_fresh": True,
@@ -36,6 +39,9 @@ def ensure_play_state(encounter_id):
         st.session_state["encounter_play"] = state
         # Clear any transient trigger messages when switching encounters.
         st.session_state["encounter_last_trigger_messages"] = []
+
+    # Back-compat: older sessions may not have the entry counter.
+    state.setdefault("enemy_phase_entry", 1)
 
     return state
 
@@ -92,9 +98,11 @@ def advance_turn(play_state: dict, disable_auto_timer: bool = False) -> None:
         if not disable_auto_timer:
             play_state["timer"] += 1
             play_state["phase"] = "enemy"
+            play_state["enemy_phase_entry"] = int(play_state.get("enemy_phase_entry", 0) or 0) + 1
             log_entry(play_state, "Advanced to Enemy Phase; timer increased")
         else:
             play_state["phase"] = "enemy"
+            play_state["enemy_phase_entry"] = int(play_state.get("enemy_phase_entry", 0) or 0) + 1
             log_entry(
                 play_state,
                 "Advanced to Enemy Phase (Timer unchanged due to encounter rule)",
@@ -131,6 +139,7 @@ def reset_play_state(play_state: dict) -> None:
     play_state["phase"] = "enemy"
     play_state["timer"] = 0
     play_state["log"] = []
+    play_state["enemy_phase_entry"] = int(play_state.get("enemy_phase_entry", 0) or 0) + 1
     # Clear transient trigger messages when resetting.
     st.session_state["encounter_last_trigger_messages"] = []
     log_entry(play_state, "Play state reset (Timer 0, Enemy Phase)")

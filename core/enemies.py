@@ -35,4 +35,22 @@ ENEMY_EXPANSIONS_BY_ID = {
     32: ["Darkroot"],                                       # Stone Guardian
     33: ["Darkroot"],                                       # Stone Knight
     34: ["The Sunless City"],                               # Mimic
+
+    # Phantoms (invaders)
+    35: ["Phantoms"],                                       # Armorer Dennis
+    36: ["Phantoms"],                                       # Fencer Sharron
+    37: ["Phantoms"],                                       # Invader Brylex
+    38: ["Phantoms"],                                       # Kirk, Knight of Thorns
+    39: ["Phantoms"],                                       # Longfinger Kirk
+    40: ["Phantoms"],                                       # Maldron the Assassin
+    41: ["Phantoms"],                                       # Maneater Mildred
+    42: ["Phantoms"],                                       # Marvelous Chester
+    43: ["Phantoms"],                                       # Melinda the Butcher
+    44: ["Phantoms"],                                       # Oliver the Collector
+    45: ["Phantoms"],                                       # Paladin Leeroy
+    46: ["Phantoms"],                                       # Xanthous King Jeremiah
+
+    # Explorers (mimic variants)
+    47: ["Explorers"],                                      # Hungry Mimic
+    48: ["Explorers"],                                      # Voracious Mimic
 }

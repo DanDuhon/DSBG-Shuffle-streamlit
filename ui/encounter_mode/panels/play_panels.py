@@ -27,8 +27,9 @@ from core.encounter import timer as timer_mod
 
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
 from core.behavior.generation import render_data_card_cached, build_behavior_catalog
-from core.behavior.logic import load_behavior
+from core.behavior.logic import load_behavior, _read_behavior_json
 from core.behavior.models import BehaviorEntry
+from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
 from ui.encounter_mode.data.enemies import enemyNames
 from ui.encounter_mode.data.keywords import (
     encounterKeywords,
@@ -1902,20 +1903,10 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
 
     enemy_entries = _get_enemy_behavior_entries_for_encounter(encounter)
 
-    # Include invaders present in this encounter (avoid dupes by name)
+    # Invaders are rendered first (top of list) with their draw/HP controls.
     invader_entries = invader_panel._get_invader_behavior_entries_for_encounter(encounter)
 
-    if invader_entries:
-        existing_names = {getattr(e, "name", None) for e in enemy_entries}
-        merged: List[BehaviorEntry] = list(enemy_entries)
-        for inv in invader_entries:
-            if getattr(inv, "name", None) not in existing_names:
-                merged.append(inv)
-        entries = merged
-    else:
-        entries = enemy_entries
-
-    if not entries:
+    if not enemy_entries and not invader_entries:
         st.caption("No enemy behavior data found for this encounter.")
         return
 
@@ -1926,35 +1917,71 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
             return int(v)
         return int(getattr(e, "order_num", 10))
 
-    entries = sorted(entries, key=_threat_key, reverse=True)
+    invader_entries = sorted(invader_entries, key=_threat_key, reverse=True) if invader_entries else []
+    enemy_entries = sorted(enemy_entries, key=_threat_key, reverse=True) if enemy_entries else []
+
+    # IMPORTANT: invaders can appear in the shuffled enemy list (e.g., original sets).
+    # We render invaders in their own section and exclude them from the enemy grid.
+    enemy_entries = [e for e in enemy_entries if not bool(getattr(e, "is_invader", False))]
+
+    # Read NG+ once; behavior rendering is per-run and can be called many times.
+    ng_level = int(get_current_ngplus_level() or 0)
 
     # Dynamic column count (critical: compact calls with columns=1)
     ncols = max(1, int(columns or 1))
-    if ncols == 1:
-        cols = [st.container()]
-    else:
-        cols = list(st.columns(ncols, gap="medium"))
 
     # For the combined summary below all cards
     all_enemy_names: list[str] = []
     aggregated_mods: dict[tuple[str, str, str], dict[str, Any]] = {}
 
+    # -------------------------
+    # Invaders (top section)
+    # -------------------------
+    if invader_entries:
+        st.markdown("#### Invaders")
+        for entry in invader_entries:
+            # Render as a full-width block (invader_stack does its own 2-column layout).
+            invader_panel.render_invader_stack(entry, encounter)
+
+        if enemy_entries:
+            st.divider()
+
+    # -------------------------
+    # Encounter enemies
+    # -------------------------
+    if enemy_entries:
+        st.markdown("#### Encounter Enemies")
+
+    entries = enemy_entries
+
+    # NOTE: Create the enemy grid container only after the invader section.
+    # Streamlit writes into the container at its creation point, so if we
+    # create columns before invaders, enemy cards will appear above invaders.
+    if ncols == 1:
+        cols = [st.container()]
+    else:
+        cols = list(st.columns(ncols, gap="medium"))
+
     for i, entry in enumerate(entries):
         target_col = cols[i % ncols]
         with target_col:
-            # Load base behavior JSON without NG+ so we can apply encounter
-            # modifiers first, then re-run NG+ on the modified raw.
-            base_cfg = load_behavior(entry.path, apply_ngplus=False)
-            enemy_name = base_cfg.name
+            # Load base behavior JSON (cached) without building a full BehaviorConfig;
+            # we only need raw JSON + the entry metadata for rendering.
+            base_raw = deepcopy(_read_behavior_json(str(entry.path)))
+            enemy_name = entry.name
             all_enemy_names.append(enemy_name)
 
             mod_tuples = _gather_behavior_mods_for_enemy(encounter, enemy_name)
             mod_dicts = [m for (m, _, _) in mod_tuples]
-            modified_raw = _apply_behavior_mods_to_raw(base_cfg.raw, mod_dicts)
+            modified_raw = _apply_behavior_mods_to_raw(base_raw, mod_dicts) if mod_dicts else base_raw
 
-            # Rebuild a NG+-adjusted BehaviorConfig from the modified raw
-            cfg = load_behavior(entry.path, raw_override=modified_raw, apply_ngplus=True)
-            raw_for_render = cfg.raw
+            # Apply NG+ scaling after modifiers (without reconstructing a full BehaviorConfig).
+            # If NG+ is 0, avoid extra deepcopies by rendering from the already-owned dict.
+            raw_for_render = (
+                apply_ngplus_to_raw(modified_raw, level=ng_level, enemy_name=enemy_name)
+                if ng_level > 0
+                else modified_raw
+            )
 
             # Special-case: for The Fountainhead, mark behavior JSON so
             # behavior-card renderer can add the extra icon to enemy cards.
@@ -2008,14 +2035,14 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                 
 
             # Special-case: use alternate data card for certain enemies in The Shine of Gold
-            if cfg.name in ("Mimic", "Phalanx") and (encounter.get("encounter_name") == "The Shine of Gold" or encounter.get("name") == "The Shine of Gold"):
-                data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data_The Shine of Gold.jpg"
+            if enemy_name in ("Mimic", "Phalanx") and (encounter.get("encounter_name") == "The Shine of Gold" or encounter.get("name") == "The Shine of Gold"):
+                data_card_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data_The Shine of Gold.jpg"
             else:
-                data_card_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
+                data_card_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data.jpg"
             data_bytes = render_data_card_cached(
                 data_card_path,
                 raw_for_render,
-                is_boss=(cfg.tier == "boss"),
+                is_boss=(entry.tier == "boss"),
             )
             if data_bytes is not None:
                 st.image(data_bytes, width="stretch")

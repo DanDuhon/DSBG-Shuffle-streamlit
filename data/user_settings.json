@@ -121,13 +121,22 @@
     "The Skeleton Ball|Tomb of Giants": false,
     "Cemetery of Ash|Dark Souls The Board Game": false,
     "Broken Passageway|The Sunless City": false,
-    "Central Plaza|The Sunless City": false
+    "Central Plaza|The Sunless City": false,
+    "Brume Tower|Executioner's Chariot": false,
+    "Gate of Peril|Executioner's Chariot": false,
+    "Gough's Perch|Black Dragon Kalameet": false,
+    "Great Stone Bridge|Black Dragon Kalameet": false,
+    "Perilous Crossing|Black Dragon Kalameet": false,
+    "Royal Woods Passage|Black Dragon Kalameet": false,
+    "Darkened Chamber|Gaping Dragon": false,
+    "Outskirts of Blighttown|Gaping Dragon": false,
+    "Sewers of Lordran|Gaping Dragon": false
   },
   "max_invaders_per_level": {
     "1": 2,
     "2": 3,
     "3": 5,
-    "4": 4
+    "4": 3
   },
   "event_deck": {
     "draw_pile": [

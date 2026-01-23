@@ -1,15 +1,17 @@
 # ui/encounter_mode/panels/invader_panel.py
 from __future__ import annotations
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import random
 import streamlit as st
 
-from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
+from core.behavior.assets import BEHAVIOR_CARDS_PATH, CARD_BACK, _behavior_image_path
 from core.behavior.generation import (
     build_behavior_catalog,
     render_data_card_cached,
     render_behavior_card_cached,
 )
+from core.image_cache import get_image_bytes_cached
 from core.behavior.logic import (
     _new_state_from_file,
     _load_cfg_for_state,
@@ -119,6 +121,63 @@ def reset_invaders_for_encounter(encounter: dict) -> None:
     st.session_state["deck_reset_id"] = st.session_state.get("deck_reset_id", 0) + 1
 
 
+def render_invader_stack(entry: BehaviorEntry, encounter: dict) -> None:
+    """Render a compact invader panel suitable for embedding in enemy lists.
+
+    Shows:
+      - invader name
+      - data card
+      - current behavior card (if any)
+      - HP slider
+      - draw / manual heat-up controls
+    """
+    ensure_behavior_session_state()
+
+    state = _ensure_invader_state(entry, encounter)
+    cfg = _load_cfg_for_state(state)
+    if not cfg:
+        st.error("Unable to load behavior data for this invader.")
+        return
+
+    display_name = (
+        cfg.raw.get("display_name")
+        or cfg.raw.get("name")
+        or cfg.name
+    )
+
+    st.markdown(f"**Invader: {display_name}**")
+
+    data_bytes, behavior_bytes = _get_invader_card_images(cfg, state)
+
+    col_left, col_right = st.columns(2, gap="medium")
+    with col_left:
+        if data_bytes is not None:
+            st.image(data_bytes, width="stretch")
+        else:
+            st.caption("No data card image found.")
+
+    with col_right:
+        if behavior_bytes is not None:
+            st.image(behavior_bytes, width="stretch")
+        else:
+            # If no current card has been drawn yet, show the card back.
+            current = state.get("current_card")
+            if not current:
+                back_bytes = get_image_bytes_cached(str(Path(CARD_BACK)))
+                if back_bytes is not None:
+                    st.image(back_bytes, width="stretch")
+                else:
+                    st.caption("No card drawn yet.")
+            else:
+                st.caption("No card drawn yet.")
+
+    col_hp, col_controls = st.columns(2, gap="medium")
+    with col_hp:
+        _render_invader_health_block(cfg, state)
+    with col_controls:
+        _render_invader_deck_controls(cfg, state)
+
+
 # ---------------------------------------------------------------------------
 # Discovery helpers: which invaders are in this encounter?
 # ---------------------------------------------------------------------------
@@ -172,7 +231,15 @@ def _get_invader_behavior_entries_for_encounter(encounter: dict) -> List[Behavio
             if name:
                 invader_names.append(str(name))
 
-    # --- 2) Build a lookup of invader BehaviorEntries by normalized name ---
+    # --- 2) If nothing is explicitly marked, fall back to enemy display names ---
+    # This supports encounters where invaders are part of the enemy list.
+    if not invader_names:
+        try:
+            invader_names = list(_get_enemy_display_names(encounter) or [])
+        except Exception:
+            invader_names = []
+
+    # --- 3) Build a lookup of invader BehaviorEntries by normalized name ---
     catalog = build_behavior_catalog()
     by_name: Dict[str, BehaviorEntry] = {}
 
@@ -183,7 +250,7 @@ def _get_invader_behavior_entries_for_encounter(encounter: dict) -> List[Behavio
                 # First one wins; avoid overwriting if multiple share a name
                 by_name.setdefault(key, entry)
 
-    # --- 3) Preserve encounter order, avoid duplicates ---
+    # --- 4) Preserve encounter order, avoid duplicates ---
     seen: set[str] = set()
     result: List[BehaviorEntry] = []
 
@@ -345,7 +412,11 @@ def _render_single_invader(entry: BehaviorEntry, encounter: dict) -> None:
     if behavior_bytes is not None:
         behavior_ph.image(behavior_bytes, width="stretch")
     else:
-        behavior_ph.caption("No card drawn yet.")
+        back_bytes = get_image_bytes_cached(str(Path(CARD_BACK)))
+        if back_bytes is not None:
+            behavior_ph.image(back_bytes, width="stretch")
+        else:
+            behavior_ph.caption("No card drawn yet.")
 
 
 
@@ -556,11 +627,13 @@ def _render_invader_deck_controls(cfg: BehaviorConfig, state: dict) -> None:
     with col_draw:
         if st.button("Draw next card 🃏", key=f"invader_draw_{cfg.name}", width="stretch"):
             _draw_card(state)
+            st.rerun()
 
     with col_heatup:
         # Optional: only show if cfg has heat-up behavior
         if st.button("Manual heat-up 🔥", key=f"invader_heatup_{cfg.name}", width="stretch"):
             _manual_heatup(state)
+            st.rerun()
 
     draw_count = len(state.get("draw_pile", []))
     discard_count = len(state.get("discard_pile", []))
