@@ -12,6 +12,7 @@
     "cards": 4,
     "armor": 2,
     "resist": 2,
+	"text": "Now dwellers of the bleak and lonely Abyss, the Four Kings at one time were great leaders amongst men, the rulers of New Londo. As that once-proud kingdom now lies in ruins, so too is spent the virtue and humanity of the Four Kings, who remain to watch over that flooded and cruel place alongside their Darkwraith knights.\n\nIn a time long since passed, it was told that in recognition of their foresight, Lord Gwyn did apportion each of their number a fragment of his Lord Soul. Still the Four Kings fell to seduction by evil, tempted by the arts granted by the Primordial Serpent Darkstalker Kaathe. Eventually, their deeds grew to be so heinous and present such threat to the surrounding lands that New Londo was flooded, trapping them and their dark followers in the Abyss and sacrificing countless innocent lives.\n\nBitter and spiteful, the Four Kings harbour a boundless wrath at their imprisonment. With vile talons they reach for the living, to steal humanity away for an eternity, just as theirs has eroded.",
     "Upward Slash": {
         "dodge": 1,
         "middle": {

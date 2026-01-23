@@ -13,6 +13,7 @@
     "heatup": 22,
     "armor": 4,
     "resist": 3,
+	"text": "Legend tells that long ago, before the forgotten kingdom of Oolacile was swallowed by the Abyss, the last of the ancient Everlasting Dragons made its home in that land. Known to the unwise as the one-eyed dragon, Black Dragon Kalameet was as dark in colour and nature as its true name suggests, the only spark of light the glowing chaos gem between its eyes. Of that terrible stone no accounts speak, other than to say that it was embedded into the creature’s very flesh and its crimson glow was devoid of all warmth.\n\nEven now, those who remember that time speak of the terrible wrath of Black Dragon Kalameet, the Bringer of Calamity. Ever one of the most belligerent dragons, after the Sunlight Spears wielded by Gwyn stripped the dragon of its stone skin, Kalameet become more akin to feral beasts than to its draconic fellows. Its terrible fury easily annihilated those upon whom it turned its attention, as the inky blackness of its sorcerous breath threatened to consume the Royal Wood.",
     "Hellfire Blast": {
         "dodge": 2,
         "middle": {

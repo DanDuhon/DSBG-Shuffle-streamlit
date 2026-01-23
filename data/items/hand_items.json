@@ -1,0 +1,8188 @@
+[
+  {
+    "id": "abyss_greatsword",
+    "name": "Abyss Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ],
+      "entity": "Artorias",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 15
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "text": "+1 damage if you have an Ember token.",
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 3
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "aged_smelter_sword",
+    "name": "Aged Smelter Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ],
+      "entity": "Smelter Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "itl": 33
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1,
+          "black": 3
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "orange": 2,
+          "blue": 1
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "attonement",
+    "name": "Attonement",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 25,
+      "fth": 25
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {},
+        "push": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "push": 1,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "aural_decoy",
+    "name": "Aural Decoy",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 22
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {},
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "avelyn",
+    "name": "Avelyn",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "dex": 30,
+      "itl": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 3,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1
+        },
+        "repeat": 3,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1
+        },
+        "repeat": 3,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "balder_side_sword",
+    "name": "Balder Side Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 33,
+      "dex": 23
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2,
+          "range": 1
+        },
+        "shift_before": 1
+      }
+    ]
+  },
+  {
+    "id": "bandit_knife",
+    "name": "Bandit Knife",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "battle_axe",
+    "name": "Battle Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "bewitched_alonne_sword",
+    "name": "Bewitched Alonne Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ],
+      "entity": "Sir Alonne",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 24,
+      "itl": 18
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {
+          "black": 2,
+          "blue": 2
+        },
+        "heal": -4,
+        "text": "You lose 4 health."
+      }
+    ]
+  },
+  {
+    "id": "black_firebombs",
+    "name": "Black Firebombs",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ]
+    },
+    "requirements": {
+      "itl": 20,
+      "fth": 20
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "node_attack": true,
+        "push": 1,
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "black_iron_greatshield",
+    "name": "Black Iron Greatshield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 27,
+      "dex": 37,
+      "itl": 17
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "Ignore push icons on enemies' physical and magic attack icons (not moves with push damage)."
+  },
+  {
+    "id": "black_knight_halberd",
+    "name": "Black Knight Halberd",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ],
+      "entity": "Black Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 32,
+      "dex": 0,
+      "itl": 0,
+      "fth": 18
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 3
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2,
+          "blue": 1
+        },
+        "shaft": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "black_knight_shield_boss",
+    "name": "Black Knight Shield (Black Knight)",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ],
+      "entity": "Black Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 24,
+      "fth": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "black_knight_shield",
+    "name": "Black Knight Shield (Deprived)",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 20
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1
+        },
+        "push": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1
+        },
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "black_knight_sword",
+    "name": "Black Knight Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "dex": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 1,
+          "blue": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "blinding_bolt",
+    "name": "Blinding Bolt",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Old Iron King"
+      ],
+      "entity": "Old Iron King",
+      "type": "boss"
+    },
+    "requirements": {
+      "fth": 40
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true,
+        "repeat": 5
+      }
+    ],
+    "text": "All 5 attacks must target enemies in the same node."
+  },
+  {
+    "id": "bloodshield",
+    "name": "Bloodshield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 16
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        }
+      }
+    ],
+    "immunities": [
+      "poison",
+      "bleed"
+    ],
+    "text": "You are immune to Bleed and Poison."
+  },
+  {
+    "id": "blue_wooden_shield",
+    "name": "Blue Wooden Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "bonewheel_shield",
+    "name": "Bonewheel Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 25,
+      "dex": 15
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "black": 2
+        },
+        "repeat": 4
+      }
+    ]
+  },
+  {
+    "id": "bountiful_light",
+    "name": "Bountiful Light",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "transposed"
+    },
+    "requirements": {
+      "fth": 35
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {},
+        "stamina_recovery": 2,
+        "text": "Up to two characters within range gain 2 stamina."
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {},
+        "heal": 2,
+        "text": "Up to two characters within range gain 2 health."
+      }
+    ]
+  },
+  {
+    "id": "bountiful_sunlight",
+    "name": "Bountiful Sunlight",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 20,
+      "fth": 35
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 3,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 6,
+        "text": "One character within range gains 6 stamina."
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "stamina_recovery": 6,
+        "text": "All other characters within range gain 6 stamina."
+      }
+    ]
+  },
+  {
+    "id": "broadsword",
+    "name": "Broadsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 30,
+      "dex": 28
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "shift_before": 1
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "shift_before": 1
+      }
+    ]
+  },
+  {
+    "id": "broken_straight_sword",
+    "name": "Broken Straight Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 20,
+      "dex": 20
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 3
+        },
+        "flat_mod": -2
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 3
+        },
+        "flat_mod": -2
+      }
+    ]
+  },
+  {
+    "id": "buckler",
+    "name": "Buckler",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 10
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "usable_with_two_hander": true,
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "butcher_knife",
+    "name": "Butcher Knife",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Maneater Mildred",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 25,
+      "fth": 15
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        },
+        "heal": 1,
+        "text": "Gain 1 health."
+      },
+      {
+        "id": "line1",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        },
+        "heal": 1,
+        "text": "Gain 1 health."
+      }
+    ]
+  },
+  {
+    "id": "caduceus_round_shield",
+    "name": "Caduceus Round Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 12,
+      "fth": 14
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "caestus",
+    "name": "Caestus",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 15
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "text": "This attack can be used while this item is in the backup slot."
+      }
+    ]
+  },
+  {
+    "id": "carthus_curved_greatsword",
+    "name": "Carthus Curved Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 30,
+      "itl": 19
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "condition": "bleed"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "carthus_curved_sword",
+    "name": "Carthus Curved Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 35,
+      "itl": 25
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        },
+        "flat_mod": -1,
+        "shift_after": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 3
+        },
+        "flat_mod": -1,
+        "shift_after": 1
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {},
+        "shift_after": 2
+      }
+    ]
+  },
+  {
+    "id": "chariot_lance",
+    "name": "Chariot Lance",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Executioner's Chariot"
+      ],
+      "entity": "Executioner's Chariot",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 22,
+      "dex": 33,
+      "itl": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 1
+        },
+        "condition": "bleed",
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 1,
+          "blue": 1
+        },
+        "condition": "bleed",
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "claws",
+    "name": "Claws",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ]
+    },
+    "requirements": {
+      "dex": 20,
+      "itl": 20
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "clerics_candlestick",
+    "name": "Cleric's Candlestick",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 21,
+      "fth": 29
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2,
+          "blue": 1
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "club",
+    "name": "Club",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "composite_bow",
+    "name": "Composite Bow",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 15,
+      "dex": 21
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 4,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": -1,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "flat_mod": -1,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "crescent_axe",
+    "name": "Crescent Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 22,
+      "dex": 17,
+      "fth": 15
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "flat_mod": 1,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "crescent_moon_sword",
+    "name": "Crescent Moon Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "dex": 17,
+      "fth": 17
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true,
+        "node_attack": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "crest_shield",
+    "name": "Crest Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 16,
+      "dex": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {},
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "crystal_hail",
+    "name": "Crystal Hail",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 25,
+      "itl": 35
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": "∞",
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "text": "Make an attack against each enemy within range."
+      }
+    ]
+  },
+  {
+    "id": "crystal_shield",
+    "name": "Crystal Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "str": 18,
+      "fth": 28
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        }
+      }
+    ],
+    "immunities": [
+      "poison",
+      "bleed"
+    ],
+    "text": "You are immune to Bleed and Poison."
+  },
+  {
+    "id": "crystal_straight_sword",
+    "name": "Crystal Straight Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 30,
+      "itl": 21
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "flat_mod": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "flat_mod": 1
+      }
+    ]
+  },
+  {
+    "id": "cursed_greatsword_of_artorias",
+    "name": "Cursed Greatsword of Artorias",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ],
+      "entity": "Great Grey Wolf Sif",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 14,
+      "itl": 14,
+      "fth": 14
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1,
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "dancers_enchanted_swords",
+    "name": "Dancer's Enchanted Swords",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Dancer of the Boreal Valley",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 36,
+      "itl": 26
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1
+        },
+        "shift_before": true,
+        "magic": true,
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "shift_before": true,
+        "magic": true,
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "dark_silver_tracer",
+    "name": "Dark Silver Tracer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ],
+      "entity": "Artorias",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 25,
+      "itl": 20
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2,
+          "flat_mod": -1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2,
+          "flat_mod": -1,
+          "shift_after": 1,
+          "condition": "poison"
+        }
+      }
+    ]
+  },
+  {
+    "id": "dark_sword",
+    "name": "Dark Sword",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 30,
+      "dex": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 5,
+        "dice": {
+          "orange": 2
+        },
+        "shift_before": 1
+      }
+    ]
+  },
+  {
+    "id": "demons_great_hammer",
+    "name": "Demon's Great Hammer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Asylum Demon"
+      ],
+      "entity": "Asylum Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 27,
+      "dex": 0,
+      "itl": 0,
+      "fth": 0
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "dragon_king_greataxe",
+    "name": "Dragon King Greataxe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Gaping Dragon"
+      ],
+      "entity": "Gaping Dragon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "dex": 33
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "orange": 2
+        },
+        "node_attack": true
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true,
+        "condition": "stagger",
+        "text": "Hits all enemies within range 1."
+      }
+    ]
+  },
+  {
+    "id": "dragon_tooth",
+    "name": "Dragon Tooth",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 37,
+      "fth": 25
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 4,
+        "dice": {
+          "blue": 1,
+          "orange": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 6,
+        "dice": {
+          "blue": 1,
+          "orange": 2
+        },
+        "node_attack": true
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 2,
+        "text": "Gain 2 stamina."
+      }
+    ]
+  },
+  {
+    "id": "dragonrider_bow",
+    "name": "Dragonrider Bow",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 34
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 3,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "orange": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line0",
+        "stamina": 4,
+        "dice": {
+          "orange": 1
+        },
+        "shaft": true,
+        "ignore_block": true
+      }
+    ]
+  },
+  {
+    "id": "dragonslayer_greatbow",
+    "name": "Dragonslayer Greatbow",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 23,
+      "dex": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 3,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true,
+        "push": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        },
+        "shaft": true,
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "dragonslayer_spear",
+    "name": "Dragonslayer Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Ornstein & Smough",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 27,
+      "fth": 27
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "shaft": true,
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2,
+          "black": 1
+        },
+        "shaft": true,
+        "magic": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true,
+        "magic": true,
+        "range": 4
+      }
+    ]
+  },
+  {
+    "id": "dragonslayers_axe",
+    "name": "Dragonslayer's Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35,
+      "dex": 15,
+      "itl": 15,
+      "fth": 15
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        },
+        "shift_before": 1,
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "drake_sword",
+    "name": "Drake Sword",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 27,
+      "dex": 17,
+      "itl": 17
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "drakewing_ultra_greatsword",
+    "name": "Drakewing Ultra Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Guardian Dragon"
+      ],
+      "entity": "Guardian Dragon",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 33,
+      "itl": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "orange": 2
+        },
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "drang_hammers",
+    "name": "Drang Hammers",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 33,
+      "dex": 35
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2
+        },
+        "flat_mod": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line2",
+        "stamina": 5,
+        "dice": {
+          "blue": 2
+        },
+        "repeat": 2,
+        "flat_mod": 1
+      }
+    ]
+  },
+  {
+    "id": "dung_pie",
+    "name": "Dung Pie",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "class"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "condition": "poison"
+      }
+    ]
+  },
+  {
+    "id": "eastern_iron_shield",
+    "name": "Eastern Iron Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 28
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "effigy_shield",
+    "name": "Effigy Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 10,
+      "fth": 10
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "elkhorn_round_shield",
+    "name": "Elkhorn Round Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 16,
+      "dex": 34,
+      "itl": 16
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "estoc",
+    "name": "Estoc",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": -1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "flat_mod": -1
+      }
+    ]
+  },
+  {
+    "id": "exile_greatsword",
+    "name": "Exile Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 30
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "node_attack": true
+      },
+      {
+        "id": "line2",
+        "stamina": 5,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "falchion",
+    "name": "Falchion",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 37,
+      "dex": 30,
+      "fth": 23
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "fire_surge",
+    "name": "Fire Surge",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 22,
+      "itl": 26
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true,
+        "push": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "fire_whip",
+    "name": "Fire Whip",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 34,
+      "fth": 18
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "node_attack": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "fireball",
+    "name": "Fireball",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "itl": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "orange": 2
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "firebombs",
+    "name": "Firebombs",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "itl": 15,
+      "fth": 15
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 4,
+        "dice": {
+          "black": 3
+        }
+      }
+    ],
+    "node_attack": true,
+    "push": 1,
+    "magic": true
+  },
+  {
+    "id": "flamberge",
+    "name": "Flamberge",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "dex": 35
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "orange": 1
+        },
+        "node_attack": true,
+        "condition": "bleed"
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "force",
+    "name": "Force",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "itl": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "push": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {},
+        "push": 2
+      }
+    ]
+  },
+  {
+    "id": "four_kings_sword",
+    "name": "Four Kings Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "The Four Kings"
+      ],
+      "entity": "The Four Kings",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 24,
+      "fth": 30
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "fume_ultra_greatsword",
+    "name": "Fume Ultra Greatsword",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 37,
+      "dex": 33
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "blue": 2,
+          "orange": 1
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "gargoyle_tail_axe",
+    "name": "Gargoyle Tail Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Gargoyle",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 25,
+      "dex": 25
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 3
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "gargoyles_halberd",
+    "name": "Gargoyle's Halberd",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Gargoyle",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 25,
+      "fth": 25
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        },
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "gargoyles_shield",
+    "name": "Gargoyle's Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Gargoyle",
+      "type": "boss"
+    },
+    "requirements": {
+      "itl": 25,
+      "fth": 25
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "giant_stone_axe",
+    "name": "Giant Stone Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "The Last Giant"
+      ],
+      "entity": "The Last Giant",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 34,
+      "dex": 24
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "condition": "stagger"
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1,
+          "blue": 1
+        },
+        "condition": "stagger"
+      }
+    ]
+  },
+  {
+    "id": "gold_tracer",
+    "name": "Gold Tracer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ],
+      "entity": "Artorias",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 35,
+      "itl": 25
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 2,
+          "flat_mod": -1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 2,
+          "flat_mod": -1,
+          "shift_after": 1,
+          "condition": "bleed"
+        }
+      }
+    ]
+  },
+  {
+    "id": "golden_ritual_spear",
+    "name": "Golden Ritual Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "itl": 24,
+      "fth": 21
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "shaft": true,
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line2",
+        "stamina": 5,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "shaft": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "golden_wing_crest_shield",
+    "name": "Golden Wing Crest Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 26,
+      "fth": 26
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "gotthard_twinswords",
+    "name": "Gotthard Twinswords",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 25,
+      "dex": 35
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line2",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "range": 1
+      }
+    ]
+  },
+  {
+    "id": "grass_crest_shield",
+    "name": "Grass Crest Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 28,
+      "fth": 28
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 1,
+        "text": "One character within range gains 1 stamina."
+      }
+    ]
+  },
+  {
+    "id": "gravelord_sword",
+    "name": "Gravelord Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ],
+      "entity": "Gravelord Nito",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 32,
+      "itl": 18
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "condition": "poison"
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1,
+          "black": 1
+        },
+        "condition": "poison"
+      }
+    ]
+  },
+  {
+    "id": "gravelord_sword_dance",
+    "name": "Gravelord Sword Dance",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ],
+      "entity": "Gravelord Nito",
+      "type": "boss"
+    },
+    "requirements": {
+      "itl": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 3,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "node_attack": true
+      },
+      {
+        "id": "line0",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "great_chaos_fireball",
+    "name": "Great Chaos Fireball",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 37,
+      "fth": 27
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true,
+        "node_attack": true,
+        "push": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 3
+        },
+        "magic": true,
+        "node_attack": true,
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "great_club",
+    "name": "Great Club",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "great_combustion",
+    "name": "Great Combustion",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 26,
+      "fth": 22
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true,
+        "node_attack": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "great_heal",
+    "name": "Great Heal",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "transposed"
+    },
+    "requirements": {
+      "fth": 40
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {},
+        "heal": 6,
+        "text": "One character on one node within range gain 6 health."
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {},
+        "heal": 6,
+        "text": "All characters on one node within range gain 6 health."
+      }
+    ]
+  },
+  {
+    "id": "great_machete",
+    "name": "Great Machete",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 40,
+      "dex": 35
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 3
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2,
+          "orange": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 3
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "great_scythe",
+    "name": "Great Scythe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ]
+    },
+    "requirements": {
+      "str": 32,
+      "dex": 21
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 3
+        },
+        "flat_mod": -1,
+        "shaft": true,
+        "node_attack": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": -1,
+        "shaft": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "great_wooden_hammer",
+    "name": "Great Wooden Hammer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 30
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 3
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "greataxe",
+    "name": "Greataxe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 32,
+      "dex": 22
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "greatshield_of_artorias",
+    "name": "Greatshield of Artorias",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ],
+      "entity": "Great Grey Wolf Sif",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 23
+    },
+    "block_dice": {
+      "orange": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You are immune to Bleed and Poison.",
+    "immunities": [
+      "bleed",
+      "poison"
+    ]
+  },
+  {
+    "id": "greatsword",
+    "name": "Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ],
+      "entity": "Heavy Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 23,
+      "dex": 23
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1,
+          "black": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "greatsword_of_artorias",
+    "name": "Greatsword of Artorias",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ],
+      "entity": "Great Grey Wolf Sif",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 24,
+      "dex": 20,
+      "itl": 20,
+      "fth": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 1,
+          "blue": 1
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "hand_axe",
+    "name": "Hand Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "hawkwoods_shield",
+    "name": "Hawkwood's Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 23,
+      "dex": 33,
+      "fth": 23
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "heal",
+    "name": "Heal",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "fth": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 1,
+        "heal": 1,
+        "text": "One character within range gains 1 stamina and 1 health."
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "heal": 4,
+        "text": "One character within range gains 4 health."
+      }
+    ]
+  },
+  {
+    "id": "heal_aid",
+    "name": "Heal Aid",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "fth": 13
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 1,
+        "heal": 1,
+        "text": "One character within range gains 1 stamina and 1 health."
+      }
+    ]
+  },
+  {
+    "id": "hollow_soldier_shield",
+    "name": "Hollow Soldier Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 16,
+      "fth": 19
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        }
+      }
+    ],
+    "text": "This weapon gains +1 damage against Hollows."
+  },
+  {
+    "id": "homing_crystal_soulmass",
+    "name": "Homing Crystal Soulmass",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 40
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 3,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 5,
+        "dice": {
+          "orange": 1
+        },
+        "repeat": 5,
+        "magic": true,
+        "text": "All 5 attacks must target the same enemy."
+      }
+    ]
+  },
+  {
+    "id": "immolation_tinder",
+    "name": "Immolation Tinder",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 28,
+      "fth": 21
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "shaft": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "irithyll_rapier",
+    "name": "Irithyll Rapier",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Boreal Outrider Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 24,
+      "itl": 24
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "condition": "frostbite"
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "condition": "frostbite"
+      }
+    ]
+  },
+  {
+    "id": "irithyll_straight_sword",
+    "name": "Irithyll Straight Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Boreal Outrider Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 23,
+      "itl": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": 1,
+        "condition": "frostbite"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2,
+          "blue": 1
+        },
+        "condition": "frostbite"
+      }
+    ]
+  },
+  {
+    "id": "iron_king_hammer",
+    "name": "Iron King Hammer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Old Iron King"
+      ],
+      "entity": "Old Iron King",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 34,
+      "dex": 23,
+      "itl": 23
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true,
+        "node_attack": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "shift_before": 1,
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "iron_round_shield",
+    "name": "Iron Round Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 10,
+      "itl": 10
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "kite_shield",
+    "name": "Kite Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "kukris",
+    "name": "Kukris",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "dex": 15
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "large_leather_shield",
+    "name": "Large Leather Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 17,
+      "dex": 33
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {},
+        "push": 1
+      }
+    ]
+  },
+  {
+    "id": "leather_shield",
+    "name": "Leather Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 12
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "lifehunt_scythe",
+    "name": "Lifehunt Scythe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ],
+      "entity": "Crossbreed Priscilla",
+      "type": "boss"
+    },
+    "requirements": {
+      "dex": 32,
+      "itl": 23
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        },
+        "flat_mod": -1,
+        "condition": "bleed",
+        "shaft": true
+      },
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "orange": 2
+        },
+        "flat_mod": -1,
+        "condition": "bleed",
+        "shaft": true
+      }
+    ],
+    "text": "After you attack with this weapon, you suffer Bleed."
+  },
+  {
+    "id": "long_sword",
+    "name": "Long Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 13,
+      "dex": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "lothrics_holy_sword",
+    "name": "Lothric's Holy Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 27,
+      "fth": 31
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true,
+        "stamina_recovery": 1,
+        "text": "One character within range 1 gains 1 stamina."
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "magic": true,
+        "stamina_recovery": 1,
+        "text": "One character within range 1 gains 1 stamina."
+      }
+    ]
+  },
+  {
+    "id": "lucerne",
+    "name": "Lucerne",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 31,
+      "itl": 31
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2,
+          "blue": 1
+        },
+        "flat_mod": -1,
+        "shift_after": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 3,
+          "blue": 1
+        },
+        "flat_mod": -1,
+        "shift_after": 1
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "shift_before": 2
+      }
+    ]
+  },
+  {
+    "id": "mace",
+    "name": "Mace",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 12,
+      "fth": 16
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "text": "You may move the Aggro token to another character after this attack."
+      }
+    ]
+  },
+  {
+    "id": "magic_barrier",
+    "name": "Magic Barrier",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 12,
+      "fth": 24
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "text": "Until the next character activation, all characters within range gain 1 blue die for resist."
+      }
+    ]
+  },
+  {
+    "id": "magic_shield",
+    "name": "Magic Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 27,
+      "fth": 14
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "orange": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "mail_breaker",
+    "name": "Mail Breaker",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "man_serpent_hatchet",
+    "name": "Man Serpent Hatchet",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 34
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "ignore_block": true
+      }
+    ]
+  },
+  {
+    "id": "manninkin_claws",
+    "name": "Mannikin Claws",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "dex": 24,
+      "itl": 24
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "shift_before": 1,
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "shift_before": 1,
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "manus_catalyst",
+    "name": "Manus Catalyst",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Manus, Father of the Abyss"
+      ],
+      "entity": "Manus, Father of the Abyss",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 26,
+      "itl": 26
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        },
+        "effects": {
+          "attack_mods": [
+            {
+              "target": "magic",
+              "dice": {
+                "black": 1
+              },
+              "stamina_cost": 1
+            }
+          ]
+        }
+      }
+    ],
+    "text": "Your magic attacks cost +1 stamina but gain 1 black die."
+  },
+  {
+    "id": "med_heal",
+    "name": "Med Heal",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "class"
+    },
+    "requirements": {
+      "fth": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "heal": 2,
+        "text": "All characters within range gain 2 health."
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "heal": 2,
+        "range": 1,
+        "text": "All characters within range gain 2 health."
+      }
+    ]
+  },
+  {
+    "id": "melindas_greataxe",
+    "name": "Melinda's Greataxe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Phantoms",
+        "The Sunless City"
+      ],
+      "entity": "Melinda the Butcher",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 34,
+      "dex": 17
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "orange": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "moonlight_greatsword",
+    "name": "Moonlight Greatsword",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 21,
+      "dex": 21,
+      "itl": 31
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 3
+        },
+        "magic": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 3
+        },
+        "magic": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "mornes_great_hammer",
+    "name": "Morne's Great Hammer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35,
+      "fth": 35
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 6,
+        "dice": {
+          "orange": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "morning_star",
+    "name": "Morning Star",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 16,
+      "fth": 19
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "murakumo",
+    "name": "Murakumo",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 27,
+      "itl": 17
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "notched_whip",
+    "name": "Notched Whip",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Phantoms",
+        "The Sunless City"
+      ],
+      "entity": "Xanthous King Jeremiah",
+      "type": "invader"
+    },
+    "requirements": {
+      "dex": 33
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "condition": "bleed"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 1
+        },
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "obsidian_greatsword",
+    "name": "Obsidian Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Black Dragon Kalameet"
+      ],
+      "entity": "Black Dragon Kalameet",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 33
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "orange": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "text": "Hits all enemies within range 1."
+      }
+    ]
+  },
+  {
+    "id": "old_dragonslayer_spear",
+    "name": "Old Dragonslayer Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ],
+      "entity": "Old Dragonslayer",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 20,
+      "fth": 20
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "shaft": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "onikiri_and_ubadachi",
+    "name": "Onikiri and Ubadachi",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 36,
+      "itl": 26
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "orange": 2
+        },
+        "range": 1
+      }
+    ]
+  },
+  {
+    "id": "painting_guardians_curved_sword",
+    "name": "Painting Guardian's Curved Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 26,
+      "itl": 26,
+      "fth": 26
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "shift_before": 1,
+        "shift_after": 1,
+        "condition": "bleed"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "shift_before": 1,
+        "shift_after": 1,
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "parrying_dagger",
+    "name": "Parrying Dagger",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "dex": 21,
+      "itl": 21,
+      "fth": 21
+    },
+    "block_dice": {
+      "block": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": -1
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "partizan",
+    "name": "Partizan",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 28,
+      "dex": 17,
+      "fth": 35
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2,
+          "orange": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 2,
+        "text": "One character within range gains 2 stamina."
+      }
+    ]
+  },
+  {
+    "id": "phoenix_parma_shield",
+    "name": "Phoenix Parma Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "fth": 20
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "pike",
+    "name": "Pike",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 23,
+      "fth": 23
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "flat_mod": 1,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": 1,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "plank_shield",
+    "name": "Plank Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Deprived",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "poison_mist",
+    "name": "Poison Mist",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 11,
+      "itl": 16
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {},
+        "condition": "poison"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "condition": "poison",
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "poison_throwing_knives",
+    "name": "Poison Throwing Knives",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "dex": 14,
+      "itl": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "condition": "poison"
+      }
+    ]
+  },
+  {
+    "id": "porcine_shield",
+    "name": "Porchine Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ]
+    },
+    "requirements": {
+      "str": 24
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "priscillas_dagger",
+    "name": "Priscilla's Dagger",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ],
+      "entity": "Crossbreed Priscilla",
+      "type": "boss"
+    },
+    "requirements": {
+      "itl": 31
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "condition": "bleed"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 1
+        },
+        "condition": "bleed",
+        "shift_before": 1
+      }
+    ]
+  },
+  {
+    "id": "pursuers_greatshield",
+    "name": "Pursuer's Greatshield",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ],
+      "entity": "The Pursuer",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 38,
+      "fth": 30
+    },
+    "block_dice": {
+      "black": 1,
+      "orange": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "pursuers_ultra_greatsword",
+    "name": "Pursuer's Ultra Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ],
+      "entity": "The Pursuer",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "blue": 2,
+          "orange": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "pursuers",
+    "name": "Pursuers",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Manus, Father of the Abyss"
+      ],
+      "entity": "Manus, Father of the Abyss",
+      "type": "boss"
+    },
+    "requirements": {
+      "itl": 35
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 5,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "repeat": 5,
+        "text": "All 5 attacks must target the same enemy."
+      }
+    ]
+  },
+  {
+    "id": "pyromancy_flame",
+    "name": "Pyromancy Flame",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "starter"
+    },
+    "requirements": {
+      "itl": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2
+        },
+        "magic": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "rapport",
+    "name": "Rapport",
+    "hand_category": "pyromancy",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 36
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 3,
+        "dice": {},
+        "text": "Choose an enemy in a node with another enemy; the chosen enemy suffers 3 damage."
+      }
+    ]
+  },
+  {
+    "id": "red_and_white_round_shield",
+    "name": "Red and White Round Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "itl": 22,
+      "fth": 10
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "reinforced_club",
+    "name": "Reinforced Club",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 23,
+      "fth": 16
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "replenishment",
+    "name": "Replenishment",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "class"
+    },
+    "requirements": {
+      "fth": 25
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 1,
+        "text": "All characters within range gain 1 stamina."
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {},
+        "heal": 1,
+        "text": "All characters within range gain 1 health."
+      }
+    ]
+  },
+  {
+    "id": "rotten_ghru_dagger",
+    "name": "Rotten Ghru Dagger",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 17,
+      "itl": 17
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": -1,
+        "condition": "poison"
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 3
+        },
+        "flat_mod": -1,
+        "condition": "poison"
+      }
+    ]
+  },
+  {
+    "id": "rotten_ghru_spear",
+    "name": "Rotten Ghru Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "dex": 21,
+      "itl": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "condition": "poison",
+        "flat_mod": -1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "condition": "poison"
+      }
+    ]
+  },
+  {
+    "id": "round_shield",
+    "name": "Round Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "royal_dirk",
+    "name": "Royal Dirk",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 31,
+      "fth": 31
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "sacred_chime",
+    "name": "Sacred Chime",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "starter"
+    },
+    "requirements": {
+      "fth": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "heal": 1,
+        "text": "One character within range gains 1 health."
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "heal": 3,
+        "text": "One character within range gains 3 health."
+      }
+    ]
+  },
+  {
+    "id": "sacred_oath",
+    "name": "Sacred Oath",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "class"
+    },
+    "requirements": {
+      "itl": 14,
+      "fth": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "text": "Until the next character activation, all characters within range gain 1 blue die for block."
+      }
+    ]
+  },
+  {
+    "id": "saint_bident",
+    "name": "Saint Bident",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35,
+      "fth": 35
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1,
+          "blue": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {},
+        "stamina_recovery": 2,
+        "text": "One character within range gains 2 stamina."
+      }
+    ]
+  },
+  {
+    "id": "sanctus",
+    "name": "Sanctus",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Paladin Leeroy",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 13,
+      "fth": 33
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "At the start of your activation, gain 1 health."
+  },
+  {
+    "id": "santiers_spear",
+    "name": "Santier's Spear",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "dex": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 2
+        },
+        "flat_mod": 1,
+        "shaft": true,
+        "range": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "shift_before": 1,
+        "node_attack": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 3
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "sellsword_twinblade_v1_1",
+    "name": "Sellsword Twinblade (V1)",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "sellsword_twinblade_v1_2",
+    "name": "Sellsword Twinblade (V1)",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "sellsword_twinblade_v2",
+    "name": "Sellsword Twinblade (V2)",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "shield_crossbow",
+    "name": "Shield Crossbow",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Executioner's Chariot"
+      ],
+      "entity": "Executioner's Chariot",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 20
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 3,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "shortbow",
+    "name": "Shortbow",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "starter"
+    },
+    "requirements": {
+      "dex": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 3,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "shortsword",
+    "name": "Shortsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 15,
+      "dex": 23
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "shotel",
+    "name": "Shotel",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "class"
+    },
+    "requirements": {
+      "dex": 29,
+      "itl": 26
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 1
+        },
+        "ignore_block": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 1
+        },
+        "ignore_block": true
+      }
+    ]
+  },
+  {
+    "id": "silver_eagle_kite_shield",
+    "name": "Silver Eagle Kite Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 15
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "silver_knight_shield",
+    "name": "Silver Knight Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 31,
+      "dex": 23
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "silver_knight_straight_sword",
+    "name": "Silver Knight Straight Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "dex": 20,
+      "itl": 20,
+      "fth": 20
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "skull_lantern",
+    "name": "Skull Lantern",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 13,
+      "itl": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "small_leather_shield",
+    "name": "Small Leather Shield",
+    "hand_category": "shield",
+    "usable_with_two_hander": true,
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Thief",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 15,
+      "dex": 30,
+      "fth": 15
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You can equip this in one hand while you have a two-handed weapon in your other hand."
+  },
+  {
+    "id": "smelter_sword",
+    "name": "Smelter Sword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Iron Keep"
+      ],
+      "entity": "Smelter Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 3
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "orange": 2
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "smoughs_hammer",
+    "name": "Smough's Hammer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Ornstein & Smough",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 37
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        },
+        "heal": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 6,
+        "dice": {
+          "orange": 2,
+          "blue": 2
+        },
+        "heal": 1
+      }
+    ]
+  },
+  {
+    "id": "soothing_sunlight",
+    "name": "Soothing Sunlight",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Dancer of the Boreal Valley",
+      "type": "boss"
+    },
+    "requirements": {
+      "fth": 38
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 4,
+        "dice": {},
+        "heal": 4,
+        "text": "All characters within range gain 4 health."
+      }
+    ]
+  },
+  {
+    "id": "sorcerers_catalyst",
+    "name": "Sorcerer's Catalyst",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "starter"
+    },
+    "requirements": {
+      "itl": 16
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 3,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "sorcerers_staff",
+    "name": "Sorcerer's Staff",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "str": 15,
+      "itl": 30
+    },
+    "block_dice": {},
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 3,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "great_magic_weapon",
+    "name": "Great Magic Weapon",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis",
+        "The Sunless City"
+      ]
+    },
+    "requirements": {
+      "itl": 12,
+      "fth": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "effects": {
+          "attack_mods": [
+            {
+              "target": "all",
+              "change_to_magic": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {},
+        "effects": {
+          "attack_mods": [
+            {
+              "target": "all",
+              "change_to_magic": true,
+              "flat_mod": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "soul_arrow",
+    "name": "Soul Arrow",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "itl": 16
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 3
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "soul_greatsword",
+    "name": "Soul Greatsword",
+    "hand_category": "sorcery",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "itl": 35,
+      "fth": 15
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "orange": 2
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "spear",
+    "name": "Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1
+        },
+        "flat_mod": 1,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "spider_shield",
+    "name": "Spider Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 27,
+      "itl": 15
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "You are immune to Poison.",
+    "immunities": [
+      "poison"
+    ]
+  },
+  {
+    "id": "spiked_mace",
+    "name": "Spiked Mace",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 32,
+      "fth": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1,
+          "blue": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 5,
+        "dice": {
+          "black": 1,
+          "blue": 2
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "spiked_shield",
+    "name": "Spiked Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Phantoms"
+      ],
+      "entity": "Kirk, Knight of Thorns",
+      "type": "invader"
+    },
+    "requirements": {
+      "str": 22,
+      "dex": 12
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {},
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "spitfire_spear",
+    "name": "Spitfire Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Guardian Dragon"
+      ],
+      "entity": "Guardian Dragon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "fth": 33
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "orange": 1
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "shaft": true,
+        "range": 3
+      }
+    ]
+  },
+  {
+    "id": "stone_greataxe",
+    "name": "Stone Greataxe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "str": 35
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "blue": 3
+        },
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "stone_greatsword",
+    "name": "Stone Greatsword",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Darkroot"
+      ]
+    },
+    "requirements": {
+      "str": 22,
+      "fth": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 2,
+          "blue": 1
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "stone_parma",
+    "name": "Stone Parma",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants",
+        "The Sunless City"
+      ],
+      "entity": "Pyromancer",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 15,
+      "itl": 35
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 3,
+        "dice": {
+          "orange": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "sunlight_shield",
+    "name": "Sunlight Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "fth": 30
+    },
+    "block_dice": {
+      "black": 2
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "sunlight_straight_sword",
+    "name": "Sunlight Straight Sword",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 15,
+      "dex": 15,
+      "fth": 30
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        }
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {},
+        "text": "1 black die party bonus to block and resist during the next enemy activation."
+      }
+    ]
+  },
+  {
+    "id": "sunset_shield",
+    "name": "Sunset Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Tomb of Giants"
+      ],
+      "entity": "Cleric",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 15,
+      "fth": 20
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "text": "After a Hollow on your node attacks you, you may push that Hollow."
+  },
+  {
+    "id": "talisman",
+    "name": "Talisman",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Herald",
+      "type": "starter"
+    },
+    "requirements": {
+      "str": 12,
+      "fth": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 2,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {},
+        "text": "All characters within range gain 1 stamina.",
+        "stamina_recovery": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {},
+        "text": "One character within range gains 6 stamina.",
+        "stamina_recovery": 6
+      }
+    ]
+  },
+  {
+    "id": "target_shield",
+    "name": "Target Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "thorolund_talisman",
+    "name": "Thorolund Talisman",
+    "hand_category": "miracle",
+    "source": {
+      "expansion": [
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "fth": 31
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 3,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "thrall_axe",
+    "name": "Thrall Axe",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 16,
+      "dex": 16
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 1,
+          "blue": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "throwing_knives",
+    "name": "Throwing Knives",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "dex": 14,
+      "itl": 12
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "black": 2
+        },
+        "shift_before": 1
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "black": 3
+        },
+        "shift_before": 1
+      }
+    ]
+  },
+  {
+    "id": "titanite_catch_pole",
+    "name": "Titanite Catch Pole",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Titanite Demon",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 28,
+      "dex": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1,
+          "black": 1
+        },
+        "magic": true,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "node_attack": true,
+        "shaft": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "magic": true,
+        "shift_before": 1,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "torch",
+    "name": "Torch",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Sorcerer",
+      "type": "class"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "blue": 1
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "tower_shield",
+    "name": "Tower Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ],
+      "entity": "Heavy Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 25,
+      "dex": 16,
+      "fth": 22
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [],
+    "no_dodge": true,
+    "text": "You cannot dodge."
+  },
+  {
+    "id": "twin_dragon_greatshield",
+    "name": "Twin Dragon Greatshield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Knight",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35,
+      "dex": 35,
+      "itl": 15,
+      "fth": 15
+    },
+    "block_dice": {
+      "blue": 2
+    },
+    "resist_dice": {
+      "blue": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "uchigatana",
+    "name": "Uchigatana",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Explorers"
+      ]
+    },
+    "requirements": {
+      "dex": 32,
+      "fth": 14
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "umbral_dagger",
+    "name": "Umbral Dagger",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Assassin",
+      "type": "transposed"
+    },
+    "requirements": {
+      "dex": 35,
+      "itl": 35
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 2
+        },
+        "flat_mod": -1
+      },
+      {
+        "id": "line1",
+        "stamina": 0,
+        "dice": {
+          "orange": 2
+        },
+        "flat_mod": -1
+      },
+      {
+        "id": "line2",
+        "stamina": 0,
+        "dice": {
+          "blue": 1,
+          "orange": 2
+        },
+        "flat_mod": -1
+      }
+    ]
+  },
+  {
+    "id": "velkas_rapier",
+    "name": "Velka's Rapier",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Painted World of Ariamis"
+      ]
+    },
+    "requirements": {
+      "dex": 19,
+      "itl": 27
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "magic": true
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "magic": true
+      }
+    ]
+  },
+  {
+    "id": "vordts_great_hammer",
+    "name": "Vordt's Great Hammer",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Vordt of the Boreal Valley"
+      ],
+      "entity": "Vordt of the Boreal Valley",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 33,
+      "itl": 33
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 2
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "blue": 3
+        },
+        "condition": "frostbite"
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 4
+        },
+        "condition": "frostbite"
+      }
+    ]
+  },
+  {
+    "id": "warden_twinblades",
+    "name": "Warden Twinblades",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "class"
+    },
+    "requirements": {
+      "str": 17,
+      "dex": 25,
+      "itl": 17
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "black": 2
+        },
+        "repeat": 2
+      },
+      {
+        "id": "line2",
+        "stamina": 5,
+        "dice": {
+          "blue": 2
+        },
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "warpick",
+    "name": "Warpick",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "The Sunless City"
+      ],
+      "entity": "Warrior",
+      "type": "transposed"
+    },
+    "requirements": {
+      "str": 35,
+      "dex": 25
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 1,
+        "dice": {
+          "blue": 1,
+          "orange": 1
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 1,
+          "orange": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "washing_pole",
+    "name": "Washing Pole",
+    "hand_category": "weapon",
+    "legendary": true,
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "dex": 37,
+      "fth": 21
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 2,
+    "range": 2,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true,
+        "condition": "bleed"
+      }
+    ]
+  },
+  {
+    "id": "winged_knight_halberd",
+    "name": "Winged Knight Halberd",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Winged Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 32,
+      "dex": 16,
+      "itl": 16,
+      "fth": 16
+    },
+    "block_dice": {
+      "blue": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "blue": 1
+        },
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "blue": 2
+        },
+        "shaft": true,
+        "node_attack": true
+      }
+    ]
+  },
+  {
+    "id": "winged_knight_twin_axes",
+    "name": "Winged Knight Twin Axes",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game"
+      ],
+      "entity": "Winged Knight",
+      "type": "boss"
+    },
+    "requirements": {
+      "str": 30,
+      "dex": 34
+    },
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 1,
+    "range": 0,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "flat_mod": 1,
+        "repeat": 2
+      },
+      {
+        "id": "line1",
+        "stamina": 2,
+        "dice": {
+          "blue": 1
+        },
+        "flat_mod": 1,
+        "repeat": 2
+      },
+      {
+        "id": "line2",
+        "stamina": 4,
+        "dice": {
+          "orange": 1
+        },
+        "flat_mod": 1,
+        "repeat": 2
+      }
+    ]
+  },
+  {
+    "id": "winged_spear",
+    "name": "Winged Spear",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 20,
+      "fth": 22
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {
+      "black": 1
+    },
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 0,
+        "dice": {
+          "black": 1
+        },
+        "flat_mod": 1,
+        "shaft": true
+      },
+      {
+        "id": "line1",
+        "stamina": 3,
+        "dice": {
+          "black": 2
+        },
+        "flat_mod": 1,
+        "shaft": true
+      }
+    ]
+  },
+  {
+    "id": "wooden_shield",
+    "name": "Wooden Shield",
+    "hand_category": "shield",
+    "source": {
+      "expansion": [
+        "Characters Expansion",
+        "Painted World of Ariamis"
+      ],
+      "entity": "Mercenary",
+      "type": "starter"
+    },
+    "requirements": {},
+    "block_dice": {},
+    "resist_dice": {},
+    "dodge_dice": 1,
+    "upgrade_slots": 0,
+    "range": 0,
+    "hands_required": 1,
+    "attacks": []
+  },
+  {
+    "id": "zweihander",
+    "name": "Zweihander",
+    "hand_category": "weapon",
+    "source": {
+      "expansion": [
+        "Dark Souls The Board Game",
+        "Tomb of Giants"
+      ]
+    },
+    "requirements": {
+      "str": 35,
+      "dex": 25
+    },
+    "block_dice": {
+      "black": 1
+    },
+    "resist_dice": {},
+    "dodge_dice": 0,
+    "upgrade_slots": 2,
+    "range": 1,
+    "hands_required": 2,
+    "attacks": [
+      {
+        "id": "line0",
+        "stamina": 2,
+        "dice": {
+          "black": 1,
+          "blue": 2
+        }
+      },
+      {
+        "id": "line1",
+        "stamina": 5,
+        "dice": {
+          "black": 1,
+          "orange": 2
+        }
+      }
+    ]
+  }
+]

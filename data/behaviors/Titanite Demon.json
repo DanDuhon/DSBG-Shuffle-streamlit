@@ -13,6 +13,7 @@
     "heatup": 10,
     "armor": 3,
     "resist": 2,
+	"text": "Forged from cast-off metal and restless spark, the Titanite Demon lurches through abandoned forges and ruined halls as a guardian without a master. Limbless yet terrifyingly agile, it drags itself forward on warped wings and a single massive polearm, the weapon whistling through the air with unnatural weight. Its body hums with the raw power of titanite, arcs of pale lightning snapping across blackened flesh and twisted steel.\n\nThere is no face to read, no eyes to meet—only the shriek of metal and the crash of its weapon as it hammers intruders into the ground. Drawn to the scraps of titanite you covet, it defends the forgotten hoards as though they were relics of a faith only it remembers. To defeat a Titanite Demon is to wrest power from the very stuff of legends, but the price is paid in sparks, blood, and shattered stone.",
     "Tail Whip": {
         "dodge": 2,
         "middle": {

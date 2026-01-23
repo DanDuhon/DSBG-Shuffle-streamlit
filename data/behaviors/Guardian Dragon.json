@@ -12,6 +12,7 @@
     "heatup": 28,
     "armor": 3,
     "resist": 3,
+	"text": "Guardian of the passage to the Dragon Aerie from Lord Aldia’s Keep, this creature is not truly a dragon as those Everlasting were but is, rather strictly speaking, a drake. It is no less mighty or fearsome for its breed, however, and its kind rule the skies far above the earth, unquestionably the predominant predators of their domain. To interlope amongst such monsters in their hallowed territory is to invite instant and baleful death.\n\nSurely few creatures of this world can rival the fierce and untamed presence of these dragons, with scales as vibrant a red as the fiery breath which they expel, and each possessed of an elegant agility unknown beyond their kind. It is inconceivable that the dragons would act on any will other than their own; so powerful and bestial a creature is unlikely to be compelled by any lesser being.",
     "Fiery Breath": {
         "dodge": 1,
         "left": {

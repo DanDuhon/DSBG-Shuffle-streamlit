@@ -1,0 +1,14 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.qodo
+*.venv
+*.vscode
+blah.py
+blah2.py
+rename_encounters.py
+update_chariot_name.py
+.github/copilot-instructions.md
+CODING_GUIDELINES.md

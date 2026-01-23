@@ -2,8 +2,10 @@
     "Forward Roll": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 3
+            "type": "move",
+			"direction": "towards",
+			"distance": 2,
+            "push": 3
         },
         "middle": {},
         "right": {}
@@ -16,22 +18,28 @@
     "resist": 1,
     "Shield Bash": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
         "right": {}
     },
     "Shield Charge": {
         "dodge": 1,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "right": {}
     },
     "Overhead Chop": {
         "dodge": 1,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 4,
@@ -43,7 +51,8 @@
         "dodge": 1,
         "left": {
             "type": "physical",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "middle": {},
         "right": {}

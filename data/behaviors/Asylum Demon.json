@@ -11,6 +11,7 @@
     "heatup": 16,
     "armor": 1,
     "resist": 1,
+	"text": "Not all demons are storied, with names that leap from the pages of history. Unknown amongst the scholars of men are those damned and contemptible creatures of vitriolic darkness which prefer the company of kindred spirits to that of mortals.\n\nThis creature is one such demon, content to dwell amongst the voiceless hollowed, soldiers and peasants both. The Undead Asylum where it can be found is a lonely and quiet place, moribund and uninviting. The demon may be lesser amongst its kind, but it nonetheless remains capable of lethal rage, its mind still ruled by virulent thoughts. In its hands it wields an immense hammer, constructed from stone archtrees and prohibitively heavy to any not possessed of such unnatural strength. Although by no means the mightiest or most enchanted of weapons, this hammer can easily crush bone into dust at the wielder’s whim.",
     "Leaping Hammer Smash": {
         "dodge": 1,
         "left": {

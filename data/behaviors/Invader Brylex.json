@@ -2,8 +2,10 @@
     "Leaping Strike": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 7
+            "type": "move",
+			"direction": "towards",
+			"distance": 1,
+            "push": 7
         },
         "middle": {},
         "right": {}
@@ -17,8 +19,10 @@
     "Trampling Charge": {
         "dodge": 1,
         "left": {
-            "type": "push",
-            "damage": 4
+            "type": "move",
+			"direction": "towards",
+			"distance": 3,
+            "push": 4
         },
         "middle": {},
         "right": {}
@@ -34,17 +38,21 @@
     },
     "Fire Surge": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "away", "distance": 1},
         "middle": {
             "type": "magic",
-            "damage": 5
+            "damage": 5,
+			"push": true
         },
         "right": {}
     },
     "Fire Whip": {
         "dodge": 1,
+        "left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "magic",
-            "damage": 6
+            "damage": 6,
+			"node": true
         },
         "right": {}
     }

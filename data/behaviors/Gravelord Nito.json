@@ -12,6 +12,7 @@
     "heatup": 15,
     "armor": 2,
     "resist": 2,
+	"text": "Deep beneath the earth, where light has never lived, Gravelord Nito slumbers atop a throne of tangled bones. He is not a king, but a collection—a mass of skulls and ribs and rusting blades bound together by the first death that ever was. Each step he takes stirs a whispering avalanche of remains, the forgotten dead shifting restlessly around their grim shepherd.\n\nNito does not roar or rage; he simply spreads decay like a slow, inevitable tide. Miasma rolls from his cloak of corpses, sapping strength, rotting flesh, and calling lesser skeletons to shamble at his side. To stand before him is to feel your own mortality clawing at your ribs, reminding you that all victories, all struggles, and all fires eventually end the same way—buried in the quiet kingdom of the Gravelord.",
     "Death Wave": {
         "dodge": 1,
         "middle": {

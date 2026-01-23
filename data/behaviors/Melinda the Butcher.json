@@ -2,9 +2,11 @@
     "Double Smash": {
         "dodge": 2,
         "repeat": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 3
+            "damage": 3,
+			"push": true
         },
         "right": {}
     },
@@ -19,34 +21,42 @@
         "repeat": 2,
         "left": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true
         },
-        "middle": {}
+        "middle": {"type": "move", "direction": "towards", "distance": 1}
     },
     "Jumping Cleave": {
         "dodge": 1,
         "repeat": 3,
         "left": {
             "type": "physical",
-            "damage": 3
+            "damage": 3,
+			"push": true
         },
         "middle": {}
     },
     "Greataxe Sweep": {
         "dodge": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
             "damage": 5,
-            "effect": ["stagger"]
+            "effect": ["stagger"],
+			"push": true,
+			"node": true
         },
         "right": {}
     },
     "Sweeping Advance": {
         "dodge": 1,
         "repeat": 2,
+        "left": {"type": "move", "direction": "towards", "distance": 1},
         "middle": {
             "type": "physical",
-            "damage": 4
+            "damage": 4,
+			"push": true,
+			"node": true
         },
         "right": {}
     }

@@ -1,48 +1,65 @@
-# Dark Souls Board Game Web Companion
+# DSBG-Shuffle (Streamlit)
 
-This is a Streamlit web app for managing Dark Souls: The Board Game encounters, events, behaviors, and campaign tracking.
-This is a refactor of the original desktop app: https://github.com/DanDuhon/DSBG-Shuffle
+A Streamlit companion app for **Dark Souls: The Board Game** with local/offline and Streamlit Cloud options.
 
-# 🚀 Features (current & planned)
+The app has a variety of modules that can enhance your DSBG experience either in preparation for play or at the table.
+- 
 
-## Encounter Mode –
-- Browse encounters.
-- Shuffle enemies while maintaining a relative level of difficulty.
-- Some encounters have toggle-able edits. Most of these discourage resting/healing between tiles within an encounter.
-- Attach random or specific events to an encounter.
-- Play encounters, displaying enemy behavior cards edited per encounter/event rules. Support for Timer/trigger based rules.
+## Quickstart (Local)
 
-## Event Mode –
-- View event cards.
-- Simulate event card decks.
-- Create custom event decks.
+Prereqs:
+- Python 3.11+ recommended
 
-## Campaign Mode –
-- Generate V1 or V2 campaigns.
-- Play through a campaign using the encounters drawn.
-- V1 campaigns generate the tile layout.
-- Track souls and sparks with some automation.
-- Save & load campaign.
+From the repo root:
 
-## Boss Mode –
-- Simulate boss behavior decks, track health, handle heat-up and special rules.
-
-## Character Mode –
-- Create character builds, see expected damage output and defensive stats.
-- Save/load character builds.
-
-# Installation
-## Local (no Docker)
-```
-# clone repo
-git clone https://github.com/yourusername/DSBG-Shuffle_streamlit.git
-cd DSBG-Shuffle-streamlit
-
-# install dependencies
+```bash
 pip install -r requirements.txt
-
-# run app
 streamlit run app.py
 ```
 
-## Docker
+Open http://localhost:8501
+
+Important: the app uses relative paths and expects to run from the **repository root**.
+
+## Quickstart (Docker)
+
+The container binds Streamlit on port **8501** and persists `data/` via a named Docker volume.
+
+```bash
+docker compose up --build
+```
+
+Open:
+- http://localhost:8501 (same machine)
+- http://<your-lan-ip>:8501 (other devices on your LAN)
+
+Resetting persisted data (this deletes saved settings/campaigns/encounters stored under `data/`):
+
+```bash
+docker compose down
+docker volume rm dsbg-shuffle-streamlit_dsbg_data
+```
+
+Windows LAN note: if other devices can’t connect, allow inbound TCP **8501** in Windows Defender Firewall.
+
+## What’s In The App
+
+In the sidebar you’ll choose a **Mode**:
+
+- **Encounter Mode**: Setup / Events / Play tabs for encounters.
+- **Event Mode**: Event deck builder plus an event card viewer.
+- **Boss Mode**: Boss selector + behavior deck controls, heat-up, and trackers.
+- **Campaign Mode**: Campaign setup and play encounters from the campaign.
+- **Character Mode**: Character build tool.
+- **Behavior Card Viewer**: Quick viewer for behavior cards.
+
+## Data & Persistence
+
+The app ships with JSON and image assets in the repo:
+
+- `data/`: game data, user settings, saved encounters, campaign data, etc.
+- `assets/`: images used throughout the UI
+
+Settings:
+- Local runs persist to `data/user_settings.json`.
+- Docker runs persist `data/` in a volume (so updates/rebuilds keep your data).

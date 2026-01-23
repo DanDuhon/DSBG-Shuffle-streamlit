@@ -1,0 +1,147 @@
+{
+    "health": 24,
+    "cards": 5,
+    "armor": 3,
+    "resist": 3,
+	"text": "When the curse of undeath descended upon the realm of the Old Iron King, he decreed that those afflicted would be confined to the Huntsman’s Copse, a dark glade in which they would be hunted like vermin. Furthermore, a hellish gaol for the victims was created: the Undead Purgatory. In this grisly prison, the victims of unlife would be tortured and maimed at the behest of the King, a punishment for daring to rise against humanity.\n\nThe empire of the Old Iron King has long since been decimated and the lands of Drangleic fallen to the undead, yet still the miserable Purgatory remains, teeming with those that once were banished here. Their excruciation continues, for the watcher over their unholy torment, the Executioner’s Chariot, endures.",
+    "Mega Boss Setup": {},
+    "Death Race 1": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Death Race 2": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Death Race 3": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Death Race 4": {
+        "dodge": 1,
+        "left": {
+            "type": "physical",
+            "damage": 7
+        }
+    },
+    "Charging Ram": {
+        "dodge": 2,
+        "middle": {
+            "type": "physical",
+            "damage": 6
+        },
+        "right": {}
+    },
+    "Roiling Darkness": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Stomp Rush": {
+        "dodge": 2,
+        "repeat": 2,
+        "left": {
+            "type": "physical",
+            "damage": 7
+        },
+        "middle": {},
+        "heatup": true
+    },
+    "Trampling Charge": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 6
+        },
+        "middle": {},
+        "right": {}
+    },
+    "Engulfing Darkness": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Advancing Back Kick": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Charging Breath": {
+        "dodge": 1,
+        "middle": {
+            "type": "magic",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Headbutt": {
+        "dodge": 3,
+        "middle": {
+            "type": "physical",
+            "damage": 5,
+            "effect": ["stagger"]
+        },
+        "right": {}
+    },
+    "Deadly Breath": {
+        "dodge": 3,
+        "middle": {
+            "type": "magic",
+            "damage": 6
+        },
+        "right": {},
+        "heatup": true
+    },
+    "Rearing Charge": {
+        "dodge": 2,
+        "left": {
+            "type": "push",
+            "damage": 4
+        },
+        "middle": {
+            "type": "push",
+            "damage": 5
+        },
+        "right": {}
+    },
+    "Back Kick": {
+        "dodge": 3,
+        "left": {
+            "type": "physical",
+            "damage": 6,
+            "effect": ["stagger"]
+        },
+        "middle": {}
+    },
+    "Merciless Charge": {
+        "dodge": 1,
+        "middle": {
+            "type": "push",
+            "damage": 6
+        },
+        "right": {
+            "type": "push",
+            "damage": 6
+        },
+        "heatup": true
+    }
+}

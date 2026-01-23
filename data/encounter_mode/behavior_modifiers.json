@@ -1,0 +1,908 @@
+{
+  "ENCOUNTER_BEHAVIOR_MODIFIERS": {
+    "Painted World of Ariamis_1_Cloak and Feathers": [
+      {
+        "description": "-1 block from special rules.",
+        "id": "pw_cloak_and_feathers_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Cloak and Feathers",
+        "stat": "armor",
+        "target": "all_enemies",
+        "value": -1
+      },
+      {
+        "description": "-1 resist from special rules.",
+        "id": "pw_cloak_and_feathers_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Cloak and Feathers",
+        "stat": "resist",
+        "target": "all_enemies",
+        "value": -1
+      },
+      {
+        "description": "-1 dodge difficulty from special rules.",
+        "id": "pw_cloak_and_feathers_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Cloak and Feathers",
+        "stat": "dodge_difficulty",
+        "target": "all_enemies",
+        "value": -1
+      }
+    ],
+    "Painted World of Ariamis_1_Frozen Sentries": [
+      {
+        "description": "Attacks gain push from special rules.",
+        "id": "pw_frozen_sentries_push",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Frozen Sentries",
+        "stat": "push",
+        "target": "all_enemies",
+        "value": true
+      }
+    ],
+    "Painted World of Ariamis_1_Skittering Frenzy": [
+      {
+        "description": "+1 block from special rules.",
+        "id": "pw_skittering_frenzy_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Skittering Frenzy",
+        "stat": "armor",
+        "target": "all_enemies",
+        "value": 1
+      },
+      {
+        "description": "+1 damage from special rules.",
+        "id": "pw_skittering_frenzy_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Skittering Frenzy",
+        "stat": "damage",
+        "target": "all_enemies",
+        "value": 1
+      }
+    ],
+    "Painted World of Ariamis_2_Corrupted Hovel": [
+      {
+        "description": "Poison from special rules.",
+        "id": "pw_corrupted_hovel_poison",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Corrupted Hovel",
+        "stat": "poison",
+        "target_alt_indices": [
+          1,
+          3
+        ],
+        "value": true
+      },
+      {
+        "description": "Node attack from special rules.",
+        "id": "pw_corrupted_hovel_node",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Corrupted Hovel",
+        "stat": "node",
+        "target_alt_indices": [
+          1,
+          3
+        ],
+        "value": true
+      }
+    ],
+    "Painted World of Ariamis_2_Inhospitable Ground": [
+      {
+        "description": "Attacks gain push from special rules.",
+        "id": "pw_inhospitable_ground_push",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Inhospitable Ground",
+        "stat": "push",
+        "target": "all_enemies",
+        "value": true
+      }
+    ],
+    "Painted World of Ariamis_2_Monstrous Maw": [
+      {
+        "description": "Base health 10 from special rules.",
+        "id": "pw_monstrous_maw_health",
+        "op": "set",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "health",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 10
+      },
+      {
+        "description": "+1 block from special rules.",
+        "id": "pw_monstrous_maw_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "armor",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "pw_monstrous_maw_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "resist",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 dodge difficulty from special rules.",
+        "id": "pw_monstrous_maw_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "dodge_difficulty",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      }
+    ],
+    "Painted World of Ariamis_3_Corvian Host": [
+      {
+        "description": "+1 block from special rules.",
+        "id": "pw_corvian_host_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Corvian Host",
+        "stat": "armor",
+        "target_alt_indices": [
+          2,
+          5
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "pw_corvian_host_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Corvian Host",
+        "stat": "resist",
+        "target_alt_indices": [
+          2,
+          5
+        ],
+        "value": 1
+      },
+      {
+        "description": "Bleed from special rules.",
+        "id": "pw_corvian_host_bleed",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Corvian Host",
+        "stat": "bleed",
+        "target_alt_indices": [
+          2,
+          5
+        ],
+        "value": true
+      }
+    ],
+    "Painted World of Ariamis_3_Deathly Freeze": [
+      {
+        "description": "Node attack from special rules.",
+        "id": "pw_deathly_freeze_node",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Deathly Freeze",
+        "stat": "node",
+        "target_alt_indices": [
+          2,
+          6
+        ],
+        "value": true
+      },
+      {
+        "description": "+1 range from special rules.",
+        "id": "pw_deathly_freeze_range",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Deathly Freeze",
+        "stat": "range",
+        "target_alt_indices": [
+          2,
+          6
+        ],
+        "value": 1
+      }
+    ],
+    "Painted World of Ariamis_3_Eye of the Storm": [
+      {
+        "description": "+1 block from special rules.",
+        "id": "pw_eye_of_the_storm_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Eye of the Storm",
+        "stat": "armor",
+        "target_alt_indices": [
+          5
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "pw_eye_of_the_storm_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Eye of the Storm",
+        "stat": "resist",
+        "target_alt_indices": [
+          5
+        ],
+        "value": 1
+      }
+    ],
+    "Painted World of Ariamis_3_Frozen Revolutions": [
+      {
+        "description": "+1 repeat from special rules.",
+        "id": "pw_frozen_revolutions_repeat",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Frozen Revolutions",
+        "stat": "repeat",
+        "target_alt_indices": [
+          6,
+          7
+        ],
+        "value": 1
+      }
+    ],
+    "Painted World of Ariamis_3_The Last Bastion": [
+      {
+        "description": "+5 base health from special rules.",
+        "id": "pw_last_bastion_health",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_The Last Bastion",
+        "stat": "health",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 5
+      },
+      {
+        "description": "+1 dodge difficulty from special rules.",
+        "id": "pw_last_bastion_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_The Last Bastion",
+        "stat": "dodge_difficulty",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 damage from special rules.",
+        "id": "pw_last_bastion_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_The Last Bastion",
+        "stat": "damage",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "Push from special rules.",
+        "id": "pw_last_bastion_push",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_The Last Bastion",
+        "stat": "push",
+        "target_alt_indices": [
+          0
+        ],
+        "value": true
+      }
+    ],
+    "Painted World of Ariamis_3_Velka's Chosen": [
+      {
+        "base": 2,
+        "description": "+[player_num+2] health from special rules.",
+        "id": "pw_velkas_chosen_health",
+        "op": "add",
+        "per_player": 1,
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Velka's Chosen",
+        "stat": "health",
+        "target_alt_indices": [
+          2
+        ]
+      },
+      {
+        "description": "+1 block from special rules.",
+        "id": "pw_velkas_chosen_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Velka's Chosen",
+        "stat": "armor",
+        "target_alt_indices": [
+          2
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "pw_velkas_chosen_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Velka's Chosen",
+        "stat": "resist",
+        "target_alt_indices": [
+          2
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 dodge difficulty from special rules.",
+        "id": "pw_velkas_chosen_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Velka's Chosen",
+        "stat": "dodge_difficulty",
+        "target_alt_indices": [
+          2
+        ],
+        "value": 1
+      },
+      {
+        "description": "Poison from special rules.",
+        "id": "pw_velkas_chosen_poison",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_3_Velka's Chosen",
+        "stat": "poison",
+        "target_alt_indices": [
+          2
+        ],
+        "value": true
+      }
+    ],
+    "The Sunless City_1_Aged Sentinel": [
+      {
+        "description": "-2 base health from special rules.",
+        "id": "tsc_aged_sentinel_health",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_1_Aged Sentinel",
+        "stat": "health",
+        "target_alt_indices": [
+          0
+        ],
+        "value": -2
+      },
+      {
+        "description": "-2 damage from special rules.",
+        "id": "tsc_aged_sentinel_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_1_Aged Sentinel",
+        "stat": "damage",
+        "target_alt_indices": [
+          0
+        ],
+        "value": -2
+      }
+    ],
+    "The Sunless City_1_Shattered Keep": [
+      {
+        "description": "Poison from special rules.",
+        "id": "tsc_shattered_keep_poison",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "The Sunless City_1_Shattered Keep",
+        "stat": "poison",
+        "target_alt_indices": [
+          1,
+          2,
+          3
+        ],
+        "value": true
+      }
+    ],
+    "The Sunless City_1_The Bell Tower": [
+      {
+        "description": "+Timer value damage from special rules.",
+        "id": "tsc_the_bell_tower_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_1_The Bell Tower",
+        "stat": "damage",
+        "target": "all_enemies",
+        "value": 1,
+        "value_from": "timer"
+      },
+      {
+        "description": "+Timer value dodge difficulty from special rules.",
+        "id": "tsc_the_bell_tower_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_1_The Bell Tower",
+        "stat": "dodge_difficulty",
+        "target": "all_enemies",
+        "value": 1,
+        "value_from": "timer"
+      }
+    ],
+    "The Sunless City_2_Gleaming Silver": [
+      {
+        "description": "+1 block from special rules.",
+        "id": "tsc_gleaming_silver_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_Gleaming Silver",
+        "stat": "block",
+        "target_alt_indices": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "value": 1
+      },
+      {
+        "description": "Frostbite from special rules.",
+        "id": "tsc_gleaming_silver_frostbite",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_Gleaming Silver",
+        "stat": "frostbite",
+        "target_alt_indices": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "value": true
+      }
+    ],
+    "The Sunless City_2_Parish Gates": [
+      {
+        "description": "+[player_num] health from special rules.",
+        "id": "tsc_parish_gates_health",
+        "op": "add",
+        "per_player": 1,
+        "source": "encounter",
+        "source_id": "The Sunless City_2_Parish Gates",
+        "stat": "health",
+        "target_alt_indices": [
+          3,
+          4
+        ]
+      },
+      {
+        "description": "+1 block from special rules.",
+        "id": "tsc_parish_gates_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_Parish Gates",
+        "stat": "armor",
+        "target_alt_indices": [
+          3,
+          4
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "tsc_parish_gates_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_Parish Gates",
+        "stat": "resist",
+        "target_alt_indices": [
+          3,
+          4
+        ],
+        "value": 1
+      },
+      {
+        "description": "Push from special rules.",
+        "id": "tsc_parish_gates_push",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_Parish Gates",
+        "stat": "push",
+        "target_alt_indices": [
+          3,
+          4
+        ],
+        "value": true
+      }
+    ],
+    "The Sunless City_2_The Iron Golem": [
+      {
+        "description": "+1 block from special rules.",
+        "id": "tsc_iron_golem_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_The Iron Golem",
+        "stat": "armor",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "tsc_iron_golem_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_The Iron Golem",
+        "stat": "resist",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      }
+    ],
+    "The Sunless City_2_The Shine of Gold": [
+      {
+        "description": "+1 block from special rules.",
+        "id": "tsc_shine_of_gold_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_The Shine of Gold",
+        "stat": "armor",
+        "target_alt_indices": [
+          2
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "tsc_shine_of_gold_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_The Shine of Gold",
+        "stat": "resist",
+        "target_alt_indices": [
+          2
+        ],
+        "value": 1
+      },
+      {
+        "description": "Bleed from special rules.",
+        "id": "tsc_shine_of_gold_bleed",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "The Sunless City_2_The Shine of Gold",
+        "stat": "bleed",
+        "target_alt_indices": [
+          2
+        ],
+        "value": true
+      }
+    ],
+    "The Sunless City_3_Trophy Room": [
+      {
+        "description": "+[player_num] health from special rules.",
+        "id": "tsc_trophy_room_health",
+        "op": "add",
+        "per_player": 1,
+        "source": "encounter",
+        "source_id": "The Sunless City_3_Trophy Room",
+        "stat": "health",
+        "target_alt_indices": [
+          4,
+          6
+        ]
+      },
+      {
+        "description": "+1 block from special rules.",
+        "id": "tsc_trophy_room_armor",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_3_Trophy Room",
+        "stat": "armor",
+        "target_alt_indices": [
+          4,
+          6
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "tsc_trophy_room_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_3_Trophy Room",
+        "stat": "resist",
+        "target_alt_indices": [
+          4,
+          6
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 dodge difficulty from special rules.",
+        "id": "tsc_trophy_room_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "The Sunless City_3_Trophy Room",
+        "stat": "dodge_difficulty",
+        "target_alt_indices": [
+          4,
+          6
+        ],
+        "value": 1
+      },
+      {
+        "description": "All attacks become magic from special rules.",
+        "id": "tsc_trophy_room_magic",
+        "op": "set",
+        "source": "encounter",
+        "source_id": "The Sunless City_3_Trophy Room",
+        "stat": "type",
+        "target_alt_indices": [
+          4,
+          6
+        ],
+        "value": "magic"
+      }
+    ],
+    "Tomb of Giants_1_Deathly Magic": [
+      {
+        "base": 5,
+        "description": "[player_num] health from special rules.",
+        "id": "tog_deathly_magic_health",
+        "op": "set",
+        "per_player": 1,
+        "source": "encounter",
+        "source_id": "Tomb of Giants_1_Deathly Magic",
+        "stat": "health",
+        "target_alt_indices": [
+          2
+        ]
+      }
+    ],
+    "Tomb of Giants_1_Last Rites": [
+      {
+        "description": "+1 damage from special rules.",
+        "id": "tog_last_rites_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_1_Last Rites",
+        "stat": "damage",
+        "target": "all_enemies",
+        "value": 1
+      }
+    ],
+    "Tomb of Giants_1_Puppet Master": [
+      {
+        "base": "Γê₧",
+        "description": "Γê₧ health from special rules.",
+        "id": "tog_puppet_master_health",
+        "op": "set",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_1_Puppet Master",
+        "stat": "health",
+        "target_alt_indices": [
+          0
+        ]
+      }
+    ],
+    "Tomb of Giants_1_Rain of Filth": [
+      {
+        "description": "All enemy attacks gain Poison from special rules.",
+        "id": "tog_rain_of_filth_poison",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_1_Rain of Filth",
+        "stat": "poison",
+        "target": "all_enemies",
+        "value": true
+      }
+    ],
+    "Tomb of Giants_2_Maze of the Dead": [
+      {
+        "description": "+1 dodge difficulty from special rules.",
+        "id": "maze_of_the_dead_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_2_Maze of the Dead",
+        "stat": "dodge_difficulty",
+        "target": "all_enemies",
+        "value": 1
+      }
+    ],
+    "Tomb of Giants_2_The Mass Grave": [
+      {
+        "description": "+1 movement from special rules.",
+        "id": "tog_mass_grave_move",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_2_The Mass Grave",
+        "stat": "move",
+        "target": "all_enemies",
+        "value": 1
+      }
+    ],
+    "Tomb of Giants_3_Death's Precipice": [
+      {
+        "description": "All enemy attacks gain Stagger from special rules.",
+        "id": "tog_deaths_precipice_stagger",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_3_Death's Precipice",
+        "stat": "stagger",
+        "target": "all_enemies",
+        "value": true
+      }
+    ],
+    "Tomb of Giants_3_Honour Guard": [
+      {
+        "description": "+1 damage from special rules.",
+        "id": "tog_honour_guard_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_3_Death's Precipice",
+        "stat": "damage",
+        "target": "all_enemies",
+        "value": 1
+      }
+    ],
+    "Tomb of Giants_3_Skeleton Overlord": [
+      {
+        "description": "Double base health from special rules.",
+        "id": "tog_skeleton_overlord_double_hp",
+        "op": "mul",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_3_Skeleton Overlord",
+        "stat": "health",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 2
+      },
+      {
+        "description": "+1 block from special rules.",
+        "id": "tog_skeleton_overlord_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_3_Skeleton Overlord",
+        "stat": "armor",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "tog_skeleton_overlord_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_3_Skeleton Overlord",
+        "stat": "resist",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      }
+    ]
+  },
+  "ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED": {
+    "Painted World of Ariamis_1_No Safe Haven": [],
+    "Painted World of Ariamis_1_The First Bastion": [],
+    "Painted World of Ariamis_2_Monstrous Maw": [
+      {
+        "description": "Base health 10 from special rules.",
+        "id": "pw_monstrous_maw_health",
+        "op": "set",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "health",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 10
+      },
+      {
+        "description": "+1 block from special rules.",
+        "id": "pw_monstrous_maw_block",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "armor",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 resist from special rules.",
+        "id": "pw_monstrous_maw_resist",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "resist",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "+1 dodge difficulty from special rules.",
+        "id": "pw_monstrous_maw_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_2_Monstrous Maw",
+        "stat": "dodge_difficulty",
+        "target_alt_indices": [
+          0
+        ],
+        "value": 1
+      },
+      {
+        "description": "Attacks gain push from special rules.",
+        "id": "pw_frozen_sentries_push",
+        "op": "flag",
+        "source": "encounter",
+        "source_id": "Painted World of Ariamis_1_Frozen Sentries",
+        "stat": "push",
+        "target_alt_indices": [
+          0
+        ],
+        "value": true
+      }
+    ],
+    "Tomb of Giants_2_Maze of the Dead": [
+      {
+        "description": "+Timer value dodge difficulty from special rules.",
+        "id": "maze_of_the_dead_dodge",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_2_Maze of the Dead",
+        "stat": "dodge_difficulty",
+        "target": "all_enemies",
+        "value": 1,
+        "value_from": "timer"
+      }
+    ],
+    "Tomb of Giants_2_The Mass Grave": [
+      {
+        "description": "+1 move per respawn.",
+        "id": "mass_grave_move",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_2_The Mass Grave",
+        "stat": "move",
+        "target": "all_enemies",
+        "value": 1,
+        "value_from": "mass_grave_reset_count"
+      },
+      {
+        "description": "+1 damage per respawn.",
+        "id": "mass_grave_damage",
+        "op": "add",
+        "source": "encounter",
+        "source_id": "Tomb of Giants_2_The Mass Grave",
+        "stat": "damage",
+        "target": "all_enemies",
+        "value": 1,
+        "value_from": "mass_grave_reset_count"
+      }
+    ]
+  }
+}

@@ -12,6 +12,7 @@
     "heatup": 15,
     "armor": 3,
     "resist": 3,
+	"text": "The strongest of the Four Knights of Gwyn, Lord of the Sunlight, Artorias was the first mortal to traverse the Abyss, having made covenant with the beasts within. When Manus, Father of the Abyss came to threaten Oolacile, it was there that Artorias gave his life in his final battle. Overwhelmed by the Dark, Artorias shielded his companion even as the once-proud knight fell to the corruption of the Dark. In that moment Artorias was cursed to wander as an insane and twisted revenant, forever denied his rightful rest.",
     "Somersault Slam": {
         "dodge": 1,
         "middle": {

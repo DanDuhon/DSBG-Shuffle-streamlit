@@ -1,13 +1,16 @@
 {
     "behavior": {
         "dodge": 2,
+		"left": {"type": "move", "direction": "towards", "distance": 2},
         "middle": {
             "type": "physical",
-            "damage": 6
+            "damage": 6,
+			"push": true
         },
         "right": {}
     },
     "health": 5,
     "armor": 1,
-    "resist": 1
+    "resist": 1,
+	"order_num": 4
 }

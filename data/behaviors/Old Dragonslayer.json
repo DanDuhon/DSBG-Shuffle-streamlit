@@ -11,6 +11,7 @@
     "cards": 4,
     "armor": 2,
     "resist": 2,
+	"text": "A faded echo of a legend, the Old Dragonslayer stalks his lonely cathedral like a ghost that never learned how to die. His armor, once resplendent, is now darkened and dull, a tarnished reflection of the glorious knight who once hunted dragons beneath a blazing sun. The spear he wields still crackles with vestiges of lightning, each thrust a reminder of battles long past, and of a covenant that ended in silence rather than song.\n\nHe offers no explanations, no hint of who he once stood beside or why he now fights alone in a distant land. To those who enter his hall, he is simply a trial—a relic testing the worth of the living. Yet as you trade blows beneath the stained glass and shattered idols, it’s hard not to feel that you are trespassing in a memory, crossing blades with the shadow of a bygone age that refuses to be forgotten.",
     "Spear Lunge": {
         "dodge": 2,
         "middle": {

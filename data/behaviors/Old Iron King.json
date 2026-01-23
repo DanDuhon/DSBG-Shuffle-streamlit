@@ -14,6 +14,7 @@
     "heatup": 22,
     "armor": 3,
     "resist": 3,
+	"text": "No one now remembers the true identity of the man who became the Old Iron King, once a minor lord with little to his name. Aided by Sir Alonne, an enigmatic knight from the east, his lust for power created a vast and indomitable empire carved from the old kingdom of Venn. Not even the curse of undeath could stay his vision, as he hunted them down and imprisoned their lifeless corpses.\n\nYet his own hubris would be his undoing. In his obsession to create an impregnable fortress as his throne, he invited disaster: the immense weight of the structure began to pull it into the depths of the earth beneath. Nothing beyond the Iron Keep now remains, and the edifice itself is slowly disappearing into the molten iron.\n\nMurdered in the last moments of his empire, the form of the Old Iron King is not as it once was, his corpse instead transformed into that of Ichorous Earth. His soul has been forever possessed by the great evil from within the flames, that eternal malevolence whose name must never be repeated.",
     "Double Fist Pound": {
         "dodge": 2,
         "left": {

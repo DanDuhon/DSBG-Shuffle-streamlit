@@ -13,6 +13,7 @@
     "heatup": 12,
     "armor": 3,
     "resist": 3,
+	"text": "Silent and poised atop the ashen keep, Sir Alonne waits—not as a warden, but as a test. His armor is foreign to these lands, lacquered plates and crimson cords wrapped around a frame honed by countless battles. The katana in his hand never trembles, its edge held low and ready, as though even the smallest movement might become a killing stroke. There are no guards, no chains, no fanfare—only the stillness of a warrior who has already passed judgment on himself.\n\nHe once lent his strength to the Old Iron King, helping to forge an empire of steel and flame, only to leave when that king’s ambition rotted into excess. Now his spirit remains, bound not by duty to a throne, but by an unfinished promise etched into steel and blood. Every duel is a question he asks without words: are you worthy of the respect that only a true swordsman can give? And if you answer perfectly—if your victory is clean and unquestionable—he meets his own end with the same grace he showed in battle, as though your blade has finally delivered the absolution he sought.",
     "Triple Slash Combo": {
         "dodge": 2,
         "repeat": 3,

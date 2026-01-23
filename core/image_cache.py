@@ -1,4 +1,3 @@
-
 """
 core.image_cache
 -----------------
@@ -13,7 +12,34 @@ Provides disk-persistent caching for:
 
 from pathlib import Path
 from PIL import Image
-import streamlit as st
+import io
+import base64
+from functools import lru_cache
+
+
+try:
+    import streamlit as st  # type: ignore
+
+    def cache_data(*args, **kwargs):
+        return st.cache_data(*args, **kwargs)
+
+    def cache_resource(*args, **kwargs):
+        return st.cache_resource(*args, **kwargs)
+
+except Exception:  # pragma: no cover
+    st = None
+
+    def cache_data(*_args, **_kwargs):
+        def _decorator(fn):
+            return lru_cache(maxsize=None)(fn)
+
+        return _decorator
+
+    def cache_resource(*_args, **_kwargs):
+        def _decorator(fn):
+            return lru_cache(maxsize=None)(fn)
+
+        return _decorator
 
 # -------------------------------------------------------------
 # Paths and cache directories
@@ -32,64 +58,97 @@ for d in CACHE_DIRS.values():
 
 
 # -------------------------------------------------------------
-# Generic cached loaders
+# Bytes helper (cached by file mtime)
 # -------------------------------------------------------------
-@st.cache_resource(show_spinner=False)
-def _load_jpg_cached(src_path: Path, cache_dir: Path) -> Image.Image:
-    """Load a JPG image from assets or disk cache."""
-    dst = cache_dir / src_path.name
-    if dst.exists():
-        try:
-            return Image.open(dst).convert("RGB")
-        except Exception:
-            dst.unlink(missing_ok=True)
-    if src_path.exists():
-        img = Image.open(src_path).convert("RGB")
-        img.save(dst, format="JPEG")
-        return img
-    raise FileNotFoundError(f"Missing JPG image: {src_path}")
+def _stat_mtime_ns(path: Path) -> int:
+    return int(path.stat().st_mtime_ns)
 
 
-@st.cache_resource(show_spinner=False)
-def _load_png_cached(src_path: Path, cache_dir: Path) -> Image.Image:
-    """Load a PNG image from assets or disk cache."""
-    dst = cache_dir / src_path.name
-    if dst.exists():
-        try:
-            return Image.open(dst).convert("RGBA")
-        except Exception:
-            dst.unlink(missing_ok=True)
-    if src_path.exists():
-        img = Image.open(src_path).convert("RGBA")
-        img.save(dst, format="PNG")
-        return img
-    raise FileNotFoundError(f"Missing PNG image: {src_path}")
+@cache_data(show_spinner=False)
+def _get_image_bytes_cached(path_str: str, mtime_ns: int) -> bytes:
+    """Internal cached reader keyed by (path, mtime).
+
+    Returns raw file bytes. If the file is an image, returns its bytes as-is.
+    """
+    p = Path(path_str)
+    if not p.exists():
+        raise FileNotFoundError(f"Missing image: {p}")
+    return p.read_bytes()
+
+
+def get_image_bytes_cached(path: str) -> bytes:
+    """Public helper: return file bytes for `path`, invalidating cache on file change."""
+    p = Path(path)
+    return _get_image_bytes_cached(str(p), _stat_mtime_ns(p))
+
+
+@cache_data(show_spinner=False)
+def bytes_to_data_uri(data: object, mime: str = "image/png") -> str:
+    """Convert raw bytes or a PIL Image to a data URI (cached by content hash).
+
+    Accepts:
+      - raw `bytes` or `bytearray`
+      - a `PIL.Image.Image` instance
+      - a file-like object with a `getvalue()` method (e.g., `io.BytesIO`)
+
+    `mime` should be the desired content type (e.g., 'image/png' or 'image/jpeg').
+    """
+    if not data:
+        return ""
+
+    # If caller passed a PIL Image, serialize it to bytes using the mime/format
+    if isinstance(data, Image.Image):
+        buf = io.BytesIO()
+        fmt = "PNG" if mime == "image/png" else "JPEG"
+        img = data
+        if fmt == "JPEG" and img.mode in ("RGBA", "LA"):
+            img = img.convert("RGB")
+        img.save(buf, format=fmt)
+        bytes_data = buf.getvalue()
+    # Bytes-like objects
+    elif isinstance(data, (bytes, bytearray)):
+        bytes_data = bytes(data)
+    # file-like buffer
+    elif hasattr(data, "getvalue"):
+        bytes_data = data.getvalue()
+    else:
+        raise TypeError("bytes_to_data_uri expects bytes, PIL.Image, or a buffer with getvalue()")
+
+    b64 = base64.b64encode(bytes_data).decode("ascii")
+    return f"data:{mime};base64,{b64}"
+
+
+def get_image_data_uri_cached(path: str) -> str:
+    """Return a `data:<mime>;base64,...` URI for `path`, cached and invalidated on file change."""
+    p = Path(path)
+    data = get_image_bytes_cached(str(p))
+    suffix = p.suffix.lower()
+    mime = "image/png" if suffix == ".png" else "image/jpeg"
+    return bytes_to_data_uri(data, mime=mime)
 
 
 # -------------------------------------------------------------
-# Public cached loaders
+# PIL Image helpers (cached by file mtime)
 # -------------------------------------------------------------
-def load_base_card(encounter_name: str, use_edited: bool) -> Image.Image:
-    """Load base encounter card (JPG)."""
-    folder = "edited encounter cards" if use_edited else "encounter cards"
-    src_path = ASSETS / folder / f"{encounter_name}.jpg"
-    cache_dir = CACHE_DIRS["edited_cards" if use_edited else "base_cards"]
-    return _load_jpg_cached(src_path, cache_dir)
+@cache_resource(show_spinner=False)
+def _load_pil_image_cached_raw(
+    path_str: str, mtime_ns: int, convert: str | None = None
+) -> Image.Image:
+    """Internal helper: load image bytes and return a PIL Image.
+
+    Keyed by (path, mtime) so updates to the file invalidate the cache.
+    """
+    data = _get_image_bytes_cached(path_str, mtime_ns)
+    img = Image.open(io.BytesIO(data))
+    if convert:
+        img = img.convert(convert)
+    return img
 
 
-def load_enemy_icon(enemy_name: str) -> Image.Image:
-    """Load enemy icon (PNG)."""
-    src_path = ASSETS / "enemy icons" / f"{enemy_name}.png"
-    return _load_png_cached(src_path, CACHE_DIRS["icons"])
+def load_pil_image_cached(path: str, convert: str | None = "RGBA") -> Image.Image:
+    """Public helper: return a PIL Image for `path` (cached).
 
-
-def load_character_icon(name: str) -> Image.Image:
-    """Load character icon (PNG)."""
-    src_path = ASSETS / "characters" / f"{name}.png"
-    return _load_png_cached(src_path, CACHE_DIRS["characters"])
-
-
-def load_expansion_icon(name: str) -> Image.Image:
-    """Load expansion icon (PNG)."""
-    src_path = ASSETS / "expansions" / f"{name}.png"
-    return _load_png_cached(src_path, CACHE_DIRS["expansions"])
+    The returned Image should be copied by callers before mutating it.
+    """
+    p = Path(path)
+    return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert)

@@ -3,11 +3,12 @@
         "dodge": 1,
         "left": {
             "type": "magic",
-            "damage": 3
-        },
-        "middle": {}
+            "damage": 3,
+			"node": true
+        }
     },
     "health": 5,
     "armor": 1,
-    "resist": 2
+    "resist": 2,
+	"order_num": 7
 }
