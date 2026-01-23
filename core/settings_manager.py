@@ -47,6 +47,78 @@ DEFAULT_SETTINGS = {
 }
 
 
+EDITED_ENCOUNTER_CARDS_DIR = Path("assets/edited encounter cards")
+
+
+def _discover_edited_encounter_toggle_keys() -> set[str]:
+    """Return the set of valid `edited_toggles` keys based on assets on disk.
+
+    Keys are stored in settings as: "<Encounter Name>|<Expansion>".
+
+    Edited encounter card filenames are expected in the form:
+        <Expansion>_<level>_<Encounter Name>.<ext>
+    """
+
+    if not EDITED_ENCOUNTER_CARDS_DIR.exists():
+        return set()
+
+    valid: set[str] = set()
+    try:
+        for p in EDITED_ENCOUNTER_CARDS_DIR.iterdir():
+            if not p.is_file():
+                continue
+            parts = p.stem.split("_", 2)
+            if len(parts) < 3:
+                continue
+            expansion, _level, encounter_name = parts
+            expansion = expansion.strip()
+            encounter_name = encounter_name.strip()
+            if expansion and encounter_name:
+                valid.add(f"{encounter_name}|{expansion}")
+    except Exception:
+        # If discovery fails for any reason, fail open (do not prune).
+        return set()
+
+    return valid
+
+
+def _prune_edited_toggles(settings: dict) -> None:
+    """In-place: drop `edited_toggles` entries for encounters without edits."""
+
+    toggles = settings.get("edited_toggles")
+    if not isinstance(toggles, dict) or not toggles:
+        return
+
+    valid = _discover_edited_encounter_toggle_keys()
+    if not valid:
+        return
+
+    pruned = {k: bool(v) for k, v in toggles.items() if k in valid}
+    settings["edited_toggles"] = pruned
+
+
+def _prune_stray_top_level_edited_toggle_keys(settings: dict) -> None:
+    """In-place: remove old/bad top-level encounter toggle keys.
+
+    Historically, some UI code accidentally wrote per-encounter edited flags
+    at the top-level of the settings dict using keys like
+    "<Encounter Name>|<Expansion>". These are supposed to live under
+    settings["edited_toggles"].
+    """
+
+    if not isinstance(settings, dict) or not settings:
+        return
+
+    # Only delete keys that look like encounter toggle keys and are simple bools.
+    # This keeps the cleanup conservative.
+    bad_keys = [k for k, v in settings.items() if isinstance(k, str) and "|" in k and isinstance(v, bool)]
+    for k in bad_keys:
+        # Never delete the actual nested dict key.
+        if k == "edited_toggles":
+            continue
+        del settings[k]
+
+
 def _maybe_streamlit():
     """Return the imported streamlit module if available, else None.
 
@@ -127,10 +199,20 @@ def load_settings():
         out[lvl] = max(0, min(val, mx))
     merged["max_invaders_per_level"] = out
 
+    # Avoid carrying stale per-encounter edited flags for encounters that have
+    # no edited card on disk.
+    _prune_stray_top_level_edited_toggle_keys(merged)
+    _prune_edited_toggles(merged)
+
     return merged
 
 def save_settings(settings: dict):
     """Persist settings to Supabase if configured, otherwise to local JSON."""
+
+    # Keep the persisted payload tidy: only store per-encounter edited flags
+    # for encounters that actually have edited cards available.
+    _prune_stray_top_level_edited_toggle_keys(settings)
+    _prune_edited_toggles(settings)
 
     new_fp = settings_fingerprint(settings)
 

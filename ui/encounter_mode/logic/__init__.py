@@ -3,6 +3,7 @@ import streamlit as st
 import re
 import os
 import json
+from functools import lru_cache
 from pathlib import Path
 from io import BytesIO
 from random import choice
@@ -210,6 +211,135 @@ def _get_invader_limit_for_level(level: int) -> int:
     return max(0, min(hard, user_int))
 
 
+def _get_invader_limit_for_level_with_settings(level: int, settings: dict | None) -> int:
+    """Like `_get_invader_limit_for_level`, but does not touch Streamlit runtime.
+
+    This is important for callers that want stable cache keys.
+    """
+    lvl = int(level)
+    hard = int(HARD_MAX_INVADERS_BY_LEVEL.get(lvl, 0))
+    settings = settings or {}
+
+    limits = None
+    for k in INVADER_LIMIT_SETTING_KEYS:
+        if k in settings:
+            limits = settings.get(k)
+            break
+
+    user_val = None
+    if isinstance(limits, dict):
+        user_val = limits.get(str(lvl), limits.get(lvl))
+    elif isinstance(limits, (list, tuple)) and len(limits) >= lvl:
+        user_val = limits[lvl - 1]
+    elif isinstance(limits, int):
+        user_val = limits
+
+    if user_val is None:
+        user_val = hard
+
+    try:
+        user_int = int(user_val)
+    except Exception:
+        user_int = hard
+
+    return max(0, min(hard, user_int))
+
+
+def _disabled_enemy_ids_signature(settings: dict | None) -> tuple[str, ...]:
+    """Return a stable signature of disabled enemies based on merged toggles.
+
+    Code checks are of the form: `if str(eid) in effective_enemy_included and not bool(value)`.
+    Therefore only the set of disabled IDs matters for availability computations.
+    """
+    settings = settings or {}
+    legacy_enemy_included = settings.get("enemy_included", {}) or {}
+    campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
+    effective_enemy_included = {}
+    if isinstance(legacy_enemy_included, dict):
+        effective_enemy_included.update(legacy_enemy_included)
+    if isinstance(campaign_enemy_included, dict):
+        effective_enemy_included.update(campaign_enemy_included)
+
+    disabled = [str(k) for k, v in effective_enemy_included.items() if not bool(v)]
+    return tuple(sorted(disabled))
+
+
+@lru_cache(maxsize=4096)
+def _analyze_encounter_availability_cached(
+    encounter_slug: str,
+    level: int,
+    character_count: int,
+    active_expansions_norm: tuple[str, ...],
+    disabled_enemy_ids: tuple[str, ...],
+    inv_limit: int,
+) -> tuple[int, bool]:
+    """Cached core for availability.
+
+    Returns (num_viable_alternatives, original_viable).
+    """
+    data = load_encounter(encounter_slug, int(character_count))
+    orig = (data or {}).get("original") or []
+
+    invader_ids = _load_invader_enemy_ids()
+    disabled_set = set(disabled_enemy_ids)
+
+    # original viability
+    original_viable = True
+    if not orig:
+        original_viable = False
+    else:
+        inv_count = 0
+        for e in orig:
+            eid = _coerce_enemy_id(e)
+            if eid not in ENEMY_EXPANSIONS_BY_ID:
+                original_viable = False
+                break
+            if str(eid) in disabled_set:
+                original_viable = False
+                break
+            if invader_ids and eid in invader_ids:
+                inv_count += 1
+                if inv_count > int(inv_limit):
+                    original_viable = False
+                    break
+
+    # viable alternatives (deduplicate identical enemy sets)
+    total = 0
+    valid_alts = get_alternatives(data or {}, set(active_expansions_norm))
+    if valid_alts:
+        seen = set()
+        for _combo, alt_sets in valid_alts.items():
+            for enemies in alt_sets or []:
+                if enemies is None:
+                    continue
+                enemy_list = list(enemies)
+
+                normalized = tuple(sorted(_coerce_enemy_id(e) for e in enemy_list))
+                if normalized in seen:
+                    continue
+
+                skip = False
+                inv_count = 0
+                for e in enemy_list:
+                    eid = _coerce_enemy_id(e)
+                    if eid not in ENEMY_EXPANSIONS_BY_ID:
+                        skip = True
+                        break
+                    if str(eid) in disabled_set:
+                        skip = True
+                        break
+                    if invader_ids and eid in invader_ids:
+                        inv_count += 1
+                        if inv_count > int(inv_limit):
+                            skip = True
+                            break
+                if not skip:
+                    seen.add(normalized)
+                    total += 1
+
+    return total, original_viable
+
+
 def apply_edited_toggle(encounter_data, expansion, encounter_name, encounter_level,
                         use_edited, enemies, combo):
     """Swap between edited/original encounter visuals (no reshuffle)."""
@@ -245,27 +375,79 @@ def filter_encounters(all_encounters, selected_expansion: str, character_count: 
             continue
         # Also ensure the encounter has at least one viable enemy set under
         # current enemy toggles and invader limits.
-        if _encounter_has_viable_alternative(e['expansion'], e['level'], e['name'], character_count, set(active_expansions), enemy_included):
+        if _encounter_has_viable_alternative(e['expansion'], e['level'], e['name'], character_count, set(active_expansions), enemy_included, settings=settings):
             out.append(e)
     return out
 
 
 def filter_expansions(encounters_by_expansion, character_count: int, active_expansions: tuple, valid_sets: dict):
     filtered_expansions = []
+    settings = st.session_state.get("user_settings") or {}
+    enemy_included = settings.get("enemy_included", {}) or {}
     for expansion_name, encounter_list in encounters_by_expansion.items():
         has_valid = False
         for e in encounter_list:
             key = f"{expansion_name}_{e['level']}_{e['name']}"
             if not encounter_is_valid(key, character_count, active_expansions, valid_sets):
                 continue
-            settings = st.session_state.get("user_settings") or {}
-            enemy_included = settings.get("enemy_included", {}) or {}
-            if _encounter_has_viable_alternative(expansion_name, e['level'], e['name'], character_count, set(active_expansions), enemy_included):
+            if _encounter_has_viable_alternative(expansion_name, e['level'], e['name'], character_count, set(active_expansions), enemy_included, settings=settings):
                 has_valid = True
                 break
         if has_valid:
             filtered_expansions.append(expansion_name)
     return filtered_expansions
+
+
+@lru_cache(maxsize=16384)
+def _encounter_has_viable_alternative_cached(
+    encounter_slug: str,
+    level: int,
+    character_count: int,
+    active_expansions_norm: tuple[str, ...],
+    disabled_enemy_ids: tuple[str, ...],
+    inv_limit: int,
+    original_only: bool,
+) -> bool:
+    """Cached core for determining whether an encounter can be generated.
+
+    Returns True if either:
+    - `original_only` and the original enemy list is viable, or
+    - at least one alternative enemy set is viable.
+    """
+    data = load_encounter(encounter_slug, int(character_count)) or {}
+    invader_ids = _load_invader_enemy_ids()
+    disabled_set = set(disabled_enemy_ids)
+
+    def _list_is_viable(enemy_list) -> bool:
+        if not enemy_list:
+            return False
+        inv_count = 0
+        for e in enemy_list:
+            eid = _coerce_enemy_id(e)
+            if eid not in ENEMY_EXPANSIONS_BY_ID:
+                return False
+            if str(eid) in disabled_set:
+                return False
+            if invader_ids and eid in invader_ids:
+                inv_count += 1
+                if inv_count > int(inv_limit):
+                    return False
+        return True
+
+    if bool(original_only):
+        return _list_is_viable(data.get("original") or [])
+
+    valid_alts = get_alternatives(data, set(active_expansions_norm))
+    if not valid_alts:
+        return False
+
+    for _combo, alt_sets in valid_alts.items():
+        for enemies in alt_sets or []:
+            if enemies is None:
+                continue
+            if _list_is_viable(list(enemies)):
+                return True
+    return False
 
 
 def _norm_name(x):
@@ -285,77 +467,43 @@ def _norm_name(x):
     return str(x).strip()
 
 
-def _encounter_has_viable_alternative(expansion: str, level: int, name: str, character_count: int, active_expansions: set, enemy_included: dict) -> bool:
+def _encounter_has_viable_alternative(
+    expansion: str,
+    level: int,
+    name: str,
+    character_count: int,
+    active_expansions: set,
+    enemy_included: dict,
+    settings: dict | None = None,
+) -> bool:
     """Return True if the encounter has at least one enemy set that is allowed
     by `ENEMY_EXPANSIONS_BY_ID`, not disabled by `enemy_included`, and respects invader limits."""
     encounter_slug = f"{expansion}_{int(level)}_{name}"
-    data = load_encounter(encounter_slug, character_count)
+    if settings is None:
+        settings = st.session_state.get("user_settings") or {}
 
     # Merge caller-provided `enemy_included` with sidebar/campaign toggles
-    settings = st.session_state.get("user_settings") or {}
     campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
     effective_enemy_included = {}
     if isinstance(enemy_included, dict):
         effective_enemy_included.update(enemy_included)
     if isinstance(campaign_enemy_included, dict):
         effective_enemy_included.update(campaign_enemy_included)
+    disabled_enemy_ids = tuple(sorted(str(k) for k, v in effective_enemy_included.items() if not bool(v)))
 
-    # If the user requested original-only, check original
-    # `settings` already loaded above
-    if bool(settings.get("only_original_enemies_for_campaigns", False)):
-        orig = data.get("original") or []
-        if not orig:
-            return False
-        # Check that all enemies are present in static mapping and not disabled
-        inv_limit = _get_invader_limit_for_level(level)
-        invader_ids = _load_invader_enemy_ids()
-        inv_count = 0
-        for e in orig:
-            eid = _coerce_enemy_id(e)
-            if eid not in ENEMY_EXPANSIONS_BY_ID:
-                return False
-            name_display = enemyNames.get(eid)
-            if name_display and str(eid) in effective_enemy_included and not bool(effective_enemy_included.get(str(eid))):
-                return False
-            if invader_ids and eid in invader_ids:
-                inv_count += 1
-                if inv_count > inv_limit:
-                    return False
-        return True
+    active_expansions_norm = tuple(sorted(_norm_name(a) for a in (active_expansions or set())))
+    inv_limit = _get_invader_limit_for_level_with_settings(int(level), settings)
+    original_only = bool(settings.get("only_original_enemies_for_campaigns", False))
 
-    # Otherwise check alternatives that are valid under active_expansions
-    valid_alts = get_alternatives(data, active_expansions)
-    if not valid_alts:
-        return False
-
-    inv_limit = _get_invader_limit_for_level(level)
-    invader_ids = _load_invader_enemy_ids()
-
-    for combo, alt_sets in valid_alts.items():
-        for enemies in alt_sets or []:
-            if enemies is None:
-                continue
-            enemy_list = list(enemies)
-            # Skip sets that reference unmapped enemies
-            skip = False
-            inv_count = 0
-            for e in enemy_list:
-                eid = _coerce_enemy_id(e)
-                if eid not in ENEMY_EXPANSIONS_BY_ID:
-                    skip = True
-                    break
-                if invader_ids and eid in invader_ids:
-                    inv_count += 1
-                    if inv_count > inv_limit:
-                        skip = True
-                        break
-                # Disabled by user?
-                if str(eid) in effective_enemy_included and not bool(effective_enemy_included.get(str(eid))):
-                    skip = True
-                    break
-            if not skip:
-                return True
-    return False
+    return _encounter_has_viable_alternative_cached(
+        encounter_slug,
+        int(level),
+        int(character_count),
+        active_expansions_norm,
+        disabled_enemy_ids,
+        int(inv_limit),
+        bool(original_only),
+    )
 
 
 def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: tuple, valid_sets: dict) -> bool:
@@ -372,8 +520,17 @@ def encounter_is_valid(encounter_key: str, char_count: int, active_expansions: t
     return False
 
 
-def shuffle_encounter(selected_encounter, character_count, active_expansions,
-                      selected_expansion, use_edited, use_original_enemies: bool = False, settings: dict | None = None, campaign_mode: bool = False):
+def shuffle_encounter(
+    selected_encounter,
+    character_count,
+    active_expansions,
+    selected_expansion,
+    use_edited,
+    use_original_enemies: bool = False,
+    settings: dict | None = None,
+    campaign_mode: bool = False,
+    render_image: bool = True,
+):
     """Shuffle and generate a randomized encounter (respects invader limit setting).
 
     If `use_original_enemies` is True, the encounter will be generated with the
@@ -385,7 +542,8 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
     level = int(selected_encounter["level"])
     encounter_slug = f"{selected_expansion}_{level}_{name}"
 
-    encounter_data = load_encounter(encounter_slug, character_count)
+    # `load_encounter` is cached; never mutate the returned dict in-place.
+    encounter_data = dict(load_encounter(encounter_slug, character_count) or {})
     # If caller requested the original enemy list, use it (respect invader limits).
     if use_original_enemies:
         enemies = encounter_data.get("original")
@@ -798,6 +956,19 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
                 encounter_data = dict(encounter_data) if encounter_data is not None else {}
                 encounter_data.setdefault("_shuffled_reward_replacements", {}).update(replacements)
 
+    # Allow callers (notably Setup tab retry loops) to choose enemies without
+    # paying the cost of PIL rendering every attempt.
+    if not render_image:
+        return {
+            "ok": True,
+            "encounter_data": encounter_data,
+            "encounter_name": name,
+            "encounter_level": level,
+            "expansion": selected_expansion,
+            "enemies": enemies,
+            "expansions_used": combo.split(",") if isinstance(combo, str) else combo,
+        }
+
     card_img = generate_encounter_image(
         selected_expansion, level, name, encounter_data, enemies, use_edited
     )
@@ -815,7 +986,7 @@ def shuffle_encounter(selected_encounter, character_count, active_expansions,
         "encounter_level": level,
         "expansion": selected_expansion,
         "enemies": enemies,
-        "expansions_used": combo.split(",") if isinstance(combo, str) else combo
+        "expansions_used": combo.split(",") if isinstance(combo, str) else combo,
     }
 
 
@@ -843,81 +1014,26 @@ def analyze_encounter_availability(selected_encounter: dict, character_count: in
     level = int(selected_encounter["level"])
     name = selected_encounter["name"]
     encounter_slug = f"{expansion}_{level}_{name}"
-    data = load_encounter(encounter_slug, character_count)
 
-    # build merged effective toggles
     # Prefer caller-provided `settings` snapshot when available so callers
-    # (including background threads) can avoid touching Streamlit runtime.
+    # can avoid touching Streamlit runtime.
     if settings is None:
         settings = st.session_state.get("user_settings") or {}
-    legacy_enemy_included = settings.get("enemy_included", {}) or {}
-    campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
-    effective_enemy_included = {}
-    if isinstance(legacy_enemy_included, dict):
-        effective_enemy_included.update(legacy_enemy_included)
-    if isinstance(campaign_enemy_included, dict):
-        effective_enemy_included.update(campaign_enemy_included)
 
-    # original viability
-    orig = data.get("original") or []
-    inv_limit = _get_invader_limit_for_level(level)
-    invader_ids = _load_invader_enemy_ids()
-    original_viable = True
-    if not orig:
-        original_viable = False
-    else:
-        inv_count = 0
-        for e in orig:
-            eid = _coerce_enemy_id(e)
-            if eid not in ENEMY_EXPANSIONS_BY_ID:
-                original_viable = False
-                break
-            if str(eid) in effective_enemy_included and not bool(effective_enemy_included.get(str(eid))):
-                original_viable = False
-                break
-            if invader_ids and eid in invader_ids:
-                inv_count += 1
-                if inv_count > inv_limit:
-                    original_viable = False
-                    break
+    active_expansions_norm = tuple(sorted(_norm_name(a) for a in (active_expansions or ())))
+    disabled_enemy_ids = _disabled_enemy_ids_signature(settings)
+    inv_limit = _get_invader_limit_for_level_with_settings(level, settings)
 
-    # count viable alternatives (deduplicate identical enemy sets)
-    total = 0
-    valid_alts = get_alternatives(data, set(active_expansions))
-    if valid_alts:
-        seen = set()
-        for combo, alt_sets in valid_alts.items():
-            for enemies in alt_sets or []:
-                if enemies is None:
-                    continue
-                enemy_list = list(enemies)
+    total, original_viable = _analyze_encounter_availability_cached(
+        encounter_slug,
+        level,
+        int(character_count),
+        active_expansions_norm,
+        disabled_enemy_ids,
+        int(inv_limit),
+    )
 
-                # Normalize enemy list into a canonical tuple of IDs for dedupe
-                normalized = tuple(sorted(_coerce_enemy_id(e) for e in enemy_list))
-
-                if normalized in seen:
-                    continue
-
-                skip = False
-                inv_count = 0
-                for e in enemy_list:
-                    eid = _coerce_enemy_id(e)
-                    if eid not in ENEMY_EXPANSIONS_BY_ID:
-                        skip = True
-                        break
-                    if invader_ids and eid in invader_ids:
-                        inv_count += 1
-                        if inv_count > inv_limit:
-                            skip = True
-                            break
-                    if str(eid) in effective_enemy_included and not bool(effective_enemy_included.get(str(eid))):
-                        skip = True
-                        break
-                if not skip:
-                    seen.add(normalized)
-                    total += 1
-
-    return {"num_viable_alternatives": total, "original_viable": original_viable}
+    return {"num_viable_alternatives": int(total), "original_viable": bool(original_viable)}
 
 
 def pick_random_alternative(data, active_expansions, encounter_level: int):
@@ -930,6 +1046,16 @@ def pick_random_alternative(data, active_expansions, encounter_level: int):
     invader_ids = _load_invader_enemy_ids()
     # debug logging removed
 
+    # Read settings + build merged enemy toggles once.
+    settings = st.session_state.get("user_settings") or {}
+    legacy_enemy_included = settings.get("enemy_included", {}) or {}
+    campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
+    effective_enemy_included = {}
+    if isinstance(legacy_enemy_included, dict):
+        effective_enemy_included.update(legacy_enemy_included)
+    if isinstance(campaign_enemy_included, dict):
+        effective_enemy_included.update(campaign_enemy_included)
+
     filtered = {}
     for combo, alt_sets in valid_alts.items():
         kept = []
@@ -938,16 +1064,6 @@ def pick_random_alternative(data, active_expansions, encounter_level: int):
                 continue
             # enemies should be a list[int], but tolerate other iterables
             enemy_list = list(enemies)
-
-            # Respect user's enemy inclusion toggles and authoritative mapping
-            settings = st.session_state.get("user_settings") or {}
-            legacy_enemy_included = settings.get("enemy_included", {}) or {}
-            campaign_enemy_included = settings.get("campaign_enemy_included", {}) or {}
-            effective_enemy_included = {}
-            if isinstance(legacy_enemy_included, dict):
-                effective_enemy_included.update(legacy_enemy_included)
-            if isinstance(campaign_enemy_included, dict):
-                effective_enemy_included.update(campaign_enemy_included)
 
             # merged toggle keys available in `effective_enemy_included`
 

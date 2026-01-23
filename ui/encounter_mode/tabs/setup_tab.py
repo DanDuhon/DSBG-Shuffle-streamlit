@@ -269,20 +269,22 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             prev_state = settings["edited_toggles"].get(key, False) if key else False
 
-            # If this encounter has no edited variant, force toggle off
+            # If this encounter has no edited variant, do not persist a toggle
+            # entry at all (and clean up any stale persisted entry).
             if not has_edited and key:
-                settings["edited_toggles"][key] = False
+                if key in settings["edited_toggles"]:
+                    del settings["edited_toggles"][key]
+                    st.session_state["user_settings"] = settings
+                    save_settings(settings)
                 prev_state = False
-                # Persist forced-off state so sidebar reflects availability
-                st.session_state["user_settings"] = settings
-                save_settings(settings)
 
             widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
 
             def _on_edited_changed():
                 new_val = bool(st.session_state.get(widget_key, False))
                 settings.setdefault("edited_toggles", {})
-                settings[ key ] = new_val
+                if has_edited and key:
+                    settings["edited_toggles"][key] = new_val
                 st.session_state["user_settings"] = settings
                 save_settings(settings)
 
@@ -294,7 +296,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 on_change=_on_edited_changed,
             )
 
-            if key:
+            if key and has_edited:
                 settings["edited_toggles"][key] = use_edited
                 # Persist the change immediately so other UI (sidebar) sees it
                 st.session_state["user_settings"] = settings
@@ -304,7 +306,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             st.session_state["last_toggle"] = use_edited
 
             # Determine availability for shuffle/original buttons
-            availability = analyze_encounter_availability(selected_encounter, character_count, tuple(active_expansions)) if selected_label else {"num_viable_alternatives": 0, "original_viable": False}
+            availability = analyze_encounter_availability(
+                selected_encounter,
+                character_count,
+                tuple(active_expansions),
+                settings=settings,
+            ) if selected_label else {"num_viable_alternatives": 0, "original_viable": False}
             shuffle_disabled = availability.get("num_viable_alternatives", 0) <= 1
             original_disabled = not availability.get("original_viable", False)
 
@@ -801,20 +808,22 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
         prev_state = settings["edited_toggles"].get(key, False) if key else False
 
-        # If this encounter has no edited variant, force toggle off
+        # If this encounter has no edited variant, do not persist a toggle
+        # entry at all (and clean up any stale persisted entry).
         if not has_edited and key:
-            settings["edited_toggles"][key] = False
+            if key in settings["edited_toggles"]:
+                del settings["edited_toggles"][key]
+                st.session_state["user_settings"] = settings
+                save_settings(settings)
             prev_state = False
-            # Persist forced-off state so sidebar reflects availability
-            st.session_state["user_settings"] = settings
-            save_settings(settings)
 
         widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
 
         def _on_edited_changed_compact():
             new_val = bool(st.session_state.get(widget_key, False))
             settings.setdefault("edited_toggles", {})
-            settings[ key ] = new_val
+            if has_edited and key:
+                settings["edited_toggles"][key] = new_val
             st.session_state["user_settings"] = settings
             save_settings(settings)
 
@@ -826,7 +835,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             on_change=_on_edited_changed_compact,
         )
 
-        if key:
+        if key and has_edited:
             settings["edited_toggles"][key] = use_edited
             # Persist the change immediately so other UI (sidebar) sees it
             st.session_state["user_settings"] = settings
@@ -862,6 +871,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     active_expansions,
                     selected_expansion,
                     use_edited,
+                    render_image=False,
                 )
                 if not res.get("ok"):
                     final_res = res
@@ -877,6 +887,22 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 attempt += 1
 
             if final_res and final_res.get("ok"):
+                # Render the card once (PIL work), after we have a final enemy list.
+                if "card_img" not in final_res:
+                    card_img = generate_encounter_image(
+                        final_res["expansion"],
+                        final_res["encounter_level"],
+                        final_res["encounter_name"],
+                        final_res.get("encounter_data") or {},
+                        final_res.get("enemies") or [],
+                        use_edited,
+                    )
+                    buf = BytesIO()
+                    card_img.save(buf, format="PNG")
+                    buf.seek(0)
+                    final_res["card_img"] = card_img
+                    final_res["buf"] = buf
+
                 st.session_state.current_encounter = final_res
                 # Reset Play tab state so the Play UI starts fresh for this new encounter
                 st.session_state["encounter_play"] = None

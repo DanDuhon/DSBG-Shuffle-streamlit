@@ -2,7 +2,7 @@
 import streamlit as st
 from functools import lru_cache
 import os
-from typing import Dict
+from typing import Dict, Tuple
 from json import load
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
@@ -27,6 +27,74 @@ from ui.encounter_mode.data.special_rule_icons import (
 
 ENCOUNTER_DATA_DIR = Path("data/encounters")
 VALID_SETS_PATH = Path("data/encounters_valid_sets.json")
+
+_REWARD_FONT_PATH = Path("assets/AdobeCaslonProSemibold.ttf")
+
+
+@lru_cache(maxsize=8)
+def _get_reward_font(size: int) -> ImageFont.FreeTypeFont:
+    try:
+        return ImageFont.truetype(str(_REWARD_FONT_PATH), int(size))
+    except Exception:
+        # Fall back gracefully if font is missing in some environments.
+        return ImageFont.load_default()
+
+
+@lru_cache(maxsize=256)
+def _load_rgba_image(path: str) -> Image.Image:
+    """Load an RGBA image from disk.
+
+    NOTE: Returned image must be treated as read-only.
+    Callers should `copy()` before mutating/compositing.
+    """
+    return Image.open(path).convert("RGBA")
+
+
+@lru_cache(maxsize=1024)
+def _load_enemy_icon_rgba(path: str) -> Image.Image:
+    """Load an enemy icon as RGBA (read-only cached base)."""
+    return Image.open(path).convert("RGBA")
+
+
+@lru_cache(maxsize=4096)
+def _get_icon_resized(path: str, box_size: int) -> Tuple[Image.Image, Tuple[int, int]]:
+    """Return icon resized to fit within `box_size` square.
+
+    Returns (resized_icon_img, (w, h)). Cached; treat as read-only.
+    """
+    src = _load_enemy_icon_rgba(path)
+    width, height = src.size
+    max_side = width if width > height else height
+    if max_side <= 0:
+        # Defensive; return a 1x1 transparent image.
+        img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+        return img, (1, 1)
+
+    s = int(box_size) / max_side
+    icon_size = (int(round(width * s)), int(round(height * s)))
+    resized = src.resize(icon_size, Image.Resampling.LANCZOS)
+    return resized, icon_size
+
+
+@lru_cache(maxsize=256)
+def _get_enemy_health_from_behavior(name: str) -> int:
+    try:
+        cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+        return int(cfg.raw.get("health", 1))
+    except Exception:
+        return 1
+
+
+@lru_cache(maxsize=256)
+def _get_resized_gang_image(path: str, target_height_px: int) -> Image.Image:
+    """Load and resize a gang keyword image to a target height (cached)."""
+    src = _load_rgba_image(path)
+    gw, gh = src.size
+    if gh <= 0:
+        return Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    scale = int(target_height_px) / gh
+    new_size = (int(round(gw * scale)), int(round(gh * scale)))
+    return src.resize(new_size, Image.Resampling.LANCZOS)
 
 
 
@@ -155,11 +223,13 @@ def build_encounter_keywords(encounter_name, expansion, use_edited=False):
 def load_encounter(encounter_slug: str, character_count: int):
     """Load encounter JSON by slug and character count.
 
-    Prefer the exact `{encounter_slug}_{character_count}.json` filename; if
-    that file is missing, scan the `data/encounters` directory for a matching
-    base slug and character-count variant and return it if found.
+    Current behavior: loads the exact file:
+    `data/encounters/{encounter_slug}_{character_count}.json`.
+
+    If the file is missing, this function raises `FileNotFoundError`.
+    (Callers that want variant fallback should implement it at a higher level
+    using the encounter index / available character-count variants.)
     """
-    # Fast path: exact filename
     file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
     with open(file_path, "r", encoding="utf-8") as f:
         return load(f)
@@ -184,13 +254,30 @@ def generate_encounter_image(
         if os.path.exists(edited_path):
             card_path = edited_path
 
-    card_img = Image.open(card_path).convert("RGBA")
+    # Cache base card image; copy before compositing.
+    card_img = _load_rgba_image(str(card_path)).copy()
 
     # ---------------------------------------------------------
     # 1) Main enemy grid icons
     # ---------------------------------------------------------
     enemy_slots = data.get("enemySlots", data.get("encounter_data", {}).get("enemySlots", []))
     enemy_index = 0  # which enemy from the chosen set we’re using next
+
+    # Layout selection is constant for the entire card.
+    normalized = expansion_name.replace("Executioner's Chariot", "Executioner's Chariot")
+    if normalized in v1Expansions:
+        lookup = "V1"
+    elif normalized in v1Level4s and level < 4:
+        lookup = "V1"
+    elif normalized in v1Level4s:
+        lookup = "V1Level4"
+    elif level == 4:
+        lookup = "V2Level4"
+    else:
+        lookup = "V2"
+
+    size = 45 if "V2" in lookup else 145 if lookup == "V1" else 100
+    pos_table = positions.get(lookup) or positions.get("V2", {})
 
     for slot_idx, enemy_count in enumerate(enemy_slots):
         if enemy_count <= 0 or slot_idx in {4, 7, 10}:  # these slots are spawns, so don't place them
@@ -205,38 +292,12 @@ def generate_encounter_image(
             enemy_index += 1
 
             icon_path = get_enemy_image_by_id(enemy_id)
-            icon_img = Image.open(icon_path)
-            width, height = icon_img.size
-
-            # Size the image down to 40 pixels based on the longer side.
-            max_side = width if width > height else height
-            if max_side <= 0:
-                continue
-
-            # Normalize a common name mismatch so classification works
-            normalized = expansion_name.replace("Executioner's Chariot", "Executioner's Chariot")
-
-            if normalized in v1Expansions:
-                lookup = "V1"
-            elif normalized in v1Level4s and level < 4:
-                lookup = "V1"
-            elif normalized in v1Level4s:
-                lookup = "V1Level4"
-            elif level == 4:
-                lookup = "V2Level4"
-            else:
-                lookup = "V2"
-
-            size = 45 if "V2" in lookup else 145 if lookup == "V1" else 100
-            s = size / max_side
-            icon_size = (int(round(width * s)), int(round(height * s)))
-            icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
+            icon_img, icon_size = _get_icon_resized(str(icon_path), int(size))
 
             # This is used to center the icon no matter its width or height.
             xOffset = int(round((size - icon_size[0]) / 2))
             yOffset = int(round((size - icon_size[1]) / 2))
 
-            pos_table = positions.get(lookup) or positions.get("V2", {})
             key = (slot_idx, i)
 
             coords = (pos_table[key][0] + xOffset, pos_table[key][1] + yOffset)
@@ -264,17 +325,7 @@ def generate_encounter_image(
 
         enemy_id = enemies[idx]
         icon_path = get_enemy_image_by_id(enemy_id)
-        icon_img = Image.open(icon_path)
-        width, height = icon_img.size
-
-        max_side = width if width > height else height
-        if max_side <= 0:
-            continue
-
-        # Scale to cfg.size
-        s = cfg.size / max_side
-        icon_size = (int(round(width * s)), int(round(height * s)))
-        icon_img = icon_img.convert("RGBA").resize(icon_size, Image.Resampling.LANCZOS)
+        icon_img, icon_size = _get_icon_resized(str(icon_path), int(cfg.size))
 
         # Center inside the cfg.size x cfg.size box whose top-left is (cfg.x, cfg.y)
         xOffset = int(round((cfg.size - icon_size[0]) / 2))
@@ -285,63 +336,64 @@ def generate_encounter_image(
     # ---------------------------------------------------------
     # 4) Render item reward text
     # ---------------------------------------------------------
-    # Prepare a drawing context for text rendering
-    draw = ImageDraw.Draw(card_img)
-
-    pref = st.session_state.get("user_settings", {}).get("encounter_item_reward_mode", "Original")
-
-    # Fixed font + size per spec
-    font = ImageFont.truetype("assets/AdobeCaslonProSemibold.ttf", 25)
-
     entries = ENCOUNTER_ORIGINAL_REWARDS.get((encounter_name, expansion_name), [])
     # When shuffling with replacement preferences (e.g. Similar Soul Cost), allow
     # the shuffler to provide replacement names via `encounter_data["_shuffled_reward_replacements"]`.
     repl_map = (data or {}).get("_shuffled_reward_replacements") or {}
 
-    def _wrap_text_to_lines(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
-        words = str(text).split()
-        if not words:
-            return [""]
-        lines = []
-        cur = words[0]
-        for w in words[1:]:
-            candidate = cur + " " + w
-            bbox = draw.textbbox((0, 0), candidate, font=font)
-            w_px = bbox[2] - bbox[0]
-            if w_px <= max_w:
-                cur = candidate
+    if entries:
+        # Prepare a drawing context for text rendering only when needed.
+        draw = ImageDraw.Draw(card_img)
+
+        pref = st.session_state.get("user_settings", {}).get("encounter_item_reward_mode", "Original")
+
+        # Fixed font + size per spec (cached)
+        font = _get_reward_font(25)
+
+        def _wrap_text_to_lines(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
+            words = str(text).split()
+            if not words:
+                return [""]
+            lines = []
+            cur = words[0]
+            for w in words[1:]:
+                candidate = cur + " " + w
+                bbox = draw.textbbox((0, 0), candidate, font=font)
+                w_px = bbox[2] - bbox[0]
+                if w_px <= max_w:
+                    cur = candidate
+                else:
+                    lines.append(cur)
+                    cur = w
+            lines.append(cur)
+            return lines
+
+        # Draw either the original listed text, or a replacement if provided and the
+        # user's preference requests non-original rendering.
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise ValueError(f"ENCOUNTER_ORIGINAL_REWARDS entries must be dicts: {entry}")
+            orig_txt = entry.get("text")
+            pos = entry.get("pos")
+            if orig_txt is None or pos is None:
+                raise ValueError(f"Malformed original reward entry: {entry}")
+
+            # Choose displayed text: original for 'Original' mode, otherwise allow replacement
+            if pref == "Original":
+                txt = orig_txt
             else:
-                lines.append(cur)
-                cur = w
-        lines.append(cur)
-        return lines
+                txt = repl_map.get(orig_txt, orig_txt)
 
-    # Draw either the original listed text, or a replacement if provided and the
-    # user's preference requests non-original rendering.
-    for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValueError(f"ENCOUNTER_ORIGINAL_REWARDS entries must be dicts: {entry}")
-        orig_txt = entry.get("text")
-        pos = entry.get("pos")
-        if orig_txt is None or pos is None:
-            raise ValueError(f"Malformed original reward entry: {entry}")
-
-        # Choose displayed text: original for 'Original' mode, otherwise allow replacement
-        if pref == "Original":
-            txt = orig_txt
-        else:
-            txt = repl_map.get(orig_txt, orig_txt)
-
-        # Wrap long text to avoid overflowing the card. Optional per-entry `max_width` in pixels.
-        max_width = int(entry.get("max_width", 200))
-        lines = _wrap_text_to_lines(txt, font, max_width)
-        # vertical spacing: use font height
-        ascent, descent = font.getmetrics()
-        line_h = ascent + descent
-        x0 = int(pos[0])
-        y0 = int(pos[1])
-        for i, line in enumerate(lines):
-            draw.text((x0, y0 + i * line_h), line, font=font, fill=(0, 0, 0))
+            # Wrap long text to avoid overflowing the card. Optional per-entry `max_width` in pixels.
+            max_width = int(entry.get("max_width", 200))
+            lines = _wrap_text_to_lines(txt, font, max_width)
+            # vertical spacing: use font height
+            ascent, descent = font.getmetrics()
+            line_h = ascent + descent
+            x0 = int(pos[0])
+            y0 = int(pos[1])
+            for i, line in enumerate(lines):
+                draw.text((x0, y0 + i * line_h), line, font=font, fill=(0, 0, 0))
 
     # ---------------------------------------------------------
     # 5) Render Gang text for Setup/original card if present
@@ -349,10 +401,14 @@ def generate_encounter_image(
     # Determine whether this encounter card lists the gang keyword
     src = editedEncounterKeywords if use_edited else encounterKeywords
     kws = src.get((encounter_name, expansion_name)) or []
-    if "gang" in kws:
+    pos_entry = GANG_TEXT_POSITIONS.get((encounter_name, expansion_name))
+    # Only do gang detection work if we're actually going to render a gang image.
+    if pos_entry and "gang" in kws:
         # Detect gang name from shuffled/original enemies list
         gang_keys = ["Hollow", "Alonne", "Skeleton", "Silver Knight"]
         counts: Dict[str, int] = {k: 0 for k in gang_keys}
+
+        from ui.encounter_mode.assets import enemyNames as _enemyNames
 
         for eid in enemies:
             name = None
@@ -363,15 +419,13 @@ def generate_encounter_image(
                     health = int(eid.get("health"))
             else:
                 if isinstance(eid, int):
-                    # map id -> name using assets mapping (imported elsewhere)
-                    from ui.encounter_mode.assets import enemyNames as _enemyNames
+                    # map id -> name using assets mapping
                     name = _enemyNames.get(eid)
                 else:
                     name = str(eid)
 
                 if name:
-                    cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
-                    health = int(cfg.raw.get("health", 1))
+                    health = _get_enemy_health_from_behavior(name)
 
             if not name:
                 continue
@@ -392,35 +446,27 @@ def generate_encounter_image(
         gang_name = best if best_count > 0 else None
 
         # Use pre-rendered gang images in assets/keywords instead of drawing text.
-        pos_entry = GANG_TEXT_POSITIONS.get((encounter_name, expansion_name))
-        if pos_entry:
-            gx, gy, gsize = pos_entry
+        gx, gy, gsize = pos_entry
 
-            # Candidate filenames to support different naming conventions
-            candidates = []
-            if gang_name:
-                lname = gang_name.lower().replace(" ", "_")
-                candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
-                candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
-                candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
+        # Candidate filenames to support different naming conventions
+        candidates = []
+        if gang_name:
+            lname = gang_name.lower().replace(" ", "_")
+            candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
+            candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
+            candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
 
-            gang_img_path = None
-            for fname in candidates:
-                p = Path("assets") / "keywords" / fname
-                if p.exists():
-                    gang_img_path = p
-                    break
+        gang_img_path = None
+        for fname in candidates:
+            p = Path("assets") / "keywords" / fname
+            if p.exists():
+                gang_img_path = p
+                break
 
-            if gang_img_path:
-                gimg = Image.open(gang_img_path).convert("RGBA")
-                gw, gh = gimg.size
-                if gh <= 0:
-                    raise ValueError("Invalid gang image height")
-                scale = gsize / gh
-                new_size = (int(round(gw * scale)), int(round(gh * scale)))
-                gimg = gimg.resize(new_size, Image.Resampling.LANCZOS)
-                # Composite centered on the requested point
-                card_img.alpha_composite(gimg, dest=(gx, gy))
+        if gang_img_path:
+            gimg = _get_resized_gang_image(str(gang_img_path), int(gsize))
+            # Composite centered on the requested point
+            card_img.alpha_composite(gimg, dest=(gx, gy))
 
     return card_img
 
