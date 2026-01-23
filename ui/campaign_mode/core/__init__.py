@@ -73,7 +73,7 @@ ENCOUNTER_GRAVESTONES: Mapping[str, int] = _LazyGravestonesMapping()
 
 def _card_w() -> int:
     s = st.session_state.get("user_settings") or {}
-    w = int(s.get("ui_card_width", 360))
+    w = int(st.session_state.get("ui_card_width", s.get("ui_card_width", 360)))
     return max(240, min(560, w))
 
 

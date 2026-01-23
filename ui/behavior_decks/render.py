@@ -46,8 +46,8 @@ def render():
 
     st.subheader("Behavior Decks")
 
-    # Card display width (from settings)
-    card_w = int(settings.get("ui_card_width", st.session_state.get("ui_card_width", 360)))
+    # Card display width (prefer live session_state for immediate UI updates).
+    card_w = int(st.session_state.get("ui_card_width", settings.get("ui_card_width", 360)))
     card_w = max(240, min(560, card_w))
 
     # Build or reuse catalog

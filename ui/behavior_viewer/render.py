@@ -25,9 +25,9 @@ def render():
 
     left_col, right_col = st.columns([1, 2])
 
-    # Card display width (from settings)
+    # Card display width (prefer live session_state for immediate UI updates).
     user_settings = st.session_state.get("user_settings") or {}
-    card_w = int(user_settings.get("ui_card_width", st.session_state.get("ui_card_width", 360)))
+    card_w = int(st.session_state.get("ui_card_width", user_settings.get("ui_card_width", 360)))
     card_w = max(240, min(560, card_w))
 
     # Respect compact UI setting: dropdown in compact mode, radio otherwise.

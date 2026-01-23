@@ -1,18 +1,1 @@
-{
-  "Painted World of Ariamis_1_Cloak and Feathers": {
-    "character_count": 1,
-    "edited": false,
-    "encounter_level": 1,
-    "encounter_name": "Cloak and Feathers",
-    "enemies": [
-      29
-    ],
-    "events": [],
-    "expansion": "Painted World of Ariamis",
-    "expansions_used": [
-      "Tomb of Giants"
-    ],
-    "meta_label": "Cloak and Feathers (level 1)",
-    "ok": true
-  }
-}
+{}
