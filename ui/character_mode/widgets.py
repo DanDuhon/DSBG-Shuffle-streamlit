@@ -28,13 +28,14 @@ def _render_selection_table(
     selected_ids: List[str],
     single_select: bool,
     key: str,
+    height: Optional[int] = 420,
     extra_columns: Optional[Dict[str, List[Any]]] = None,
     rows_fn: Optional[Callable[[List[Dict[str, Any]]], List[Dict[str, Any]]]] = None,
     column_config_override: Optional[Dict[str, Any]] = None,
     column_order: Optional[List[str]] = None,
 ) -> List[str]:
     if not items:
-        st.dataframe([], width="stretch", hide_index=True)
+        st.dataframe([], width="stretch", hide_index=True, height=height or 100)
         return []
 
     rows = rows_fn(items) if rows_fn else _rows_for_table(items)
@@ -58,6 +59,9 @@ def _render_selection_table(
         "disabled": [c for c in df.columns if c != "Select"],
         "num_rows": "fixed",
     }
+
+    if height is not None:
+        kwargs["height"] = int(height)
 
     # Optional explicit display order (also hides unspecified columns)
     if column_order:
