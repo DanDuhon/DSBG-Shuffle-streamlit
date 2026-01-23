@@ -1,18 +1,21 @@
 version: "3.9"
 
 services:
-  dsbg-dev:
+  dsbg:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dsbg-dev
+    container_name: dsbg
     ports:
       - "8501:8501"
     volumes:
-      - ./:/app
-      - ./data:/app/data
-      - ./assets:/app/assets
+      - dsbg_data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
-    command: streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
     restart: unless-stopped
+
+volumes:
+  dsbg_data:

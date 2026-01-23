@@ -8,5 +8,4 @@ venv/
 .env.*
 .git/
 .gitignore
-.streamlit/
 tests/

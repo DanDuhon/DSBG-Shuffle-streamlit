@@ -41,36 +41,34 @@ streamlit run app.py
 ```
 
 ## 🐳 Docker Options
-You can run the app in two ways (but only one at a time unless you give them different ports):
-### Lightweight (fast, dev-friendly)
-- Small image, skips large data/ and assets/ during build.
-- Requires you to mount them at runtime.
-```
-docker build -f Dockerfile.light -t dsbg-web:light .
-docker run -p 8501:8501 -v $(pwd)/data:/app/data -v $(pwd)/assets:/app/assets dsbg-web:light
-```
+This repo supports a single, self-contained Docker image intended for offline / local LAN use.
 
-### Full Offline (self-contained)
-- Larger image, but includes all JSON + images.
-- Runs anywhere with no mounted volumes needed.
+### Docker Compose (recommended)
+Build and start the app:
 ```
-docker build -f Dockerfile.full -t dsbg-web:full .
-docker run -p 8501:8501 dsbg-web:full
+docker compose up --build
 ```
 
-### Docker Compose
-To simplify switching between builds, use docker-compose.yml.
+Then open:
+- http://localhost:8501 (same machine)
+- http://<your-lan-ip>:8501 (other devices on your LAN)
 
-**Run lightweight build**
-`docker compose up dsbg-light`
-- Runs on http://localhost:8501
-- Fast rebuilds
-- Requires local `./data` + `./assets` folders
+**Windows LAN note:** if other devices can't connect, allow inbound TCP port `8501` in Windows Defender Firewall (or temporarily disable the firewall to confirm it's the issue).
 
-**Run full offline build**
-`docker compose up dsbg-full`
-- Runs on http://localhost:8501
-- Larger image, but 100% portable
+### Persistence (important)
+The container uses a named Docker volume for `data/` so your changes persist across updates.
+
+If you want to reset to a fresh install (this deletes saved settings/campaigns):
+```
+docker compose down
+docker volume rm dsbg-shuffle-streamlit_dsbg_data
+```
+
+### Updating
+Pull latest code and rebuild:
+```
+docker compose up --build
+```
 
 # 📂 Project Structure
 ```
@@ -98,9 +96,8 @@ dsbg-app/
 ├── data/                 # JSON encounter + event data
 ├── assets/               # images (enemy icons, encounter cards, keywords)
 ├── requirements.txt
-├── Dockerfile.light
-├── Dockerfile.full
-├── docker-compose.yml
+├── Dockerfile
+├── docker-compose.yaml
 ├── .dockerignore
 └── README.md
 ```
