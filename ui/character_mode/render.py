@@ -425,6 +425,7 @@ def render(settings: Dict[str, Any]) -> None:
         hand_immunity_opts = sorted({x for it in hand_pool_for_options for x in _immunities_set(it)})
 
         with st.expander("Hand item filters", expanded=False):
+            st.caption("Filter options are limited to items you can currently equip.")
             c1, c2 = st.columns(2)
             with c1:
                 prev = ss.get("cm_hf_categories") or cat_opts
@@ -759,6 +760,7 @@ def render(settings: Dict[str, Any]) -> None:
         armor_immunity_opts = sorted({x for it in armor_pool_for_options for x in _immunities_set(it)})
 
         with st.expander("Armor filters", expanded=False):
+            st.caption("Filter options are limited to items you can currently equip.")
             c1, c2 = st.columns(2)
             with c1:
                 prev = ss.get("cm_af_dodge") or armor_dodge_opts
@@ -1141,6 +1143,12 @@ def render(settings: Dict[str, Any]) -> None:
             for a, b in itertools.combinations(one_hands, 2):
                 _render_def_for([a, b], f"{a.get('name')} + {b.get('name')}")
 
+        # Single 1-hand item
+        if len(one_hands) == 1:
+            st.markdown("**1-hand item:**")
+            h = one_hands[0]
+            _render_def_for([h], f"{h.get('name')}")
+
         # Single 2-hand items
         if two_hands:
             st.markdown("**2-hand items:**")
@@ -1149,10 +1157,34 @@ def render(settings: Dict[str, Any]) -> None:
 
         # Attacks summary
         atk_rows = preview.get('atk_rows') or []
+        st.markdown("**Attacks**")
         if atk_rows:
-            vals = [float(r.get('TotAvg') or 0) for r in atk_rows]
-            avg_atk = sum(vals) / len(vals) if vals else 0.0
-            st.markdown(f"**Attacks:** {len(atk_rows)} lines, avg damage per attack: {avg_atk:.2f}")
+            df = pd.DataFrame(atk_rows)
+            disp = df.copy()
+
+            disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
+            disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
+            disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("TotMin")
+            disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("TotMax")
+            disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("TotAvg")
+
+            if "Cond" in disp.columns:
+                disp["Conditions"] = disp["Cond"]
+            elif "TotCond" in disp.columns:
+                disp["Conditions"] = disp["TotCond"]
+            else:
+                disp["Conditions"] = ""
+
+            # coerce Repeat to numeric so missing shows blank
+            if "Repeat" in disp.columns:
+                disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
+
+            pref = ["Item", "Atk#", "Stamina", "Dice", "Min", "Max", "Avg", "Conditions", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
+            disp_cols = [c for c in pref if c in disp.columns]
+            # Height tuned for the comparison column
+            st.dataframe(disp[disp_cols], hide_index=True, width="stretch", height=220)
+        else:
+            st.caption("No attack lines.")
 
     cL, cR = st.columns(2)
     with cL:
@@ -1230,6 +1262,9 @@ def render(settings: Dict[str, Any]) -> None:
                 else:
                     md_lines.append("- " + str(l))
             st.markdown("\n".join(md_lines))
+        else:
+            st.markdown("#### Selected Items")
+            st.caption("No items selected.")
 
         df_atk = pd.DataFrame(atk_rows)
         disp_atk = df_atk.copy()
@@ -1264,92 +1299,134 @@ def render(settings: Dict[str, Any]) -> None:
         disp_atk["Repeat"] = pd.to_numeric(disp_atk.get("Repeat"), errors="coerce")
 
         # Also show combo-based defenses under Totals
-        st.markdown("#### Combos")
         one_hands = [h for h in selected_hand_objs if _hands_required(h) == 1]
         two_hands = [h for h in selected_hand_objs if _hands_required(h) == 2]
         twohand_compatible_shields = [h for h in selected_hand_objs if _is_twohand_compatible_shield(h)]
 
-        def _render_def_combo(h_objs: List[dict], title: str):
-            # collect weapon upgrades attached to these hand items
-            wus = []
-            for h in h_objs:
-                hid = _id(h)
-                wus.extend(weapon_upgrades_by_hand.get(hid) or [])
-            dt = build_defense_totals_cached(armor_obj=armor_obj, armor_upgrade_objs=armor_upgrade_objs, hand_objs=h_objs, weapon_upgrade_objs=wus)
-            # For combos we sum hand dodge values (not the max)
-            sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
-            eff_dodge = int(dt.dodge_armor) + int(sum_hand_dodge)
-            b_stats = _dice_min_max_avg(dt.block)
-            r_stats = _dice_min_max_avg(dt.resist)
-            st.markdown(f"**{title}**")
-            st.markdown(
-                f"""
-                <ul style="list-style:none; padding-left:0; margin:0;">
-                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Dodge:</span> {_dodge_icons(eff_dodge)} <span style="color:#bfb79f">(armor {dt.dodge_armor} + hands {sum_hand_dodge})</span></li>
-                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Block:</span> {_dice_icons(dt.block)} <span style="color:#bfb79f">(avg {b_stats['avg']:.2f})</span></li>
-                <li><span style="display:inline-block; width:3.5rem; font-weight:600">Resist:</span> {_dice_icons(dt.resist)} <span style="color:#bfb79f">(avg {r_stats['avg']:.2f})</span></li>
-                </ul>
-                """,
-                unsafe_allow_html=True,
-            )
-            sim_incoming = ss.get("cm_sim_incoming", 6)
-            sim_diff = ss.get("cm_sim_dodge_diff", 2)
-            sim_block = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.block)
-            sim_resist = expected_damage_taken(incoming_damage=sim_incoming, dodge_dice=eff_dodge, dodge_difficulty=sim_diff, defense_dice=dt.resist)
-            st.markdown(f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}")
-            # Attack info for this combo (dice icons and avg per attack)
-            # Compute combo-specific attack rows so per-attack mods from the
-            # items participating in the combo (e.g., catalysts) are applied
-            # to partner attacks only when the provider is included.
-            combo_wu_by_hand = { _id(h): weapon_upgrades_by_hand.get(_id(h)) or [] for h in h_objs }
-            combo_rows = build_attack_totals_rows_cached(
-                hand_items=h_objs,
-                selected_hand_ids=set([_id(h) for h in h_objs]),
-                armor_obj=armor_obj,
-                armor_upgrade_objs=armor_upgrade_objs,
-                weapon_upgrades_by_hand=combo_wu_by_hand,
-                apply_other_hand_attack_mods=True,
-            )
-            if combo_rows:
-                df_combo = pd.DataFrame(combo_rows)
-                disp_combo = df_combo.copy()
-                # Normalize Tot* column names to friendly names
-                disp_combo["Stamina"] = disp_combo.get("TotStam") if "TotStam" in disp_combo.columns else disp_combo.get("Stam")
-                disp_combo["Dice"] = disp_combo.get("TotDice") if "TotDice" in disp_combo.columns else disp_combo.get("Dice")
-                disp_combo["Min"] = disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("TotMin")
-                disp_combo["Max"] = disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("TotMax")
-                disp_combo["Avg"] = disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("TotAvg")
+        if selected_hand_objs:
+            st.markdown("#### Combos")
 
-                if "Cond" in disp_combo.columns:
-                    disp_combo["Conditions"] = disp_combo["Cond"]
-                elif "TotCond" in disp_combo.columns:
-                    disp_combo["Conditions"] = disp_combo["TotCond"]
-                else:
-                    disp_combo["Conditions"] = ""
+            def _render_def_combo(h_objs: List[dict], title: str):
+                # collect weapon upgrades attached to these hand items
+                wus = []
+                for h in h_objs:
+                    hid = _id(h)
+                    wus.extend(weapon_upgrades_by_hand.get(hid) or [])
+                dt = build_defense_totals_cached(
+                    armor_obj=armor_obj,
+                    armor_upgrade_objs=armor_upgrade_objs,
+                    hand_objs=h_objs,
+                    weapon_upgrade_objs=wus,
+                )
+                # For combos we sum hand dodge values (not the max)
+                sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
+                eff_dodge = int(dt.dodge_armor) + int(sum_hand_dodge)
+                b_stats = _dice_min_max_avg(dt.block)
+                r_stats = _dice_min_max_avg(dt.resist)
+                st.markdown(f"**{title}**")
+                st.markdown(
+                    f"""
+                    <ul style="list-style:none; padding-left:0; margin:0;">
+                    <li><span style="display:inline-block; width:3.5rem; font-weight:600">Dodge:</span> {_dodge_icons(eff_dodge)} <span style="color:#bfb79f">(armor {dt.dodge_armor} + hands {sum_hand_dodge})</span></li>
+                    <li><span style="display:inline-block; width:3.5rem; font-weight:600">Block:</span> {_dice_icons(dt.block)} <span style="color:#bfb79f">(avg {b_stats['avg']:.2f})</span></li>
+                    <li><span style="display:inline-block; width:3.5rem; font-weight:600">Resist:</span> {_dice_icons(dt.resist)} <span style="color:#bfb79f">(avg {r_stats['avg']:.2f})</span></li>
+                    </ul>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                sim_incoming = ss.get("cm_sim_incoming", 6)
+                sim_diff = ss.get("cm_sim_dodge_diff", 2)
+                sim_block = expected_damage_taken(
+                    incoming_damage=sim_incoming,
+                    dodge_dice=eff_dodge,
+                    dodge_difficulty=sim_diff,
+                    defense_dice=dt.block,
+                )
+                sim_resist = expected_damage_taken(
+                    incoming_damage=sim_incoming,
+                    dodge_dice=eff_dodge,
+                    dodge_difficulty=sim_diff,
+                    defense_dice=dt.resist,
+                )
+                st.markdown(
+                    f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}"
+                )
 
-                # coerce Repeat to numeric so missing shows blank
-                if 'Repeat' in disp_combo.columns:
-                    disp_combo['Repeat'] = pd.to_numeric(disp_combo.get('Repeat'), errors='coerce')
+                # Attack info for this combo (dice icons and avg per attack)
+                # Compute combo-specific attack rows so per-attack mods from the
+                # items participating in the combo (e.g., catalysts) are applied
+                # to partner attacks only when the provider is included.
+                combo_wu_by_hand = {_id(h): weapon_upgrades_by_hand.get(_id(h)) or [] for h in h_objs}
+                combo_rows = build_attack_totals_rows_cached(
+                    hand_items=h_objs,
+                    selected_hand_ids=set([_id(h) for h in h_objs]),
+                    armor_obj=armor_obj,
+                    armor_upgrade_objs=armor_upgrade_objs,
+                    weapon_upgrades_by_hand=combo_wu_by_hand,
+                    apply_other_hand_attack_mods=True,
+                )
+                if combo_rows:
+                    df_combo = pd.DataFrame(combo_rows)
+                    disp_combo = df_combo.copy()
+                    # Normalize Tot* column names to friendly names
+                    disp_combo["Stamina"] = disp_combo.get("TotStam") if "TotStam" in disp_combo.columns else disp_combo.get("Stam")
+                    disp_combo["Dice"] = disp_combo.get("TotDice") if "TotDice" in disp_combo.columns else disp_combo.get("Dice")
+                    disp_combo["Min"] = disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("TotMin")
+                    disp_combo["Max"] = disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("TotMax")
+                    disp_combo["Avg"] = disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("TotAvg")
 
-                pref = ["Item", "Atk#", "Stamina", "Dice", "Min", "Max", "Avg", "Conditions", "Range", "Magic", "Node", "Shaft", "Push", "Repeat", "Text"]
-                disp_cols = [c for c in pref if c in disp_combo.columns]
-                st.dataframe(disp_combo[disp_cols], hide_index=True, width="stretch", height=140)
+                    if "Cond" in disp_combo.columns:
+                        disp_combo["Conditions"] = disp_combo["Cond"]
+                    elif "TotCond" in disp_combo.columns:
+                        disp_combo["Conditions"] = disp_combo["TotCond"]
+                    else:
+                        disp_combo["Conditions"] = ""
 
-        if len(one_hands) >= 2:
-            for a, b in itertools.combinations(one_hands, 2):
-                _render_def_combo([a, b], f"{a.get('name')} + {b.get('name')}")
+                    # coerce Repeat to numeric so missing shows blank
+                    if "Repeat" in disp_combo.columns:
+                        disp_combo["Repeat"] = pd.to_numeric(disp_combo.get("Repeat"), errors="coerce")
+
+                    pref = [
+                        "Item",
+                        "Atk#",
+                        "Stamina",
+                        "Dice",
+                        "Min",
+                        "Max",
+                        "Avg",
+                        "Conditions",
+                        "Range",
+                        "Magic",
+                        "Node",
+                        "Shaft",
+                        "Push",
+                        "Repeat",
+                        "Text",
+                    ]
+                    disp_cols = [c for c in pref if c in disp_combo.columns]
+                    st.dataframe(disp_combo[disp_cols], hide_index=True, width="stretch", height=140)
+
+            if len(one_hands) >= 2:
+                for a, b in itertools.combinations(one_hands, 2):
+                    _render_def_combo([a, b], f"{a.get('name')} + {b.get('name')}")
+                    st.markdown("---")
+
+            # A single 1-hand item is still a valid combo (empty off-hand)
+            if len(one_hands) == 1:
+                h = one_hands[0]
+                _render_def_combo([h], f"{h.get('name')}")
                 st.markdown("---")
 
-        if two_hands or twohand_compatible_shields:
-            for h in two_hands:
-                # single 2-hand item
-                if not twohand_compatible_shields:
-                    _render_def_combo([h], f"{h.get('name')}")
-                    st.markdown("---")
-                # pair 2-hand item with any shields marked usable with 2-hander
-                for sh in twohand_compatible_shields:
-                    _render_def_combo([h, sh], f"{h.get('name')} + {sh.get('name')}")
-                    st.markdown("---")
+            if two_hands or twohand_compatible_shields:
+                for h in two_hands:
+                    # single 2-hand item
+                    if not twohand_compatible_shields:
+                        _render_def_combo([h], f"{h.get('name')}")
+                        st.markdown("---")
+                    # pair 2-hand item with any shields marked usable with 2-hander
+                    for sh in twohand_compatible_shields:
+                        _render_def_combo([h, sh], f"{h.get('name')} + {sh.get('name')}")
+                        st.markdown("---")
 
     # --- Selected Items + validation (handled above in Totals) ---
 

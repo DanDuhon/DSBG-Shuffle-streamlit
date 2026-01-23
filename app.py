@@ -1,6 +1,9 @@
 # app.py
 import streamlit as st
 
+from pathlib import Path
+import base64
+
 from ui.sidebar import render_sidebar
 from ui.encounter_mode.render import render as encounter_mode_render
 from ui.boss_mode.render import render as boss_mode_render
@@ -17,17 +20,87 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-st.markdown("""
+
+def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
+    """Return an @font-face rule embedding a local TTF as a data URI.
+
+    Streamlit doesn't provide a static files pipeline by default; embedding keeps
+    the Dark Souls look consistent in offline/Docker runs.
+    """
+    try:
+        data = base64.b64encode(font_path.read_bytes()).decode("ascii")
+    except Exception:
+        return ""
+
+    return (
+        "@font-face {"
+        f"font-family: '{font_family}';"
+        f"src: url('data:font/ttf;base64,{data}') format('truetype');"
+        f"font-weight: {int(weight)};"
+        "font-style: normal;"
+        "font-display: swap;"
+        "}"
+    )
+
+
+_ASSETS_DIR = Path("assets")
+_FONT_CASLON_REG = _ASSETS_DIR / "Adobe Caslon Pro Regular.ttf"
+_FONT_CASLON_SEMI = _ASSETS_DIR / "AdobeCaslonProSemibold.ttf"
+
+_embedded_fonts_css = "\n".join(
+    [
+        _font_face_css("DSBG-Caslon", _FONT_CASLON_REG, 400),
+        _font_face_css("DSBG-Caslon", _FONT_CASLON_SEMI, 600),
+    ]
+)
+
+_DS_GLOBAL_STYLE = """
     <style>
-    /* Make main background darker and slightly textured-feeling */
-    .stApp {
-        background: radial-gradient(circle at top, #222 0, #000 60%);
-        color: #e0d6b5;
+    __EMBEDDED_FONTS__
+
+    :root {
+        --ds-bg: #050506;
+        --ds-bg-elev: #0b0b0d;
+        --ds-panel: rgba(10, 10, 12, 0.78);
+        --ds-border: rgba(255, 255, 255, 0.10);
+        --ds-border-strong: rgba(255, 255, 255, 0.16);
+        --ds-text: #e0d6b5;
+        --ds-text-dim: rgba(224, 214, 181, 0.72);
+        --ds-accent: #c28f2c;           /* ember gold */
+        --ds-accent-soft: rgba(194, 143, 44, 0.25);
+        --ds-danger: #b64a3a;
+        --ds-shadow: 0 12px 28px rgba(0,0,0,0.88);
+        --ds-font-body: "DSBG-Caslon", "Georgia", serif;
+        --ds-font-display: "DSBG-Caslon", "Georgia", serif;
     }
 
-    /* Use a more gothic/serif-like font if available */
-    html, body, [class*="css"]  {
-        font-family: "Cinzel", "Georgia", serif;
+    /* App background: ember-lit stone + subtle grit */
+    .stApp {
+        color: var(--ds-text);
+        background-color: var(--ds-bg);
+        background-image:
+            radial-gradient(1200px 600px at 20% -10%, rgba(194, 143, 44, 0.10), transparent 55%),
+            radial-gradient(900px 500px at 80% 0%, rgba(255, 255, 255, 0.05), transparent 60%),
+            radial-gradient(800px 600px at 50% 120%, rgba(0, 0, 0, 0.75), transparent 50%),
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 5px),
+            linear-gradient(#070709 0%, #030304 35%, #000000 100%);
+        background-attachment: fixed;
+    }
+
+    html, body {
+        font-family: var(--ds-font-body);
+        color: var(--ds-text);
+    }
+
+    /* Headings: sharper and more "metal etched" */
+    div[data-testid="stMarkdownContainer"] h1,
+    div[data-testid="stMarkdownContainer"] h2,
+    div[data-testid="stMarkdownContainer"] h3 {
+        font-family: var(--ds-font-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(245, 233, 200, 0.95);
+        text-shadow: 0 1px 0 rgba(0,0,0,0.65);
     }
 
     /* Tabs: look like worn metal with a glowing selected state */
@@ -35,33 +108,144 @@ st.markdown("""
         gap: 0.25rem;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: #111 !important;
+        background-color: rgba(10, 10, 12, 0.78) !important;
         border-radius: 0 !important;
-        border-bottom: 2px solid #333 !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.14) !important;
         padding: 0.5rem 1rem !important;
-        color: #aaa !important;
+        color: var(--ds-text-dim) !important;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
     .stTabs [aria-selected="true"] {
-        border-bottom-color: #c28f2c !important;
-        color: #f5e9c8 !important;
+        border-bottom-color: var(--ds-accent) !important;
+        color: rgba(245, 233, 200, 0.95) !important;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--ds-accent-soft);
     }
 
     /* Sidebar: subtle divider and more compact */
     section[data-testid="stSidebar"] {
-        background-color: #050506 !important;
-        border-right: 1px solid #333 !important;
+        background-color: var(--ds-bg-elev) !important;
+        border-right: 1px solid var(--ds-border) !important;
+    }
+
+    /* Buttons: ember edge, steel body */
+    div.stButton > button,
+    button[kind="primary"],
+    button[kind="secondary"] {
+        border-radius: 0 !important;
+        border: 1px solid var(--ds-border-strong) !important;
+        background: linear-gradient(180deg, rgba(25,25,28,0.92), rgba(12,12,14,0.92)) !important;
+        color: var(--ds-text) !important;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.55);
+        transition: box-shadow 120ms ease, transform 120ms ease, border-color 120ms ease;
+    }
+    div.stButton > button:hover,
+    button[kind="primary"]:hover,
+    button[kind="secondary"]:hover {
+        border-color: rgba(194, 143, 44, 0.55) !important;
+        box-shadow: 0 10px 22px rgba(0,0,0,0.65), 0 0 0 1px var(--ds-accent-soft);
+        transform: translateY(-1px);
+    }
+    div.stButton > button:active,
+    button[kind="primary"]:active,
+    button[kind="secondary"]:active {
+        transform: translateY(0px);
+    }
+
+    /* Inputs/selects: darker fields with ember focus */
+    input, textarea {
+        color: var(--ds-text) !important;
+        background-color: rgba(10, 10, 12, 0.75) !important;
+    }
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="textarea"] > div,
+    div[data-baseweb="select"] > div {
+        background-color: rgba(10, 10, 12, 0.75) !important;
+        border: 1px solid var(--ds-border) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+    div[data-baseweb="input"]:focus-within > div,
+    div[data-baseweb="textarea"]:focus-within > div,
+    div[data-baseweb="select"]:focus-within > div {
+        border-color: rgba(194, 143, 44, 0.55) !important;
+        box-shadow: 0 0 0 1px var(--ds-accent-soft) !important;
+    }
+
+    /* Expanders: panel look */
+    details {
+        background: var(--ds-panel);
+        border: 1px solid var(--ds-border);
+        border-radius: 0;
+        box-shadow: var(--ds-shadow);
+    }
+    summary {
+        color: rgba(245, 233, 200, 0.92);
+        font-family: var(--ds-font-display);
+        letter-spacing: 0.04em;
+    }
+
+    /* Links */
+    a { color: rgba(194, 143, 44, 0.92) !important; }
+    a:hover { color: rgba(245, 233, 200, 0.98) !important; }
+
+    /* Scrollbars (WebKit) */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(194, 143, 44, 0.35);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.10);
     }
 
     /* Card-style images: subtle 3D drop shadow */
     .card-image img {
         border-radius: 6px;
-        background: radial-gradient(circle at top, #444 0, #111 65%);
+        background: radial-gradient(circle at top, rgba(255,255,255,0.12) 0, rgba(10,10,12,0.92) 65%);
         box-shadow:
             0 10px 22px rgba(0, 0, 0, 0.9),
             0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    /* Shared icon rows/grids used by Campaign + Encounter icon renderers */
+    .campaign-party-section h5,
+    .icons-section h5 {
+        margin: 0.75rem 0 0.25rem 0;
+        font-family: var(--ds-font-display);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: rgba(245, 233, 200, 0.92);
+    }
+
+    .campaign-party-row,
+    .icons-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+
+    .icons-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+
+    .campaign-party-fallback,
+    .icon-fallback {
+        height: 48px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid var(--ds-border);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        text-align: center;
+        padding: 2px;
+        color: var(--ds-text);
     }
 
     /* Tighter spacing between party/expansion icons */
@@ -98,7 +282,12 @@ st.markdown("""
         margin-bottom: 0.48rem !important;
     }
     </style>
-""", unsafe_allow_html=True)
+"""
+
+st.markdown(
+    _DS_GLOBAL_STYLE.replace("__EMBEDDED_FONTS__", _embedded_fonts_css),
+    unsafe_allow_html=True,
+)
 
 # Ensure client_id from browser localStorage is available before loading settings
 try:

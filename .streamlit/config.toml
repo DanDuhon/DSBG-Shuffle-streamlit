@@ -1,0 +1,7 @@
+[theme]
+base = "dark"
+primaryColor = "#ba5412"               # dark ember
+backgroundColor = "#050506"            # near-black
+secondaryBackgroundColor = "#0b0b0d"   # panels/sidebar
+textColor = "#e0d6b5"                  # parchment
+font = "serif"
