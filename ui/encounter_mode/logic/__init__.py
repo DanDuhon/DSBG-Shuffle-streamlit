@@ -16,6 +16,10 @@ from ui.encounter_mode.generation import (
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
 from ui.encounter_mode.data.enemies import enemyNames
 from ui.encounter_mode.data.rewards import ENCOUNTER_ORIGINAL_REWARDS
+from ui.encounter_mode.data.behavior_modifiers import (
+    ENCOUNTER_BEHAVIOR_MODIFIERS,
+    ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED,
+)
 from core.character.character_stats import average_souls_to_equip
 from ui.character_mode.data_io import _find_data_file, _load_json_list
 
