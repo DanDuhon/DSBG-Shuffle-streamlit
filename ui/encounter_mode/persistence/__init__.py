@@ -5,7 +5,7 @@ import os
 import streamlit as st
 
 from core import supabase_store
-from core.settings_manager import _has_supabase_config
+from core.settings_manager import _has_supabase_config, get_runtime_client_id
 
 
 DATA_DIR = Path("data")
@@ -15,11 +15,7 @@ SAVED_ENCOUNTERS_PATH = DATA_DIR / "saved_encounters.json"
 def load_saved_encounters(*, reload: bool = False) -> Dict[str, Any]:
     # Supabase-backed documents: one row per encounter keyed by name
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         try:
             names = supabase_store.list_documents("saved_encounter", user_id=client_id)
@@ -68,11 +64,7 @@ def _atomic_write(path: Path, payload: Dict[str, Any]) -> None:
 def save_saved_encounters(encounters: Dict[str, Any]) -> None:
     # Persist to Supabase when configured; otherwise write local JSON file.
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         # Upsert each encounter
         for name, obj in (encounters or {}).items():

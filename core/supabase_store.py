@@ -142,15 +142,16 @@ def upsert_document(
 
 def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) -> Optional[Any]:
     """Fetch a single document's `data` field or None if not found."""
+    # Schema expects user_id NOT NULL; treat missing user_id as "not found".
+    if user_id is None:
+        return None
+
     url = _table_url()
     headers = _headers()
     # PostgREST filtering via query params (e.g., doc_type=eq.x)
     # Select all fields so we can pick the newest row if duplicates exist.
     params: Dict[str, str] = {"select": "*", "doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}"}
-    if user_id is None:
-        params["user_id"] = "is.null"
-    else:
-        params["user_id"] = f"eq.{user_id}"
+    params["user_id"] = f"eq.{user_id}"
 
     try:
         resp = requests.get(url, headers=headers, params=params, timeout=10)
@@ -169,13 +170,14 @@ def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) ->
 
 def list_documents(doc_type: str, user_id: Optional[str] = None) -> List[str]:
     """Return a list of `key_name` values for a given doc_type."""
+    # Schema expects user_id NOT NULL; treat missing user_id as "no documents".
+    if user_id is None:
+        return []
+
     url = _table_url()
     headers = _headers()
     params: Dict[str, str] = {"select": "key_name", "doc_type": f"eq.{doc_type}"}
-    if user_id is None:
-        params["user_id"] = "is.null"
-    else:
-        params["user_id"] = f"eq.{user_id}"
+    params["user_id"] = f"eq.{user_id}"
 
     resp = requests.get(url, headers=headers, params=params, timeout=10)
     resp.raise_for_status()

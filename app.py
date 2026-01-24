@@ -345,18 +345,22 @@ except Exception:
     client_id = settings.get("client_id") if isinstance(settings, dict) else None
 
 if not client_id:
-    import uuid
-
-    client_id = str(uuid.uuid4())
-    settings["client_id"] = client_id
+    # IMPORTANT: use the browser-persisted mechanism so refreshes keep the same id.
     try:
-        st.session_state["client_id"] = client_id
+        client_id = client_id_module.get_or_create_client_id()
     except Exception:
-        pass
-    # Persist settings with the new client_id (this will upsert to Supabase when configured)
-    st.session_state["_settings_allow_save"] = True
-    save_settings(settings)
-    st.session_state["_settings_allow_save"] = False
+        client_id = None
+
+    if client_id:
+        settings["client_id"] = client_id
+        try:
+            st.session_state["client_id"] = client_id
+        except Exception:
+            pass
+        # Persist settings with the new client_id (this will upsert to Supabase when configured)
+        st.session_state["_settings_allow_save"] = True
+        save_settings(settings)
+        st.session_state["_settings_allow_save"] = False
 
 # --- One-shot cross-tab handoff: Campaign Mode -> app bootstrap ---
 # Campaign Setup tab cannot safely overwrite sidebar widget keys after widgets
