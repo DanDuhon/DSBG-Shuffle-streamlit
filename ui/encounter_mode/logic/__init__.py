@@ -16,7 +16,7 @@ from ui.encounter_mode.generation import (
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
 from ui.encounter_mode.data.enemies import enemyNames
 from ui.encounter_mode.data.rewards import ENCOUNTER_ORIGINAL_REWARDS
-from ui.encounter_mode.data.behavior_modifiers import (
+from ui.encounter_mode.data.behavior_modifiers import ( # Don't remove these, they get imported elsewhere
     ENCOUNTER_BEHAVIOR_MODIFIERS,
     ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED,
 )
