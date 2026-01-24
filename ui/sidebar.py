@@ -479,6 +479,8 @@ def render_sidebar(settings: dict):
                     st.write({
                         "session_state.client_id": st.session_state.get("client_id"),
                         "query_param.client_id": qcid,
+                        "has_streamlit_javascript": bool(getattr(client_id_module, "st_javascript", None)),
+                        "client_id_debug": st.session_state.get("_client_id_debug"),
                         "client_id_module.get_or_create_client_id()": client_id_module.get_or_create_client_id(),
                     })
             except Exception:

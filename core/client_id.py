@@ -24,26 +24,55 @@ def _is_valid_uuid(val: str | None) -> bool:
         return False
 
 
+def _record_debug(msg: str) -> None:
+    if st is None:
+        return
+    try:
+        st.session_state["_client_id_debug"] = msg
+    except Exception:
+        return
+
+
 def _js_localstorage_get_or_create() -> str:
     # IMPORTANT: create only if missing (avoids clobbering on refresh).
     # Return a value (string) synchronously when possible.
+    # Notes:
+    # - Checks localStorage first.
+    # - Falls back to a cookie (some environments restrict localStorage in iframes).
+    # - Only generates a new UUID if neither store has one.
     return (
         "(() => {"
         f"const k = {json.dumps(LOCALSTORAGE_KEY)};"
+        "const ck = k;"
+        "const readCookie = (name) => {"
+        "  try {"
+        "    const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[-.$?*|{}()\\[\\]\\\\/+^]/g, '\\$&') + '=([^;]*)'));"
+        "    return m ? decodeURIComponent(m[1]) : null;"
+        "  } catch (e) { return null; }"
+        "};"
+        "const writeCookie = (name, value) => {"
+        "  try {"
+        "    document.cookie = name + '=' + encodeURIComponent(value) + '; Path=/; Max-Age=31536000; SameSite=Lax';"
+        "  } catch (e) {}"
+        "};"
         "let v = null;"
         "try { v = window.localStorage.getItem(k); } catch (e) { v = null; }"
         "if (!v || v === 'null' || v === 'undefined') {"
+        "  v = readCookie(ck);"
+        "}"
+        "if (!v || v === 'null' || v === 'undefined') {"
         "  try { v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : null; } catch (e) { v = null; }"
         "  if (!v) {"
-        "    // RFC4122-ish fallback"
         "    v = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {"
         "      const r = Math.random() * 16 | 0;"
         "      const t = c === 'x' ? r : (r & 0x3 | 0x8);"
         "      return t.toString(16);"
         "    });"
         "  }"
-        "  try { window.localStorage.setItem(k, v); } catch (e) {}"
         "}"
+        "// Best-effort persist to both cookie + localStorage"
+        "writeCookie(ck, v);"
+        "try { window.localStorage.setItem(k, v); } catch (e) {}"
         "return v;"
         "})()"
     )
@@ -58,6 +87,9 @@ def _js_localstorage_set(val: str) -> str:
         "try {"
         "  const cur = window.localStorage.getItem(k);"
         "  if (cur !== v) window.localStorage.setItem(k, v);"
+        "} catch (e) {}"
+        "try {"
+        "  document.cookie = k + '=' + encodeURIComponent(v) + '; Path=/; Max-Age=31536000; SameSite=Lax';"
         "} catch (e) {}"
         "return v;"
         "})()"
@@ -104,9 +136,29 @@ def _set_query_param(key: str, value: str) -> None:
         if qp is not None:
             try:
                 qp[key] = value
+                return
             except Exception:
+                pass
+            try:
                 qp.update({key: value})
-            return
+                return
+            except Exception:
+                pass
+            # Some versions provide a from_dict helper
+            try:
+                from_dict = getattr(qp, "from_dict", None)
+                if callable(from_dict):
+                    # Preserve existing params when possible
+                    cur = {}
+                    try:
+                        cur = dict(qp)
+                    except Exception:
+                        cur = {}
+                    cur[key] = value
+                    from_dict(cur)
+                    return
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -117,6 +169,22 @@ def _set_query_param(key: str, value: str) -> None:
         flattened = {k: (v[0] if isinstance(v, list) and v else v) for k, v in existing.items()}
         st.experimental_set_query_params(**flattened)
     except Exception:
+        # If Streamlit API can't set query params (some hosted contexts), we'll
+        # fall back to setting URL client-side where possible.
+        try:
+            if st_javascript:
+                st_javascript(
+                    "(() => {"
+                    "try {"
+                    "  const u = new URL(window.location.href);"
+                    f"  u.searchParams.set({json.dumps(key)}, {json.dumps(value)});"
+                    "  window.history.replaceState({}, '', u.toString());"
+                    "} catch (e) {}"
+                    "return null;"
+                    "})()"
+                )
+        except Exception:
+            pass
         return
 
 
@@ -166,6 +234,24 @@ def get_or_create_client_id() -> str:
                 # Keep URL stable across refreshes.
                 _set_query_param("client_id", val)
                 return val
+            # Streamlit Cloud: components can return None during hydration.
+            # Don't generate a new id yet; rerun a couple times to let the
+            # component respond with its persisted value.
+            try:
+                attempts = int(st.session_state.get("_client_id_js_attempts", 0) or 0) + 1
+            except Exception:
+                attempts = 1
+            try:
+                st.session_state["_client_id_js_attempts"] = attempts
+            except Exception:
+                pass
+
+            _record_debug(f"st_javascript returned {val!r}; attempts={attempts}")
+            if attempts <= 3:
+                try:
+                    st.rerun()
+                except Exception:
+                    pass
         except Exception:
             pass
 
