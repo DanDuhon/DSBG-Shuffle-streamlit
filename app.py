@@ -20,6 +20,18 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
+# Establish a stable per-browser client_id as early as possible.
+# On Streamlit Cloud, this may pause execution briefly until the JS component
+# hydrates and returns the persisted value.
+try:
+    cid = client_id_module.get_or_create_client_id()
+    try:
+        st.session_state["client_id"] = cid
+    except Exception:
+        pass
+except Exception:
+    pass
+
 
 def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
     """Return an @font-face rule embedding a local TTF as a data URI.
@@ -288,17 +300,6 @@ st.markdown(
     _DS_GLOBAL_STYLE.replace("__EMBEDDED_FONTS__", _embedded_fonts_css),
     unsafe_allow_html=True,
 )
-
-# Ensure client_id from browser localStorage is available before loading settings
-try:
-    cid = client_id_module.get_or_create_client_id()
-    try:
-        st.session_state["client_id"] = cid
-    except Exception:
-        pass
-except Exception:
-    # If client-side helper fails, continue — server-side generation will happen later
-    pass
 
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:

@@ -12,6 +12,7 @@ except Exception:  # pragma: no cover
     st = None
 
 LOCALSTORAGE_KEY = "dsbg_client_id"
+_JS_COMPONENT_KEY = "dsbg_client_id_js"
 
 
 def _is_valid_uuid(val: str | None) -> bool:
@@ -223,7 +224,14 @@ def get_or_create_client_id() -> str:
     # 3) Try browser localStorage via st_javascript (get-or-create, no clobber)
     if st_javascript:
         try:
-            val = st_javascript(_js_localstorage_get_or_create())
+            # NOTE: `streamlit-javascript` returns its `default` until the
+            # frontend has mounted and called `setComponentValue`. Using a
+            # stable key prevents remount loops on reruns.
+            val = st_javascript(
+                _js_localstorage_get_or_create(),
+                default=None,
+                key=_JS_COMPONENT_KEY,
+            )
             if isinstance(val, str) and val.lower() in ("null", "undefined"):
                 val = None
             if _is_valid_uuid(val):
@@ -234,9 +242,10 @@ def get_or_create_client_id() -> str:
                 # Keep URL stable across refreshes.
                 _set_query_param("client_id", val)
                 return val
-            # Streamlit Cloud: components can return None during hydration.
-            # Don't generate a new id yet; rerun a couple times to let the
-            # component respond with its persisted value.
+            # Streamlit Cloud: during initial hydration, this can be None/0.
+            # Avoid generating a new UUID (which would change on refresh).
+            # Instead, pause execution and let the component update trigger
+            # a rerun when the value becomes available.
             try:
                 attempts = int(st.session_state.get("_client_id_js_attempts", 0) or 0) + 1
             except Exception:
@@ -247,11 +256,10 @@ def get_or_create_client_id() -> str:
                 pass
 
             _record_debug(f"st_javascript returned {val!r}; attempts={attempts}")
-            if attempts <= 3:
-                try:
-                    st.rerun()
-                except Exception:
-                    pass
+            try:
+                st.stop()
+            except Exception:
+                pass
         except Exception:
             pass
 
