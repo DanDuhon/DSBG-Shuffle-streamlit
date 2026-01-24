@@ -448,3 +448,39 @@ def render_sidebar(settings: dict):
         else:
             st.caption("Last saved: —")
 
+        # Optional: client-id diagnostics (for Streamlit Cloud debugging)
+        show_debug = False
+        try:
+            import os
+
+            show_debug = os.environ.get("DSBG_DEBUG_CLIENT_ID") in ("1", "true", "TRUE", "yes", "YES")
+        except Exception:
+            show_debug = False
+
+        try:
+            if not show_debug and hasattr(st, "secrets"):
+                show_debug = bool(st.secrets.get("DSBG_DEBUG_CLIENT_ID", False))
+        except Exception:
+            pass
+
+        if show_debug:
+            try:
+                from core import client_id as client_id_module
+
+                qcid = None
+                try:
+                    qp = getattr(st, "query_params", None)
+                    if qp is not None:
+                        qcid = qp.get("client_id")
+                except Exception:
+                    qcid = None
+
+                with st.expander("🔎 Debug: Client ID", expanded=False):
+                    st.write({
+                        "session_state.client_id": st.session_state.get("client_id"),
+                        "query_param.client_id": qcid,
+                        "client_id_module.get_or_create_client_id()": client_id_module.get_or_create_client_id(),
+                    })
+            except Exception:
+                pass
+
