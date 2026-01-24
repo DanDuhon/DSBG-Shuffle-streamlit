@@ -475,10 +475,23 @@ def render_sidebar(settings: dict):
                 except Exception:
                     qcid = None
 
+                qp_all = None
+                try:
+                    qp_proxy = getattr(st, "query_params", None)
+                    if qp_proxy is not None:
+                        to_dict = getattr(qp_proxy, "to_dict", None)
+                        if callable(to_dict):
+                            qp_all = to_dict()
+                        else:
+                            qp_all = dict(qp_proxy)
+                except Exception:
+                    qp_all = None
+
                 with st.expander("🔎 Debug: Client ID", expanded=False):
                     st.write({
                         "session_state.client_id": st.session_state.get("client_id"),
                         "query_param.client_id": qcid,
+                        "query_params": qp_all,
                         "has_streamlit_javascript": bool(getattr(client_id_module, "st_javascript", None)),
                         "client_id_debug": st.session_state.get("_client_id_debug"),
                         "client_id_module.get_or_create_client_id()": client_id_module.get_or_create_client_id(),

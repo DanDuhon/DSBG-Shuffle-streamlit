@@ -104,13 +104,23 @@ def _get_query_param(key: str) -> str | None:
 
     # Streamlit >= 1.30: st.query_params is a dict-like proxy
     try:
-        qp = getattr(st, "query_params", None)
-        if qp is not None:
-            val = qp.get(key)
-            if isinstance(val, list):
-                return val[0] if val else None
-            if isinstance(val, str):
-                return val
+        qp = st.query_params  # type: ignore[attr-defined]
+        # Prefer get_all when available (handles repeated keys)
+        try:
+            get_all = getattr(qp, "get_all", None)
+            if callable(get_all):
+                vals = get_all(key)
+                if isinstance(vals, list) and vals:
+                    return str(vals[-1])
+        except Exception:
+            pass
+
+        val = qp.get(key)
+        if isinstance(val, list):
+            return str(val[0]) if val else None
+        if val is None:
+            return None
+        return str(val)
     except Exception:
         pass
 
@@ -131,35 +141,36 @@ def _set_query_param(key: str, value: str) -> None:
     if st is None:
         return
 
-    # Streamlit >= 1.30: in-place update
+    # Streamlit >= 1.30: st.query_params
     try:
-        qp = getattr(st, "query_params", None)
-        if qp is not None:
-            try:
-                qp[key] = value
-                return
-            except Exception:
-                pass
-            try:
-                qp.update({key: value})
-                return
-            except Exception:
-                pass
-            # Some versions provide a from_dict helper
-            try:
-                from_dict = getattr(qp, "from_dict", None)
-                if callable(from_dict):
-                    # Preserve existing params when possible
-                    cur = {}
+        qp = st.query_params  # type: ignore[attr-defined]
+        try:
+            qp[key] = str(value)
+            return
+        except Exception:
+            pass
+
+        # Fall back to from_dict if available
+        try:
+            to_dict = getattr(qp, "to_dict", None)
+            from_dict = getattr(qp, "from_dict", None)
+            if callable(from_dict):
+                cur = {}
+                if callable(to_dict):
+                    try:
+                        cur = dict(to_dict())
+                    except Exception:
+                        cur = {}
+                else:
                     try:
                         cur = dict(qp)
                     except Exception:
                         cur = {}
-                    cur[key] = value
-                    from_dict(cur)
-                    return
-            except Exception:
-                pass
+                cur[key] = str(value)
+                from_dict(cur)
+                return
+        except Exception:
+            pass
     except Exception:
         pass
 
@@ -275,6 +286,23 @@ def get_or_create_client_id() -> str:
 
     # Also set query param so the id survives refreshes even if localStorage fails
     _set_query_param("client_id", new_id)
+
+    # On Streamlit Cloud, updating query params doesn't always immediately reflect
+    # in the current script run. Force a rerun once so the rest of the app sees
+    # a stable client_id coming from the URL.
+    try:
+        already = bool(st.session_state.get("_client_id_set_qp_once", False))
+    except Exception:
+        already = False
+    if not already:
+        try:
+            st.session_state["_client_id_set_qp_once"] = True
+        except Exception:
+            pass
+        try:
+            st.rerun()
+        except Exception:
+            pass
 
     # Best-effort: if JS is available, also sync localStorage after we have a stable id.
     if st_javascript:
