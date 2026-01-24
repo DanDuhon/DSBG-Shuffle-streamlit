@@ -5,7 +5,7 @@ import os
 import streamlit as st
 
 from core import supabase_store
-from core.settings_manager import _has_supabase_config
+from core.settings_manager import _has_supabase_config, get_runtime_client_id
 
 
 DATA_DIR = Path("data")
@@ -69,11 +69,7 @@ def _load_campaigns(*, reload: bool = False) -> Dict[str, Any]:
     with `doc_type = 'campaign'` and `key_name = <campaign name>`.
     """
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         out: Dict[str, Any] = {}
         try:
@@ -96,11 +92,7 @@ def _load_campaigns(*, reload: bool = False) -> Dict[str, Any]:
 def _save_campaigns(campaigns: Dict[str, Any]) -> None:
     # Supabase-backed persistence: upsert each campaign as a separate row.
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         for name, obj in (campaigns or {}).items():
             try:

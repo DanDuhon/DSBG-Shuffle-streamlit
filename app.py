@@ -20,6 +20,18 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
+# Establish a stable per-browser client_id as early as possible.
+# On Streamlit Cloud, this may pause execution briefly until the JS component
+# hydrates and returns the persisted value.
+try:
+    cid = client_id_module.get_or_create_client_id()
+    try:
+        st.session_state["client_id"] = cid
+    except Exception:
+        pass
+except Exception:
+    pass
+
 
 def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
     """Return an @font-face rule embedding a local TTF as a data URI.
@@ -289,17 +301,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Ensure client_id from browser localStorage is available before loading settings
-try:
-    cid = client_id_module.get_or_create_client_id()
-    try:
-        st.session_state["client_id"] = cid
-    except Exception:
-        pass
-except Exception:
-    # If client-side helper fails, continue — server-side generation will happen later
-    pass
-
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
     st.session_state.user_settings = load_settings()
@@ -345,18 +346,22 @@ except Exception:
     client_id = settings.get("client_id") if isinstance(settings, dict) else None
 
 if not client_id:
-    import uuid
-
-    client_id = str(uuid.uuid4())
-    settings["client_id"] = client_id
+    # IMPORTANT: use the browser-persisted mechanism so refreshes keep the same id.
     try:
-        st.session_state["client_id"] = client_id
+        client_id = client_id_module.get_or_create_client_id()
     except Exception:
-        pass
-    # Persist settings with the new client_id (this will upsert to Supabase when configured)
-    st.session_state["_settings_allow_save"] = True
-    save_settings(settings)
-    st.session_state["_settings_allow_save"] = False
+        client_id = None
+
+    if client_id:
+        settings["client_id"] = client_id
+        try:
+            st.session_state["client_id"] = client_id
+        except Exception:
+            pass
+        # Persist settings with the new client_id (this will upsert to Supabase when configured)
+        st.session_state["_settings_allow_save"] = True
+        save_settings(settings)
+        st.session_state["_settings_allow_save"] = False
 
 # --- One-shot cross-tab handoff: Campaign Mode -> app bootstrap ---
 # Campaign Setup tab cannot safely overwrite sidebar widget keys after widgets

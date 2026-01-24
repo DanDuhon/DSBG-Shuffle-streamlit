@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from collections import defaultdict
 from datetime import datetime, timezone
 from core import supabase_store
-from core.settings_manager import _has_supabase_config, save_settings
+from core.settings_manager import _has_supabase_config, get_runtime_client_id, save_settings
 from ui.event_mode.event_card_text import EVENT_CARD_TEXT
 from ui.event_mode.event_card_type import EVENT_CARD_TYPE
 from ui.event_mode.event_card_meta import (
@@ -55,11 +55,7 @@ def load_custom_event_decks() -> Dict[str, dict]:
     """
     # Supabase-backed: one row per deck with doc_type='event_deck'
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         out: Dict[str, dict] = {}
         try:
@@ -91,11 +87,7 @@ def load_custom_event_decks() -> Dict[str, dict]:
 def save_custom_event_decks(decks: Dict[str, dict]) -> None:
     # Supabase-backed: upsert each deck as its own document
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         for name, deck in (decks or {}).items():
             try:

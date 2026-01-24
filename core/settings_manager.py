@@ -154,6 +154,64 @@ def _runtime_client_id() -> str | None:
     except Exception:
         return None
 
+
+def get_runtime_client_id() -> str | None:
+    """Return a stable UUID string for the current client (best-effort).
+
+    When running under Streamlit, this will attempt to create/persist the id
+    (via query params/localStorage) using `core.client_id.get_or_create_client_id()`.
+
+    Returns None when Streamlit isn't available and no env var is set.
+    """
+
+    # 1) Environment override (scripts/tools)
+    cid = os.environ.get("DSBG_CLIENT_ID")
+    if cid:
+        try:
+            uuid.UUID(str(cid))
+            return str(cid)
+        except Exception:
+            return None
+
+    st = _maybe_streamlit()
+    if st is None:
+        return None
+
+    # 2) Session state (already established)
+    try:
+        cid = st.session_state.get("client_id")
+    except Exception:
+        cid = None
+    if cid:
+        try:
+            uuid.UUID(str(cid))
+            return str(cid)
+        except Exception:
+            cid = None
+
+    # 3) Ask the browser bridge / query params helper to establish one
+    try:
+        from core import client_id as client_id_module
+
+        cid = client_id_module.get_or_create_client_id()
+    except Exception:
+        cid = None
+
+    if cid:
+        try:
+            uuid.UUID(str(cid))
+        except Exception:
+            cid = None
+
+    if cid:
+        try:
+            st.session_state["client_id"] = str(cid)
+        except Exception:
+            pass
+        return str(cid)
+
+    return None
+
 def load_settings():
     """Load persisted user settings and merge them onto DEFAULT_SETTINGS.
 
@@ -179,15 +237,12 @@ def load_settings():
 
     # Choose storage backend: Supabase when configured, otherwise local JSON.
     if _has_supabase_config():
-        # Prefer per-client settings when we can determine a client_id.
-        client_id = _runtime_client_id()
+        # Supabase schema requires user_id NOT NULL; always use per-client documents.
+        client_id = get_runtime_client_id()
 
         loaded = None
         if client_id:
             loaded = supabase_store.get_document("user_settings", "default", user_id=client_id)
-        # Fallback to global (NULL user_id) document
-        if loaded is None:
-            loaded = supabase_store.get_document("user_settings", "default")
     else:
         try:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -265,10 +320,27 @@ def save_settings(settings: dict):
 
     if _has_supabase_config():
         # Determine or create a client_id to persist per-client documents.
-        client_id = settings.get("client_id") or _runtime_client_id()
+        client_id = settings.get("client_id")
+        if client_id:
+            try:
+                uuid.UUID(str(client_id))
+            except Exception:
+                client_id = None
+
         if not client_id:
+            client_id = get_runtime_client_id()
+
+        if not client_id:
+            # Last resort: generate one (but try to also mirror into Streamlit session)
             client_id = str(uuid.uuid4())
-            settings["client_id"] = client_id
+            st = _maybe_streamlit()
+            if st is not None:
+                try:
+                    st.session_state["client_id"] = client_id
+                except Exception:
+                    pass
+
+        settings["client_id"] = client_id
 
         # Attempt to persist to Supabase using the per-client id.
         try:

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 
 from core import supabase_store
-from core.settings_manager import _has_supabase_config
+from core.settings_manager import _has_supabase_config, get_runtime_client_id
 
 
 def _find_data_file(filename: str) -> Optional[Path]:
@@ -37,11 +37,7 @@ BUILDS_FILE = Path("data/character_builds.json")
 def load_builds() -> Dict[str, Any]:
     # Supabase-backed persistence: one row per build
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         out: Dict[str, Any] = {}
         try:
@@ -71,11 +67,7 @@ def load_builds() -> Dict[str, Any]:
 def save_builds(builds: Dict[str, Any]) -> None:
     # Supabase-backed: upsert each build as separate document
     if _has_supabase_config():
-        client_id = None
-        try:
-            client_id = st.session_state.get("client_id")
-        except Exception:
-            client_id = None
+        client_id = get_runtime_client_id()
 
         for name, obj in (builds or {}).items():
             try:

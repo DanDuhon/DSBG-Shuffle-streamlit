@@ -448,3 +448,54 @@ def render_sidebar(settings: dict):
         else:
             st.caption("Last saved: —")
 
+        # Optional: client-id diagnostics (for Streamlit Cloud debugging)
+        show_debug = False
+        try:
+            import os
+
+            show_debug = os.environ.get("DSBG_DEBUG_CLIENT_ID") in ("1", "true", "TRUE", "yes", "YES")
+        except Exception:
+            show_debug = False
+
+        try:
+            if not show_debug and hasattr(st, "secrets"):
+                show_debug = bool(st.secrets.get("DSBG_DEBUG_CLIENT_ID", False))
+        except Exception:
+            pass
+
+        if show_debug:
+            try:
+                from core import client_id as client_id_module
+
+                qcid = None
+                try:
+                    qp = getattr(st, "query_params", None)
+                    if qp is not None:
+                        qcid = qp.get("client_id")
+                except Exception:
+                    qcid = None
+
+                qp_all = None
+                try:
+                    qp_proxy = getattr(st, "query_params", None)
+                    if qp_proxy is not None:
+                        to_dict = getattr(qp_proxy, "to_dict", None)
+                        if callable(to_dict):
+                            qp_all = to_dict()
+                        else:
+                            qp_all = dict(qp_proxy)
+                except Exception:
+                    qp_all = None
+
+                with st.expander("🔎 Debug: Client ID", expanded=False):
+                    st.write({
+                        "session_state.client_id": st.session_state.get("client_id"),
+                        "query_param.client_id": qcid,
+                        "query_params": qp_all,
+                        "has_streamlit_javascript": bool(getattr(client_id_module, "st_javascript", None)),
+                        "client_id_debug": st.session_state.get("_client_id_debug"),
+                        "client_id_module.get_or_create_client_id()": client_id_module.get_or_create_client_id(),
+                    })
+            except Exception:
+                pass
+
