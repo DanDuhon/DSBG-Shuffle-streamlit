@@ -394,6 +394,11 @@ if pending:
     snap_version = snapshot.get("rules_version", "V1")
     st.session_state["campaign_rules_version"] = snap_version
 
+    # Keep the Setup tab radio widget and version-switch tracker in sync.
+    # (The radio uses a separate key to avoid Streamlit widget-state conflicts.)
+    st.session_state["campaign_rules_version_widget"] = snap_version
+    st.session_state["_campaign_rules_version_last"] = snap_version
+
     # Restore campaign state dict for correct version
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
     st.session_state[state_key] = snapshot.get("state", {}) or {}

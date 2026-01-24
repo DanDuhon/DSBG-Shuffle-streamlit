@@ -11,7 +11,12 @@ from ui.campaign_mode.persistence import(
     get_campaigns,
     _save_campaigns,
 )
-from ui.campaign_mode.state import _get_player_count, _ensure_v1_state, _ensure_v2_state
+from ui.campaign_mode.state import (
+    _get_player_count,
+    _ensure_v1_state,
+    _ensure_v2_state,
+    clear_other_campaign_state,
+)
 
 
 def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
@@ -36,10 +41,20 @@ def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
     radio_kwargs = {"options": options, "horizontal": True, "key": "campaign_rules_version_widget"}
     if "campaign_rules_version_widget" not in st.session_state:
         radio_kwargs["index"] = index
+    prev_version = st.session_state.get("_campaign_rules_version_last")
+    if prev_version not in options:
+        prev_version = current
+
     version = st.radio("Rules version", **radio_kwargs)
+
+    # Option B: switching versions clears the other version's state so
+    # completion/status cannot leak across.
+    if version != prev_version:
+        clear_other_campaign_state(keep_version=version)
 
     # This is now safe; no widget with this key exists
     st.session_state["campaign_rules_version"] = version
+    st.session_state["_campaign_rules_version_last"] = version
 
     st.markdown("---")
     return version, player_count
@@ -149,6 +164,8 @@ def _render_v1_setup(
     settings["only_original_enemies_for_campaigns"] = bool(only_original)
 
     if st.button("Generate campaign ⚙️", key="campaign_v1_generate", width="stretch"):
+        # Option B: generating a V1 campaign discards any loaded V2 campaign.
+        clear_other_campaign_state(keep_version="V1")
         with st.spinner("Generating campaign..."):
             campaign = _generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
@@ -287,6 +304,8 @@ def _render_v2_setup(
     settings["only_original_enemies_for_campaigns"] = bool(only_original)
 
     if st.button("Generate campaign ⚙️", key="campaign_v2_generate", width="stretch"):
+        # Option B: generating a V2 campaign discards any loaded V1 campaign.
+        clear_other_campaign_state(keep_version="V2")
         with st.spinner("Generating V2 campaign..."):
             # Mirror v2-only original-enemy option into settings as well
             if "only_original_enemies" not in state:

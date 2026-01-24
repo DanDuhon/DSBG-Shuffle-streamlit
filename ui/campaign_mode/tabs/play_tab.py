@@ -311,32 +311,20 @@ def _render_campaign_play_tab(
     """
     settings = _get_settings()
 
-    # Decide which campaign is active: prefer V2 if present.
-    v2_state = st.session_state.get("campaign_v2_state")
-    v1_state = st.session_state.get("campaign_v1_state")
-
-    active_state: Optional[Dict[str, Any]] = None
-    active_version: str = "V1"
-
-    if isinstance(v2_state, dict) and isinstance(v2_state.get("campaign"), dict):
-        active_state = v2_state
-        active_version = "V2"
-    elif isinstance(v1_state, dict) and isinstance(v1_state.get("campaign"), dict):
-        active_state = v1_state
+    # Always use the authoritative rules version for selecting the active campaign.
+    active_version = st.session_state.get("campaign_rules_version", "V1")
+    if active_version not in ("V1", "V2"):
         active_version = "V1"
 
-    if not active_state:
+    state_key = "campaign_v1_state" if active_version == "V1" else "campaign_v2_state"
+    active_state = st.session_state.get(state_key)
+    if not isinstance(active_state, dict) or not isinstance(active_state.get("campaign"), dict):
         st.info("No campaign is currently loaded. Use the Campaign tab to generate or load one.")
         return
 
     # Normalize state (sparks/souls) for the active version
     player_count = _get_player_count(settings)
-    if active_version == "V2":
-        state = _ensure_v2_state(player_count)
-        state_key = "campaign_v2_state"
-    else:
-        state = _ensure_v1_state(player_count)
-        state_key = "campaign_v1_state"
+    state = _ensure_v1_state(player_count) if active_version == "V1" else _ensure_v2_state(player_count)
 
     campaign = state.get("campaign")
     if not isinstance(campaign, dict):
