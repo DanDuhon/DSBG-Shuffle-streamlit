@@ -20,6 +20,51 @@ from typing import Any, Dict, List, Optional
 import os
 import json
 import requests
+from datetime import datetime
+
+
+def _parse_dt(val: Any) -> Optional[datetime]:
+    if not isinstance(val, str) or not val:
+        return None
+    try:
+        # Handle common PostgREST/Supabase ISO formats
+        s = val.replace("Z", "+00:00")
+        return datetime.fromisoformat(s)
+    except Exception:
+        return None
+
+
+def _pick_latest_row(rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Choose the most recent row from a list.
+
+    This is defensive: if the Supabase table lacks the unique constraint that
+    `on_conflict` expects, duplicates can exist. We prefer the newest row by:
+    - updated_at (if present)
+    - created_at (if present)
+    - id (if present)
+    - otherwise the last row returned
+    """
+    if not rows:
+        return None
+    if len(rows) == 1:
+        return rows[0]
+
+    best = None
+    best_key = None
+    for r in rows:
+        updated = _parse_dt(r.get("updated_at"))
+        created = _parse_dt(r.get("created_at"))
+        rid = r.get("id")
+        rid_int = rid if isinstance(rid, int) else None
+        key = (
+            updated or created,
+            created,
+            rid_int,
+        )
+        if best is None or (best_key is not None and key > best_key) or best_key is None:
+            best = r
+            best_key = key
+    return best or rows[-1]
 
 
 def _maybe_streamlit():
@@ -100,7 +145,8 @@ def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) ->
     url = _table_url()
     headers = _headers()
     # PostgREST filtering via query params (e.g., doc_type=eq.x)
-    params: Dict[str, str] = {"select": "data", "doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}"}
+    # Select all fields so we can pick the newest row if duplicates exist.
+    params: Dict[str, str] = {"select": "*", "doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}"}
     if user_id is None:
         params["user_id"] = "is.null"
     else:
@@ -111,9 +157,12 @@ def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) ->
         if resp.status_code != 200:
             return None
         arr = resp.json()
-        if not arr:
+        if not isinstance(arr, list) or not arr:
             return None
-        return arr[0]["data"]
+        row = _pick_latest_row(arr)
+        if not row or "data" not in row:
+            return None
+        return row.get("data")
     except Exception:
         return None
 
@@ -130,7 +179,21 @@ def list_documents(doc_type: str, user_id: Optional[str] = None) -> List[str]:
 
     resp = requests.get(url, headers=headers, params=params, timeout=10)
     resp.raise_for_status()
-    return [r["key_name"] for r in resp.json()]
+    rows = resp.json()
+    if not isinstance(rows, list):
+        return []
+    # De-dupe defensively in case duplicates exist in the table.
+    out: List[str] = []
+    seen: set[str] = set()
+    for r in rows:
+        try:
+            k = r.get("key_name")
+        except Exception:
+            k = None
+        if isinstance(k, str) and k and k not in seen:
+            seen.add(k)
+            out.append(k)
+    return out
 
 
 def delete_document(doc_type: str, key_name: str, user_id: Optional[str] = None) -> bool:

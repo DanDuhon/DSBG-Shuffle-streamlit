@@ -33,11 +33,6 @@ INVADER_LIMIT_SETTING_KEYS = (
     "max_allowed_invaders_per_level",    # tolerated alias
 )
 
-from ui.encounter_mode.data.behavior_modifiers import (
-    ENCOUNTER_BEHAVIOR_MODIFIERS,
-    ENCOUNTER_BEHAVIOR_MODIFIERS_EDITED,
-)
-
 
 @st.cache_data(show_spinner=False)
 def _list_encounters_cached():
