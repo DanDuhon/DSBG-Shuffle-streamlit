@@ -11,12 +11,29 @@ from ui.campaign_mode.persistence import(
     get_campaigns,
     _save_campaigns,
 )
+from ui.campaign_mode.persistence.dirty import (
+    any_campaign_has_unsaved_changes,
+    campaign_has_unsaved_changes,
+    clear_campaign_baseline,
+    set_campaign_baseline,
+)
 from ui.campaign_mode.state import (
     _get_player_count,
     _ensure_v1_state,
     _ensure_v2_state,
     clear_other_campaign_state,
 )
+
+
+def _has_any_loaded_campaign() -> bool:
+    """Return True if either V1 or V2 currently has a generated/loaded campaign."""
+    v1 = st.session_state.get("campaign_v1_state")
+    if isinstance(v1, dict) and isinstance(v1.get("campaign"), dict):
+        return True
+    v2 = st.session_state.get("campaign_v2_state")
+    if isinstance(v2, dict) and isinstance(v2.get("campaign"), dict):
+        return True
+    return False
 
 
 def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
@@ -163,7 +180,25 @@ def _render_v1_setup(
     # Mirror into settings so campaign generation code can read it
     settings["only_original_enemies_for_campaigns"] = bool(only_original)
 
-    if st.button("Generate campaign ⚙️", key="campaign_v1_generate", width="stretch"):
+    needs_confirm = bool(_has_any_loaded_campaign() and any_campaign_has_unsaved_changes())
+    confirm_key = "campaign_v1_generate_confirm_overwrite"
+    confirm_ok = True
+    if needs_confirm:
+        st.warning("Generating a new campaign will replace your current unsaved campaign.")
+        confirm_ok = bool(
+            st.checkbox(
+                "I understand — overwrite current campaign",
+                key=confirm_key,
+                value=False,
+            )
+        )
+
+    if st.button(
+        "Generate campaign ⚙️",
+        key="campaign_v1_generate",
+        width="stretch",
+        disabled=bool(needs_confirm and not confirm_ok),
+    ):
         # Option B: generating a V1 campaign discards any loaded V2 campaign.
         clear_other_campaign_state(keep_version="V1")
         with st.spinner("Generating campaign..."):
@@ -178,7 +213,16 @@ def _render_v1_setup(
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
         st.session_state["campaign_v1_state"] = state
-        st.success("Campaign generated.")
+        # Generated campaigns are unsaved by default.
+        clear_campaign_baseline(version="V1")
+        # Reset confirmation and rerun so the UI immediately reflects that a campaign exists.
+        st.session_state[confirm_key] = False
+        st.session_state["campaign_generate_notice"] = "Campaign generated."
+        st.rerun()
+
+    notice = st.session_state.pop("campaign_generate_notice", None)
+    if notice:
+        st.success(str(notice))
 
     st.markdown("### Campaign overview")
 
@@ -303,7 +347,25 @@ def _render_v2_setup(
     # Mirror into settings so campaign generation reads it immediately
     settings["only_original_enemies_for_campaigns"] = bool(only_original)
 
-    if st.button("Generate campaign ⚙️", key="campaign_v2_generate", width="stretch"):
+    needs_confirm = bool(_has_any_loaded_campaign() and any_campaign_has_unsaved_changes())
+    confirm_key = "campaign_v2_generate_confirm_overwrite"
+    confirm_ok = True
+    if needs_confirm:
+        st.warning("Generating a new campaign will replace your current unsaved campaign.")
+        confirm_ok = bool(
+            st.checkbox(
+                "I understand — overwrite current campaign",
+                key=confirm_key,
+                value=False,
+            )
+        )
+
+    if st.button(
+        "Generate campaign ⚙️",
+        key="campaign_v2_generate",
+        width="stretch",
+        disabled=bool(needs_confirm and not confirm_ok),
+    ):
         # Option B: generating a V2 campaign discards any loaded V1 campaign.
         clear_other_campaign_state(keep_version="V2")
         with st.spinner("Generating V2 campaign..."):
@@ -322,7 +384,16 @@ def _render_v2_setup(
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
         st.session_state["campaign_v2_state"] = state
-        st.success("Campaign generated.")
+        # Generated campaigns are unsaved by default.
+        clear_campaign_baseline(version="V2")
+        # Reset confirmation and rerun so the UI immediately reflects that a campaign exists.
+        st.session_state[confirm_key] = False
+        st.session_state["campaign_generate_notice"] = "Campaign generated."
+        st.rerun()
+
+    notice = st.session_state.pop("campaign_generate_notice", None)
+    if notice:
+        st.success(str(notice))
 
     st.markdown("### Campaign overview")
 
@@ -368,11 +439,25 @@ def _render_save_load_section(
             key=f"campaign_name_{version}",
         )
 
+        # Overwrite confirmation when saving to an existing name
+        save_overwrite_ok = True
+        if name_input.strip() in campaigns:
+            save_overwrite_ok = bool(
+                st.checkbox(
+                    "Overwrite existing saved campaign",
+                    key=f"campaign_save_overwrite_ok_{version}",
+                    value=False,
+                )
+            )
+
         if st.button("Save campaign 💾", key=f"campaign_save_{version}", width="stretch"):
             name = name_input.strip()
             if not name:
                 st.error("Campaign name is required to save.")
             else:
+                if name in campaigns and not save_overwrite_ok:
+                    st.warning("That name already exists — confirm overwrite to replace it.")
+                    return
                 # For campaign rules versions that rely on an explicit node track
                 # (V1 and V2), require a generated campaign so Campaign can resume.
                 if version in ("V1", "V2") and not isinstance(
@@ -404,6 +489,7 @@ def _render_save_load_section(
                     }
                     campaigns[name] = snapshot
                     _save_campaigns(campaigns)
+                    set_campaign_baseline(version=version, state=current_state)
                     st.success(f"Saved campaign '{name}'.")
 
     # ----- LOAD / DELETE -----
@@ -425,13 +511,36 @@ def _render_save_load_section(
 
 
             with load_col:
+                # Only require overwrite confirmation when the campaign version that
+                # will be overwritten has unsaved changes.
+                target_version = version
+                if selected_name != "<none>":
+                    snap = campaigns.get(selected_name) or {}
+                    if isinstance(snap, dict):
+                        target_version = str(snap.get("rules_version") or version)
+                needs_confirm = bool(
+                    _has_any_loaded_campaign()
+                    and campaign_has_unsaved_changes(version=target_version)
+                )
+                confirm_ok = True
+                if needs_confirm:
+                    confirm_ok = bool(
+                        st.checkbox(
+                            "Overwrite current campaign when loading",
+                            key=f"campaign_load_confirm_overwrite_{version}",
+                            value=False,
+                        )
+                    )
                 if st.button(
                     "Load selected campaign 📥",
                     key=f"campaign_load_btn_{version}",
-                    width="stretch"
+                    width="stretch",
+                    disabled=bool(needs_confirm and not confirm_ok),
                 ):
                     if selected_name != "<none>":
                         snapshot = campaigns[selected_name]
+                        # Reset confirmation checkbox for next time.
+                        st.session_state[f"campaign_load_confirm_overwrite_{version}"] = False
                         # One-shot load handoff:
                         # We cannot safely overwrite sidebar widget keys mid-run, so we
                         # stash the chosen snapshot under `pending_campaign_snapshot` and

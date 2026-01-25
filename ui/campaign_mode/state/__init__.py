@@ -139,11 +139,15 @@ def clear_other_campaign_state(*, keep_version: str) -> None:
     keep = "V1" if str(keep_version).upper().startswith("V1") else "V2"
     drop_prefix = "campaign_v2_" if keep == "V1" else "campaign_v1_"
     drop_state_key = "campaign_v2_state" if keep == "V1" else "campaign_v1_state"
+    drop_baseline_key = "_campaign_baseline_sig_v2" if keep == "V1" else "_campaign_baseline_sig_v1"
 
     # Clear versioned campaign UI/runtime keys.
     for k in list(st.session_state.keys()):
         if k == drop_state_key or k.startswith(drop_prefix):
             st.session_state.pop(k, None)
+
+    # Clear unsaved-change baseline for the dropped version.
+    st.session_state.pop(drop_baseline_key, None)
 
     # Clear cross-mode bridge keys that should never carry between campaigns.
     for k in (

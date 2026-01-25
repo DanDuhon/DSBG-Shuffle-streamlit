@@ -1,6 +1,8 @@
 # ui/campaign_mode/manage_tab_shared.py
 import streamlit as st
 from typing import Any, Dict, Optional
+from ui.campaign_mode.persistence import get_campaigns, _save_campaigns
+from ui.campaign_mode.persistence.dirty import set_campaign_baseline
 from ui.campaign_mode.core import (
     _reset_all_encounters_on_bonfire_return,
     _record_dropped_souls,
@@ -303,3 +305,112 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
         st.image(img, width="stretch")
     else:
         st.warning("Failed to render encounter card.")
+
+
+def _render_campaign_save_controls(
+    *,
+    version: str,
+    state: Dict[str, Any],
+    settings: Dict[str, Any],
+) -> None:
+    """Save the current campaign snapshot (no load controls).
+
+    Intended for the Manage Campaign tab, under the "Current space" panel.
+
+    Persists to the same backing store used by the Setup tab so users can
+    later load it from there.
+    """
+    version = (version or "").upper() or "V1"
+
+    st.markdown("---")
+    st.markdown("##### Save campaign")
+
+    campaigns = get_campaigns()
+    saved_names = sorted((campaigns or {}).keys())
+
+    pick_key = f"campaign_manage_save_pick_{version.lower()}"
+    name_key = f"campaign_manage_save_name_{version.lower()}"
+    default_name = str(state.get("name") or "").strip()
+
+    if name_key not in st.session_state:
+        st.session_state[name_key] = default_name
+
+    def _sync_selected_name_to_text() -> None:
+        selected = st.session_state.get(pick_key)
+        if isinstance(selected, str) and selected and selected != "<type a new name>":
+            st.session_state[name_key] = selected
+
+    if saved_names:
+        options = ["<type a new name>"] + saved_names
+        index = 0
+        if default_name and default_name in saved_names:
+            try:
+                index = options.index(default_name)
+            except Exception:
+                index = 0
+
+        st.selectbox(
+            "Saved campaign names",
+            options=options,
+            index=index,
+            key=pick_key,
+            on_change=_sync_selected_name_to_text,
+        )
+    else:
+        st.caption("No saved campaigns yet — type a name to create one.")
+
+    name_input = st.text_input(
+        "Name to save as",
+        key=name_key,
+        placeholder="e.g. Friday night run",
+    )
+
+    name_now = str(st.session_state.get(name_key) or "").strip()
+    exists_already = bool(name_now) and name_now in (campaigns or {})
+    overwrite_ok_key = f"campaign_manage_save_overwrite_ok_{version.lower()}"
+    overwrite_ok = True
+    if exists_already:
+        overwrite_ok = bool(
+            st.checkbox(
+                "Overwrite existing saved campaign",
+                key=overwrite_ok_key,
+                value=False,
+            )
+        )
+
+    if st.button(
+        "Save campaign 💾",
+        key=f"campaign_manage_save_btn_{version.lower()}",
+        width="stretch",
+    ):
+        name = str(name_input or "").strip()
+        if not name:
+            st.error("Campaign name is required to save.")
+            return
+
+        if name in (campaigns or {}) and not overwrite_ok:
+            st.warning("That name already exists — confirm overwrite to replace it.")
+            return
+
+        # For V1/V2, a generated campaign graph is required to resume later.
+        if version in ("V1", "V2") and not isinstance(state.get("campaign"), dict):
+            st.error(
+                "Generate the campaign before saving; this save currently has no encounters."
+            )
+            return
+
+        state["name"] = name
+        snapshot = {
+            "rules_version": version,
+            "state": state,
+            "sidebar_settings": {
+                "active_expansions": settings.get("active_expansions"),
+                "selected_characters": settings.get("selected_characters"),
+                "ngplus_level": int(st.session_state.get("ngplus_level", 0)),
+            },
+        }
+
+        campaigns[name] = snapshot
+        _save_campaigns(campaigns)
+        set_campaign_baseline(version=version, state=state)
+        st.success(f"Saved campaign '{name}'.")

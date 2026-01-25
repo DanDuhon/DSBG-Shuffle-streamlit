@@ -406,6 +406,8 @@ if not client_id:
 # --- Apply pending campaign snapshot (from Campaign Mode) *before* sidebar widgets ---
 pending = st.session_state.get("pending_campaign_snapshot")
 if pending:
+    from ui.campaign_mode.persistence.dirty import set_campaign_baseline
+
     snap_name = pending.get("name")
     snapshot = pending.get("snapshot", {}) or {}
 
@@ -419,7 +421,10 @@ if pending:
 
     # Restore campaign state dict for correct version
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
-    st.session_state[state_key] = snapshot.get("state", {}) or {}
+    loaded_state = snapshot.get("state", {}) or {}
+    st.session_state[state_key] = loaded_state
+    # Mark this loaded campaign as clean (no unsaved changes yet).
+    set_campaign_baseline(version=snap_version, state=loaded_state)
 
     # Restore sidebar-related settings (expansions, party, NG+)
     snap_sidebar = snapshot.get("sidebar_settings", {}) or {}
