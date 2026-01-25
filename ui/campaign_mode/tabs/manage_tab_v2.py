@@ -19,6 +19,7 @@ from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_boss_outcome_controls,
     _is_stage_closed_for_node,
     _render_campaign_encounter_card,
+    _render_campaign_save_controls,
 )
 from ui.campaign_mode.tabs.manage_tab_v1 import _render_v1_current_panel
 from ui.campaign_mode.state import _get_settings, _get_player_count
@@ -406,6 +407,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
     with col_detail:
         _render_v2_current_panel(campaign, current_node, state)
+        _render_campaign_save_controls(version="V2", state=state, settings=settings)
         _render_boss_outcome_controls(state, campaign, current_node)
 
     st.session_state["campaign_v2_state"] = state
@@ -628,6 +630,7 @@ def _render_v2_campaign_compact(
 
     st.markdown("---")
     _render_v2_current_panel(campaign, current_node, state)
+    _render_campaign_save_controls(version="V2", state=state, settings=settings)
     _render_boss_outcome_controls(state, campaign, current_node)
 
 

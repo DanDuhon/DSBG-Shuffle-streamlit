@@ -3,6 +3,8 @@ import streamlit as st
 
 from pathlib import Path
 import base64
+import os
+import time
 
 from ui.sidebar import render_sidebar
 from ui.encounter_mode.render import render as encounter_mode_render
@@ -12,7 +14,9 @@ from ui.event_mode.render import render as event_mode_render
 from ui.character_mode.render import render as character_mode_render
 from ui.behavior_viewer.render import render as behavior_viewer_render
 from core import client_id as client_id_module
-from core.settings_manager import load_settings, save_settings
+from core.settings_manager import get_config_bool, is_streamlit_cloud, load_settings, save_settings
+
+_APP_START = time.perf_counter()
 
 st.set_page_config(
     page_title="DSBG-Shuffle",
@@ -59,11 +63,25 @@ _ASSETS_DIR = Path("assets")
 _FONT_CASLON_REG = _ASSETS_DIR / "Adobe Caslon Pro Regular.ttf"
 _FONT_CASLON_SEMI = _ASSETS_DIR / "AdobeCaslonProSemibold.ttf"
 
-_embedded_fonts_css = "\n".join(
-    [
-        _font_face_css("DSBG-Caslon", _FONT_CASLON_REG, 400),
-        _font_face_css("DSBG-Caslon", _FONT_CASLON_SEMI, 600),
-    ]
+
+@st.cache_resource(show_spinner=False)
+def _get_embedded_fonts_css_cached() -> str:
+    return _build_embedded_fonts_css()
+
+
+def _build_embedded_fonts_css() -> str:
+    return "\n".join(
+        [
+            _font_face_css("DSBG-Caslon", _FONT_CASLON_REG, 400),
+            _font_face_css("DSBG-Caslon", _FONT_CASLON_SEMI, 600),
+        ]
+    )
+
+
+_embedded_fonts_css = (
+    _get_embedded_fonts_css_cached()
+    if get_config_bool("DSBG_CACHE_EMBEDDED_FONTS", default=True)
+    else _build_embedded_fonts_css()
 )
 
 _DS_GLOBAL_STYLE = """
@@ -388,15 +406,25 @@ if not client_id:
 # --- Apply pending campaign snapshot (from Campaign Mode) *before* sidebar widgets ---
 pending = st.session_state.get("pending_campaign_snapshot")
 if pending:
+    from ui.campaign_mode.persistence.dirty import set_campaign_baseline
+
     snap_name = pending.get("name")
     snapshot = pending.get("snapshot", {}) or {}
 
     snap_version = snapshot.get("rules_version", "V1")
     st.session_state["campaign_rules_version"] = snap_version
 
+    # Keep the Setup tab radio widget and version-switch tracker in sync.
+    # (The radio uses a separate key to avoid Streamlit widget-state conflicts.)
+    st.session_state["campaign_rules_version_widget"] = snap_version
+    st.session_state["_campaign_rules_version_last"] = snap_version
+
     # Restore campaign state dict for correct version
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
-    st.session_state[state_key] = snapshot.get("state", {}) or {}
+    loaded_state = snapshot.get("state", {}) or {}
+    st.session_state[state_key] = loaded_state
+    # Mark this loaded campaign as clean (no unsaved changes yet).
+    set_campaign_baseline(version=snap_version, state=loaded_state)
 
     # Restore sidebar-related settings (expansions, party, NG+)
     snap_sidebar = snapshot.get("sidebar_settings", {}) or {}
@@ -486,3 +514,33 @@ elif mode == "Character Mode":
     character_mode_render(settings)
 elif mode == "Behavior Card Viewer":
     behavior_viewer_render()
+
+
+def _rss_mb() -> float | None:
+    """Best-effort RSS in MB (Linux/proc only)."""
+    try:
+        status = Path("/proc/self/status")
+        if not status.exists():
+            return None
+        for line in status.read_text(encoding="utf-8").splitlines():
+            if line.startswith("VmRSS:"):
+                parts = line.split()
+                if len(parts) >= 2:
+                    kb = float(parts[1])
+                    return kb / 1024.0
+    except Exception:
+        return None
+    return None
+
+
+if is_streamlit_cloud() and get_config_bool("DSBG_DEBUG_PERF", default=False):
+    elapsed_s = time.perf_counter() - _APP_START
+    with st.sidebar.expander("Diagnostics", expanded=False):
+        st.caption(f"Render time: {elapsed_s:.3f}s")
+        rss = _rss_mb()
+        if rss is not None:
+            st.caption(f"RSS: {rss:.1f} MB")
+        try:
+            st.caption(f"Python PID: {os.getpid()}")
+        except Exception:
+            pass

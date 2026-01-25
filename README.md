@@ -63,3 +63,22 @@ The app ships with JSON and image assets in the repo:
 Settings:
 - Local runs persist to `data/user_settings.json`.
 - Docker runs persist `data/` in a volume (so updates/rebuilds keep your data).
+
+## Streamlit Cloud Secrets
+
+This app supports Streamlit Cloud configuration via Secrets.
+
+Recommended Secrets:
+
+- `DSBG_DEPLOYMENT = "cloud"` (enables Cloud-only behavior)
+- `DSBG_CACHE_EMBEDDED_FONTS = true` (keeps embedded fonts but avoids rebuilding base64 CSS on reruns)
+- `DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES = true` (prevents caching encounter-card asset images on Cloud)
+
+	Note: when enabled, the app also tightens a few large in-process `lru_cache` sizes
+	(enemy icon resizing + encounter availability checks) to reduce Cloud RAM pressure.
+- `DSBG_DEBUG_PERF = true` (optional; shows a small Diagnostics panel in the sidebar)
+
+If you use Supabase persistence, also set:
+
+- `SUPABASE_URL`
+- `SUPABASE_KEY`

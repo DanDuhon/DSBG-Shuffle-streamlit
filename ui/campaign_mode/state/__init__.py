@@ -125,3 +125,41 @@ def _ensure_v2_state(player_count: int) -> Dict[str, Any]:
     st.session_state[key] = state
     _ensure_campaign_event_state(state)
     return state
+
+
+def clear_other_campaign_state(*, keep_version: str) -> None:
+    """Option B behavior: switching rules versions clears the other version's state.
+
+    This prevents V1 and V2 campaign progress (node completion, sparks/souls widgets,
+    travel targets, etc.) from leaking across tabs.
+
+    Also clears Encounter Mode bridge keys so Campaign Play cannot reuse stale
+    reward totals or encounter selections.
+    """
+    keep = "V1" if str(keep_version).upper().startswith("V1") else "V2"
+    drop_prefix = "campaign_v2_" if keep == "V1" else "campaign_v1_"
+    drop_state_key = "campaign_v2_state" if keep == "V1" else "campaign_v1_state"
+    drop_baseline_key = "_campaign_baseline_sig_v2" if keep == "V1" else "_campaign_baseline_sig_v1"
+
+    # Clear versioned campaign UI/runtime keys.
+    for k in list(st.session_state.keys()):
+        if k == drop_state_key or k.startswith(drop_prefix):
+            st.session_state.pop(k, None)
+
+    # Clear unsaved-change baseline for the dropped version.
+    st.session_state.pop(drop_baseline_key, None)
+
+    # Clear cross-mode bridge keys that should never carry between campaigns.
+    for k in (
+        "current_encounter",
+        "last_encounter",
+        "encounter_events",
+        "last_encounter_reward_totals",
+        "last_encounter_rewards_for_slug",
+        "campaign_play_mark_completed",
+        "campaign_play_mark_failed",
+        "pending_campaign_snapshot",
+        "campaign_load_notice",
+    ):
+        st.session_state.pop(k, None)
+

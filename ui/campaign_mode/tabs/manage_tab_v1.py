@@ -19,6 +19,7 @@ from ui.campaign_mode.core import (
 from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_boss_outcome_controls,
     _render_campaign_encounter_card,
+    _render_campaign_save_controls,
 )
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
@@ -509,6 +510,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
     with col_detail:
         _render_v1_current_panel(campaign, current_node)
+        _render_campaign_save_controls(version="V1", state=state, settings=settings)
         _render_boss_outcome_controls(state, campaign, current_node)
 
     # Persist updated state

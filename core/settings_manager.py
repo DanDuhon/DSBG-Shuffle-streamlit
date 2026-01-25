@@ -134,6 +134,74 @@ def _maybe_streamlit():
         return None
 
 
+def _parse_bool(value: object) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("1", "true", "yes", "y", "on"):
+            return True
+        if v in ("0", "false", "no", "n", "off"):
+            return False
+    return None
+
+
+def get_config_value(key: str, default: object = None) -> object:
+    """Return a config value from Streamlit secrets (preferred) or env vars.
+
+    This keeps Streamlit Cloud configuration in Secrets, while still allowing
+    scripts/Docker to override via environment variables.
+    """
+
+    st = _maybe_streamlit()
+    if st is not None:
+        try:
+            if key in st.secrets:
+                return st.secrets.get(key)
+        except Exception:
+            pass
+
+    if key in os.environ:
+        return os.environ.get(key)
+
+    return default
+
+
+def get_config_bool(key: str, default: bool = False) -> bool:
+    v = get_config_value(key, default=None)
+    parsed = _parse_bool(v)
+    if parsed is None:
+        return bool(default)
+    return parsed
+
+
+def get_config_str(key: str, default: str | None = None) -> str | None:
+    v = get_config_value(key, default=None)
+    if v is None:
+        return default
+    try:
+        return str(v)
+    except Exception:
+        return default
+
+
+def is_streamlit_cloud() -> bool:
+    """Return True when explicitly configured as Streamlit Cloud.
+
+    This uses Streamlit Cloud Secrets (recommended) via:
+      - DSBG_DEPLOYMENT = "cloud"
+
+    Falls back to env var for non-Streamlit contexts.
+    """
+
+    deployment = (get_config_str("DSBG_DEPLOYMENT") or "").strip().lower()
+    return deployment in {"cloud", "streamlit_cloud", "streamlitcloud"}
+
+
 def _runtime_client_id() -> str | None:
     """Best-effort client id lookup.
 

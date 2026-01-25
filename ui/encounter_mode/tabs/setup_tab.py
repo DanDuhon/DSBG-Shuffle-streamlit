@@ -50,6 +50,32 @@ def _event_img_path(ev: dict) -> str | None:
     )
 
 
+def _ensure_card_bytes_inplace(encounter: dict) -> bytes | None:
+    """Ensure encounter["card_bytes"] is present for display.
+
+    This avoids re-encoding the same PIL image to PNG on every Streamlit rerun.
+    """
+    try:
+        existing = encounter.get("card_bytes")
+        if isinstance(existing, (bytes, bytearray)) and existing:
+            return bytes(existing)
+    except Exception:
+        pass
+
+    img = encounter.get("card_img")
+    if img is None:
+        return None
+
+    try:
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        data = buf.getvalue()
+        encounter["card_bytes"] = data
+        return data
+    except Exception:
+        return None
+
+
 def render_original_encounter(
     encounter_data,
     selected_expansion,
@@ -73,12 +99,12 @@ def render_original_encounter(
 
     buf = BytesIO()
     card_img.save(buf, format="PNG")
-    buf.seek(0)
+    card_bytes = buf.getvalue()
 
     return {
         "ok": True,
-        "buf": buf,
         "card_img": card_img,
+        "card_bytes": card_bytes,
         "encounter_data": encounter_data,
         "encounter_name": encounter_name,
         "encounter_level": encounter_level,
@@ -560,6 +586,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                         if card_img is not None:
                             payload["card_img"] = card_img
+                            try:
+                                buf = BytesIO()
+                                card_img.save(buf, format="PNG")
+                                payload["card_bytes"] = buf.getvalue()
+                            except Exception:
+                                payload.pop("card_bytes", None)
 
                         st.session_state.current_encounter = payload
                         st.session_state.encounter_events = payload.get("events", [])
@@ -597,12 +629,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         with col_enc:
             if "current_encounter" in st.session_state:
                 encounter = st.session_state.current_encounter
-                img = encounter["card_img"]
-
-                buf = BytesIO()
-                img.save(buf, format="PNG")
-                buf.seek(0)
-                st.image(buf.getvalue(), width="stretch")
+                img_bytes = _ensure_card_bytes_inplace(encounter)
+                if img_bytes:
+                    st.image(img_bytes, width="stretch")
+                else:
+                    st.caption("Encounter image unavailable.")
 
                 # Divider between card and rules
                 st.markdown(
@@ -897,11 +928,15 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         final_res.get("enemies") or [],
                         use_edited,
                     )
-                    buf = BytesIO()
-                    card_img.save(buf, format="PNG")
-                    buf.seek(0)
                     final_res["card_img"] = card_img
-                    final_res["buf"] = buf
+                    try:
+                        buf = BytesIO()
+                        card_img.save(buf, format="PNG")
+                        final_res["card_bytes"] = buf.getvalue()
+                    except Exception:
+                        final_res.pop("card_bytes", None)
+                else:
+                    _ensure_card_bytes_inplace(final_res)
 
                 st.session_state.current_encounter = final_res
                 # Reset Play tab state so the Play UI starts fresh for this new encounter
@@ -935,6 +970,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 # Mark this encounter as an Original render so Play uses the Hollow gang
                 res["force_gang"] = "Hollow"
                 st.session_state.current_encounter = res
+                _ensure_card_bytes_inplace(st.session_state.current_encounter)
                 # Reset Play tab state so the Play UI starts fresh for this original render
                 st.session_state["encounter_play"] = None
                 st.session_state["last_encounter"] = {
@@ -998,6 +1034,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 )
                 if res.get("ok"):
                     st.session_state.current_encounter = res
+                    _ensure_card_bytes_inplace(st.session_state.current_encounter)
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
                         "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
@@ -1015,12 +1052,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     
         if "current_encounter" in st.session_state:
             encounter = st.session_state.current_encounter
-            img = encounter["card_img"]
-
-            buf = BytesIO()
-            img.save(buf, format="PNG")
-            buf.seek(0)
-            st.image(buf.getvalue(), width="stretch")
+            img_bytes = _ensure_card_bytes_inplace(encounter)
+            if img_bytes:
+                st.image(img_bytes, width="stretch")
+            else:
+                st.caption("Encounter image unavailable.")
 
             # Divider between card and rules
             st.markdown(

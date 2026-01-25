@@ -22,6 +22,7 @@ from ui.encounter_mode.data.behavior_modifiers import ( # Don't remove these, th
 )
 from core.character.character_stats import average_souls_to_equip
 from ui.character_mode.data_io import _find_data_file, _load_json_list
+from core.settings_manager import get_config_bool, is_streamlit_cloud
 
 
 INVADERS_PATH = Path("data/invaders.json")
@@ -36,6 +37,15 @@ INVADER_LIMIT_SETTING_KEYS = (
     "max_invaders_by_level",             # tolerated alias
     "max_allowed_invaders_per_level",    # tolerated alias
 )
+
+
+# Cloud-only: reduce long-lived LRU caches to lower memory pressure.
+_TIGHTEN_LRU = is_streamlit_cloud() and get_config_bool(
+    "DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False
+)
+
+_AVAILABILITY_CACHE_MAX = 1024 if _TIGHTEN_LRU else 4096
+_VIABLE_ALT_CACHE_MAX = 2048 if _TIGHTEN_LRU else 16384
 
 
 @st.cache_data(show_spinner=False)
@@ -263,7 +273,7 @@ def _disabled_enemy_ids_signature(settings: dict | None) -> tuple[str, ...]:
     return tuple(sorted(disabled))
 
 
-@lru_cache(maxsize=4096)
+@lru_cache(maxsize=_AVAILABILITY_CACHE_MAX)
 def _analyze_encounter_availability_cached(
     encounter_slug: str,
     level: int,
@@ -397,7 +407,7 @@ def filter_expansions(encounters_by_expansion, character_count: int, active_expa
     return filtered_expansions
 
 
-@lru_cache(maxsize=16384)
+@lru_cache(maxsize=_VIABLE_ALT_CACHE_MAX)
 def _encounter_has_viable_alternative_cached(
     encounter_slug: str,
     level: int,
