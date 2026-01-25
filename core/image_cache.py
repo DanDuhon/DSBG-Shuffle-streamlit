@@ -62,6 +62,12 @@ for d in CACHE_DIRS.values():
 # -------------------------------------------------------------
 # Bytes helper (cached by file mtime)
 # -------------------------------------------------------------
+def _normalize_path_str(path: str) -> str:
+    # Many saved payloads may contain Windows-style backslashes; normalize so
+    # the same data works on Streamlit Cloud (Linux).
+    return str(path).replace("\\", "/")
+
+
 def _stat_mtime_ns(path: Path) -> int:
     return int(path.stat().st_mtime_ns)
 
@@ -80,10 +86,14 @@ def _get_image_bytes_cached(path_str: str, mtime_ns: int) -> bytes:
 
 def get_image_bytes_cached(path: str) -> bytes:
     """Public helper: return file bytes for `path`, invalidating cache on file change."""
-    p = Path(path)
+    p = Path(_normalize_path_str(path))
+
+    # Many UI call sites treat missing images as optional. Returning empty bytes
+    # keeps the app resilient when an asset path is missing or invalid.
+    if not p.exists():
+        return b""
+
     if _should_bypass_image_cache_for_path(p):
-        if not p.exists():
-            raise FileNotFoundError(f"Missing image: {p}")
         return p.read_bytes()
     return _get_image_bytes_cached(str(p), _stat_mtime_ns(p))
 
@@ -126,8 +136,10 @@ def bytes_to_data_uri(data: object, mime: str = "image/png") -> str:
 
 def get_image_data_uri_cached(path: str) -> str:
     """Return a `data:<mime>;base64,...` URI for `path`, cached and invalidated on file change."""
-    p = Path(path)
+    p = Path(_normalize_path_str(path))
     data = get_image_bytes_cached(str(p))
+    if not data:
+        return ""
     suffix = p.suffix.lower()
     mime = "image/png" if suffix == ".png" else "image/jpeg"
     if _should_bypass_image_cache_for_path(p):
