@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional
 from collections import defaultdict
 from datetime import datetime, timezone
 from core import supabase_store
-from core.settings_manager import _has_supabase_config, get_runtime_client_id, save_settings
+from core import auth
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
 from ui.event_mode.event_card_text import EVENT_CARD_TEXT
 from ui.event_mode.event_card_type import EVENT_CARD_TYPE
 from ui.event_mode.event_card_meta import (
@@ -53,19 +54,23 @@ def load_custom_event_decks() -> Dict[str, dict]:
       { "decks": { "<name>": {"cards": {...}} }, "updated": "..." }
     Legacy support: if file is { "<name>": {...} } treat that as decks mapping.
     """
-    # Supabase-backed: one row per deck with doc_type='event_deck'
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    # Streamlit Cloud: Supabase-backed (per-account) custom decks.
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            # Logged out: do not read shared local files on Cloud.
+            return {}
 
         out: Dict[str, dict] = {}
         try:
-            names = supabase_store.list_documents("event_deck", user_id=client_id)
+            names = supabase_store.list_documents("event_deck", user_id=user_id, access_token=access_token)
         except Exception:
             names = []
 
         for n in names:
             try:
-                obj = supabase_store.get_document("event_deck", n, user_id=client_id)
+                obj = supabase_store.get_document("event_deck", n, user_id=user_id, access_token=access_token)
                 if isinstance(obj, dict):
                     out[n] = obj
             except Exception:
@@ -85,23 +90,26 @@ def load_custom_event_decks() -> Dict[str, dict]:
 
 
 def save_custom_event_decks(decks: Dict[str, dict]) -> None:
-    # Supabase-backed: upsert each deck as its own document
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    # Streamlit Cloud: Supabase-backed (per-account) custom decks.
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            return
 
         for name, deck in (decks or {}).items():
             try:
-                supabase_store.upsert_document("event_deck", name, deck, user_id=client_id)
+                supabase_store.upsert_document("event_deck", name, deck, user_id=user_id, access_token=access_token)
             except Exception:
                 pass
 
         # Remove remote decks that no longer exist locally
         try:
-            remote = supabase_store.list_documents("event_deck", user_id=client_id)
+            remote = supabase_store.list_documents("event_deck", user_id=user_id, access_token=access_token)
             for r in remote:
                 if r not in decks:
                     try:
-                        supabase_store.delete_document("event_deck", r, user_id=client_id)
+                        supabase_store.delete_document("event_deck", r, user_id=user_id, access_token=access_token)
                     except Exception:
                         pass
         except Exception:

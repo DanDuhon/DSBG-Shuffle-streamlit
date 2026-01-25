@@ -1,6 +1,7 @@
 #ui/sidebar.py
 import streamlit as st
-from core.settings_manager import save_settings, settings_fingerprint
+from core import auth
+from core.settings_manager import is_streamlit_cloud, save_settings, settings_fingerprint
 from datetime import datetime, timezone
 from copy import deepcopy
 from core.character.characters import CHARACTER_EXPANSIONS
@@ -59,34 +60,70 @@ def _sync_invader_caps():
 
 
 def render_sidebar(settings: dict):
-    """Render the Settings sidebar using a draft/commit model.
+    """Render the Settings sidebar.
 
-    Draft-save contract:
-    - `st.session_state["user_settings"]` is the last applied (committed) settings dict.
-    - The sidebar edits a *draft* copy stored at `st.session_state["_settings_draft"]`.
-    - Clicking Save deep-copies the draft into `st.session_state["user_settings"]` and
-      persists via `core.settings_manager.save_settings(...)`.
+    Persistence contract:
+    - Local/Docker: settings changes take effect immediately and are saved to JSON automatically.
+    - Streamlit Cloud: settings can be changed while logged out, but saving requires login.
 
     Session keys touched (high-level):
     - Applied/draft: "user_settings", "_settings_draft", "_settings_draft_base_fp", "_settings_ui_base_fp"
     - Save metadata: "_settings_last_saved_fp", "_settings_last_saved_at"
     - Representative widget keys: "ngplus_level", "ui_card_width", "ui_compact" (plus many dynamic keys)
     """
+
+    cloud_mode = bool(is_streamlit_cloud())
+
+    # Cloud-only Account UI (Google OAuth primary + magic link fallback).
+    if auth.is_auth_ui_enabled():
+        st.sidebar.header("Account")
+        auth.ensure_session_loaded()
+
+        if auth.is_authenticated():
+            ident = auth.get_user_email() or auth.get_user_id() or "(unknown user)"
+            st.sidebar.caption(f"Signed in: {ident}")
+            if st.sidebar.button("Log out", use_container_width=True, key="auth_logout_btn"):
+                auth.logout()
+                st.stop()
+        else:
+            if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
+                auth.login_google()
+                st.stop()
+
+            email = st.sidebar.text_input(
+                "Email (magic link)",
+                key="auth_magic_email",
+                placeholder="you@example.com",
+            )
+            if st.sidebar.button("Send magic link", use_container_width=True, key="auth_magic_btn"):
+                ok = auth.send_magic_link(email)
+                if ok:
+                    st.sidebar.success("Magic link sent. Check your email.")
+                else:
+                    st.sidebar.error("Could not send magic link.")
+
     st.sidebar.header("Settings")
-    # Reserve top space for Save UI (rendered later after widgets update draft settings).
-    save_ui = st.sidebar.container()
+    # Streamlit Cloud renders a Save UI (gated by login). Local/Docker auto-saves.
+    save_ui = st.sidebar.container() if cloud_mode else None
 
     applied_settings = st.session_state.get("user_settings", settings) or {}
     applied_fp = settings_fingerprint(applied_settings)
 
-    draft_settings = st.session_state.get("_settings_draft")
-    draft_base_fp = st.session_state.get("_settings_draft_base_fp")
-    if not isinstance(draft_settings, dict) or draft_base_fp != applied_fp:
-        draft_settings = deepcopy(applied_settings)
-        st.session_state["_settings_draft"] = draft_settings
+    if cloud_mode:
+        # Cloud: keep draft/commit model to allow "changes apply but don't persist".
+        draft_settings = st.session_state.get("_settings_draft")
+        draft_base_fp = st.session_state.get("_settings_draft_base_fp")
+        if not isinstance(draft_settings, dict) or draft_base_fp != applied_fp:
+            draft_settings = deepcopy(applied_settings)
+            st.session_state["_settings_draft"] = draft_settings
+            st.session_state["_settings_draft_base_fp"] = applied_fp
+        settings = draft_settings
+    else:
+        # Local/Docker: edit the live settings dict in-place so the rest of the app
+        # sees updates immediately in the same rerun.
+        st.session_state["_settings_draft"] = applied_settings
         st.session_state["_settings_draft_base_fp"] = applied_fp
-
-    settings = draft_settings
+        settings = applied_settings
 
     def _key_safe(text: str) -> str:
         return "".join(ch.lower() if ch.isalnum() else "_" for ch in str(text))
@@ -417,85 +454,49 @@ def render_sidebar(settings: dict):
     current_fp = settings_fingerprint(settings)
     dirty = bool(current_fp != applied_fp)
 
-    with save_ui:
-        if st.button("Save settings", disabled=not dirty, use_container_width=True, key="save_settings_btn"):
-            old_active_expansions = list(applied_settings.get("active_expansions", []) or [])
-            new_active_expansions = list(settings.get("active_expansions", []) or [])
+    if cloud_mode and save_ui is not None:
+        with save_ui:
+            needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
+            if needs_login:
+                st.caption("Log in to save.")
 
-            committed = deepcopy(settings)
-            st.session_state["user_settings"] = committed
-            st.session_state["_settings_draft"] = deepcopy(committed)
-            st.session_state["_settings_draft_base_fp"] = settings_fingerprint(committed)
+            if st.button(
+                "Save settings",
+                disabled=(not dirty) or needs_login,
+                use_container_width=True,
+                key="save_settings_btn",
+            ):
+                old_active_expansions = list(applied_settings.get("active_expansions", []) or [])
+                new_active_expansions = list(settings.get("active_expansions", []) or [])
 
-            save_settings(committed)
+                committed = deepcopy(settings)
+                st.session_state["user_settings"] = committed
+                st.session_state["_settings_draft"] = deepcopy(committed)
+                st.session_state["_settings_draft_base_fp"] = settings_fingerprint(committed)
 
-            st.session_state["_settings_just_saved"] = True
-            st.session_state["_settings_old_active_expansions"] = old_active_expansions
-            st.session_state["_settings_new_active_expansions"] = new_active_expansions
-            st.rerun()
+                save_settings(committed)
 
-        last_saved_at = st.session_state.get("_settings_last_saved_at")
-        if last_saved_at:
-            try:
-                dt = datetime.fromisoformat(str(last_saved_at))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                local_dt = dt.astimezone()
-                save_text = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
-            except Exception:
-                save_text = str(last_saved_at)
-            st.caption(f"Last saved: {save_text}")
-        else:
-            st.caption("Last saved: —")
+                st.session_state["_settings_just_saved"] = True
+                st.session_state["_settings_old_active_expansions"] = old_active_expansions
+                st.session_state["_settings_new_active_expansions"] = new_active_expansions
+                st.rerun()
 
-        # Optional: client-id diagnostics (for Streamlit Cloud debugging)
-        show_debug = False
-        try:
-            import os
-
-            show_debug = os.environ.get("DSBG_DEBUG_CLIENT_ID") in ("1", "true", "TRUE", "yes", "YES")
-        except Exception:
-            show_debug = False
-
-        try:
-            if not show_debug and hasattr(st, "secrets"):
-                show_debug = bool(st.secrets.get("DSBG_DEBUG_CLIENT_ID", False))
-        except Exception:
-            pass
-
-        if show_debug:
-            try:
-                from core import client_id as client_id_module
-
-                qcid = None
+            last_saved_at = st.session_state.get("_settings_last_saved_at")
+            if last_saved_at:
                 try:
-                    qp = getattr(st, "query_params", None)
-                    if qp is not None:
-                        qcid = qp.get("client_id")
+                    dt = datetime.fromisoformat(str(last_saved_at))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    local_dt = dt.astimezone()
+                    save_text = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
                 except Exception:
-                    qcid = None
-
-                qp_all = None
-                try:
-                    qp_proxy = getattr(st, "query_params", None)
-                    if qp_proxy is not None:
-                        to_dict = getattr(qp_proxy, "to_dict", None)
-                        if callable(to_dict):
-                            qp_all = to_dict()
-                        else:
-                            qp_all = dict(qp_proxy)
-                except Exception:
-                    qp_all = None
-
-                with st.expander("🔎 Debug: Client ID", expanded=False):
-                    st.write({
-                        "session_state.client_id": st.session_state.get("client_id"),
-                        "query_param.client_id": qcid,
-                        "query_params": qp_all,
-                        "has_streamlit_javascript": bool(getattr(client_id_module, "st_javascript", None)),
-                        "client_id_debug": st.session_state.get("_client_id_debug"),
-                        "client_id_module.get_or_create_client_id()": client_id_module.get_or_create_client_id(),
-                    })
-            except Exception:
-                pass
+                    save_text = str(last_saved_at)
+                st.caption(f"Last saved: {save_text}")
+            else:
+                st.caption("Last saved: —")
+    elif (not cloud_mode) and dirty:
+        # Local/Docker: auto-persist immediately when settings changed.
+        # `save_settings` already avoids redundant writes via fingerprinting.
+        save_settings(settings)
+        st.session_state["_settings_draft_base_fp"] = settings_fingerprint(settings)
 

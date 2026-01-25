@@ -3,6 +3,7 @@ import streamlit as st
 from pathlib import Path
 from io import BytesIO
 
+from core import auth
 from core.settings_manager import save_settings
 from ui.encounter_mode.persistence import load_saved_encounters, save_saved_encounters
 from core.behavior.generation import build_behavior_catalog
@@ -517,12 +518,16 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             # ---------------------------------------------------------
             st.subheader("Saved Encounters")
 
+            needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
+            if needs_login:
+                st.caption("Log in to save.")
+
             save_name_default = (
                 st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
             )
             save_name = st.text_input("Save as:", value=save_name_default)
 
-            if st.button("Save Current 💾", width="stretch"):
+            if st.button("Save Current 💾", width="stretch", disabled=needs_login):
                 if "current_encounter" not in st.session_state:
                     st.warning("No active encounter to save.")
                 else:
@@ -610,7 +615,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         _apply_added_invaders_to_current_encounter()
 
                 with delete_col:
-                    if st.button("Delete 🗑️", width="stretch"):
+                    if st.button("Delete 🗑️", width="stretch", disabled=needs_login):
                         if load_name in st.session_state.saved_encounters:
                             st.session_state.saved_encounters.pop(load_name, None)
                             # Persist deletion to dedicated file, fallback to settings

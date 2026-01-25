@@ -1,6 +1,8 @@
 #ui/campaign_mode/setup_tab.py
 import streamlit as st
 from typing import Any, Dict
+
+from core import auth
 from ui.campaign_mode.core import _default_sparks_max
 from ui.campaign_mode.generation import (
     _filter_bosses,
@@ -421,6 +423,10 @@ def _render_save_load_section(
     st.markdown("---")
     st.subheader("Save / Load campaign")
 
+    needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
+    if needs_login:
+        st.caption("Log in to save.")
+
     campaigns = get_campaigns()
 
     if bool(st.session_state.get("ui_compact")):
@@ -450,7 +456,12 @@ def _render_save_load_section(
                 )
             )
 
-        if st.button("Save campaign 💾", key=f"campaign_save_{version}", width="stretch"):
+        if st.button(
+            "Save campaign 💾",
+            key=f"campaign_save_{version}",
+            width="stretch",
+            disabled=needs_login,
+        ):
             name = name_input.strip()
             if not name:
                 st.error("Campaign name is required to save.")
@@ -557,7 +568,8 @@ def _render_save_load_section(
                 if st.button(
                     "Delete selected 🗑️",
                     key=f"campaign_delete_btn_{version}",
-                    width="stretch"
+                    width="stretch",
+                    disabled=needs_login,
                 ):
                     if selected_name == "<none>":
                         st.error("Select a campaign to delete.")

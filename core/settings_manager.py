@@ -1,7 +1,6 @@
 import json
 import hashlib
 import os
-import uuid
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -202,93 +201,13 @@ def is_streamlit_cloud() -> bool:
     return deployment in {"cloud", "streamlit_cloud", "streamlitcloud"}
 
 
-def _runtime_client_id() -> str | None:
-    """Best-effort client id lookup.
-
-    Order:
-    - env var (for scripts): DSBG_CLIENT_ID
-    - Streamlit session_state["client_id"] when running in Streamlit
-    """
-
-    cid = os.environ.get("DSBG_CLIENT_ID")
-    if cid:
-        return cid
-
-    st = _maybe_streamlit()
-    if st is None:
-        return None
-    try:
-        return st.session_state.get("client_id")
-    except Exception:
-        return None
-
-
-def get_runtime_client_id() -> str | None:
-    """Return a stable UUID string for the current client (best-effort).
-
-    When running under Streamlit, this will attempt to create/persist the id
-    (via query params/localStorage) using `core.client_id.get_or_create_client_id()`.
-
-    Returns None when Streamlit isn't available and no env var is set.
-    """
-
-    # 1) Environment override (scripts/tools)
-    cid = os.environ.get("DSBG_CLIENT_ID")
-    if cid:
-        try:
-            uuid.UUID(str(cid))
-            return str(cid)
-        except Exception:
-            return None
-
-    st = _maybe_streamlit()
-    if st is None:
-        return None
-
-    # 2) Session state (already established)
-    try:
-        cid = st.session_state.get("client_id")
-    except Exception:
-        cid = None
-    if cid:
-        try:
-            uuid.UUID(str(cid))
-            return str(cid)
-        except Exception:
-            cid = None
-
-    # 3) Ask the browser bridge / query params helper to establish one
-    try:
-        from core import client_id as client_id_module
-
-        cid = client_id_module.get_or_create_client_id()
-    except Exception:
-        cid = None
-
-    if cid:
-        try:
-            uuid.UUID(str(cid))
-        except Exception:
-            cid = None
-
-    if cid:
-        try:
-            st.session_state["client_id"] = str(cid)
-        except Exception:
-            pass
-        return str(cid)
-
-    return None
-
 def load_settings():
     """Load persisted user settings and merge them onto DEFAULT_SETTINGS.
 
     Persistence precedence:
-    - If Supabase is configured, prefer per-client settings when a client id is available:
-        1) `DSBG_CLIENT_ID` env var (scripts/tools), else
-        2) Streamlit `st.session_state["client_id"]` (app runtime)
-      If no per-client doc exists, fall back to the global (NULL user_id) document.
-    - Otherwise, read local JSON from `data/user_settings.json`.
+        - Streamlit Cloud: if Supabase is configured and the user is authenticated,
+            load the per-account settings document.
+        - Otherwise, read local JSON from `data/user_settings.json`.
     - If nothing can be loaded, returns a deepcopy of DEFAULT_SETTINGS.
 
     Merge / cleanup rules:
@@ -303,14 +222,27 @@ def load_settings():
     """
     merged = deepcopy(DEFAULT_SETTINGS)
 
-    # Choose storage backend: Supabase when configured, otherwise local JSON.
-    if _has_supabase_config():
-        # Supabase schema requires user_id NOT NULL; always use per-client documents.
-        client_id = get_runtime_client_id()
+    # Choose storage backend:
+    # - Streamlit Cloud: Supabase per-account settings when logged in.
+    # - Otherwise: local JSON.
+    if is_streamlit_cloud() and _has_supabase_config():
+        try:
+            from core import auth
+
+            user_id = auth.get_user_id()
+            access_token = auth.get_access_token()
+        except Exception:
+            user_id = None
+            access_token = None
 
         loaded = None
-        if client_id:
-            loaded = supabase_store.get_document("user_settings", "default", user_id=client_id)
+        if user_id and access_token:
+            loaded = supabase_store.get_document(
+                "user_settings",
+                "default",
+                user_id=user_id,
+                access_token=access_token,
+            )
     else:
         try:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -358,8 +290,8 @@ def save_settings(settings: dict):
     - Avoids redundant writes:
         - under Streamlit, returns early if `_settings_last_saved_fp` matches
         - for local JSON, skips rewriting the file if the fingerprint is unchanged
-    - When Supabase is enabled, attempts a per-client upsert (creating a UUID
-      `client_id` in the settings dict if needed).
+        - In Streamlit Cloud with Supabase configured, saving requires an authenticated
+            account; when logged out, this returns False without persisting.
 
     Streamlit metadata keys (best-effort):
     - `_settings_last_saved_fp`: fingerprint of the last payload persisted
@@ -386,36 +318,32 @@ def save_settings(settings: dict):
         except Exception:
             pass
 
-    if _has_supabase_config():
-        # Determine or create a client_id to persist per-client documents.
-        client_id = settings.get("client_id")
-        if client_id:
-            try:
-                uuid.UUID(str(client_id))
-            except Exception:
-                client_id = None
-
-        if not client_id:
-            client_id = get_runtime_client_id()
-
-        if not client_id:
-            # Last resort: generate one (but try to also mirror into Streamlit session)
-            client_id = str(uuid.uuid4())
-            st = _maybe_streamlit()
-            if st is not None:
-                try:
-                    st.session_state["client_id"] = client_id
-                except Exception:
-                    pass
-
-        settings["client_id"] = client_id
-
-        # Attempt to persist to Supabase using the per-client id.
+    if is_streamlit_cloud() and _has_supabase_config():
+        # Cloud persistence requires an authenticated account.
         try:
-            res = supabase_store.upsert_document("user_settings", "default", settings, user_id=client_id)
+            from core import auth
+
+            user_id = auth.get_user_id()
+            access_token = auth.get_access_token()
+        except Exception:
+            user_id = None
+            access_token = None
+
+        if not user_id or not access_token:
+            return False
+
+        # Attempt to persist to Supabase using the authenticated user id.
+        try:
+            res = supabase_store.upsert_document(
+                "user_settings",
+                "default",
+                settings,
+                user_id=user_id,
+                access_token=access_token,
+            )
             _update_streamlit_last_saved_metadata(settings)
             return res
-        except Exception as exc:
+        except Exception:
             return False
 
     SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -475,17 +403,17 @@ def _update_streamlit_last_saved_metadata(settings: dict) -> None:
 
 
 def _has_supabase_config() -> bool:
-    """Return True when SUPABASE_URL and SUPABASE_KEY are available via
+    """Return True when SUPABASE_URL and a Supabase API key are available via
     environment variables or Streamlit secrets (when running under Streamlit).
     This lets Docker/local runs (without secrets) continue using JSON files.
     """
     # Prefer environment variables for non-Streamlit runs (scripts, Docker)
-    if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_KEY"):
+    if os.environ.get("SUPABASE_URL") and (os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY")):
         return True
     try:
         import streamlit as st
 
-        if st.secrets.get("SUPABASE_URL") and st.secrets.get("SUPABASE_KEY"):
+        if st.secrets.get("SUPABASE_URL") and (st.secrets.get("SUPABASE_ANON_KEY") or st.secrets.get("SUPABASE_KEY")):
             return True
     except Exception:
         # streamlit may not be available in some contexts

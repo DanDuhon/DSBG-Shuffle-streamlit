@@ -1,6 +1,8 @@
 # ui/campaign_mode/manage_tab_shared.py
 import streamlit as st
 from typing import Any, Dict, Optional
+
+from core import auth
 from ui.campaign_mode.persistence import get_campaigns, _save_campaigns
 from ui.campaign_mode.persistence.dirty import set_campaign_baseline
 from ui.campaign_mode.core import (
@@ -325,6 +327,10 @@ def _render_campaign_save_controls(
     st.markdown("---")
     st.markdown("##### Save campaign")
 
+    needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
+    if needs_login:
+        st.caption("Log in to save.")
+
     campaigns = get_campaigns()
     saved_names = sorted((campaigns or {}).keys())
 
@@ -382,6 +388,7 @@ def _render_campaign_save_controls(
         "Save campaign 💾",
         key=f"campaign_manage_save_btn_{version.lower()}",
         width="stretch",
+        disabled=needs_login,
     ):
         name = str(name_input or "").strip()
         if not name:

@@ -3,7 +3,7 @@
 A Streamlit companion app for **Dark Souls: The Board Game** with local/offline and Streamlit Cloud options.
 
 The app has a variety of modules that can enhance your DSBG experience either in preparation for play or at the table.
-- 
+
 
 ## Quickstart (Local)
 
@@ -64,6 +64,10 @@ Settings:
 - Local runs persist to `data/user_settings.json`.
 - Docker runs persist `data/` in a volume (so updates/rebuilds keep your data).
 
+Streamlit Cloud:
+- Saving requires an account (Google OAuth, with email magic-link fallback).
+- When logged out, settings changes still affect the current session, but nothing is saved.
+
 ## Streamlit Cloud Secrets
 
 This app supports Streamlit Cloud configuration via Secrets.
@@ -73,12 +77,15 @@ Recommended Secrets:
 - `DSBG_DEPLOYMENT = "cloud"` (enables Cloud-only behavior)
 - `DSBG_CACHE_EMBEDDED_FONTS = true` (keeps embedded fonts but avoids rebuilding base64 CSS on reruns)
 - `DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES = true` (prevents caching encounter-card asset images on Cloud)
-
-	Note: when enabled, the app also tightens a few large in-process `lru_cache` sizes
-	(enemy icon resizing + encounter availability checks) to reduce Cloud RAM pressure.
+  - Note: when enabled, the app also tightens a few large in-process `lru_cache` sizes (enemy icon resizing + encounter availability checks) to reduce Cloud RAM pressure.
 - `DSBG_DEBUG_PERF = true` (optional; shows a small Diagnostics panel in the sidebar)
 
 If you use Supabase persistence, also set:
 
 - `SUPABASE_URL`
-- `SUPABASE_KEY`
+- `SUPABASE_ANON_KEY` (preferred)
+
+Then, in the Supabase dashboard:
+- Enable Auth providers: Google (primary) and Email (magic link fallback).
+- Create the `app_documents` table (see `core/supabase_store.py` docstring for the expected columns).
+- Enable Row Level Security (RLS) so users can only access their own rows.

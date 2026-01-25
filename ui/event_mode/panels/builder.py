@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import streamlit as st
 
+from core import auth
 from core.image_cache import get_image_bytes_cached
 from ui.event_mode.logic import (
     list_all_event_cards,
@@ -63,6 +64,10 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
         st.markdown("### Deck Summary")
         b = _builder_get()
 
+        needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
+        if needs_login:
+            st.caption("Log in to save.")
+
         # Build card counts from the live number-input session keys so UI changes
         # immediately enable the Save button without needing a full rerun.
         cards_map: Dict[str, int] = {}
@@ -84,7 +89,7 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
         st.markdown(f"**Unique cards:** {len(cards_map)}")
         st.markdown(f"**Total cards:** {total}")
 
-        save_disabled = not (b.get("name") and cards_map)
+        save_disabled = needs_login or not (b.get("name") and cards_map)
 
         if st.button("Save custom deck 💾", width="stretch", disabled=save_disabled):
             name = str(b["name"]).strip()
@@ -120,7 +125,7 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
             st.session_state[_BUILDER_SYNC_KEY] = True
             st.rerun()
 
-        del_disabled = not (b.get("loaded_from") and b.get("loaded_from") in custom_decks)
+        del_disabled = needs_login or not (b.get("loaded_from") and b.get("loaded_from") in custom_decks)
         if st.button("Delete loaded deck 🗑️", width="stretch", disabled=del_disabled):
             loaded = b.get("loaded_from")
             if loaded in custom_decks:

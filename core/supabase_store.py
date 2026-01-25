@@ -2,18 +2,19 @@
 
 This module uses the Supabase REST API (PostgREST) via `requests` so it
 can be invoked from inside Streamlit (using `st.secrets`) or from scripts
-that export `SUPABASE_URL` and `SUPABASE_KEY` environment variables.
+that export `SUPABASE_URL` and a Supabase API key.
 
 Expect the following table (see scripts/supabase_schema.sql):
 - app_documents(doc_type TEXT, key_name TEXT, user_id TEXT, data JSONB)
 
 Secrets expected in Streamlit Cloud (via `st.secrets`):
-  SUPABASE_URL
-  SUPABASE_KEY
+    SUPABASE_URL
+    SUPABASE_ANON_KEY (preferred)
+    SUPABASE_KEY (fallback)
 
 Example usage inside Streamlit:
   from core import supabase_store as store
-  store.upsert_document('user_settings','default', settings_dict)
+    store.upsert_document('user_settings','default', settings_dict, user_id=user_id, access_token=jwt)
   obj = store.get_document('user_settings','default')
 """
 from typing import Any, Dict, List, Optional, Tuple
@@ -89,21 +90,21 @@ def _base_url_from_env() -> str:
 
 
 def _key_from_env() -> str:
-    key = os.environ.get("SUPABASE_KEY")
+    key = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY")
     if not key:
         st = _maybe_streamlit()
         if st is not None and hasattr(st, "secrets"):
-            key = st.secrets.get("SUPABASE_KEY")
+            key = st.secrets.get("SUPABASE_ANON_KEY") or st.secrets.get("SUPABASE_KEY")
     if not key:
-        raise EnvironmentError("SUPABASE_KEY not set in env or st.secrets")
+        raise EnvironmentError("SUPABASE_ANON_KEY/SUPABASE_KEY not set in env or st.secrets")
     return key
 
 
-def _headers() -> Dict[str, str]:
+def _headers(access_token: Optional[str] = None) -> Dict[str, str]:
     key = _key_from_env()
     return {
         "apikey": key,
-        "Authorization": f"Bearer {key}",
+        "Authorization": f"Bearer {access_token or key}",
         "Content-Type": "application/json",
         # Prefer header is used for return behaviour; override in callers as needed.
         "Prefer": "return=representation",
@@ -218,7 +219,11 @@ def _table_url() -> str:
 
 
 def upsert_document(
-    doc_type: str, key_name: str, data: Any, user_id: Optional[str] = None
+    doc_type: str,
+    key_name: str,
+    data: Any,
+    user_id: Optional[str] = None,
+    access_token: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Insert or update a JSON document.
 
@@ -231,7 +236,7 @@ def upsert_document(
         payload["user_id"] = user_id
 
     params = {"on_conflict": "doc_type,key_name,user_id"}
-    headers = _headers()
+    headers = _headers(access_token=access_token)
     headers["Prefer"] = "resolution=merge-duplicates,return=representation"
     try:
         resp = requests.post(url, headers=headers, params=params, json=[payload], timeout=10)
@@ -251,13 +256,15 @@ def upsert_document(
         raise
 
 
-def _get_document_remote(doc_type: str, key_name: str, user_id: str) -> Optional[Any]:
+def _get_document_remote(
+    doc_type: str, key_name: str, user_id: str, access_token: Optional[str] = None
+) -> Optional[Any]:
     """Remote fetch implementation (no cache)."""
     """Fetch a single document's `data` field or None if not found."""
     if not user_id:
         return None
     url = _table_url()
-    headers = _headers()
+    headers = _headers(access_token=access_token)
     # PostgREST filtering via query params (e.g., doc_type=eq.x)
     # Select all fields so we can pick the newest row if duplicates exist.
     params: Dict[str, str] = {"select": "*", "doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}", "user_id": f"eq.{user_id}"}
@@ -277,7 +284,12 @@ def _get_document_remote(doc_type: str, key_name: str, user_id: str) -> Optional
         return None
 
 
-def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) -> Optional[Any]:
+def get_document(
+    doc_type: str,
+    key_name: str,
+    user_id: Optional[str] = None,
+    access_token: Optional[str] = None,
+) -> Optional[Any]:
     """Fetch a single document's `data` field or None if not found.
 
     Under Streamlit, results are cached in session_state to avoid repeated
@@ -294,19 +306,19 @@ def get_document(doc_type: str, key_name: str, user_id: Optional[str] = None) ->
         if found:
             return cached
 
-    val = _get_document_remote(doc_type, key_name, uid)
+    val = _get_document_remote(doc_type, key_name, uid, access_token=access_token)
     if _cache_enabled():
         _doc_cache_set((uid, doc_type, key_name), val)
     return val
 
 
-def _list_documents_remote(doc_type: str, user_id: str) -> List[str]:
+def _list_documents_remote(doc_type: str, user_id: str, access_token: Optional[str] = None) -> List[str]:
     """Remote list implementation (no cache)."""
     """Return a list of `key_name` values for a given doc_type."""
     if not user_id:
         return []
     url = _table_url()
-    headers = _headers()
+    headers = _headers(access_token=access_token)
     params: Dict[str, str] = {"select": "key_name", "doc_type": f"eq.{doc_type}"}
     params["user_id"] = f"eq.{user_id}"
 
@@ -329,7 +341,7 @@ def _list_documents_remote(doc_type: str, user_id: str) -> List[str]:
     return out
 
 
-def list_documents(doc_type: str, user_id: Optional[str] = None) -> List[str]:
+def list_documents(doc_type: str, user_id: Optional[str] = None, access_token: Optional[str] = None) -> List[str]:
     """Return a list of `key_name` values for a given doc_type.
 
     Under Streamlit, results are cached in session_state to avoid repeated
@@ -345,20 +357,25 @@ def list_documents(doc_type: str, user_id: Optional[str] = None) -> List[str]:
         if isinstance(cached, list):
             return cached
 
-    names = _list_documents_remote(doc_type, uid)
+    names = _list_documents_remote(doc_type, uid, access_token=access_token)
     if _cache_enabled():
         _list_cache_set((uid, doc_type), names)
     return names
 
 
-def delete_document(doc_type: str, key_name: str, user_id: Optional[str] = None) -> bool:
+def delete_document(
+    doc_type: str,
+    key_name: str,
+    user_id: Optional[str] = None,
+    access_token: Optional[str] = None,
+) -> bool:
     """Delete a document; returns True if deleted."""
     # Schema expects user_id NOT NULL
     if user_id is None:
         return False
 
     url = _table_url()
-    headers = _headers()
+    headers = _headers(access_token=access_token)
     params: Dict[str, str] = {"doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}"}
     params["user_id"] = f"eq.{user_id}"
 

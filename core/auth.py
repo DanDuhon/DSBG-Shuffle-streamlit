@@ -1,0 +1,292 @@
+import json
+from dataclasses import dataclass
+from typing import Any, Optional
+
+from core.settings_manager import get_config_str, is_streamlit_cloud
+
+try:
+    import streamlit as st  # type: ignore
+except Exception:  # pragma: no cover
+    st = None
+
+try:
+    from streamlit_javascript import st_javascript
+except Exception:  # pragma: no cover
+    st_javascript = None
+
+
+_AUTH_SESSION_KEY = "_dsbg_auth_session_v1"
+_AUTH_JS_KEY = "dsbg_auth_js_v1"
+
+
+@dataclass(frozen=True)
+class AuthSession:
+    user_id: str
+    email: str | None
+    access_token: str
+
+
+def _get_supabase_url() -> str | None:
+    return get_config_str("SUPABASE_URL")
+
+
+def _get_supabase_anon_key() -> str | None:
+    # Prefer explicit anon key going forward.
+    # Back-compat: allow SUPABASE_KEY if that's what the deployment provides.
+    return get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
+
+
+def is_auth_ui_enabled() -> bool:
+    """Return True when we should show account UI.
+
+    Requirements:
+    - Only show in Streamlit Cloud deployments.
+    - Only show when Supabase config is present.
+    """
+
+    if not is_streamlit_cloud():
+        return False
+    return bool(_get_supabase_url() and _get_supabase_anon_key() and st is not None and st_javascript is not None)
+
+
+def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
+    return (
+        "(async () => {"
+        f"const SUPABASE_URL = {json.dumps(supabase_url)};"
+        f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
+        "const ensureLib = () => new Promise((resolve, reject) => {"
+        "  try {"
+        "    if (window.supabase && window.supabase.createClient) return resolve(true);"
+        "    const id = 'dsbg_supabase_js_umd_v2';"
+        "    const existing = document.getElementById(id);"
+        "    if (existing) {"
+        "      const tick = () => {"
+        "        if (window.supabase && window.supabase.createClient) return resolve(true);"
+        "        setTimeout(tick, 50);"
+        "      };"
+        "      tick();"
+        "      return;"
+        "    }"
+        "    const s = document.createElement('script');"
+        "    s.id = id;"
+        "    s.async = true;"
+        "    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';"
+        "    s.onload = () => resolve(true);"
+        "    s.onerror = (e) => reject(e);"
+        "    document.head.appendChild(s);"
+        "  } catch (e) { reject(e); }"
+        "});"
+        "await ensureLib();"
+        "window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {"
+        "  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },"
+        "});"
+        "const client = window.__dsbg_supabase_client;"
+        "try {"
+        "  const u = new URL(window.location.href);"
+        "  if (u.searchParams.get('code')) {"
+        "    await client.auth.exchangeCodeForSession(window.location.href);"
+        "    u.searchParams.delete('code');"
+        "    u.searchParams.delete('state');"
+        "    window.history.replaceState({}, '', u.toString());"
+        "  }"
+        "} catch (e) {}"
+        "const res = await client.auth.getSession();"
+        "if (res && res.error) {"
+        "  return { ok: false, error: String(res.error.message || res.error), session: null };"
+        "}"
+        "const s = res && res.data ? res.data.session : null;"
+        "if (!s) return { ok: true, session: null };"
+        "return { ok: true, session: {"
+        "  access_token: s.access_token,"
+        "  refresh_token: s.refresh_token,"
+        "  expires_at: s.expires_at,"
+        "  user: { id: s.user && s.user.id ? s.user.id : null, email: s.user && s.user.email ? s.user.email : null }"
+        "}};"
+        "})()"
+    )
+
+
+def _js_login_google() -> str:
+    return (
+        "(async () => {"
+        "const client = window.__dsbg_supabase_client;"
+        "if (!client) return { ok: false, error: 'supabase client not initialized' };"
+        "const redirectTo = window.location.href.split('?')[0];"
+        "await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });"
+        "return { ok: true };"
+        "})()"
+    )
+
+
+def _js_login_magic_link(email: str) -> str:
+    return (
+        "(async () => {"
+        f"const email = {json.dumps(email)};"
+        "const client = window.__dsbg_supabase_client;"
+        "if (!client) return { ok: false, error: 'supabase client not initialized' };"
+        "const emailRedirectTo = window.location.href.split('?')[0];"
+        "const res = await client.auth.signInWithOtp({ email, options: { emailRedirectTo } });"
+        "if (res && res.error) return { ok: false, error: String(res.error.message || res.error) };"
+        "return { ok: true };"
+        "})()"
+    )
+
+
+def _js_logout() -> str:
+    return (
+        "(async () => {"
+        "const client = window.__dsbg_supabase_client;"
+        "if (!client) return { ok: true };"
+        "await client.auth.signOut();"
+        "return { ok: true };"
+        "})()"
+    )
+
+
+def _coerce_session(payload: Any) -> Optional[AuthSession]:
+    if not isinstance(payload, dict):
+        return None
+    if not payload.get("ok"):
+        return None
+    session = payload.get("session")
+    if session is None:
+        return None
+    if not isinstance(session, dict):
+        return None
+    user = session.get("user")
+    if not isinstance(user, dict):
+        return None
+    user_id = user.get("id")
+    if not isinstance(user_id, str) or not user_id:
+        return None
+    email = user.get("email")
+    if email is not None and not isinstance(email, str):
+        email = None
+    access_token = session.get("access_token")
+    if not isinstance(access_token, str) or not access_token:
+        return None
+    return AuthSession(user_id=user_id, email=email, access_token=access_token)
+
+
+def ensure_session_loaded() -> Optional[AuthSession]:
+    """Best-effort: load current Supabase session from the browser.
+
+    In Streamlit Cloud, this uses `streamlit-javascript` to call into supabase-js
+    (UMD via CDN) and returns the current user session if present.
+
+    In non-cloud contexts, this is a no-op and returns None.
+    """
+
+    if not is_auth_ui_enabled():
+        return None
+
+    assert st is not None
+    assert st_javascript is not None
+
+    # If we already have a session in Streamlit state, return it.
+    try:
+        cached = st.session_state.get(_AUTH_SESSION_KEY)
+    except Exception:
+        cached = None
+    if isinstance(cached, AuthSession):
+        return cached
+
+    url = _get_supabase_url()
+    anon = _get_supabase_anon_key()
+    if not url or not anon:
+        return None
+
+    val = st_javascript(_js_get_session(url, anon), default=None, key=_AUTH_JS_KEY)
+    session = _coerce_session(val)
+
+    # During initial hydration, streamlit-javascript can return default (None).
+    if session is None and val is None:
+        try:
+            attempts = int(st.session_state.get("_auth_js_attempts", 0) or 0) + 1
+        except Exception:
+            attempts = 1
+        try:
+            st.session_state["_auth_js_attempts"] = attempts
+        except Exception:
+            pass
+        try:
+            st.stop()
+        except Exception:
+            return None
+
+    try:
+        st.session_state[_AUTH_SESSION_KEY] = session
+    except Exception:
+        pass
+    return session
+
+
+def clear_cached_session() -> None:
+    if st is None:
+        return
+    try:
+        st.session_state.pop(_AUTH_SESSION_KEY, None)
+        st.session_state.pop("_auth_js_attempts", None)
+    except Exception:
+        return
+
+
+def get_user_id() -> str | None:
+    sess = ensure_session_loaded()
+    return sess.user_id if sess else None
+
+
+def get_user_email() -> str | None:
+    sess = ensure_session_loaded()
+    return sess.email if sess else None
+
+
+def get_access_token() -> str | None:
+    sess = ensure_session_loaded()
+    return sess.access_token if sess else None
+
+
+def is_authenticated() -> bool:
+    return bool(get_user_id() and get_access_token())
+
+
+def login_google() -> None:
+    if not is_auth_ui_enabled():
+        return
+    assert st_javascript is not None
+    # Ensure client exists and then trigger OAuth redirect.
+    url = _get_supabase_url()
+    anon = _get_supabase_anon_key()
+    if not url or not anon:
+        return
+    st_javascript(_js_get_session(url, anon), default=None, key=_AUTH_JS_KEY)
+    st_javascript(_js_login_google(), default=None, key="dsbg_auth_google")
+
+
+def send_magic_link(email: str) -> bool:
+    if not is_auth_ui_enabled():
+        return False
+    email = (email or "").strip()
+    if not email or "@" not in email:
+        return False
+    assert st_javascript is not None
+    url = _get_supabase_url()
+    anon = _get_supabase_anon_key()
+    if not url or not anon:
+        return False
+    st_javascript(_js_get_session(url, anon), default=None, key=_AUTH_JS_KEY)
+    res = st_javascript(_js_login_magic_link(email), default=None, key="dsbg_auth_magic")
+    return bool(isinstance(res, dict) and res.get("ok") is True)
+
+
+def logout() -> None:
+    if not is_auth_ui_enabled():
+        return
+    assert st is not None
+    assert st_javascript is not None
+    st_javascript(_js_logout(), default=None, key="dsbg_auth_logout")
+    clear_cached_session()
+    try:
+        st.rerun()
+    except Exception:
+        pass
