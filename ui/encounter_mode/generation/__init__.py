@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from core.behavior.logic import load_behavior
 from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
+from core.settings_manager import get_config_bool, is_streamlit_cloud
 from ui.encounter_mode.assets import (
     get_enemy_image_by_id,
     editedEncounterKeywords,
@@ -31,6 +32,14 @@ VALID_SETS_PATH = Path("data/encounters_valid_sets.json")
 _REWARD_FONT_PATH = Path("assets/AdobeCaslonProSemibold.ttf")
 
 
+_TIGHTEN_LRU = is_streamlit_cloud() and get_config_bool(
+    "DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False
+)
+
+_ENEMY_ICON_RGBA_CACHE_MAX = 256 if _TIGHTEN_LRU else 1024
+_ICON_RESIZED_CACHE_MAX = 512 if _TIGHTEN_LRU else 4096
+
+
 @lru_cache(maxsize=8)
 def _get_reward_font(size: int) -> ImageFont.FreeTypeFont:
     try:
@@ -50,13 +59,20 @@ def _load_rgba_image(path: str) -> Image.Image:
     return Image.open(path).convert("RGBA")
 
 
-@lru_cache(maxsize=1024)
+def _should_bypass_encounter_card_base_image_cache() -> bool:
+    try:
+        return is_streamlit_cloud() and get_config_bool("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False)
+    except Exception:
+        return False
+
+
+@lru_cache(maxsize=_ENEMY_ICON_RGBA_CACHE_MAX)
 def _load_enemy_icon_rgba(path: str) -> Image.Image:
     """Load an enemy icon as RGBA (read-only cached base)."""
     return Image.open(path).convert("RGBA")
 
 
-@lru_cache(maxsize=4096)
+@lru_cache(maxsize=_ICON_RESIZED_CACHE_MAX)
 def _get_icon_resized(path: str, box_size: int) -> Tuple[Image.Image, Tuple[int, int]]:
     """Return icon resized to fit within `box_size` square.
 
@@ -254,8 +270,13 @@ def generate_encounter_image(
         if os.path.exists(edited_path):
             card_path = edited_path
 
-    # Cache base card image; copy before compositing.
-    card_img = _load_rgba_image(str(card_path)).copy()
+    # Base encounter card image can be large; on Streamlit Cloud we optionally bypass
+    # caching to reduce long-lived memory usage.
+    if _should_bypass_encounter_card_base_image_cache():
+        card_img = Image.open(card_path).convert("RGBA")
+    else:
+        card_img = _load_rgba_image(str(card_path))
+    card_img = card_img.copy()
 
     # ---------------------------------------------------------
     # 1) Main enemy grid icons

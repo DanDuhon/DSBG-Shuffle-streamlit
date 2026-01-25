@@ -16,6 +16,8 @@ import io
 import base64
 from functools import lru_cache
 
+from core.settings_manager import get_config_bool, is_streamlit_cloud
+
 
 try:
     import streamlit as st  # type: ignore
@@ -79,6 +81,10 @@ def _get_image_bytes_cached(path_str: str, mtime_ns: int) -> bytes:
 def get_image_bytes_cached(path: str) -> bytes:
     """Public helper: return file bytes for `path`, invalidating cache on file change."""
     p = Path(path)
+    if _should_bypass_image_cache_for_path(p):
+        if not p.exists():
+            raise FileNotFoundError(f"Missing image: {p}")
+        return p.read_bytes()
     return _get_image_bytes_cached(str(p), _stat_mtime_ns(p))
 
 
@@ -124,6 +130,8 @@ def get_image_data_uri_cached(path: str) -> str:
     data = get_image_bytes_cached(str(p))
     suffix = p.suffix.lower()
     mime = "image/png" if suffix == ".png" else "image/jpeg"
+    if _should_bypass_image_cache_for_path(p):
+        return _bytes_to_data_uri_uncached(data, mime=mime)
     return bytes_to_data_uri(data, mime=mime)
 
 
@@ -151,4 +159,40 @@ def load_pil_image_cached(path: str, convert: str | None = "RGBA") -> Image.Imag
     The returned Image should be copied by callers before mutating it.
     """
     p = Path(path)
+    if _should_bypass_image_cache_for_path(p):
+        if not p.exists():
+            raise FileNotFoundError(f"Missing image: {p}")
+        data = p.read_bytes()
+        img = Image.open(io.BytesIO(data))
+        if convert:
+            img = img.convert(convert)
+        return img
     return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert)
+
+
+def _bytes_to_data_uri_uncached(data: bytes, mime: str = "image/png") -> str:
+    if not data:
+        return ""
+    b64 = base64.b64encode(data).decode("ascii")
+    return f"data:{mime};base64,{b64}"
+
+
+def _is_encounter_card_asset_path(p: Path) -> bool:
+    s = str(p).replace("\\", "/").lower()
+    return (
+        "/assets/encounter cards/" in s
+        or s.endswith("/assets/encounter cards")
+        or "/assets/edited encounter cards/" in s
+        or s.endswith("/assets/edited encounter cards")
+    )
+
+
+def _should_bypass_image_cache_for_path(p: Path) -> bool:
+    try:
+        if not is_streamlit_cloud():
+            return False
+        if not get_config_bool("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False):
+            return False
+        return _is_encounter_card_asset_path(p)
+    except Exception:
+        return False
