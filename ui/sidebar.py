@@ -216,6 +216,16 @@ def render_sidebar(settings: dict):
                     st.caption("Last session payload")
                     st.write(_redact_payload(last_sess_payload))
 
+                last_logout_raw = st.session_state.get("_auth_last_logout_raw")
+                if last_logout_raw is not None:
+                    st.caption("Last logout raw")
+                    st.write(_redact_url(last_logout_raw) if isinstance(last_logout_raw, str) else last_logout_raw)
+
+                last_logout_payload = st.session_state.get("_auth_last_logout_payload")
+                if last_logout_payload is not None:
+                    st.caption("Last logout payload")
+                    st.write(_redact_payload(last_logout_payload) if isinstance(last_logout_payload, dict) else last_logout_payload)
+
         auth_err = st.session_state.get("_auth_last_error")
         if isinstance(auth_err, str) and auth_err.strip():
             st.sidebar.error(auth_err)

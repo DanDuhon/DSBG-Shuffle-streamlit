@@ -373,10 +373,11 @@ def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:
         const client = window.__dsbg_supabase_client;
 
         // Attempt a normal sign-out (clears storage in most cases).
-        const out = await client.auth.signOut({{ scope: 'local' }});
-        if (out && out.error) {{
-            // Continue to storage cleanup anyway.
-        }}
+        // Some environments behave oddly with scope; try local first, then global.
+        let out = null;
+        try {{ out = await client.auth.signOut({{ scope: 'local' }}); }} catch (e) {{ out = null; }}
+
+        // Extra hardening: clear known auth storage keys.
 
         // Extra hardening: clear known auth storage keys.
         try {{
@@ -390,9 +391,31 @@ def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:
         try {{ window.localStorage && window.localStorage.removeItem('supabase.auth.token'); }} catch (e) {{}}
         try {{ window.sessionStorage && window.sessionStorage.removeItem('supabase.auth.token'); }} catch (e) {{}}
 
+        // Clear in-memory client session too.
+        try {{ window.__dsbg_supabase_client = null; }} catch (e) {{}}
+        try {{ delete window.__dsbg_supabase_client; }} catch (e) {{}}
+
         // Verify session is gone.
-        const s = await client.auth.getSession();
-        const sess = s && s.data ? s.data.session : null;
+        // (Recreate the client to avoid reading a stale in-memory session.)
+        const verifyClient = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY,
+            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+        );
+        let s = await verifyClient.auth.getSession();
+        let sess = s && s.data ? s.data.session : null;
+        if (sess) {{
+            // Final attempt: global sign-out, then re-check.
+            try {{ await verifyClient.auth.signOut({{ scope: 'global' }}); }} catch (e) {{}}
+            try {{
+                const ref = new URL(SUPABASE_URL).host.split('.')[0];
+                const key = `sb-${{ref}}-auth-token`;
+                try {{ window.localStorage && window.localStorage.removeItem(key); }} catch (e) {{}}
+                try {{ window.sessionStorage && window.sessionStorage.removeItem(key); }} catch (e) {{}}
+            }} catch (e) {{}}
+            s = await verifyClient.auth.getSession();
+            sess = s && s.data ? s.data.session : null;
+        }}
         if (sess) {{
             return JSON.stringify({{ ok: false, error: 'Sign-out did not clear the session (still present).', sessionStillPresent: true }});
         }}
