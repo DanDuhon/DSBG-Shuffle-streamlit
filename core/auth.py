@@ -163,7 +163,10 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "  // PKCE flow: ?code=..."
         "  const code = u.searchParams.get('code');"
         "  if (code) {"
-        "    await client.auth.exchangeCodeForSession(code);"
+        "    const ex = await client.auth.exchangeCodeForSession(code);"
+        "    if (ex && ex.error) {"
+        "      return { ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) };"
+        "    }"
         "    maybeClearTopUrl();"
         "  }"
 
@@ -175,11 +178,14 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "    const at = qp.get('access_token');"
         "    const rt = qp.get('refresh_token');"
         "    if (at && rt) {"
-        "      await client.auth.setSession({ access_token: at, refresh_token: rt });"
+        "      const ss = await client.auth.setSession({ access_token: at, refresh_token: rt });"
+        "      if (ss && ss.error) {"
+        "        return { ok: false, error: 'setSession: ' + String(ss.error.message || ss.error) };"
+        "      }"
         "      maybeClearTopUrl();"
         "    }"
         "  }"
-        "} catch (e) {}"
+        "} catch (e) { return { ok: false, error: String(e && e.message ? e.message : e) }; }"
         "const res = await client.auth.getSession();"
         "if (res && res.error) {"
         "  return { ok: false, error: String(res.error.message || res.error), session: null };"
@@ -368,25 +374,52 @@ def ensure_session_loaded() -> Optional[AuthSession]:
         pass
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
-    # If this run is the result of an auth redirect (e.g. OAuth returning with
-    # ?code=...), we *do* want to block once to allow the JS component to post
-    # its value, otherwise the UI will keep showing logged-out until the user
-    # triggers another rerun.
     if val is None:
+        # streamlit-javascript often returns None on the first rerun after
+        # insertion. We want to trigger *one* immediate rerun so auth can
+        # hydrate without requiring the user to click something.
+        #
+        # IMPORTANT: never do this on reruns triggered by auth buttons, or we'd
+        # swallow the click.
         try:
-            qp = getattr(st, "query_params", None)
-            has_code = False
-            if qp is not None:
+            pressed = False
+            for k in ("auth_google_btn", "auth_magic_btn", "auth_logout_btn"):
                 try:
-                    has_code = bool(qp.get("code"))
+                    if bool(st.session_state.get(k)):
+                        pressed = True
+                        break
                 except Exception:
-                    has_code = False
-            if has_code:
+                    continue
+
+            if not pressed and not bool(st.session_state.get("_dsbg_auth_waited_for_js", False)):
+                st.session_state["_dsbg_auth_waited_for_js"] = True
                 st.stop()
         except Exception:
+            # Never let auth hydration break the app.
             pass
         return None
-    session = _coerce_session(_coerce_js_dict(val))
+
+    # Reset one-shot wait flag once we have any response.
+    try:
+        st.session_state["_dsbg_auth_waited_for_js"] = False
+    except Exception:
+        pass
+
+    payload = _coerce_js_dict(val)
+    try:
+        st.session_state["_auth_last_session_payload"] = payload
+    except Exception:
+        pass
+
+    if isinstance(payload, dict) and payload.get("ok") is False:
+        try:
+            err = payload.get("error")
+            if isinstance(err, str) and err.strip():
+                st.session_state["_auth_last_error"] = err
+        except Exception:
+            pass
+
+    session = _coerce_session(payload)
 
     try:
         st.session_state[_AUTH_SESSION_KEY] = session
@@ -402,6 +435,8 @@ def clear_cached_session() -> None:
         st.session_state.pop(_AUTH_SESSION_KEY, None)
         st.session_state.pop("_auth_js_attempts", None)
         st.session_state.pop("_dsbg_auth_js_used_this_run", None)
+        st.session_state.pop("_dsbg_auth_waited_for_js", None)
+        st.session_state.pop("_auth_last_session_payload", None)
     except Exception:
         return
 

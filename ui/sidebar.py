@@ -189,6 +189,11 @@ def render_sidebar(settings: dict):
                     st.caption("Last auth response")
                     st.write(last_auth_debug)
 
+                last_sess_payload = st.session_state.get("_auth_last_session_payload")
+                if last_sess_payload is not None:
+                    st.caption("Last session payload")
+                    st.write(last_sess_payload)
+
         auth_err = st.session_state.get("_auth_last_error")
         if isinstance(auth_err, str) and auth_err.strip():
             st.sidebar.error(auth_err)
