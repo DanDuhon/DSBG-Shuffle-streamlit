@@ -80,7 +80,17 @@ def _run_js(code: str, *, key: str) -> Any:
                 return st_javascript(js_code=code, key=key)
             except TypeError:
                 # Last resort: call positionally.
-                return st_javascript(code)
+                try:
+                    # streamlit-javascript 0.1.5 supports (code, waiting_text)
+                    return st_javascript(code, "Waiting for response")
+                except TypeError:
+                    return st_javascript(code)
+
+
+def _is_no_js_response(val: Any) -> bool:
+    # streamlit-javascript 0.1.5 can return 0 as a placeholder before the
+    # browser posts a real value back.
+    return val is None or val == 0
 
 
 @dataclass(frozen=True)
@@ -477,7 +487,7 @@ def ensure_session_loaded() -> Optional[AuthSession]:
             else:
                 val = {"ok": True}
 
-            if val is None:
+            if _is_no_js_response(val):
                 if not bool(st.session_state.get(_LOGOUT_WAITED_KEY, False)):
                     st.session_state[_LOGOUT_WAITED_KEY] = True
                     st.stop()
@@ -535,7 +545,7 @@ def ensure_session_loaded() -> Optional[AuthSession]:
         pass
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
-    if val is None:
+    if _is_no_js_response(val):
         # streamlit-javascript often returns None on the first rerun after
         # insertion. We want to trigger *one* immediate rerun so auth can
         # hydrate without requiring the user to click something.

@@ -135,29 +135,29 @@ def render_sidebar(settings: dict):
                     # (code, default, key, ...). We only rely on the portable
                     # signatures here.
                     try:
-                        test_val = st_javascript("1+1")
-                    except TypeError:
                         test_val = st_javascript("1+1", "Waiting for response")
+                    except TypeError:
+                        test_val = st_javascript("1+1")
 
                     # A second probe that does not require async/await.
                     try:
-                        href_val = st_javascript("(function(){ return window.location.href; })()")
-                    except TypeError:
                         href_val = st_javascript(
                             "(function(){ return window.location.href; })()",
                             "Waiting for response",
                         )
+                    except TypeError:
+                        href_val = st_javascript("(function(){ return window.location.href; })()")
 
                     # Try to read the top-level (parent) URL too; some browsers
                     # may block this in iframes, so treat failures as expected.
                     try:
                         parent_href = st_javascript(
-                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()"
+                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()",
+                            "Waiting for response",
                         )
                     except TypeError:
                         parent_href = st_javascript(
-                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()",
-                            "Waiting for response",
+                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()"
                         )
 
                     def _redact_url(val):
