@@ -171,7 +171,7 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "  if (!code && u.hash) {"
         "    const parts = String(u.hash || '').split('#').filter(Boolean);"
         "    const last = parts.length ? parts[parts.length - 1] : '';"
-        "    const qp = new URLSearchParams(last);
+        "    const qp = new URLSearchParams(last);"
         "    const at = qp.get('access_token');"
         "    const rt = qp.get('refresh_token');"
         "    if (at && rt) {"
