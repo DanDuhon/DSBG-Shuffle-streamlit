@@ -28,11 +28,32 @@ def _run_js(code: str, *, key: str) -> Any:
 
     if st_javascript is None:
         return None
+
+    # Streamlit forbids creating multiple elements with the same key in a
+    # single run. Because auth helpers may call into JS multiple times during
+    # one rerun, always suffix the provided key with a counter.
+    unique_key = key
+    if st is not None:
+        try:
+            seq = int(st.session_state.get("_dsbg_js_seq", 0) or 0) + 1
+        except Exception:
+            seq = 1
+        try:
+            st.session_state["_dsbg_js_seq"] = seq
+        except Exception:
+            pass
+        unique_key = f"{key}__{seq}"
+
+    # Compatibility: different streamlit-javascript versions have different
+    # signatures; do not use the `default=` kwarg.
     try:
-        return st_javascript(code, default=None, key=key)
+        return st_javascript(code, key=unique_key)
     except TypeError:
-        # Older streamlit-javascript
-        return st_javascript(code, key=key)
+        try:
+            return st_javascript(js_code=code, key=unique_key)
+        except TypeError:
+            # Last resort: call positionally.
+            return st_javascript(code)
 
 
 @dataclass(frozen=True)
