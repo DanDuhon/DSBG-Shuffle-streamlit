@@ -306,11 +306,12 @@ def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
 }})()"""
 
 
-def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) -> str:
+def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str, request_id: str | None = None) -> str:
         return f"""(async () => {{
     const email = {json.dumps(email)};
     const SUPABASE_URL = {json.dumps(supabase_url)};
     const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
+    const REQUEST_ID = {json.dumps(request_id) if request_id else 'null'};
 
     const ensureLib = () => new Promise((resolve, reject) => {{
         try {{
@@ -355,6 +356,19 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) 
     try {{ topHref = window.parent.location.href; }} catch (e) {{ topHref = window.location.href; }}
     const u = new URL(String(topHref));
     const emailRedirectTo = u.origin + '/';
+
+    // Deduplicate sends across reruns: if we already attempted this REQUEST_ID,
+    // don't send again; just report ok.
+    if (REQUEST_ID) {{
+        try {{
+            const key = 'dsbg_magiclink_reqid_v1';
+            const last = window.localStorage ? window.localStorage.getItem(key) : null;
+            if (last && last === REQUEST_ID) {{
+                return JSON.stringify({{ ok: true, deduped: true }});
+            }}
+            if (window.localStorage) window.localStorage.setItem(key, REQUEST_ID);
+        }} catch (e) {{}}
+    }}
 
     const res = await client.auth.signInWithOtp({{ email, options: {{ emailRedirectTo }} }});
     if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
@@ -682,7 +696,7 @@ def login_google() -> dict | None:
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
 
-def send_magic_link(email: str) -> dict | None:
+def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None:
     if not is_auth_ui_enabled():
         return {"ok": False, "error": "Auth UI is disabled."}
     email = (email or "").strip()
@@ -693,15 +707,13 @@ def send_magic_link(email: str) -> dict | None:
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
-    res = _run_js(_js_login_magic_link(email, url, anon), key="dsbg_auth_magic")
+    res = _run_js(_js_login_magic_link(email, url, anon, request_id=request_id), key="dsbg_auth_magic")
     # With streamlit-javascript 0.1.5, a placeholder 0/None can occur even when
     # Supabase successfully sends the email. Prefer a 'maybe sent' result.
     if _is_no_js_response(res):
-        return {
-            "ok": True,
-            "maybe_sent": True,
-            "warning": "No response from browser, but the email may still have been sent. Check your inbox.",
-        }
+        if request_id:
+            return {"ok": False, "pending": True}
+        return {"ok": True, "maybe_sent": True, "warning": "No response from browser, but the email may still have been sent. Check your inbox."}
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 
