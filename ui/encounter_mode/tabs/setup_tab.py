@@ -622,7 +622,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         _apply_added_invaders_to_current_encounter()
 
                 with delete_col:
-                    if st.button("Delete 🗑️", width="stretch", disabled=needs_login):
+                    if st.button("Delete 🗑️", width="stretch", disabled=not can_persist):
                         if load_name in st.session_state.saved_encounters:
                             st.session_state.saved_encounters.pop(load_name, None)
                             # Persist deletion to dedicated file, fallback to settings
