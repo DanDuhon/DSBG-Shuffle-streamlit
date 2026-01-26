@@ -160,7 +160,27 @@ def render_sidebar(settings: dict):
                             "Waiting for response",
                         )
 
-                    st.write({"js_return": test_val, "href": href_val, "parent_href": parent_href})
+                    def _redact_url(val):
+                        if not isinstance(val, str):
+                            return val
+                        out = val
+                        for key in [
+                            "access_token",
+                            "refresh_token",
+                            "provider_token",
+                            "id_token",
+                            "token",
+                        ]:
+                            if key in out:
+                                # Very lightweight redaction: replace values like key=...& with key=REDACTED&
+                                out = out.replace(f"{key}=", f"{key}=REDACTED")
+                        return out
+
+                    st.write({
+                        "js_return": test_val,
+                        "href": _redact_url(href_val),
+                        "parent_href": _redact_url(parent_href),
+                    })
                 except Exception as e:
                     st.write({"js_return": None, "error": str(e)})
 
