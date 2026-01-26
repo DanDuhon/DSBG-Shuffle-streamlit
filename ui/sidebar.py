@@ -225,7 +225,7 @@ def render_sidebar(settings: dict):
             st.sidebar.caption(f"Signed in: {ident}")
             if st.sidebar.button("Log out", use_container_width=True, key="auth_logout_btn"):
                 auth.logout()
-                st.stop()
+                st.rerun()
         else:
             if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
                 st.session_state["_auth_last_error"] = ""

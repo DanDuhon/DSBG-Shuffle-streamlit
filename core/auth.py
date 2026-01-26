@@ -17,6 +17,8 @@ except Exception:  # pragma: no cover
 
 _AUTH_SESSION_KEY = "_dsbg_auth_session_v1"
 _AUTH_JS_KEY = "dsbg_auth_js_v1"
+_LOGOUT_IN_PROGRESS_KEY = "_dsbg_logout_in_progress_v1"
+_LOGOUT_WAITED_KEY = "_dsbg_logout_waited_for_js_v1"
 
 
 def _coerce_js_dict(val: Any) -> dict | None:
@@ -324,15 +326,81 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) 
     )
 
 
-def _js_logout() -> str:
-    return (
-        "(async () => {"
-        "const client = window.__dsbg_supabase_client;"
-        "if (!client) return { ok: true };"
-        "await client.auth.signOut();"
-        "return { ok: true };"
-        "})()"
-    )
+def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:
+        # NOTE: must be robust across reruns and must not rely on prior client init.
+        # We explicitly clear the well-known Supabase auth storage key too.
+        return f"""(async () => {{
+    const SUPABASE_URL = {json.dumps(supabase_url)};
+    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
+
+    const ensureLib = () => new Promise((resolve, reject) => {{
+        try {{
+            if (window.supabase && window.supabase.createClient) return resolve(true);
+            const id = 'dsbg_supabase_js_umd_v2';
+            const existing = document.getElementById(id);
+            if (existing) {{
+                const tick = () => {{
+                    if (window.supabase && window.supabase.createClient) return resolve(true);
+                    setTimeout(tick, 50);
+                }};
+                tick();
+                return;
+            }}
+            const s = document.createElement('script');
+            s.id = id;
+            s.async = true;
+            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            s.onload = () => resolve(true);
+            s.onerror = (e) => reject(e);
+            document.head.appendChild(s);
+        }} catch (e) {{
+            reject(e);
+        }}
+    }});
+
+    try {{
+        await ensureLib();
+    }} catch (e) {{
+        return JSON.stringify({{ ok: false, error: 'Failed to load supabase-js: ' + String(e && e.message ? e.message : e) }});
+    }}
+
+    try {{
+        window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY,
+            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+        );
+        const client = window.__dsbg_supabase_client;
+
+        // Attempt a normal sign-out (clears storage in most cases).
+        const out = await client.auth.signOut({{ scope: 'local' }});
+        if (out && out.error) {{
+            // Continue to storage cleanup anyway.
+        }}
+
+        // Extra hardening: clear known auth storage keys.
+        try {{
+            const ref = new URL(SUPABASE_URL).host.split('.')[0];
+            const key = `sb-${{ref}}-auth-token`;
+            try {{ window.localStorage && window.localStorage.removeItem(key); }} catch (e) {{}}
+            try {{ window.sessionStorage && window.sessionStorage.removeItem(key); }} catch (e) {{}}
+        }} catch (e) {{}}
+
+        // Back-compat cleanup (older libs sometimes used this key).
+        try {{ window.localStorage && window.localStorage.removeItem('supabase.auth.token'); }} catch (e) {{}}
+        try {{ window.sessionStorage && window.sessionStorage.removeItem('supabase.auth.token'); }} catch (e) {{}}
+
+        // Verify session is gone.
+        const s = await client.auth.getSession();
+        const sess = s && s.data ? s.data.session : null;
+        if (sess) {{
+            return JSON.stringify({{ ok: false, error: 'Sign-out did not clear the session (still present).', sessionStillPresent: true }});
+        }}
+        return JSON.stringify({{ ok: true }});
+    }} catch (e) {{
+        return JSON.stringify({{ ok: false, error: String(e && e.message ? e.message : e) }});
+    }}
+}})()"""
 
 
 def _coerce_session(payload: Any) -> Optional[AuthSession]:
@@ -374,6 +442,47 @@ def ensure_session_loaded() -> Optional[AuthSession]:
 
     assert st is not None
     assert st_javascript is not None
+
+    # If a logout is in progress, prioritize completing it and do not hydrate a
+    # new session from browser storage.
+    try:
+        if bool(st.session_state.get(_LOGOUT_IN_PROGRESS_KEY, False)):
+            url = _get_supabase_url()
+            anon = _get_supabase_anon_key()
+            if url and anon:
+                val = _run_js(_js_logout(url, anon), key="dsbg_auth_logout_v1")
+            else:
+                val = {"ok": True}
+
+            if val is None:
+                if not bool(st.session_state.get(_LOGOUT_WAITED_KEY, False)):
+                    st.session_state[_LOGOUT_WAITED_KEY] = True
+                    st.stop()
+                return None
+
+            payload = _coerce_js_dict(val)
+            try:
+                st.session_state["_auth_last_logout_raw"] = val
+                st.session_state["_auth_last_logout_payload"] = payload
+            except Exception:
+                pass
+
+            if isinstance(payload, dict) and payload.get("ok") is True:
+                st.session_state[_LOGOUT_IN_PROGRESS_KEY] = False
+                st.session_state[_LOGOUT_WAITED_KEY] = False
+                clear_cached_session()
+                return None
+
+            if isinstance(payload, dict) and isinstance(payload.get("error"), str):
+                st.session_state["_auth_last_error"] = str(payload.get("error"))
+            # Leave logout in progress false so user can try again.
+            st.session_state[_LOGOUT_IN_PROGRESS_KEY] = False
+            st.session_state[_LOGOUT_WAITED_KEY] = False
+            clear_cached_session()
+            return None
+    except Exception:
+        # Never let logout state break the app.
+        pass
 
     # Avoid creating duplicate JS components in a single rerun.
     # `app.py` resets this flag to False once per rerun.
@@ -533,9 +642,19 @@ def logout() -> None:
         return
     assert st is not None
     assert st_javascript is not None
-    _run_js(_js_logout(), key="dsbg_auth_logout")
-    clear_cached_session()
+
+    # Mark logout in progress so hydration doesn't immediately re-log us in.
     try:
-        st.rerun()
+        st.session_state[_LOGOUT_IN_PROGRESS_KEY] = True
+        st.session_state[_LOGOUT_WAITED_KEY] = False
     except Exception:
         pass
+
+    clear_cached_session()
+
+    url = _get_supabase_url()
+    anon = _get_supabase_anon_key()
+    if url and anon:
+        _run_js(_js_logout(url, anon), key="dsbg_auth_logout_v1")
+
+    # Caller decides whether to rerun/stop.
