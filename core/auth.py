@@ -165,7 +165,7 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "  if (code) {"
         "    const ex = await client.auth.exchangeCodeForSession(code);"
         "    if (ex && ex.error) {"
-        "      return { ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) };"
+        "      return JSON.stringify({ ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) });"
         "    }"
         "    maybeClearTopUrl();"
         "  }"
@@ -180,24 +180,24 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "    if (at && rt) {"
         "      const ss = await client.auth.setSession({ access_token: at, refresh_token: rt });"
         "      if (ss && ss.error) {"
-        "        return { ok: false, error: 'setSession: ' + String(ss.error.message || ss.error) };"
+        "        return JSON.stringify({ ok: false, error: 'setSession: ' + String(ss.error.message || ss.error) });"
         "      }"
         "      maybeClearTopUrl();"
         "    }"
         "  }"
-        "} catch (e) { return { ok: false, error: String(e && e.message ? e.message : e) }; }"
+        "} catch (e) { return JSON.stringify({ ok: false, error: String(e && e.message ? e.message : e) }); }"
         "const res = await client.auth.getSession();"
         "if (res && res.error) {"
-        "  return { ok: false, error: String(res.error.message || res.error), session: null };"
+        "  return JSON.stringify({ ok: false, error: String(res.error.message || res.error), session: null });"
         "}"
         "const s = res && res.data ? res.data.session : null;"
-        "if (!s) return { ok: true, session: null };"
-        "return { ok: true, session: {"
+        "if (!s) return JSON.stringify({ ok: true, session: null });"
+        "return JSON.stringify({ ok: true, session: {"
         "  access_token: s.access_token,"
         "  refresh_token: s.refresh_token,"
         "  expires_at: s.expires_at,"
         "  user: { id: s.user && s.user.id ? s.user.id : null, email: s.user && s.user.email ? s.user.email : null }"
-        "}};"
+        "}}});"
         "})()"
     )
 
@@ -405,6 +405,13 @@ def ensure_session_loaded() -> Optional[AuthSession]:
     except Exception:
         pass
 
+    # Persist the raw value for debugging; some versions may return a non-JSON
+    # string (or another type) even when JS returns an object.
+    try:
+        st.session_state["_auth_last_session_raw"] = val
+    except Exception:
+        pass
+
     payload = _coerce_js_dict(val)
     try:
         st.session_state["_auth_last_session_payload"] = payload
@@ -436,6 +443,7 @@ def clear_cached_session() -> None:
         st.session_state.pop("_auth_js_attempts", None)
         st.session_state.pop("_dsbg_auth_js_used_this_run", None)
         st.session_state.pop("_dsbg_auth_waited_for_js", None)
+        st.session_state.pop("_auth_last_session_raw", None)
         st.session_state.pop("_auth_last_session_payload", None)
     except Exception:
         return

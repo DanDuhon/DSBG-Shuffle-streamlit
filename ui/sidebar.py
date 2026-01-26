@@ -176,6 +176,23 @@ def render_sidebar(settings: dict):
                                 out = out.replace(f"{key}=", f"{key}=REDACTED")
                         return out
 
+                    def _redact_payload(obj):
+                        if not isinstance(obj, dict):
+                            return obj
+                        # Shallow redaction + common nested session fields
+                        red = dict(obj)
+                        sess = red.get("session")
+                        if isinstance(sess, dict):
+                            sess = dict(sess)
+                            for k in ("access_token", "refresh_token", "provider_token", "id_token"):
+                                if k in sess:
+                                    sess[k] = "REDACTED"
+                            red["session"] = sess
+                        for k in ("access_token", "refresh_token", "provider_token", "id_token"):
+                            if k in red:
+                                red[k] = "REDACTED"
+                        return red
+
                     st.write({
                         "js_return": test_val,
                         "href": _redact_url(href_val),
@@ -189,10 +206,15 @@ def render_sidebar(settings: dict):
                     st.caption("Last auth response")
                     st.write(last_auth_debug)
 
+                last_sess_raw = st.session_state.get("_auth_last_session_raw")
+                if last_sess_raw is not None:
+                    st.caption("Last session raw")
+                    st.write(_redact_url(last_sess_raw) if isinstance(last_sess_raw, str) else last_sess_raw)
+
                 last_sess_payload = st.session_state.get("_auth_last_session_payload")
                 if last_sess_payload is not None:
                     st.caption("Last session payload")
-                    st.write(last_sess_payload)
+                    st.write(_redact_payload(last_sess_payload))
 
         auth_err = st.session_state.get("_auth_last_error")
         if isinstance(auth_err, str) and auth_err.strip():
