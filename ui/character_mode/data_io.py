@@ -35,6 +35,19 @@ BUILDS_FILE = Path("data/character_builds.json")
 
 
 @st.cache_data(show_spinner=False)
+def _load_builds_local() -> Dict[str, Any]:
+    """Load builds from local JSON file (no auth, safe to cache)."""
+
+    path = BUILDS_FILE
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, dict):
+        return {}
+    return data
+
+
 def load_builds() -> Dict[str, Any]:
     # Streamlit Cloud: Supabase-backed persistence (per-account)
     if is_streamlit_cloud() and _has_supabase_config():
@@ -62,14 +75,7 @@ def load_builds() -> Dict[str, Any]:
     if is_streamlit_cloud():
         return {}
 
-    path = BUILDS_FILE
-    if not path.exists():
-        return {}
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    if not isinstance(data, dict):
-        return {}
-    return data
+    return _load_builds_local()
 
 
 def save_builds(builds: Dict[str, Any]) -> None:
@@ -110,3 +116,8 @@ def save_builds(builds: Dict[str, Any]) -> None:
     BUILDS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with BUILDS_FILE.open("w", encoding="utf-8") as f:
         json.dump(builds or {}, f, indent=2)
+
+    try:
+        _load_builds_local.clear()
+    except Exception:
+        pass

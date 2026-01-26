@@ -47,6 +47,21 @@ def _utc_now_iso() -> str:
 
 
 @st.cache_data(show_spinner=False)
+def _load_custom_event_decks_local() -> Dict[str, dict]:
+    """Load custom decks from local JSON file (no auth, safe to cache)."""
+
+    if not CUSTOM_DECKS_PATH.exists():
+        return {}
+    data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
+
+    if isinstance(data, dict) and "decks" in data and isinstance(data["decks"], dict):
+        return data["decks"]
+    if isinstance(data, dict):
+        # legacy: the whole object is the decks mapping
+        return data
+    return {}
+
+
 def load_custom_event_decks() -> Dict[str, dict]:
     """
     Returns mapping: deck_name -> {"cards": {image_path: copies}, ...}
@@ -81,16 +96,7 @@ def load_custom_event_decks() -> Dict[str, dict]:
     if is_streamlit_cloud():
         return {}
 
-    if not CUSTOM_DECKS_PATH.exists():
-        return {}
-    data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
-
-    if isinstance(data, dict) and "decks" in data and isinstance(data["decks"], dict):
-        return data["decks"]
-    if isinstance(data, dict):
-        # legacy: the whole object is the decks mapping
-        return data
-    return {}
+    return _load_custom_event_decks_local()
 
 
 def save_custom_event_decks(decks: Dict[str, dict]) -> None:
@@ -119,10 +125,7 @@ def save_custom_event_decks(decks: Dict[str, dict]) -> None:
         except Exception:
             pass
 
-        try:
-            load_custom_event_decks.clear()
-        except Exception:
-            pass
+        # No Streamlit cache to clear for the Cloud path.
         st.rerun()
         return
 
@@ -135,7 +138,7 @@ def save_custom_event_decks(decks: Dict[str, dict]) -> None:
     CUSTOM_DECKS_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     # Clear the cached loader so future calls reflect the updated file.
     try:
-        load_custom_event_decks.clear()
+        _load_custom_event_decks_local.clear()
     except Exception:
         pass
     st.rerun()
