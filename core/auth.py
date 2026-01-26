@@ -149,7 +149,8 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "  const href = getTopHref();"
         "  const u = new URL(href);"
         "  if (u.searchParams.get('code')) {"
-        "    await client.auth.exchangeCodeForSession(href);"
+        "    const code = u.searchParams.get('code');"
+        "    await client.auth.exchangeCodeForSession(code);"
         "    u.searchParams.delete('code');"
         "    u.searchParams.delete('state');"
         "    replaceTopHref(u.toString());"
@@ -343,10 +344,23 @@ def ensure_session_loaded() -> Optional[AuthSession]:
         pass
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
-    # IMPORTANT: do not `st.stop()` here.
-    # This function is called during sidebar rendering; stopping early will
-    # swallow button clicks (the click rerun never reaches the button handler).
+    # If this run is the result of an auth redirect (e.g. OAuth returning with
+    # ?code=...), we *do* want to block once to allow the JS component to post
+    # its value, otherwise the UI will keep showing logged-out until the user
+    # triggers another rerun.
     if val is None:
+        try:
+            qp = getattr(st, "query_params", None)
+            has_code = False
+            if qp is not None:
+                try:
+                    has_code = bool(qp.get("code"))
+                except Exception:
+                    has_code = False
+            if has_code:
+                st.stop()
+        except Exception:
+            pass
         return None
     session = _coerce_session(_coerce_js_dict(val))
 

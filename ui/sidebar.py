@@ -148,7 +148,19 @@ def render_sidebar(settings: dict):
                             "Waiting for response",
                         )
 
-                    st.write({"js_return": test_val, "href": href_val})
+                    # Try to read the top-level (parent) URL too; some browsers
+                    # may block this in iframes, so treat failures as expected.
+                    try:
+                        parent_href = st_javascript(
+                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()"
+                        )
+                    except TypeError:
+                        parent_href = st_javascript(
+                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()",
+                            "Waiting for response",
+                        )
+
+                    st.write({"js_return": test_val, "href": href_val, "parent_href": parent_href})
                 except Exception as e:
                     st.write({"js_return": None, "error": str(e)})
 
