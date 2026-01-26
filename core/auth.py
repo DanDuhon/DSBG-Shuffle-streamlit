@@ -112,94 +112,123 @@ def is_auth_ui_enabled() -> bool:
 
 
 def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
-    return (
-        "(async () => {"
-        f"const SUPABASE_URL = {json.dumps(supabase_url)};"
-        f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
-        "const getTopHref = () => { try { return window.parent.location.href; } catch (e) { return window.location.href; } };"
-        "const replaceTopHref = (href) => { try { window.parent.history.replaceState({}, '', href); } catch (e) { try { window.history.replaceState({}, '', href); } catch (e2) {} } };"
-        "const ensureLib = () => new Promise((resolve, reject) => {"
-        "  try {"
-        "    if (window.supabase && window.supabase.createClient) return resolve(true);"
-        "    const id = 'dsbg_supabase_js_umd_v2';"
-        "    const existing = document.getElementById(id);"
-        "    if (existing) {"
-        "      const tick = () => {"
-        "        if (window.supabase && window.supabase.createClient) return resolve(true);"
-        "        setTimeout(tick, 50);"
-        "      };"
-        "      tick();"
-        "      return;"
-        "    }"
-        "    const s = document.createElement('script');"
-        "    s.id = id;"
-        "    s.async = true;"
-        "    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';"
-        "    s.onload = () => resolve(true);"
-        "    s.onerror = (e) => reject(e);"
-        "    document.head.appendChild(s);"
-        "  } catch (e) { reject(e); }"
-        "});"
-        "await ensureLib();"
-        "window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {"
-        "  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },"
-        "});"
-        "const client = window.__dsbg_supabase_client;"
-        "try {"
-        "  const href = getTopHref();"
-        "  const u = new URL(href);"
-        "  const maybeClearTopUrl = () => {"
-        "    try {"
-        "      u.searchParams.delete('code');"
-        "      u.searchParams.delete('state');"
-        "      u.searchParams.delete('error');"
-        "      u.searchParams.delete('error_code');"
-        "      u.searchParams.delete('error_description');"
-        "      u.hash = '';"
-        "      replaceTopHref(u.toString());"
-        "    } catch (e) {}"
-        "  };"
+        return f"""(async () => {{
+    const SUPABASE_URL = {json.dumps(supabase_url)};
+    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
 
-        "  /* PKCE flow: ?code=... */"
-        "  const code = u.searchParams.get('code');"
-        "  if (code) {"
-        "    const ex = await client.auth.exchangeCodeForSession(code);"
-        "    if (ex && ex.error) {"
-        "      return JSON.stringify({ ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) });"
-        "    }"
-        "    maybeClearTopUrl();"
-        "  }"
+    const getTopHref = () => {{
+        try {{
+            return window.parent.location.href;
+        }} catch (e) {{
+            return window.location.href;
+        }}
+    }};
 
-        "  /* Implicit flow fallback: #access_token=...&refresh_token=... */"
-        "  if (!code && u.hash) {"
-        "    const parts = String(u.hash || '').split('#').filter(Boolean);"
-        "    const last = parts.length ? parts[parts.length - 1] : '';"
-        "    const qp = new URLSearchParams(last);"
-        "    const at = qp.get('access_token');"
-        "    const rt = qp.get('refresh_token');"
-        "    if (at && rt) {"
-        "      const ss = await client.auth.setSession({ access_token: at, refresh_token: rt });"
-        "      if (ss && ss.error) {"
-        "        return JSON.stringify({ ok: false, error: 'setSession: ' + String(ss.error.message || ss.error) });"
-        "      }"
-        "      maybeClearTopUrl();"
-        "    }"
-        "  }"
-        "} catch (e) { return JSON.stringify({ ok: false, error: String(e && e.message ? e.message : e) }); }"
-        "const res = await client.auth.getSession();"
-        "if (res && res.error) {"
-        "  return JSON.stringify({ ok: false, error: String(res.error.message || res.error), session: null });"
-        "}"
-        "const s = res && res.data ? res.data.session : null;"
-        "if (!s) return JSON.stringify({ ok: true, session: null });"
-        "return JSON.stringify({ ok: true, session: {"
-        "  access_token: s.access_token,"
-        "  refresh_token: s.refresh_token,"
-        "  expires_at: s.expires_at,"
-        "  user: { id: s.user && s.user.id ? s.user.id : null, email: s.user && s.user.email ? s.user.email : null }"
-        "}}});"
-        "})()"
-    )
+    const replaceTopHref = (href) => {{
+        try {{
+            window.parent.history.replaceState({{}}, '', href);
+        }} catch (e) {{
+            try {{
+                window.history.replaceState({{}}, '', href);
+            }} catch (e2) {{}}
+        }}
+    }};
+
+    const ensureLib = () => new Promise((resolve, reject) => {{
+        try {{
+            if (window.supabase && window.supabase.createClient) return resolve(true);
+            const id = 'dsbg_supabase_js_umd_v2';
+            const existing = document.getElementById(id);
+            if (existing) {{
+                const tick = () => {{
+                    if (window.supabase && window.supabase.createClient) return resolve(true);
+                    setTimeout(tick, 50);
+                }};
+                tick();
+                return;
+            }}
+            const s = document.createElement('script');
+            s.id = id;
+            s.async = true;
+            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            s.onload = () => resolve(true);
+            s.onerror = (e) => reject(e);
+            document.head.appendChild(s);
+        }} catch (e) {{
+            reject(e);
+        }}
+    }});
+
+    await ensureLib();
+    window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+    );
+
+    const client = window.__dsbg_supabase_client;
+
+    try {{
+        const href = getTopHref();
+        const u = new URL(href);
+
+        const maybeClearTopUrl = () => {{
+            try {{
+                u.searchParams.delete('code');
+                u.searchParams.delete('state');
+                u.searchParams.delete('error');
+                u.searchParams.delete('error_code');
+                u.searchParams.delete('error_description');
+                u.hash = '';
+                replaceTopHref(u.toString());
+            }} catch (e) {{}}
+        }};
+
+        // PKCE flow: ?code=...
+        const code = u.searchParams.get('code');
+        if (code) {{
+            const ex = await client.auth.exchangeCodeForSession(code);
+            if (ex && ex.error) {{
+                return JSON.stringify({{ ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) }});
+            }}
+            maybeClearTopUrl();
+        }}
+
+        // Implicit flow fallback: #access_token=...&refresh_token=...
+        if (!code && u.hash) {{
+            const parts = String(u.hash || '').split('#').filter(Boolean);
+            const last = parts.length ? parts[parts.length - 1] : '';
+            const qp = new URLSearchParams(last);
+            const at = qp.get('access_token');
+            const rt = qp.get('refresh_token');
+            if (at && rt) {{
+                const ss = await client.auth.setSession({{ access_token: at, refresh_token: rt }});
+                if (ss && ss.error) {{
+                    return JSON.stringify({{ ok: false, error: 'setSession: ' + String(ss.error.message || ss.error) }});
+                }}
+                maybeClearTopUrl();
+            }}
+        }}
+    }} catch (e) {{
+        return JSON.stringify({{ ok: false, error: String(e && e.message ? e.message : e) }});
+    }}
+
+    const res = await client.auth.getSession();
+    if (res && res.error) {{
+        return JSON.stringify({{ ok: false, error: String(res.error.message || res.error), session: null }});
+    }}
+    const s = res && res.data ? res.data.session : null;
+    if (!s) return JSON.stringify({{ ok: true, session: null }});
+    return JSON.stringify({{ ok: true, session: {{
+        access_token: s.access_token,
+        refresh_token: s.refresh_token,
+        expires_at: s.expires_at,
+        user: {{
+            id: s.user && s.user.id ? s.user.id : null,
+            email: s.user && s.user.email ? s.user.email : null,
+        }}
+    }} }});
+}})()"""
 
 
 def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
