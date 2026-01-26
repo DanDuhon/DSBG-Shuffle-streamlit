@@ -676,6 +676,8 @@ def login_google() -> dict | None:
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_google(url, anon), key="dsbg_auth_google")
+    if _is_no_js_response(res):
+        return {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
@@ -692,6 +694,14 @@ def send_magic_link(email: str) -> dict | None:
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_magic_link(email, url, anon), key="dsbg_auth_magic")
+    # With streamlit-javascript 0.1.5, a placeholder 0/None can occur even when
+    # Supabase successfully sends the email. Prefer a 'maybe sent' result.
+    if _is_no_js_response(res):
+        return {
+            "ok": True,
+            "maybe_sent": True,
+            "warning": "No response from browser, but the email may still have been sent. Check your inbox.",
+        }
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 

@@ -273,7 +273,13 @@ def render_sidebar(settings: dict):
                 if debug_perf:
                     st.session_state["_auth_last_debug"] = {"action": "magic_link", "email": email, "response": res}
                 if isinstance(res, dict) and res.get("ok") is True:
-                    st.sidebar.success("Magic link sent. Check your email.")
+                    if res.get("maybe_sent") is True:
+                        st.sidebar.success("Magic link sent (likely). Check your email.")
+                        warn = res.get("warning")
+                        if isinstance(warn, str) and warn.strip():
+                            st.sidebar.caption(warn)
+                    else:
+                        st.sidebar.success("Magic link sent. Check your email.")
                 else:
                     if isinstance(res, dict) and res.get("error"):
                         err = str(res.get("error"))
