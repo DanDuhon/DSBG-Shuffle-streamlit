@@ -65,15 +65,20 @@ def _run_js(code: str, *, key: str) -> Any:
             pass
 
     # Compatibility: different streamlit-javascript versions have different
-    # signatures; do not use the `default=` kwarg.
+    # signatures; prefer the positional form that supports default=None and key.
     try:
-        return st_javascript(code, key=key)
+        # Common signature: st_javascript(js_code, default, key, ...)
+        return st_javascript(code, None, key)
     except TypeError:
         try:
-            return st_javascript(js_code=code, key=key)
+            # Newer signature: st_javascript(js_code, key=...)
+            return st_javascript(code, key=key)
         except TypeError:
-            # Last resort: call positionally.
-            return st_javascript(code)
+            try:
+                return st_javascript(js_code=code, key=key)
+            except TypeError:
+                # Last resort: call positionally.
+                return st_javascript(code)
 
 
 @dataclass(frozen=True)

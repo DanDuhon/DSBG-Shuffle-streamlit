@@ -318,14 +318,6 @@ try:
 except Exception:
     pass
 
-# Streamlit Cloud: attempt auth hydration early so per-account settings can
-# load on the first render after login.
-if auth.is_auth_ui_enabled():
-    try:
-        auth.ensure_session_loaded()
-    except Exception:
-        pass
-
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
     st.session_state.user_settings = load_settings()
