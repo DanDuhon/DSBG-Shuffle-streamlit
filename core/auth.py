@@ -180,17 +180,7 @@ def _js_login_google() -> str:
         "if (url) {"
         "  const win = window.open(url, '_blank', 'noopener,noreferrer');"
         "  if (!win) return { ok: false, error: 'Popup blocked. Allow popups for this site and try again.' };"
-        "  const waitMs = 60000;"
-        "  const stepMs = 750;"
-        "  const start = Date.now();"
-        "  while ((Date.now() - start) < waitMs) {"
-        "    try {"
-        "      const s = await client.auth.getSession();"
-        "      if (s && s.data && s.data.session && s.data.session.access_token) return { ok: true, opened: true, authed: true };"
-        "    } catch (e) {}"
-        "    await new Promise(r => setTimeout(r, stepMs));"
-        "  }"
-        "  return { ok: true, opened: true, authed: false };"
+        "  return { ok: true, opened: true };"
         "}"
         "return { ok: false, error: 'No OAuth URL returned by Supabase' };"
         "})()"
@@ -292,6 +282,10 @@ def ensure_session_loaded() -> Optional[AuthSession]:
         pass
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
+    if val is None and st is not None:
+        # streamlit-javascript returns None on first evaluation; stop and let
+        # Streamlit rerun once the component posts its value.
+        st.stop()
     session = _coerce_session(_coerce_js_dict(val))
 
     try:
@@ -342,6 +336,8 @@ def login_google() -> dict | None:
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_google(), key="dsbg_auth_google")
+    if res is None and st is not None:
+        st.stop()
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
@@ -358,6 +354,8 @@ def send_magic_link(email: str) -> dict | None:
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_magic_link(email), key="dsbg_auth_magic")
+    if res is None and st is not None:
+        st.stop()
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 
