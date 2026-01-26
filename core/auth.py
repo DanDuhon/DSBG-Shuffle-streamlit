@@ -19,6 +19,22 @@ _AUTH_SESSION_KEY = "_dsbg_auth_session_v1"
 _AUTH_JS_KEY = "dsbg_auth_js_v1"
 
 
+def _run_js(code: str, *, key: str) -> Any:
+    """Run JavaScript via streamlit-javascript, compatible across versions.
+
+    Some versions of `streamlit-javascript` do not support the `default=` kwarg.
+    This wrapper tries the newer signature first, then falls back.
+    """
+
+    if st_javascript is None:
+        return None
+    try:
+        return st_javascript(code, default=None, key=key)
+    except TypeError:
+        # Older streamlit-javascript
+        return st_javascript(code, key=key)
+
+
 @dataclass(frozen=True)
 class AuthSession:
     user_id: str
@@ -196,7 +212,7 @@ def ensure_session_loaded() -> Optional[AuthSession]:
     if not url or not anon:
         return None
 
-    val = st_javascript(_js_get_session(url, anon), default=None, key=_AUTH_JS_KEY)
+    val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
     session = _coerce_session(val)
 
     # During initial hydration, streamlit-javascript can return default (None).
@@ -259,8 +275,8 @@ def login_google() -> None:
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return
-    st_javascript(_js_get_session(url, anon), default=None, key=_AUTH_JS_KEY)
-    st_javascript(_js_login_google(), default=None, key="dsbg_auth_google")
+    _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
+    _run_js(_js_login_google(), key="dsbg_auth_google")
 
 
 def send_magic_link(email: str) -> bool:
@@ -274,8 +290,8 @@ def send_magic_link(email: str) -> bool:
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return False
-    st_javascript(_js_get_session(url, anon), default=None, key=_AUTH_JS_KEY)
-    res = st_javascript(_js_login_magic_link(email), default=None, key="dsbg_auth_magic")
+    _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
+    res = _run_js(_js_login_magic_link(email), key="dsbg_auth_magic")
     return bool(isinstance(res, dict) and res.get("ok") is True)
 
 
@@ -284,7 +300,7 @@ def logout() -> None:
         return
     assert st is not None
     assert st_javascript is not None
-    st_javascript(_js_logout(), default=None, key="dsbg_auth_logout")
+    _run_js(_js_logout(), key="dsbg_auth_logout")
     clear_cached_session()
     try:
         st.rerun()
