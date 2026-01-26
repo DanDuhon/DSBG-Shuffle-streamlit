@@ -117,11 +117,18 @@ def render_sidebar(settings: dict):
             if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
                 st.session_state["_auth_last_error"] = ""
                 res = auth.login_google()
-                if isinstance(res, dict) and res.get("ok") is False:
+                if not isinstance(res, dict):
+                    st.session_state["_auth_last_error"] = (
+                        "Could not start Google sign-in (no response from browser). "
+                        "Try again and allow popups for this site."
+                    )
+                elif res.get("ok") is False:
                     st.session_state["_auth_last_error"] = str(res.get("error") or "Could not start Google sign-in.")
-                elif isinstance(res, dict) and res.get("ok") is True:
-                    # If redirect is blocked/misconfigured, keep the UI responsive.
-                    st.sidebar.caption("Starting Google sign-in…")
+                elif res.get("ok") is True:
+                    if res.get("authed") is True:
+                        st.sidebar.success("Signed in. You can close the Google tab.")
+                    else:
+                        st.sidebar.caption("Google sign-in opened in a new tab. Finish sign-in there, then return here.")
 
             email = st.sidebar.text_input(
                 "Email (magic link)",
@@ -130,11 +137,16 @@ def render_sidebar(settings: dict):
             )
             if st.sidebar.button("Send magic link", use_container_width=True, key="auth_magic_btn"):
                 st.session_state["_auth_last_error"] = ""
-                ok = auth.send_magic_link(email)
-                if ok:
+                res = auth.send_magic_link(email)
+                if isinstance(res, dict) and res.get("ok") is True:
                     st.sidebar.success("Magic link sent. Check your email.")
                 else:
-                    st.session_state["_auth_last_error"] = "Could not send magic link. Check the email and Supabase auth settings."
+                    if isinstance(res, dict) and res.get("error"):
+                        st.session_state["_auth_last_error"] = str(res.get("error"))
+                    else:
+                        st.session_state["_auth_last_error"] = (
+                            "Could not send magic link. Check the email and Supabase auth settings."
+                        )
 
     st.sidebar.header("Settings")
     # Streamlit Cloud renders a Save UI (gated by login). Local/Docker auto-saves.

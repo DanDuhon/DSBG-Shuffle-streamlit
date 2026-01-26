@@ -19,6 +19,24 @@ _AUTH_SESSION_KEY = "_dsbg_auth_session_v1"
 _AUTH_JS_KEY = "dsbg_auth_js_v1"
 
 
+def _coerce_js_dict(val: Any) -> dict | None:
+    """Coerce a streamlit-javascript return into a dict.
+
+    Depending on the streamlit-javascript version/browser, results can come back
+    as a Python dict, a JSON string, or None.
+    """
+
+    if isinstance(val, dict):
+        return val
+    if isinstance(val, str):
+        try:
+            parsed = json.loads(val)
+        except Exception:
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
 def _run_js(code: str, *, key: str) -> Any:
     """Run JavaScript via streamlit-javascript, compatible across versions.
 
@@ -93,6 +111,8 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "(async () => {"
         f"const SUPABASE_URL = {json.dumps(supabase_url)};"
         f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
+        "const getTopHref = () => { try { return window.parent.location.href; } catch (e) { return window.location.href; } };"
+        "const replaceTopHref = (href) => { try { window.parent.history.replaceState({}, '', href); } catch (e) { try { window.history.replaceState({}, '', href); } catch (e2) {} } };"
         "const ensureLib = () => new Promise((resolve, reject) => {"
         "  try {"
         "    if (window.supabase && window.supabase.createClient) return resolve(true);"
@@ -121,12 +141,13 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "});"
         "const client = window.__dsbg_supabase_client;"
         "try {"
-        "  const u = new URL(window.location.href);"
+        "  const href = getTopHref();"
+        "  const u = new URL(href);"
         "  if (u.searchParams.get('code')) {"
-        "    await client.auth.exchangeCodeForSession(window.location.href);"
+        "    await client.auth.exchangeCodeForSession(href);"
         "    u.searchParams.delete('code');"
         "    u.searchParams.delete('state');"
-        "    window.history.replaceState({}, '', u.toString());"
+        "    replaceTopHref(u.toString());"
         "  }"
         "} catch (e) {}"
         "const res = await client.auth.getSession();"
@@ -150,11 +171,27 @@ def _js_login_google() -> str:
         "(async () => {"
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
-        "const redirectTo = window.location.href.split('?')[0];"
+        "let topHref = null;"
+        "try { topHref = window.parent.location.href; } catch (e) { topHref = window.location.href; }"
+        "const redirectTo = String(topHref).split('?')[0];"
         "const res = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });"
         "if (res && res.error) return { ok: false, error: String(res.error.message || res.error) };"
         "const url = res && res.data ? res.data.url : null;"
-        "if (url) { window.location.href = url; return { ok: true, redirected: true }; }"
+        "if (url) {"
+        "  const win = window.open(url, '_blank', 'noopener,noreferrer');"
+        "  if (!win) return { ok: false, error: 'Popup blocked. Allow popups for this site and try again.' };"
+        "  const waitMs = 60000;"
+        "  const stepMs = 750;"
+        "  const start = Date.now();"
+        "  while ((Date.now() - start) < waitMs) {"
+        "    try {"
+        "      const s = await client.auth.getSession();"
+        "      if (s && s.data && s.data.session && s.data.session.access_token) return { ok: true, opened: true, authed: true };"
+        "    } catch (e) {}"
+        "    await new Promise(r => setTimeout(r, stepMs));"
+        "  }"
+        "  return { ok: true, opened: true, authed: false };"
+        "}"
         "return { ok: false, error: 'No OAuth URL returned by Supabase' };"
         "})()"
     )
@@ -166,7 +203,9 @@ def _js_login_magic_link(email: str) -> str:
         f"const email = {json.dumps(email)};"
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
-        "const emailRedirectTo = window.location.href.split('?')[0];"
+        "let topHref = null;"
+        "try { topHref = window.parent.location.href; } catch (e) { topHref = window.location.href; }"
+        "const emailRedirectTo = String(topHref).split('?')[0];"
         "const res = await client.auth.signInWithOtp({ email, options: { emailRedirectTo } });"
         "if (res && res.error) return { ok: false, error: String(res.error.message || res.error) };"
         "return { ok: true };"
@@ -253,7 +292,7 @@ def ensure_session_loaded() -> Optional[AuthSession]:
         pass
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
-    session = _coerce_session(val)
+    session = _coerce_session(_coerce_js_dict(val))
 
     try:
         st.session_state[_AUTH_SESSION_KEY] = session
@@ -301,24 +340,26 @@ def login_google() -> dict | None:
     url = _get_supabase_url()
     anon = _get_supabase_anon_key()
     if not url or not anon:
-        return None
+        return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_google(), key="dsbg_auth_google")
-    return res if isinstance(res, dict) else None
+    coerced = _coerce_js_dict(res)
+    return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
 
-def send_magic_link(email: str) -> bool:
+def send_magic_link(email: str) -> dict | None:
     if not is_auth_ui_enabled():
-        return False
+        return {"ok": False, "error": "Auth UI is disabled."}
     email = (email or "").strip()
     if not email or "@" not in email:
-        return False
+        return {"ok": False, "error": "Enter a valid email address."}
     assert st_javascript is not None
     url = _get_supabase_url()
     anon = _get_supabase_anon_key()
     if not url or not anon:
-        return False
+        return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_magic_link(email), key="dsbg_auth_magic")
-    return bool(isinstance(res, dict) and res.get("ok") is True)
+    coerced = _coerce_js_dict(res)
+    return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 
 
 def logout() -> None:

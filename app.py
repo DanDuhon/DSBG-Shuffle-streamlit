@@ -309,10 +309,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- Initialize Settings ---
-if "user_settings" not in st.session_state:
-    st.session_state.user_settings = load_settings()
-
 # Auth session hydration should run at most once per rerun.
 # `core.auth.ensure_session_loaded()` uses this flag to avoid creating
 # duplicate streamlit-javascript components in the same run.
@@ -321,6 +317,18 @@ try:
     st.session_state["_dsbg_js_keys_used_this_run"] = []
 except Exception:
     pass
+
+# Streamlit Cloud: attempt auth hydration early so per-account settings can
+# load on the first render after login.
+if auth.is_auth_ui_enabled():
+    try:
+        auth.ensure_session_loaded()
+    except Exception:
+        pass
+
+# --- Initialize Settings ---
+if "user_settings" not in st.session_state:
+    st.session_state.user_settings = load_settings()
 
 # Streamlit Cloud: if the user logs in/out, reload per-account settings.
 # This keeps the experience intuitive (login immediately pulls your saved settings).
@@ -332,15 +340,14 @@ if auth.is_auth_ui_enabled():
     previous_uid = st.session_state.get("_auth_user_id")
     if current_uid != previous_uid:
         st.session_state["_auth_user_id"] = current_uid
-        if current_uid:
-            st.session_state.user_settings = load_settings()
-            # Reset sidebar draft state so widgets re-seed cleanly.
-            for k in ["_settings_draft", "_settings_draft_base_fp", "_settings_ui_base_fp"]:
-                try:
-                    st.session_state.pop(k, None)
-                except Exception:
-                    pass
-            st.rerun()
+        st.session_state.user_settings = load_settings()
+        # Reset sidebar draft state so widgets re-seed cleanly.
+        for k in ["_settings_draft", "_settings_draft_base_fp", "_settings_ui_base_fp"]:
+            try:
+                st.session_state.pop(k, None)
+            except Exception:
+                pass
+        st.rerun()
 
 settings = st.session_state.user_settings
 
