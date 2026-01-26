@@ -29,28 +29,13 @@ def _run_js(code: str, *, key: str) -> Any:
     if st_javascript is None:
         return None
 
-    # Streamlit forbids creating multiple elements with the same key in a
-    # single run. Because auth helpers may call into JS multiple times during
-    # one rerun, always suffix the provided key with a counter.
-    unique_key = key
-    if st is not None:
-        try:
-            seq = int(st.session_state.get("_dsbg_js_seq", 0) or 0) + 1
-        except Exception:
-            seq = 1
-        try:
-            st.session_state["_dsbg_js_seq"] = seq
-        except Exception:
-            pass
-        unique_key = f"{key}__{seq}"
-
     # Compatibility: different streamlit-javascript versions have different
     # signatures; do not use the `default=` kwarg.
     try:
-        return st_javascript(code, key=unique_key)
+        return st_javascript(code, key=key)
     except TypeError:
         try:
-            return st_javascript(js_code=code, key=unique_key)
+            return st_javascript(js_code=code, key=key)
         except TypeError:
             # Last resort: call positionally.
             return st_javascript(code)
@@ -220,6 +205,15 @@ def ensure_session_loaded() -> Optional[AuthSession]:
     assert st is not None
     assert st_javascript is not None
 
+    # Avoid creating duplicate JS components in a single rerun.
+    # `app.py` resets this flag to False once per rerun.
+    try:
+        if bool(st.session_state.get("_dsbg_auth_js_used_this_run", False)):
+            cached_any = st.session_state.get(_AUTH_SESSION_KEY)
+            return cached_any if isinstance(cached_any, AuthSession) else None
+    except Exception:
+        pass
+
     # If we already have a session in Streamlit state, return it.
     try:
         cached = st.session_state.get(_AUTH_SESSION_KEY)
@@ -233,23 +227,13 @@ def ensure_session_loaded() -> Optional[AuthSession]:
     if not url or not anon:
         return None
 
+    try:
+        st.session_state["_dsbg_auth_js_used_this_run"] = True
+    except Exception:
+        pass
+
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
     session = _coerce_session(val)
-
-    # During initial hydration, streamlit-javascript can return default (None).
-    if session is None and val is None:
-        try:
-            attempts = int(st.session_state.get("_auth_js_attempts", 0) or 0) + 1
-        except Exception:
-            attempts = 1
-        try:
-            st.session_state["_auth_js_attempts"] = attempts
-        except Exception:
-            pass
-        try:
-            st.stop()
-        except Exception:
-            return None
 
     try:
         st.session_state[_AUTH_SESSION_KEY] = session
@@ -264,6 +248,7 @@ def clear_cached_session() -> None:
     try:
         st.session_state.pop(_AUTH_SESSION_KEY, None)
         st.session_state.pop("_auth_js_attempts", None)
+        st.session_state.pop("_dsbg_auth_js_used_this_run", None)
     except Exception:
         return
 

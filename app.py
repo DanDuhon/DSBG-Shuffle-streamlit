@@ -313,6 +313,14 @@ st.markdown(
 if "user_settings" not in st.session_state:
     st.session_state.user_settings = load_settings()
 
+# Auth session hydration should run at most once per rerun.
+# `core.auth.ensure_session_loaded()` uses this flag to avoid creating
+# duplicate streamlit-javascript components in the same run.
+try:
+    st.session_state["_dsbg_auth_js_used_this_run"] = False
+except Exception:
+    pass
+
 # Streamlit Cloud: if the user logs in/out, reload per-account settings.
 # This keeps the experience intuitive (login immediately pulls your saved settings).
 if auth.is_auth_ui_enabled():
