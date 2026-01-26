@@ -112,6 +112,39 @@ def render_sidebar(settings: dict):
                     "This test should return 2."
                 )
 
+                def _redact_url(val):
+                    if not isinstance(val, str):
+                        return val
+                    out = val
+                    for key in [
+                        "access_token",
+                        "refresh_token",
+                        "provider_token",
+                        "id_token",
+                        "token",
+                    ]:
+                        if key in out:
+                            # Very lightweight redaction: replace values like key=...& with key=REDACTED&
+                            out = out.replace(f"{key}=", f"{key}=REDACTED")
+                    return out
+
+                def _redact_payload(obj):
+                    if not isinstance(obj, dict):
+                        return obj
+                    # Shallow redaction + common nested session fields
+                    red = dict(obj)
+                    sess = red.get("session")
+                    if isinstance(sess, dict):
+                        sess = dict(sess)
+                        for k in ("access_token", "refresh_token", "provider_token", "id_token"):
+                            if k in sess:
+                                sess[k] = "REDACTED"
+                        red["session"] = sess
+                    for k in ("access_token", "refresh_token", "provider_token", "id_token"):
+                        if k in red:
+                            red[k] = "REDACTED"
+                    return red
+
                 # Show runtime/package versions to confirm what Streamlit Cloud actually installed.
                 try:
                     import sys
@@ -159,39 +192,6 @@ def render_sidebar(settings: dict):
                         parent_href = st_javascript(
                             "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()"
                         )
-
-                    def _redact_url(val):
-                        if not isinstance(val, str):
-                            return val
-                        out = val
-                        for key in [
-                            "access_token",
-                            "refresh_token",
-                            "provider_token",
-                            "id_token",
-                            "token",
-                        ]:
-                            if key in out:
-                                # Very lightweight redaction: replace values like key=...& with key=REDACTED&
-                                out = out.replace(f"{key}=", f"{key}=REDACTED")
-                        return out
-
-                    def _redact_payload(obj):
-                        if not isinstance(obj, dict):
-                            return obj
-                        # Shallow redaction + common nested session fields
-                        red = dict(obj)
-                        sess = red.get("session")
-                        if isinstance(sess, dict):
-                            sess = dict(sess)
-                            for k in ("access_token", "refresh_token", "provider_token", "id_token"):
-                                if k in sess:
-                                    sess[k] = "REDACTED"
-                            red["session"] = sess
-                        for k in ("access_token", "refresh_token", "provider_token", "id_token"):
-                            if k in red:
-                                red[k] = "REDACTED"
-                        return red
 
                     st.write({
                         "js_return": test_val,
