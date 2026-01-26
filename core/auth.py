@@ -160,7 +160,7 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "    } catch (e) {}"
         "  };"
 
-        "  // PKCE flow: ?code=..."
+        "  /* PKCE flow: ?code=... */"
         "  const code = u.searchParams.get('code');"
         "  if (code) {"
         "    const ex = await client.auth.exchangeCodeForSession(code);"
@@ -170,7 +170,7 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         "    maybeClearTopUrl();"
         "  }"
 
-        "  // Implicit flow fallback: #access_token=...&refresh_token=..."
+        "  /* Implicit flow fallback: #access_token=...&refresh_token=... */"
         "  if (!code && u.hash) {"
         "    const parts = String(u.hash || '').split('#').filter(Boolean);"
         "    const last = parts.length ? parts[parts.length - 1] : '';"
