@@ -174,6 +174,29 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
 def _js_login_google() -> str:
     return (
         "(async () => {"
+        "const ensureLib = () => new Promise((resolve, reject) => {"
+        "  try {"
+        "    if (window.supabase && window.supabase.createClient) return resolve(true);"
+        "    const id = 'dsbg_supabase_js_umd_v2';"
+        "    const existing = document.getElementById(id);"
+        "    if (existing) {"
+        "      const tick = () => {"
+        "        if (window.supabase && window.supabase.createClient) return resolve(true);"
+        "        setTimeout(tick, 50);"
+        "      };"
+        "      tick();"
+        "      return;"
+        "    }"
+        "    const s = document.createElement('script');"
+        "    s.id = id;"
+        "    s.async = true;"
+        "    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';"
+        "    s.onload = () => resolve(true);"
+        "    s.onerror = (e) => reject(e);"
+        "    document.head.appendChild(s);"
+        "  } catch (e) { reject(e); }"
+        "});"
+        "await ensureLib();"
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
         "let topHref = null;"
@@ -196,6 +219,29 @@ def _js_login_magic_link(email: str) -> str:
     return (
         "(async () => {"
         f"const email = {json.dumps(email)};"
+        "const ensureLib = () => new Promise((resolve, reject) => {"
+        "  try {"
+        "    if (window.supabase && window.supabase.createClient) return resolve(true);"
+        "    const id = 'dsbg_supabase_js_umd_v2';"
+        "    const existing = document.getElementById(id);"
+        "    if (existing) {"
+        "      const tick = () => {"
+        "        if (window.supabase && window.supabase.createClient) return resolve(true);"
+        "        setTimeout(tick, 50);"
+        "      };"
+        "      tick();"
+        "      return;"
+        "    }"
+        "    const s = document.createElement('script');"
+        "    s.id = id;"
+        "    s.async = true;"
+        "    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';"
+        "    s.onload = () => resolve(true);"
+        "    s.onerror = (e) => reject(e);"
+        "    document.head.appendChild(s);"
+        "  } catch (e) { reject(e); }"
+        "});"
+        "await ensureLib();"
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
         "let topHref = null;"
@@ -287,10 +333,11 @@ def ensure_session_loaded() -> Optional[AuthSession]:
         pass
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
-    if val is None and st is not None:
-        # streamlit-javascript returns None on first evaluation; stop and let
-        # Streamlit rerun once the component posts its value.
-        st.stop()
+    # IMPORTANT: do not `st.stop()` here.
+    # This function is called during sidebar rendering; stopping early will
+    # swallow button clicks (the click rerun never reaches the button handler).
+    if val is None:
+        return None
     session = _coerce_session(_coerce_js_dict(val))
 
     try:
@@ -341,8 +388,6 @@ def login_google() -> dict | None:
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_google(), key="dsbg_auth_google")
-    if res is None and st is not None:
-        st.stop()
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
@@ -359,8 +404,6 @@ def send_magic_link(email: str) -> dict | None:
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     res = _run_js(_js_login_magic_link(email), key="dsbg_auth_magic")
-    if res is None and st is not None:
-        st.stop()
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 
