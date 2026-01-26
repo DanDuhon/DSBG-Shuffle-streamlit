@@ -244,96 +244,122 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
 
 
 def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
-    return (
-        "(async () => {"
-        f"const SUPABASE_URL = {json.dumps(supabase_url)};"
-        f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
-        "const ensureLib = () => new Promise((resolve, reject) => {"
-        "  try {"
-        "    if (window.supabase && window.supabase.createClient) return resolve(true);"
-        "    const id = 'dsbg_supabase_js_umd_v2';"
-        "    const existing = document.getElementById(id);"
-        "    if (existing) {"
-        "      const tick = () => {"
-        "        if (window.supabase && window.supabase.createClient) return resolve(true);"
-        "        setTimeout(tick, 50);"
-        "      };"
-        "      tick();"
-        "      return;"
-        "    }"
-        "    const s = document.createElement('script');"
-        "    s.id = id;"
-        "    s.async = true;"
-        "    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';"
-        "    s.onload = () => resolve(true);"
-        "    s.onerror = (e) => reject(e);"
-        "    document.head.appendChild(s);"
-        "  } catch (e) { reject(e); }"
-        "});"
-        "await ensureLib();"
-        "window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {"
-        "  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },"
-        "});"
-        "const client = window.__dsbg_supabase_client;"
-        "if (!client) return { ok: false, error: 'supabase client not initialized' };"
-        "let topHref = null;"
-        "try { topHref = window.parent.location.href; } catch (e) { topHref = window.location.href; }"
-        "const redirectTo = String(topHref).split('?')[0];"
-        "const res = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });"
-        "if (res && res.error) return { ok: false, error: String(res.error.message || res.error) };"
-        "const url = res && res.data ? res.data.url : null;"
-        "if (url) {"
-        "  const win = window.open(url, '_blank', 'noopener,noreferrer');"
-        "  if (!win) return { ok: false, error: 'Popup blocked. Allow popups for this site and try again.' };"
-        "  return { ok: true, opened: true };"
-        "}"
-        "return { ok: false, error: 'No OAuth URL returned by Supabase' };"
-        "})()"
-    )
+        return f"""(async () => {{
+    const SUPABASE_URL = {json.dumps(supabase_url)};
+    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
+
+    const ensureLib = () => new Promise((resolve, reject) => {{
+        try {{
+            if (window.supabase && window.supabase.createClient) return resolve(true);
+            const id = 'dsbg_supabase_js_umd_v2';
+            const existing = document.getElementById(id);
+            if (existing) {{
+                const tick = () => {{
+                    if (window.supabase && window.supabase.createClient) return resolve(true);
+                    setTimeout(tick, 50);
+                }};
+                tick();
+                return;
+            }}
+            const s = document.createElement('script');
+            s.id = id;
+            s.async = true;
+            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            s.onload = () => resolve(true);
+            s.onerror = (e) => reject(e);
+            document.head.appendChild(s);
+        }} catch (e) {{
+            reject(e);
+        }}
+    }});
+
+    try {{
+        await ensureLib();
+    }} catch (e) {{
+        return JSON.stringify({{ ok: false, error: 'Failed to load supabase-js: ' + String(e && e.message ? e.message : e) }});
+    }}
+
+    window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+    );
+    const client = window.__dsbg_supabase_client;
+    if (!client) return JSON.stringify({{ ok: false, error: 'supabase client not initialized' }});
+
+    let topHref = null;
+    try {{ topHref = window.parent.location.href; }} catch (e) {{ topHref = window.location.href; }}
+    const u = new URL(String(topHref));
+    // Use origin root to avoid Streamlit internal /~/+/ paths getting into Supabase allowlists.
+    const redirectTo = u.origin + '/';
+
+    const res = await client.auth.signInWithOAuth({{ provider: 'google', options: {{ redirectTo }} }});
+    if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
+
+    const url = res && res.data ? res.data.url : null;
+    if (url) {{
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) return JSON.stringify({{ ok: false, error: 'Popup blocked. Allow popups for this site and try again.' }});
+        return JSON.stringify({{ ok: true, opened: true }});
+    }}
+    return JSON.stringify({{ ok: false, error: 'No OAuth URL returned by Supabase' }});
+}})()"""
 
 
 def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) -> str:
-    return (
-        "(async () => {"
-        f"const email = {json.dumps(email)};"
-        f"const SUPABASE_URL = {json.dumps(supabase_url)};"
-        f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
-        "const ensureLib = () => new Promise((resolve, reject) => {"
-        "  try {"
-        "    if (window.supabase && window.supabase.createClient) return resolve(true);"
-        "    const id = 'dsbg_supabase_js_umd_v2';"
-        "    const existing = document.getElementById(id);"
-        "    if (existing) {"
-        "      const tick = () => {"
-        "        if (window.supabase && window.supabase.createClient) return resolve(true);"
-        "        setTimeout(tick, 50);"
-        "      };"
-        "      tick();"
-        "      return;"
-        "    }"
-        "    const s = document.createElement('script');"
-        "    s.id = id;"
-        "    s.async = true;"
-        "    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';"
-        "    s.onload = () => resolve(true);"
-        "    s.onerror = (e) => reject(e);"
-        "    document.head.appendChild(s);"
-        "  } catch (e) { reject(e); }"
-        "});"
-        "await ensureLib();"
-        "window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {"
-        "  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },"
-        "});"
-        "const client = window.__dsbg_supabase_client;"
-        "if (!client) return { ok: false, error: 'supabase client not initialized' };"
-        "let topHref = null;"
-        "try { topHref = window.parent.location.href; } catch (e) { topHref = window.location.href; }"
-        "const emailRedirectTo = String(topHref).split('?')[0];"
-        "const res = await client.auth.signInWithOtp({ email, options: { emailRedirectTo } });"
-        "if (res && res.error) return { ok: false, error: String(res.error.message || res.error) };"
-        "return { ok: true };"
-        "})()"
-    )
+        return f"""(async () => {{
+    const email = {json.dumps(email)};
+    const SUPABASE_URL = {json.dumps(supabase_url)};
+    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
+
+    const ensureLib = () => new Promise((resolve, reject) => {{
+        try {{
+            if (window.supabase && window.supabase.createClient) return resolve(true);
+            const id = 'dsbg_supabase_js_umd_v2';
+            const existing = document.getElementById(id);
+            if (existing) {{
+                const tick = () => {{
+                    if (window.supabase && window.supabase.createClient) return resolve(true);
+                    setTimeout(tick, 50);
+                }};
+                tick();
+                return;
+            }}
+            const s = document.createElement('script');
+            s.id = id;
+            s.async = true;
+            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            s.onload = () => resolve(true);
+            s.onerror = (e) => reject(e);
+            document.head.appendChild(s);
+        }} catch (e) {{
+            reject(e);
+        }}
+    }});
+
+    try {{
+        await ensureLib();
+    }} catch (e) {{
+        return JSON.stringify({{ ok: false, error: 'Failed to load supabase-js: ' + String(e && e.message ? e.message : e) }});
+    }}
+
+    window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+    );
+    const client = window.__dsbg_supabase_client;
+    if (!client) return JSON.stringify({{ ok: false, error: 'supabase client not initialized' }});
+
+    let topHref = null;
+    try {{ topHref = window.parent.location.href; }} catch (e) {{ topHref = window.location.href; }}
+    const u = new URL(String(topHref));
+    const emailRedirectTo = u.origin + '/';
+
+    const res = await client.auth.signInWithOtp({{ email, options: {{ emailRedirectTo }} }});
+    if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
+    return JSON.stringify({{ ok: true }});
+}})()"""
 
 
 def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:

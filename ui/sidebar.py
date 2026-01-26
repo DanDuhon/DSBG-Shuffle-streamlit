@@ -286,7 +286,9 @@ def render_sidebar(settings: dict):
                         st.session_state["_auth_last_error"] = err
                     else:
                         st.session_state["_auth_last_error"] = (
-                            "Could not send magic link. Check the email and Supabase auth settings."
+                            "No response from browser. The email may still have been sent — check your inbox. "
+                            "If the link opens a Supabase page saying 'Huh. This isn’t supposed to happen.', "
+                            "ensure your Supabase Auth redirect allowlist includes this app URL (dev + prod)."
                         )
 
     st.sidebar.header("Settings")
