@@ -1,4 +1,8 @@
 streamlit>=1.50.0
 pillow>=11.0.0
 requests>=2.28.0
-streamlit-javascript>=0.0.7
+
+# NOTE: The PyPI package `streamlit-javascript` is stale (0.1.5 from 2022) and
+# can fail to return values on modern Streamlit versions. We pin to the
+# maintained upstream build.
+streamlit-javascript @ git+https://github.com/thunderbug1/streamlit-javascript.git@1.42.0

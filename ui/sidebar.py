@@ -103,6 +103,38 @@ def render_sidebar(settings: dict):
         st.sidebar.header("Account")
         auth.ensure_session_loaded()
 
+        debug_perf_raw = str(get_config_str("DSBG_DEBUG_PERF") or "").strip().lower()
+        debug_perf = debug_perf_raw in {"1", "true", "yes", "y", "on"}
+        if debug_perf:
+            with st.sidebar.expander("Debug: JS bridge", expanded=False):
+                st.caption(
+                    "If auth buttons say ‘no response from browser’, the Streamlit JS component may not be returning. "
+                    "This test should return 2."
+                )
+
+                # Show runtime/package versions to confirm what Streamlit Cloud actually installed.
+                try:
+                    import sys
+                    from importlib.metadata import version as _pkg_version  # type: ignore
+
+                    st.write(
+                        {
+                            "python": sys.version.split(" ")[0],
+                            "streamlit": getattr(st, "__version__", "(unknown)"),
+                            "streamlit-javascript": _pkg_version("streamlit-javascript"),
+                        }
+                    )
+                except Exception as e:
+                    st.write({"versions_error": str(e)})
+
+                try:
+                    from streamlit_javascript import st_javascript  # type: ignore
+
+                    test_val = st_javascript("1+1", None, "dsbg_js_bridge_test")
+                    st.write({"js_return": test_val})
+                except Exception as e:
+                    st.write({"js_return": None, "error": str(e)})
+
         auth_err = st.session_state.get("_auth_last_error")
         if isinstance(auth_err, str) and auth_err.strip():
             st.sidebar.error(auth_err)
