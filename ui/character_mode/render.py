@@ -48,7 +48,7 @@ from ui.character_mode.aggregates import (
     build_defense_totals_cached,
 )
 from ui.character_mode.widgets import _render_selection_table
-from core.settings_manager import save_settings
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
 
 
 def render(settings: Dict[str, Any]) -> None:
@@ -1462,11 +1462,18 @@ def render(settings: Dict[str, Any]) -> None:
 
     with tab_save_load:
         st.markdown("#### Save / Load")
-        needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
-        if needs_login:
+        cloud_mode = bool(is_streamlit_cloud())
+        supabase_ready = bool(_has_supabase_config())
+        can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+        if cloud_mode and not supabase_ready:
+            st.caption("Saving is disabled until Supabase is configured.")
+        elif cloud_mode and not auth.is_authenticated():
             st.caption("Log in to save.")
         _ = st.text_input("Build name", key="cm_build_name")
-        if st.button("Save build 💾", key="cm_build_save", disabled=needs_login):
+        if st.button("Save build 💾", key="cm_build_save", disabled=not can_persist):
+            if not can_persist:
+                st.error("Not logged in; cannot persist on Streamlit Cloud.")
+                st.stop()
             name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
             ss["cm_builds"][name] = _current_build()
             save_builds(ss["cm_builds"])
@@ -1481,7 +1488,7 @@ def render(settings: Dict[str, Any]) -> None:
                     ss["cm_pending_build"] = ss["cm_builds"][name]
                     st.rerun()
         with c4:
-            if st.button("Delete 🗑️", key="cm_build_delete", disabled=needs_login):
+            if st.button("Delete 🗑️", key="cm_build_delete", disabled=not can_persist):
                 name = ss.get("cm_build_select")
                 if name and name in ss.get("cm_builds", {}):
                     ss["cm_builds"].pop(name, None)

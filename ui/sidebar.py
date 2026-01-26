@@ -74,6 +74,17 @@ def render_sidebar(settings: dict):
 
     cloud_mode = bool(is_streamlit_cloud())
 
+    # If Cloud mode is enabled but Supabase secrets are missing, users will not
+    # see login UI and nothing should persist.
+    if cloud_mode:
+        supa_url = get_config_str("SUPABASE_URL")
+        supa_key = get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
+        if not (supa_url and supa_key):
+            st.sidebar.warning(
+                "Cloud mode is enabled, but Supabase secrets are missing (SUPABASE_URL and SUPABASE_ANON_KEY). "
+                "Login is disabled and saves will not persist across refresh."
+            )
+
     # Misconfiguration helper: if Supabase is configured but Cloud mode is off,
     # auth UI and save gating will be disabled and the app will fall back to
     # local JSON persistence (even if this is running on Streamlit Cloud).
@@ -469,13 +480,16 @@ def render_sidebar(settings: dict):
 
     if cloud_mode and save_ui is not None:
         with save_ui:
+            missing_auth_ui = cloud_mode and not auth.is_auth_ui_enabled()
             needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
-            if needs_login:
+            if missing_auth_ui:
+                st.caption("Saving is disabled until Supabase auth is configured.")
+            elif needs_login:
                 st.caption("Log in to save.")
 
             if st.button(
                 "Save settings",
-                disabled=(not dirty) or needs_login,
+                disabled=(not dirty) or needs_login or missing_auth_ui,
                 use_container_width=True,
                 key="save_settings_btn",
             ):
@@ -487,7 +501,9 @@ def render_sidebar(settings: dict):
                 st.session_state["_settings_draft"] = deepcopy(committed)
                 st.session_state["_settings_draft_base_fp"] = settings_fingerprint(committed)
 
-                save_settings(committed)
+                ok = bool(save_settings(committed))
+                if not ok:
+                    st.sidebar.error("Settings were applied but could not be persisted.")
 
                 st.session_state["_settings_just_saved"] = True
                 st.session_state["_settings_old_active_expansions"] = old_active_expansions

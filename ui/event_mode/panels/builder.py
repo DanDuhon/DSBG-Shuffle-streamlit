@@ -6,6 +6,7 @@ from typing import Any, Dict
 import streamlit as st
 
 from core import auth
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 from core.image_cache import get_image_bytes_cached
 from ui.event_mode.logic import (
     list_all_event_cards,
@@ -64,8 +65,12 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
         st.markdown("### Deck Summary")
         b = _builder_get()
 
-        needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
-        if needs_login:
+        cloud_mode = bool(is_streamlit_cloud())
+        supabase_ready = bool(_has_supabase_config())
+        can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+        if cloud_mode and not supabase_ready:
+            st.caption("Saving is disabled until Supabase is configured.")
+        elif cloud_mode and not auth.is_authenticated():
             st.caption("Log in to save.")
 
         # Build card counts from the live number-input session keys so UI changes
@@ -89,9 +94,12 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
         st.markdown(f"**Unique cards:** {len(cards_map)}")
         st.markdown(f"**Total cards:** {total}")
 
-        save_disabled = needs_login or not (b.get("name") and cards_map)
+        save_disabled = (not can_persist) or not (b.get("name") and cards_map)
 
         if st.button("Save custom deck 💾", width="stretch", disabled=save_disabled):
+            if not can_persist:
+                st.error("Not logged in; cannot persist on Streamlit Cloud.")
+                return
             name = str(b["name"]).strip()
             if name:
                 custom_decks[name] = {"cards": dict(cards_map)}
