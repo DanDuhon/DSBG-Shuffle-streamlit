@@ -720,6 +720,8 @@ def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None
     # With streamlit-javascript 0.1.5, a placeholder 0/None can occur even when
     # Supabase successfully sends the email. Prefer a 'maybe sent' result.
     if _is_no_js_response(res):
+        if request_id:
+            return {"ok": False, "pending": True}
         return {
             "ok": True,
             "maybe_sent": True,
