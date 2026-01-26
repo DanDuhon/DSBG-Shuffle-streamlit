@@ -224,6 +224,7 @@ def load_settings():
 
     # Choose storage backend:
     # - Streamlit Cloud: Supabase per-account settings when logged in.
+    # - Streamlit Cloud without Supabase: do not read shared local files.
     # - Otherwise: local JSON.
     if is_streamlit_cloud() and _has_supabase_config():
         try:
@@ -243,6 +244,8 @@ def load_settings():
                 user_id=user_id,
                 access_token=access_token,
             )
+    elif is_streamlit_cloud():
+        loaded = None
     else:
         try:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -345,6 +348,11 @@ def save_settings(settings: dict):
             return res
         except Exception:
             return False
+
+    # Streamlit Cloud should never persist anonymously to local JSON files.
+    # If Supabase isn't configured, fail closed.
+    if is_streamlit_cloud():
+        return False
 
     SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
 

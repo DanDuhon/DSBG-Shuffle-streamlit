@@ -90,6 +90,10 @@ def _load_campaigns(*, reload: bool = False) -> Dict[str, Any]:
                 continue
         return out
 
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
+
     return _load_json_object(CAMPAIGNS_PATH, reload=reload)
 
 
@@ -118,6 +122,10 @@ def _save_campaigns(campaigns: Dict[str, Any]) -> None:
                         pass
         except Exception:
             pass
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
         return
 
     CAMPAIGNS_PATH.parent.mkdir(parents=True, exist_ok=True)

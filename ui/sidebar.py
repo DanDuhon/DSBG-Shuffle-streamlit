@@ -1,7 +1,7 @@
 #ui/sidebar.py
 import streamlit as st
 from core import auth
-from core.settings_manager import is_streamlit_cloud, save_settings, settings_fingerprint
+from core.settings_manager import get_config_str, is_streamlit_cloud, save_settings, settings_fingerprint
 from datetime import datetime, timezone
 from copy import deepcopy
 from core.character.characters import CHARACTER_EXPANSIONS
@@ -73,6 +73,19 @@ def render_sidebar(settings: dict):
     """
 
     cloud_mode = bool(is_streamlit_cloud())
+
+    # Misconfiguration helper: if Supabase is configured but Cloud mode is off,
+    # auth UI and save gating will be disabled and the app will fall back to
+    # local JSON persistence (even if this is running on Streamlit Cloud).
+    if not cloud_mode:
+        supa_url = get_config_str("SUPABASE_URL")
+        supa_key = get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
+        if supa_url and supa_key:
+            st.sidebar.warning(
+                "Supabase is configured, but DSBG_DEPLOYMENT is not set to 'cloud'. "
+                "Login + per-account saving are disabled, and the app will use local JSON persistence. "
+                "Set DSBG_DEPLOYMENT='cloud' in Streamlit secrets to require login to save."
+            )
 
     # Cloud-only Account UI (Google OAuth primary + magic link fallback).
     if auth.is_auth_ui_enabled():

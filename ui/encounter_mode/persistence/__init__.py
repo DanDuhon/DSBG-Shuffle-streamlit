@@ -36,6 +36,10 @@ def load_saved_encounters(*, reload: bool = False) -> Dict[str, Any]:
                 continue
         return out
 
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
+
     if not SAVED_ENCOUNTERS_PATH.exists():
         return {}
     with SAVED_ENCOUNTERS_PATH.open("r", encoding="utf-8") as f:
@@ -97,6 +101,10 @@ def save_saved_encounters(encounters: Dict[str, Any]) -> None:
                         pass
         except Exception:
             pass
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
         return
 
     _atomic_write(SAVED_ENCOUNTERS_PATH, encounters)

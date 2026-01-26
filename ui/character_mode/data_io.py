@@ -58,6 +58,10 @@ def load_builds() -> Dict[str, Any]:
                 continue
         return out
 
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
+
     path = BUILDS_FILE
     if not path.exists():
         return {}
@@ -97,6 +101,10 @@ def save_builds(builds: Dict[str, Any]) -> None:
                         pass
         except Exception:
             pass
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
         return
 
     BUILDS_FILE.parent.mkdir(parents=True, exist_ok=True)

@@ -77,6 +77,10 @@ def load_custom_event_decks() -> Dict[str, dict]:
                 continue
         return out
 
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
+
     if not CUSTOM_DECKS_PATH.exists():
         return {}
     data = json.loads(CUSTOM_DECKS_PATH.read_text(encoding="utf-8"))
@@ -120,6 +124,11 @@ def save_custom_event_decks(decks: Dict[str, dict]) -> None:
         except Exception:
             pass
         st.rerun()
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
+        return
 
     CUSTOM_DECKS_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {"decks": decks, "updated": _utc_now_iso()}
