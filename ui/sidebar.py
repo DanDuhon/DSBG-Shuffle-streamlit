@@ -130,8 +130,25 @@ def render_sidebar(settings: dict):
                 try:
                     from streamlit_javascript import st_javascript  # type: ignore
 
-                    test_val = st_javascript("1+1", None, "dsbg_js_bridge_test")
-                    st.write({"js_return": test_val})
+                    # Compatibility: streamlit-javascript 0.1.5 only supports
+                    # (code) or (code, waiting_text). Newer builds may support
+                    # (code, default, key, ...). We only rely on the portable
+                    # signatures here.
+                    try:
+                        test_val = st_javascript("1+1")
+                    except TypeError:
+                        test_val = st_javascript("1+1", "Waiting for response")
+
+                    # A second probe that does not require async/await.
+                    try:
+                        href_val = st_javascript("(function(){ return window.location.href; })()")
+                    except TypeError:
+                        href_val = st_javascript(
+                            "(function(){ return window.location.href; })()",
+                            "Waiting for response",
+                        )
+
+                    st.write({"js_return": test_val, "href": href_val})
                 except Exception as e:
                     st.write({"js_return": None, "error": str(e)})
 

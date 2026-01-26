@@ -171,9 +171,11 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
     )
 
 
-def _js_login_google() -> str:
+def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
     return (
         "(async () => {"
+        f"const SUPABASE_URL = {json.dumps(supabase_url)};"
+        f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
         "const ensureLib = () => new Promise((resolve, reject) => {"
         "  try {"
         "    if (window.supabase && window.supabase.createClient) return resolve(true);"
@@ -197,6 +199,9 @@ def _js_login_google() -> str:
         "  } catch (e) { reject(e); }"
         "});"
         "await ensureLib();"
+        "window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {"
+        "  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },"
+        "});"
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
         "let topHref = null;"
@@ -215,10 +220,12 @@ def _js_login_google() -> str:
     )
 
 
-def _js_login_magic_link(email: str) -> str:
+def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) -> str:
     return (
         "(async () => {"
         f"const email = {json.dumps(email)};"
+        f"const SUPABASE_URL = {json.dumps(supabase_url)};"
+        f"const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};"
         "const ensureLib = () => new Promise((resolve, reject) => {"
         "  try {"
         "    if (window.supabase && window.supabase.createClient) return resolve(true);"
@@ -242,6 +249,9 @@ def _js_login_magic_link(email: str) -> str:
         "  } catch (e) { reject(e); }"
         "});"
         "await ensureLib();"
+        "window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {"
+        "  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },"
+        "});"
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
         "let topHref = null;"
@@ -387,7 +397,7 @@ def login_google() -> dict | None:
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
-    res = _run_js(_js_login_google(), key="dsbg_auth_google")
+    res = _run_js(_js_login_google(url, anon), key="dsbg_auth_google")
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
@@ -403,7 +413,7 @@ def send_magic_link(email: str) -> dict | None:
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
-    res = _run_js(_js_login_magic_link(email), key="dsbg_auth_magic")
+    res = _run_js(_js_login_magic_link(email, url, anon), key="dsbg_auth_magic")
     coerced = _coerce_js_dict(res)
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 
