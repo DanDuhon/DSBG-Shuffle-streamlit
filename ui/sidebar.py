@@ -152,6 +152,11 @@ def render_sidebar(settings: dict):
                 except Exception as e:
                     st.write({"js_return": None, "error": str(e)})
 
+                last_auth_debug = st.session_state.get("_auth_last_debug")
+                if last_auth_debug is not None:
+                    st.caption("Last auth response")
+                    st.write(last_auth_debug)
+
         auth_err = st.session_state.get("_auth_last_error")
         if isinstance(auth_err, str) and auth_err.strip():
             st.sidebar.error(auth_err)
@@ -166,13 +171,22 @@ def render_sidebar(settings: dict):
             if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
                 st.session_state["_auth_last_error"] = ""
                 res = auth.login_google()
+                if debug_perf:
+                    st.session_state["_auth_last_debug"] = {"action": "google", "response": res}
                 if not isinstance(res, dict):
                     st.session_state["_auth_last_error"] = (
                         "Could not start Google sign-in (no response from browser). "
                         "Try again and allow popups for this site."
                     )
                 elif res.get("ok") is False:
-                    st.session_state["_auth_last_error"] = str(res.get("error") or "Could not start Google sign-in.")
+                    err = str(res.get("error") or "Could not start Google sign-in.")
+                    if "Unsupported provider" in err or "provider is not enabled" in err:
+                        err = (
+                            "Google sign-in is disabled in Supabase for this project. "
+                            "Enable it in Supabase Dashboard → Authentication → Providers → Google.\n\n"
+                            f"Details: {err}"
+                        )
+                    st.session_state["_auth_last_error"] = err
                 elif res.get("ok") is True:
                     if res.get("authed") is True:
                         st.sidebar.success("Signed in. You can close the Google tab.")
@@ -187,11 +201,20 @@ def render_sidebar(settings: dict):
             if st.sidebar.button("Send magic link", use_container_width=True, key="auth_magic_btn"):
                 st.session_state["_auth_last_error"] = ""
                 res = auth.send_magic_link(email)
+                if debug_perf:
+                    st.session_state["_auth_last_debug"] = {"action": "magic_link", "email": email, "response": res}
                 if isinstance(res, dict) and res.get("ok") is True:
                     st.sidebar.success("Magic link sent. Check your email.")
                 else:
                     if isinstance(res, dict) and res.get("error"):
-                        st.session_state["_auth_last_error"] = str(res.get("error"))
+                        err = str(res.get("error"))
+                        if "Email provider" in err and "not enabled" in err:
+                            err = (
+                                "Email / magic-link sign-in is disabled in Supabase for this project. "
+                                "Enable it in Supabase Dashboard → Authentication → Providers → Email.\n\n"
+                                f"Details: {err}"
+                            )
+                        st.session_state["_auth_last_error"] = err
                     else:
                         st.session_state["_auth_last_error"] = (
                             "Could not send magic link. Check the email and Supabase auth settings."
