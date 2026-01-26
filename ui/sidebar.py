@@ -103,6 +103,10 @@ def render_sidebar(settings: dict):
         st.sidebar.header("Account")
         auth.ensure_session_loaded()
 
+        auth_err = st.session_state.get("_auth_last_error")
+        if isinstance(auth_err, str) and auth_err.strip():
+            st.sidebar.error(auth_err)
+
         if auth.is_authenticated():
             ident = auth.get_user_email() or auth.get_user_id() or "(unknown user)"
             st.sidebar.caption(f"Signed in: {ident}")
@@ -111,8 +115,13 @@ def render_sidebar(settings: dict):
                 st.stop()
         else:
             if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
-                auth.login_google()
-                st.stop()
+                st.session_state["_auth_last_error"] = ""
+                res = auth.login_google()
+                if isinstance(res, dict) and res.get("ok") is False:
+                    st.session_state["_auth_last_error"] = str(res.get("error") or "Could not start Google sign-in.")
+                elif isinstance(res, dict) and res.get("ok") is True:
+                    # If redirect is blocked/misconfigured, keep the UI responsive.
+                    st.sidebar.caption("Starting Google sign-in…")
 
             email = st.sidebar.text_input(
                 "Email (magic link)",
@@ -120,11 +129,12 @@ def render_sidebar(settings: dict):
                 placeholder="you@example.com",
             )
             if st.sidebar.button("Send magic link", use_container_width=True, key="auth_magic_btn"):
+                st.session_state["_auth_last_error"] = ""
                 ok = auth.send_magic_link(email)
                 if ok:
                     st.sidebar.success("Magic link sent. Check your email.")
                 else:
-                    st.sidebar.error("Could not send magic link.")
+                    st.session_state["_auth_last_error"] = "Could not send magic link. Check the email and Supabase auth settings."
 
     st.sidebar.header("Settings")
     # Streamlit Cloud renders a Save UI (gated by login). Local/Docker auto-saves.

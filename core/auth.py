@@ -151,8 +151,11 @@ def _js_login_google() -> str:
         "const client = window.__dsbg_supabase_client;"
         "if (!client) return { ok: false, error: 'supabase client not initialized' };"
         "const redirectTo = window.location.href.split('?')[0];"
-        "await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });"
-        "return { ok: true };"
+        "const res = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });"
+        "if (res && res.error) return { ok: false, error: String(res.error.message || res.error) };"
+        "const url = res && res.data ? res.data.url : null;"
+        "if (url) { window.location.href = url; return { ok: true, redirected: true }; }"
+        "return { ok: false, error: 'No OAuth URL returned by Supabase' };"
         "})()"
     )
 
@@ -289,17 +292,18 @@ def is_authenticated() -> bool:
     return bool(get_user_id() and get_access_token())
 
 
-def login_google() -> None:
+def login_google() -> dict | None:
     if not is_auth_ui_enabled():
-        return
+        return None
     assert st_javascript is not None
     # Trigger OAuth redirect. The sidebar already calls `ensure_session_loaded()`
     # before rendering buttons, which initializes the Supabase client.
     url = _get_supabase_url()
     anon = _get_supabase_anon_key()
     if not url or not anon:
-        return
-    _run_js(_js_login_google(), key="dsbg_auth_google")
+        return None
+    res = _run_js(_js_login_google(), key="dsbg_auth_google")
+    return res if isinstance(res, dict) else None
 
 
 def send_magic_link(email: str) -> bool:
