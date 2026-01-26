@@ -318,6 +318,7 @@ if "user_settings" not in st.session_state:
 # duplicate streamlit-javascript components in the same run.
 try:
     st.session_state["_dsbg_auth_js_used_this_run"] = False
+    st.session_state["_dsbg_js_keys_used_this_run"] = []
 except Exception:
     pass
 

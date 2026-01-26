@@ -29,6 +29,23 @@ def _run_js(code: str, *, key: str) -> Any:
     if st_javascript is None:
         return None
 
+    # Streamlit forbids creating multiple elements with the same key in a
+    # single rerun. Track used keys and no-op on repeats.
+    if st is not None:
+        try:
+            used = st.session_state.get("_dsbg_js_keys_used_this_run")
+        except Exception:
+            used = None
+        if not isinstance(used, list):
+            used = []
+        if key in used:
+            return None
+        try:
+            used.append(key)
+            st.session_state["_dsbg_js_keys_used_this_run"] = used
+        except Exception:
+            pass
+
     # Compatibility: different streamlit-javascript versions have different
     # signatures; do not use the `default=` kwarg.
     try:
@@ -276,12 +293,12 @@ def login_google() -> None:
     if not is_auth_ui_enabled():
         return
     assert st_javascript is not None
-    # Ensure client exists and then trigger OAuth redirect.
+    # Trigger OAuth redirect. The sidebar already calls `ensure_session_loaded()`
+    # before rendering buttons, which initializes the Supabase client.
     url = _get_supabase_url()
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return
-    _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
     _run_js(_js_login_google(), key="dsbg_auth_google")
 
 
@@ -296,7 +313,6 @@ def send_magic_link(email: str) -> bool:
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return False
-    _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
     res = _run_js(_js_login_magic_link(email), key="dsbg_auth_magic")
     return bool(isinstance(res, dict) and res.get("ok") is True)
 
