@@ -51,13 +51,19 @@ def render(settings: dict, campaign: bool = False) -> None:  # noqa: ARG001
     encounter_id = play_state.get_encounter_id(encounter)
 
     ui_compact = bool(st.session_state.get("ui_compact", False))
-    player_count = play_state.get_player_count()
-    souls = int(player_count) * 2
+
+    # Always compute/store totals so Campaign Play can apply rewards.
+    totals = play_panels.compute_reward_totals(encounter, settings, {"timer": 0})
+    play_panels.store_reward_totals_for_campaign(encounter, totals)
+    souls = int(totals.get("souls") or 0)
+    treasure = int(totals.get("treasure") or 0)
 
     if ui_compact:
         play_panels._render_objectives(encounter, settings)
         st.markdown("#### Rewards")
         st.markdown(f"- Souls: **{souls}**")
+        if treasure:
+            st.markdown(f"- Draw {treasure} treasures")
         _enemy_cards_fragment(encounter_id, columns=1)
         return
 
@@ -66,6 +72,8 @@ def render(settings: dict, campaign: bool = False) -> None:  # noqa: ARG001
         play_panels._render_objectives(encounter, settings)
         st.markdown("#### Rewards")
         st.markdown(f"- Souls: **{souls}**")
+        if treasure:
+            st.markdown(f"- Draw {treasure} treasures")
 
     with col_right:
         _enemy_cards_fragment(encounter_id, columns=V1_BEHAVIOR_COLUMNS)
