@@ -13,7 +13,7 @@ from ui.campaign_mode.render import render as campaign_mode_render
 from ui.event_mode.render import render as event_mode_render
 from ui.character_mode.render import render as character_mode_render
 from ui.behavior_viewer.render import render as behavior_viewer_render
-from core import client_id as client_id_module
+from core import auth
 from core.settings_manager import get_config_bool, is_streamlit_cloud, load_settings, save_settings
 
 _APP_START = time.perf_counter()
@@ -24,17 +24,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-# Establish a stable per-browser client_id as early as possible.
-# On Streamlit Cloud, this may pause execution briefly until the JS component
-# hydrates and returns the persisted value.
-try:
-    cid = client_id_module.get_or_create_client_id()
-    try:
-        st.session_state["client_id"] = cid
-    except Exception:
-        pass
-except Exception:
-    pass
+
 
 
 def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
@@ -319,9 +309,37 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Auth session hydration should run at most once per rerun.
+# `core.auth.ensure_session_loaded()` uses this flag to avoid creating
+# duplicate streamlit-javascript components in the same run.
+try:
+    st.session_state["_dsbg_auth_js_used_this_run"] = False
+    st.session_state["_dsbg_js_keys_used_this_run"] = []
+except Exception:
+    pass
+
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
     st.session_state.user_settings = load_settings()
+
+# Streamlit Cloud: if the user logs in/out, reload per-account settings.
+# This keeps the experience intuitive (login immediately pulls your saved settings).
+if auth.is_auth_ui_enabled():
+    try:
+        current_uid = auth.get_user_id()
+    except Exception:
+        current_uid = None
+    previous_uid = st.session_state.get("_auth_user_id")
+    if current_uid != previous_uid:
+        st.session_state["_auth_user_id"] = current_uid
+        st.session_state.user_settings = load_settings()
+        # Reset sidebar draft state so widgets re-seed cleanly.
+        for k in ["_settings_draft", "_settings_draft_base_fp", "_settings_ui_base_fp"]:
+            try:
+                st.session_state.pop(k, None)
+            except Exception:
+                pass
+        st.rerun()
 
 settings = st.session_state.user_settings
 
@@ -356,30 +374,7 @@ if st.session_state.pop("_settings_just_saved", False):
             except Exception:
                 pass
 
-# Ensure a single per-client `client_id` exists in session and persisted settings.
-# This avoids multiple different UUIDs being generated across reruns.
-try:
-    client_id = st.session_state.get("client_id") or settings.get("client_id")
-except Exception:
-    client_id = settings.get("client_id") if isinstance(settings, dict) else None
 
-if not client_id:
-    # IMPORTANT: use the browser-persisted mechanism so refreshes keep the same id.
-    try:
-        client_id = client_id_module.get_or_create_client_id()
-    except Exception:
-        client_id = None
-
-    if client_id:
-        settings["client_id"] = client_id
-        try:
-            st.session_state["client_id"] = client_id
-        except Exception:
-            pass
-        # Persist settings with the new client_id (this will upsert to Supabase when configured)
-        st.session_state["_settings_allow_save"] = True
-        save_settings(settings)
-        st.session_state["_settings_allow_save"] = False
 
 # --- One-shot cross-tab handoff: Campaign Mode -> app bootstrap ---
 # Campaign Setup tab cannot safely overwrite sidebar widget keys after widgets

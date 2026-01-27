@@ -5,7 +5,8 @@ import os
 import streamlit as st
 
 from core import supabase_store
-from core.settings_manager import _has_supabase_config, get_runtime_client_id
+from core import auth
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 
 
 DATA_DIR = Path("data")
@@ -13,24 +14,31 @@ SAVED_ENCOUNTERS_PATH = DATA_DIR / "saved_encounters.json"
 
 
 def load_saved_encounters(*, reload: bool = False) -> Dict[str, Any]:
-    # Supabase-backed documents: one row per encounter keyed by name
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    # Streamlit Cloud: Supabase-backed documents (per-account)
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            return {}
 
         try:
-            names = supabase_store.list_documents("saved_encounter", user_id=client_id)
+            names = supabase_store.list_documents("saved_encounter", user_id=user_id, access_token=access_token)
         except Exception:
             names = []
 
         out: Dict[str, Any] = {}
         for n in names:
             try:
-                obj = supabase_store.get_document("saved_encounter", n, user_id=client_id)
+                obj = supabase_store.get_document("saved_encounter", n, user_id=user_id, access_token=access_token)
                 if obj is not None:
                     out[n] = obj
             except Exception:
                 continue
         return out
+
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
 
     if not SAVED_ENCOUNTERS_PATH.exists():
         return {}
@@ -62,29 +70,41 @@ def _atomic_write(path: Path, payload: Dict[str, Any]) -> None:
 
 
 def save_saved_encounters(encounters: Dict[str, Any]) -> None:
-    # Persist to Supabase when configured; otherwise write local JSON file.
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    # Persist to Supabase on Streamlit Cloud when configured and logged in;
+    # otherwise write local JSON file.
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            return
 
         # Upsert each encounter
         for name, obj in (encounters or {}).items():
             try:
-                supabase_store.upsert_document("saved_encounter", name, obj, user_id=client_id)
+                supabase_store.upsert_document(
+                    "saved_encounter", name, obj, user_id=user_id, access_token=access_token
+                )
             except Exception:
                 # continue on individual failures
                 continue
 
         # Delete any remote encounters not present locally
         try:
-            remote = supabase_store.list_documents("saved_encounter", user_id=client_id)
+            remote = supabase_store.list_documents("saved_encounter", user_id=user_id, access_token=access_token)
             for r in remote:
                 if r not in encounters:
                     try:
-                        supabase_store.delete_document("saved_encounter", r, user_id=client_id)
+                        supabase_store.delete_document(
+                            "saved_encounter", r, user_id=user_id, access_token=access_token
+                        )
                     except Exception:
                         pass
         except Exception:
             pass
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
         return
 
     _atomic_write(SAVED_ENCOUNTERS_PATH, encounters)

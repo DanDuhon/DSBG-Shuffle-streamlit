@@ -23,6 +23,7 @@ from ui.encounter_mode.data.behavior_modifiers import ( # Don't remove these, th
 from core.character.character_stats import average_souls_to_equip
 from ui.character_mode.data_io import _find_data_file, _load_json_list
 from core.settings_manager import get_config_bool, is_streamlit_cloud
+from core.expansions import is_v2_expansion
 
 
 INVADERS_PATH = Path("data/invaders.json")
@@ -66,7 +67,7 @@ def _list_encounters_cached():
     # --- Custom expansion sorting (keep parity with previous implementation) ---
     def expansion_sort_key(exp):
         exp_lower = exp.lower()
-        if any(x in exp_lower for x in ["tomb of giants", "painted world of ariamis", "the sunless city"]):
+        if is_v2_expansion(exp):
             return (0, exp_lower)
         elif "dark souls the board game" in exp_lower:
             return (1, exp_lower)

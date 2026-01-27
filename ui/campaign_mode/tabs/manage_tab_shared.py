@@ -1,7 +1,11 @@
 # ui/campaign_mode/manage_tab_shared.py
 import streamlit as st
 from typing import Any, Dict, Optional
+
+from core import auth
 from ui.campaign_mode.persistence import get_campaigns, _save_campaigns
+
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 from ui.campaign_mode.persistence.dirty import set_campaign_baseline
 from ui.campaign_mode.core import (
     _reset_all_encounters_on_bonfire_return,
@@ -325,6 +329,14 @@ def _render_campaign_save_controls(
     st.markdown("---")
     st.markdown("##### Save campaign")
 
+    cloud_mode = bool(is_streamlit_cloud())
+    supabase_ready = bool(_has_supabase_config())
+    can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+    if cloud_mode and not supabase_ready:
+        st.caption("Saving is disabled until Supabase is configured.")
+    elif cloud_mode and not auth.is_authenticated():
+        st.caption("Log in to save.")
+
     campaigns = get_campaigns()
     saved_names = sorted((campaigns or {}).keys())
 
@@ -382,10 +394,15 @@ def _render_campaign_save_controls(
         "Save campaign 💾",
         key=f"campaign_manage_save_btn_{version.lower()}",
         width="stretch",
+        disabled=not can_persist,
     ):
         name = str(name_input or "").strip()
         if not name:
             st.error("Campaign name is required to save.")
+            return
+
+        if not can_persist:
+            st.error("Not logged in; cannot persist on Streamlit Cloud.")
             return
 
         if name in (campaigns or {}) and not overwrite_ok:

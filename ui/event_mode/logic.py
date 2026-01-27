@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional
 from collections import defaultdict
 from datetime import datetime, timezone
 from core import supabase_store
-from core.settings_manager import _has_supabase_config, get_runtime_client_id, save_settings
+from core import auth
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
 from ui.event_mode.event_card_text import EVENT_CARD_TEXT
 from ui.event_mode.event_card_type import EVENT_CARD_TYPE
 from ui.event_mode.event_card_meta import (
@@ -16,16 +17,12 @@ from ui.event_mode.event_card_meta import (
     get_event_draw_rewards_map,
     get_event_rewards_map,
 )
+from core.expansions import V2_EXPANSIONS
 
 
 DATA_DIR = Path("data/events")
 ASSETS_DIR = Path("assets/events")
 DECK_STATE_KEY = "event_deck"
-V2_EXPANSIONS = [
-    "Painted World of Ariamis",
-    "Tomb of Giants",
-    "The Sunless City",
-]
 
 # --- Custom decks (user-authored) ---
 CUSTOM_DECKS_PATH = Path("data/custom_event_decks.json")
@@ -46,31 +43,8 @@ def _utc_now_iso() -> str:
 
 
 @st.cache_data(show_spinner=False)
-def load_custom_event_decks() -> Dict[str, dict]:
-    """
-    Returns mapping: deck_name -> {"cards": {image_path: copies}, ...}
-    File schema:
-      { "decks": { "<name>": {"cards": {...}} }, "updated": "..." }
-    Legacy support: if file is { "<name>": {...} } treat that as decks mapping.
-    """
-    # Supabase-backed: one row per deck with doc_type='event_deck'
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
-
-        out: Dict[str, dict] = {}
-        try:
-            names = supabase_store.list_documents("event_deck", user_id=client_id)
-        except Exception:
-            names = []
-
-        for n in names:
-            try:
-                obj = supabase_store.get_document("event_deck", n, user_id=client_id)
-                if isinstance(obj, dict):
-                    out[n] = obj
-            except Exception:
-                continue
-        return out
+def _load_custom_event_decks_local() -> Dict[str, dict]:
+    """Load custom decks from local JSON file (no auth, safe to cache)."""
 
     if not CUSTOM_DECKS_PATH.exists():
         return {}
@@ -84,41 +58,83 @@ def load_custom_event_decks() -> Dict[str, dict]:
     return {}
 
 
+def load_custom_event_decks() -> Dict[str, dict]:
+    """
+    Returns mapping: deck_name -> {"cards": {image_path: copies}, ...}
+    File schema:
+      { "decks": { "<name>": {"cards": {...}} }, "updated": "..." }
+    Legacy support: if file is { "<name>": {...} } treat that as decks mapping.
+    """
+    # Streamlit Cloud: Supabase-backed (per-account) custom decks.
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            # Logged out: do not read shared local files on Cloud.
+            return {}
+
+        out: Dict[str, dict] = {}
+        try:
+            names = supabase_store.list_documents("event_deck", user_id=user_id, access_token=access_token)
+        except Exception:
+            names = []
+
+        for n in names:
+            try:
+                obj = supabase_store.get_document("event_deck", n, user_id=user_id, access_token=access_token)
+                if isinstance(obj, dict):
+                    out[n] = obj
+            except Exception:
+                continue
+        return out
+
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
+
+    return _load_custom_event_decks_local()
+
+
 def save_custom_event_decks(decks: Dict[str, dict]) -> None:
-    # Supabase-backed: upsert each deck as its own document
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    # Streamlit Cloud: Supabase-backed (per-account) custom decks.
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            return
 
         for name, deck in (decks or {}).items():
             try:
-                supabase_store.upsert_document("event_deck", name, deck, user_id=client_id)
+                supabase_store.upsert_document("event_deck", name, deck, user_id=user_id, access_token=access_token)
             except Exception:
                 pass
 
         # Remove remote decks that no longer exist locally
         try:
-            remote = supabase_store.list_documents("event_deck", user_id=client_id)
+            remote = supabase_store.list_documents("event_deck", user_id=user_id, access_token=access_token)
             for r in remote:
                 if r not in decks:
                     try:
-                        supabase_store.delete_document("event_deck", r, user_id=client_id)
+                        supabase_store.delete_document("event_deck", r, user_id=user_id, access_token=access_token)
                     except Exception:
                         pass
         except Exception:
             pass
 
-        try:
-            load_custom_event_decks.clear()
-        except Exception:
-            pass
+        # No Streamlit cache to clear for the Cloud path.
         st.rerun()
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
+        return
 
     CUSTOM_DECKS_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {"decks": decks, "updated": _utc_now_iso()}
     CUSTOM_DECKS_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     # Clear the cached loader so future calls reflect the updated file.
     try:
-        load_custom_event_decks.clear()
+        _load_custom_event_decks_local.clear()
     except Exception:
         pass
     st.rerun()

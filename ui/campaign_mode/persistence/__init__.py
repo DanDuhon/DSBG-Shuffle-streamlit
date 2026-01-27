@@ -5,7 +5,8 @@ import os
 import streamlit as st
 
 from core import supabase_store
-from core.settings_manager import _has_supabase_config, get_runtime_client_id
+from core import auth
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 
 
 DATA_DIR = Path("data")
@@ -68,49 +69,63 @@ def _load_campaigns(*, reload: bool = False) -> Dict[str, Any]:
     When Supabase is configured, campaigns are stored as individual rows
     with `doc_type = 'campaign'` and `key_name = <campaign name>`.
     """
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            return {}
 
         out: Dict[str, Any] = {}
         try:
-            names = supabase_store.list_documents("campaign", user_id=client_id)
+            names = supabase_store.list_documents("campaign", user_id=user_id, access_token=access_token)
         except Exception:
             names = []
 
         for n in names:
             try:
-                obj = supabase_store.get_document("campaign", n, user_id=client_id)
+                obj = supabase_store.get_document("campaign", n, user_id=user_id, access_token=access_token)
                 if obj is not None:
                     out[n] = obj
             except Exception:
                 continue
         return out
 
+    # Streamlit Cloud should never read shared local files.
+    if is_streamlit_cloud():
+        return {}
+
     return _load_json_object(CAMPAIGNS_PATH, reload=reload)
 
 
 def _save_campaigns(campaigns: Dict[str, Any]) -> None:
     # Supabase-backed persistence: upsert each campaign as a separate row.
-    if _has_supabase_config():
-        client_id = get_runtime_client_id()
+    if is_streamlit_cloud() and _has_supabase_config():
+        user_id = auth.get_user_id()
+        access_token = auth.get_access_token()
+        if not user_id or not access_token:
+            return
 
         for name, obj in (campaigns or {}).items():
             try:
-                supabase_store.upsert_document("campaign", name, obj, user_id=client_id)
+                supabase_store.upsert_document("campaign", name, obj, user_id=user_id, access_token=access_token)
             except Exception:
                 pass
 
         # Delete remote campaigns not present locally
         try:
-            remote = supabase_store.list_documents("campaign", user_id=client_id)
+            remote = supabase_store.list_documents("campaign", user_id=user_id, access_token=access_token)
             for r in remote:
                 if r not in campaigns:
                     try:
-                        supabase_store.delete_document("campaign", r, user_id=client_id)
+                        supabase_store.delete_document("campaign", r, user_id=user_id, access_token=access_token)
                     except Exception:
                         pass
         except Exception:
             pass
+        return
+
+    # Streamlit Cloud should never persist anonymously to local JSON.
+    if is_streamlit_cloud():
         return
 
     CAMPAIGNS_PATH.parent.mkdir(parents=True, exist_ok=True)

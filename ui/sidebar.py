@@ -1,6 +1,7 @@
 #ui/sidebar.py
 import streamlit as st
-from core.settings_manager import save_settings, settings_fingerprint
+from core import auth
+from core.settings_manager import get_config_str, is_streamlit_cloud, save_settings, settings_fingerprint
 from datetime import datetime, timezone
 from copy import deepcopy
 from core.character.characters import CHARACTER_EXPANSIONS
@@ -59,34 +60,266 @@ def _sync_invader_caps():
 
 
 def render_sidebar(settings: dict):
-    """Render the Settings sidebar using a draft/commit model.
+    """Render the Settings sidebar.
 
-    Draft-save contract:
-    - `st.session_state["user_settings"]` is the last applied (committed) settings dict.
-    - The sidebar edits a *draft* copy stored at `st.session_state["_settings_draft"]`.
-    - Clicking Save deep-copies the draft into `st.session_state["user_settings"]` and
-      persists via `core.settings_manager.save_settings(...)`.
+    Persistence contract:
+    - Local/Docker: settings changes take effect immediately and are saved to JSON automatically.
+    - Streamlit Cloud: settings can be changed while logged out, but saving requires login.
 
     Session keys touched (high-level):
     - Applied/draft: "user_settings", "_settings_draft", "_settings_draft_base_fp", "_settings_ui_base_fp"
     - Save metadata: "_settings_last_saved_fp", "_settings_last_saved_at"
     - Representative widget keys: "ngplus_level", "ui_card_width", "ui_compact" (plus many dynamic keys)
     """
+
+    cloud_mode = bool(is_streamlit_cloud())
+
+    # If Cloud mode is enabled but Supabase secrets are missing, users will not
+    # see login UI and nothing should persist.
+    if cloud_mode:
+        supa_url = get_config_str("SUPABASE_URL")
+        supa_key = get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
+        if not (supa_url and supa_key):
+            st.sidebar.warning(
+                "Cloud mode is enabled, but Supabase secrets are missing (SUPABASE_URL and SUPABASE_ANON_KEY). "
+                "Login is disabled and saves will not persist across refresh."
+            )
+
+    # Misconfiguration helper: if Supabase is configured but Cloud mode is off,
+    # auth UI and save gating will be disabled and the app will fall back to
+    # local JSON persistence (even if this is running on Streamlit Cloud).
+    if not cloud_mode:
+        supa_url = get_config_str("SUPABASE_URL")
+        supa_key = get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
+        if supa_url and supa_key:
+            st.sidebar.warning(
+                "Supabase is configured, but DSBG_DEPLOYMENT is not set to 'cloud'. "
+                "Login + per-account saving are disabled, and the app will use local JSON persistence. "
+                "Set DSBG_DEPLOYMENT='cloud' in Streamlit secrets to require login to save."
+            )
+
+    # Cloud-only Account UI (Google OAuth primary + magic link fallback).
+    if auth.is_auth_ui_enabled():
+        st.sidebar.header("Account")
+        auth.ensure_session_loaded()
+
+        debug_perf_raw = str(get_config_str("DSBG_DEBUG_PERF") or "").strip().lower()
+        debug_perf = debug_perf_raw in {"1", "true", "yes", "y", "on"}
+        if debug_perf:
+            with st.sidebar.expander("Debug: JS bridge", expanded=False):
+                st.caption(
+                    "If auth buttons say ‘no response from browser’, the Streamlit JS component may not be returning. "
+                    "This test should return 2."
+                )
+
+                def _redact_url(val):
+                    if not isinstance(val, str):
+                        return val
+                    out = val
+                    for key in [
+                        "access_token",
+                        "refresh_token",
+                        "provider_token",
+                        "id_token",
+                        "token",
+                    ]:
+                        if key in out:
+                            # Very lightweight redaction: replace values like key=...& with key=REDACTED&
+                            out = out.replace(f"{key}=", f"{key}=REDACTED")
+                    return out
+
+                def _redact_payload(obj):
+                    if not isinstance(obj, dict):
+                        return obj
+                    # Shallow redaction + common nested session fields
+                    red = dict(obj)
+                    sess = red.get("session")
+                    if isinstance(sess, dict):
+                        sess = dict(sess)
+                        for k in ("access_token", "refresh_token", "provider_token", "id_token"):
+                            if k in sess:
+                                sess[k] = "REDACTED"
+                        red["session"] = sess
+                    for k in ("access_token", "refresh_token", "provider_token", "id_token"):
+                        if k in red:
+                            red[k] = "REDACTED"
+                    return red
+
+                # Show runtime/package versions to confirm what Streamlit Cloud actually installed.
+                try:
+                    import sys
+                    from importlib.metadata import version as _pkg_version  # type: ignore
+
+                    st.write(
+                        {
+                            "python": sys.version.split(" ")[0],
+                            "streamlit": getattr(st, "__version__", "(unknown)"),
+                            "streamlit-javascript": _pkg_version("streamlit-javascript"),
+                        }
+                    )
+                except Exception as e:
+                    st.write({"versions_error": str(e)})
+
+                try:
+                    from streamlit_javascript import st_javascript  # type: ignore
+
+                    # Compatibility: streamlit-javascript 0.1.5 only supports
+                    # (code) or (code, waiting_text). Newer builds may support
+                    # (code, default, key, ...). We only rely on the portable
+                    # signatures here.
+                    try:
+                        test_val = st_javascript("1+1", "Waiting for response")
+                    except TypeError:
+                        test_val = st_javascript("1+1")
+
+                    # A second probe that does not require async/await.
+                    try:
+                        href_val = st_javascript(
+                            "(function(){ return window.location.href; })()",
+                            "Waiting for response",
+                        )
+                    except TypeError:
+                        href_val = st_javascript("(function(){ return window.location.href; })()")
+
+                    # Try to read the top-level (parent) URL too; some browsers
+                    # may block this in iframes, so treat failures as expected.
+                    try:
+                        parent_href = st_javascript(
+                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()",
+                            "Waiting for response",
+                        )
+                    except TypeError:
+                        parent_href = st_javascript(
+                            "(function(){ try { return window.parent.location.href; } catch(e) { return null; } })()"
+                        )
+
+                    st.write({
+                        "js_return": test_val,
+                        "href": _redact_url(href_val),
+                        "parent_href": _redact_url(parent_href),
+                    })
+                except Exception as e:
+                    st.write({"js_return": None, "error": str(e)})
+
+                last_auth_debug = st.session_state.get("_auth_last_debug")
+                if last_auth_debug is not None:
+                    st.caption("Last auth response")
+                    st.write(last_auth_debug)
+
+                last_sess_raw = st.session_state.get("_auth_last_session_raw")
+                if last_sess_raw is not None:
+                    st.caption("Last session raw")
+                    st.write(_redact_url(last_sess_raw) if isinstance(last_sess_raw, str) else last_sess_raw)
+
+                last_sess_payload = st.session_state.get("_auth_last_session_payload")
+                if last_sess_payload is not None:
+                    st.caption("Last session payload")
+                    st.write(_redact_payload(last_sess_payload))
+
+                last_logout_raw = st.session_state.get("_auth_last_logout_raw")
+                if last_logout_raw is not None:
+                    st.caption("Last logout raw")
+                    st.write(_redact_url(last_logout_raw) if isinstance(last_logout_raw, str) else last_logout_raw)
+
+                last_logout_payload = st.session_state.get("_auth_last_logout_payload")
+                if last_logout_payload is not None:
+                    st.caption("Last logout payload")
+                    st.write(_redact_payload(last_logout_payload) if isinstance(last_logout_payload, dict) else last_logout_payload)
+
+                last_magic_raw = st.session_state.get("_auth_last_magic_raw")
+                if last_magic_raw is not None:
+                    st.caption("Last magic-link raw")
+                    st.write(_redact_url(last_magic_raw) if isinstance(last_magic_raw, str) else last_magic_raw)
+
+                last_magic_payload = st.session_state.get("_auth_last_magic_payload")
+                if last_magic_payload is not None:
+                    st.caption("Last magic-link payload")
+                    st.write(_redact_payload(last_magic_payload) if isinstance(last_magic_payload, dict) else last_magic_payload)
+
+        auth_err = st.session_state.get("_auth_last_error")
+        if isinstance(auth_err, str) and auth_err.strip():
+            st.sidebar.error(auth_err)
+
+        if auth.is_authenticated():
+            ident = auth.get_user_email() or auth.get_user_id() or "(unknown user)"
+            st.sidebar.caption(f"Signed in: {ident}")
+            if st.sidebar.button("Log out", use_container_width=True, key="auth_logout_btn"):
+                auth.logout()
+                st.rerun()
+        else:
+            if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
+                st.session_state["_auth_last_error"] = ""
+                res = auth.login_google()
+                if debug_perf:
+                    st.session_state["_auth_last_debug"] = {"action": "google", "response": res}
+                if not isinstance(res, dict):
+                    st.session_state["_auth_last_error"] = (
+                        "Could not start Google sign-in (no response from browser). "
+                        "Try again and allow popups for this site."
+                    )
+                elif res.get("ok") is False:
+                    err = str(res.get("error") or "Could not start Google sign-in.")
+                    if "Unsupported provider" in err or "provider is not enabled" in err:
+                        err = (
+                            "Google sign-in is disabled in Supabase for this project. "
+                            "Enable it in Supabase Dashboard → Authentication → Providers → Google.\n\n"
+                            f"Details: {err}"
+                        )
+                    st.session_state["_auth_last_error"] = err
+                elif res.get("ok") is True:
+                    if res.get("authed") is True:
+                        st.sidebar.success("Signed in. You can close the Google tab.")
+                    else:
+                        st.sidebar.caption("Google sign-in opened in a new tab. Finish sign-in there, then return here.")
+
+            email = st.sidebar.text_input(
+                "Email (magic link)",
+                key="auth_magic_email",
+                placeholder="you@example.com",
+            )
+            if st.sidebar.button(
+                "Send magic link",
+                use_container_width=True,
+                key="auth_magic_btn",
+            ):
+                st.session_state["_auth_last_error"] = ""
+                res = auth.send_magic_link(email)
+                if debug_perf:
+                    st.session_state["_auth_last_debug"] = {"action": "magic_link", "email": email, "response": res}
+
+                if isinstance(res, dict) and res.get("ok") is True:
+                    st.sidebar.success("Magic link sent. Check your email.")
+                elif isinstance(res, dict) and res.get("maybe_sent") is True:
+                    st.sidebar.success("Magic link sent (likely). Check your email.")
+                    st.sidebar.caption("The browser component didn’t respond, but the email may still have been sent.")
+                else:
+                    if isinstance(res, dict) and res.get("error"):
+                        st.session_state["_auth_last_error"] = str(res.get("error"))
+                    else:
+                        st.session_state["_auth_last_error"] = "Could not send magic link."
+
     st.sidebar.header("Settings")
-    # Reserve top space for Save UI (rendered later after widgets update draft settings).
-    save_ui = st.sidebar.container()
+    # Streamlit Cloud renders a Save UI (gated by login). Local/Docker auto-saves.
+    save_ui = st.sidebar.container() if cloud_mode else None
 
     applied_settings = st.session_state.get("user_settings", settings) or {}
     applied_fp = settings_fingerprint(applied_settings)
 
-    draft_settings = st.session_state.get("_settings_draft")
-    draft_base_fp = st.session_state.get("_settings_draft_base_fp")
-    if not isinstance(draft_settings, dict) or draft_base_fp != applied_fp:
-        draft_settings = deepcopy(applied_settings)
-        st.session_state["_settings_draft"] = draft_settings
+    if cloud_mode:
+        # Cloud: keep draft/commit model to allow "changes apply but don't persist".
+        draft_settings = st.session_state.get("_settings_draft")
+        draft_base_fp = st.session_state.get("_settings_draft_base_fp")
+        if not isinstance(draft_settings, dict) or draft_base_fp != applied_fp:
+            draft_settings = deepcopy(applied_settings)
+            st.session_state["_settings_draft"] = draft_settings
+            st.session_state["_settings_draft_base_fp"] = applied_fp
+        settings = draft_settings
+    else:
+        # Local/Docker: edit the live settings dict in-place so the rest of the app
+        # sees updates immediately in the same rerun.
+        st.session_state["_settings_draft"] = applied_settings
         st.session_state["_settings_draft_base_fp"] = applied_fp
-
-    settings = draft_settings
+        settings = applied_settings
 
     def _key_safe(text: str) -> str:
         return "".join(ch.lower() if ch.isalnum() else "_" for ch in str(text))
@@ -417,85 +650,54 @@ def render_sidebar(settings: dict):
     current_fp = settings_fingerprint(settings)
     dirty = bool(current_fp != applied_fp)
 
-    with save_ui:
-        if st.button("Save settings", disabled=not dirty, use_container_width=True, key="save_settings_btn"):
-            old_active_expansions = list(applied_settings.get("active_expansions", []) or [])
-            new_active_expansions = list(settings.get("active_expansions", []) or [])
+    if cloud_mode and save_ui is not None:
+        with save_ui:
+            missing_auth_ui = cloud_mode and not auth.is_auth_ui_enabled()
+            needs_login = auth.is_auth_ui_enabled() and not auth.is_authenticated()
+            if missing_auth_ui:
+                st.caption("Saving is disabled until Supabase auth is configured.")
+            elif needs_login:
+                st.caption("Log in to save.")
 
-            committed = deepcopy(settings)
-            st.session_state["user_settings"] = committed
-            st.session_state["_settings_draft"] = deepcopy(committed)
-            st.session_state["_settings_draft_base_fp"] = settings_fingerprint(committed)
+            if st.button(
+                "Save settings",
+                disabled=(not dirty) or needs_login or missing_auth_ui,
+                use_container_width=True,
+                key="save_settings_btn",
+            ):
+                old_active_expansions = list(applied_settings.get("active_expansions", []) or [])
+                new_active_expansions = list(settings.get("active_expansions", []) or [])
 
-            save_settings(committed)
+                committed = deepcopy(settings)
+                st.session_state["user_settings"] = committed
+                st.session_state["_settings_draft"] = deepcopy(committed)
+                st.session_state["_settings_draft_base_fp"] = settings_fingerprint(committed)
 
-            st.session_state["_settings_just_saved"] = True
-            st.session_state["_settings_old_active_expansions"] = old_active_expansions
-            st.session_state["_settings_new_active_expansions"] = new_active_expansions
-            st.rerun()
+                ok = bool(save_settings(committed))
+                if not ok:
+                    st.sidebar.error("Settings were applied but could not be persisted.")
 
-        last_saved_at = st.session_state.get("_settings_last_saved_at")
-        if last_saved_at:
-            try:
-                dt = datetime.fromisoformat(str(last_saved_at))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                local_dt = dt.astimezone()
-                save_text = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
-            except Exception:
-                save_text = str(last_saved_at)
-            st.caption(f"Last saved: {save_text}")
-        else:
-            st.caption("Last saved: —")
+                st.session_state["_settings_just_saved"] = True
+                st.session_state["_settings_old_active_expansions"] = old_active_expansions
+                st.session_state["_settings_new_active_expansions"] = new_active_expansions
+                st.rerun()
 
-        # Optional: client-id diagnostics (for Streamlit Cloud debugging)
-        show_debug = False
-        try:
-            import os
-
-            show_debug = os.environ.get("DSBG_DEBUG_CLIENT_ID") in ("1", "true", "TRUE", "yes", "YES")
-        except Exception:
-            show_debug = False
-
-        try:
-            if not show_debug and hasattr(st, "secrets"):
-                show_debug = bool(st.secrets.get("DSBG_DEBUG_CLIENT_ID", False))
-        except Exception:
-            pass
-
-        if show_debug:
-            try:
-                from core import client_id as client_id_module
-
-                qcid = None
+            last_saved_at = st.session_state.get("_settings_last_saved_at")
+            if last_saved_at:
                 try:
-                    qp = getattr(st, "query_params", None)
-                    if qp is not None:
-                        qcid = qp.get("client_id")
+                    dt = datetime.fromisoformat(str(last_saved_at))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    local_dt = dt.astimezone()
+                    save_text = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
                 except Exception:
-                    qcid = None
-
-                qp_all = None
-                try:
-                    qp_proxy = getattr(st, "query_params", None)
-                    if qp_proxy is not None:
-                        to_dict = getattr(qp_proxy, "to_dict", None)
-                        if callable(to_dict):
-                            qp_all = to_dict()
-                        else:
-                            qp_all = dict(qp_proxy)
-                except Exception:
-                    qp_all = None
-
-                with st.expander("🔎 Debug: Client ID", expanded=False):
-                    st.write({
-                        "session_state.client_id": st.session_state.get("client_id"),
-                        "query_param.client_id": qcid,
-                        "query_params": qp_all,
-                        "has_streamlit_javascript": bool(getattr(client_id_module, "st_javascript", None)),
-                        "client_id_debug": st.session_state.get("_client_id_debug"),
-                        "client_id_module.get_or_create_client_id()": client_id_module.get_or_create_client_id(),
-                    })
-            except Exception:
-                pass
+                    save_text = str(last_saved_at)
+                st.caption(f"Last saved: {save_text}")
+            else:
+                st.caption("Last saved: —")
+    elif (not cloud_mode) and dirty:
+        # Local/Docker: auto-persist immediately when settings changed.
+        # `save_settings` already avoids redundant writes via fingerprinting.
+        save_settings(settings)
+        st.session_state["_settings_draft_base_fp"] = settings_fingerprint(settings)
 

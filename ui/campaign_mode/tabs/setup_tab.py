@@ -1,6 +1,8 @@
 #ui/campaign_mode/setup_tab.py
 import streamlit as st
 from typing import Any, Dict
+
+from core import auth
 from ui.campaign_mode.core import _default_sparks_max
 from ui.campaign_mode.generation import (
     _filter_bosses,
@@ -17,6 +19,8 @@ from ui.campaign_mode.persistence.dirty import (
     clear_campaign_baseline,
     set_campaign_baseline,
 )
+
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 from ui.campaign_mode.state import (
     _get_player_count,
     _ensure_v1_state,
@@ -421,6 +425,14 @@ def _render_save_load_section(
     st.markdown("---")
     st.subheader("Save / Load campaign")
 
+    cloud_mode = bool(is_streamlit_cloud())
+    supabase_ready = bool(_has_supabase_config())
+    can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+    if cloud_mode and not supabase_ready:
+        st.caption("Saving is disabled until Supabase is configured.")
+    elif cloud_mode and not auth.is_authenticated():
+        st.caption("Log in to save.")
+
     campaigns = get_campaigns()
 
     if bool(st.session_state.get("ui_compact")):
@@ -450,11 +462,19 @@ def _render_save_load_section(
                 )
             )
 
-        if st.button("Save campaign 💾", key=f"campaign_save_{version}", width="stretch"):
+        if st.button(
+            "Save campaign 💾",
+            key=f"campaign_save_{version}",
+            width="stretch",
+            disabled=not can_persist,
+        ):
             name = name_input.strip()
             if not name:
                 st.error("Campaign name is required to save.")
             else:
+                if not can_persist:
+                    st.error("Not logged in; cannot persist on Streamlit Cloud.")
+                    return
                 if name in campaigns and not save_overwrite_ok:
                     st.warning("That name already exists — confirm overwrite to replace it.")
                     return
@@ -557,7 +577,8 @@ def _render_save_load_section(
                 if st.button(
                     "Delete selected 🗑️",
                     key=f"campaign_delete_btn_{version}",
-                    width="stretch"
+                    width="stretch",
+                    disabled=not can_persist,
                 ):
                     if selected_name == "<none>":
                         st.error("Select a campaign to delete.")

@@ -6,7 +6,7 @@ or inferred from their expansion.
 
 from __future__ import annotations
 
-from ui.event_mode.logic import V2_EXPANSIONS
+from core.expansions import V2_EXPANSIONS
 
 V2_EXPANSIONS_SET = set(V2_EXPANSIONS)
 

@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from ui.event_mode.logic import V2_EXPANSIONS
+from core.expansions import V2_EXPANSIONS
 
 
 ASSETS_DIR = Path("assets")

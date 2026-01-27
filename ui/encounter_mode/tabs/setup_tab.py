@@ -3,7 +3,8 @@ import streamlit as st
 from pathlib import Path
 from io import BytesIO
 
-from core.settings_manager import save_settings
+from core import auth
+from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
 from ui.encounter_mode.persistence import load_saved_encounters, save_saved_encounters
 from core.behavior.generation import build_behavior_catalog
 from core.behavior.models import BehaviorEntry
@@ -517,15 +518,26 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             # ---------------------------------------------------------
             st.subheader("Saved Encounters")
 
+            cloud_mode = bool(is_streamlit_cloud())
+            supabase_ready = bool(_has_supabase_config())
+            can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+            if cloud_mode and not supabase_ready:
+                st.caption("Saving is disabled until Supabase is configured.")
+            elif cloud_mode and not auth.is_authenticated():
+                st.caption("Log in to save.")
+
             save_name_default = (
                 st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
             )
             save_name = st.text_input("Save as:", value=save_name_default)
 
-            if st.button("Save Current 💾", width="stretch"):
+            if st.button("Save Current 💾", width="stretch", disabled=not can_persist):
                 if "current_encounter" not in st.session_state:
                     st.warning("No active encounter to save.")
                 else:
+                    if not can_persist:
+                        st.error("Not logged in; cannot persist on Streamlit Cloud.")
+                        st.stop()
                     # Build payload but strip non-JSON-serializable objects (images/bytes)
                     raw = dict(st.session_state.current_encounter)
                     for k in ("card_img", "buf", "card_bytes"):
@@ -610,7 +622,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         _apply_added_invaders_to_current_encounter()
 
                 with delete_col:
-                    if st.button("Delete 🗑️", width="stretch"):
+                    if st.button("Delete 🗑️", width="stretch", disabled=not can_persist):
                         if load_name in st.session_state.saved_encounters:
                             st.session_state.saved_encounters.pop(load_name, None)
                             # Persist deletion to dedicated file, fallback to settings
