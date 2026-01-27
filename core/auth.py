@@ -357,18 +357,23 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str, 
     const u = new URL(String(topHref));
     const emailRedirectTo = u.origin + '/';
 
-    // Deduplicate sends across reruns: only dedupe once we have marked a request
-    // as completed (so we don't incorrectly skip sending when the JS bridge
-    // returned a placeholder).
-    if (REQUEST_ID) {{
-        try {{
+    // Idempotency across reruns: if we already sent this REQUEST_ID, do not send
+    // again. If we already started it, report pending (avoid duplicate emails).
+    if (REQUEST_ID) {
+        try {
+            const startedKey = 'dsbg_magiclink_started_reqid_v1';
             const doneKey = 'dsbg_magiclink_done_reqid_v1';
             const done = window.localStorage ? window.localStorage.getItem(doneKey) : null;
-            if (done && done === REQUEST_ID) {{
-                return JSON.stringify({{ ok: true, deduped: true }});
-            }}
-        }} catch (e) {{}}
-    }}
+            if (done && done === REQUEST_ID) {
+                return JSON.stringify({ ok: true, deduped: true });
+            }
+            const started = window.localStorage ? window.localStorage.getItem(startedKey) : null;
+            if (started && started === REQUEST_ID) {
+                return JSON.stringify({ ok: false, pending: true });
+            }
+            if (window.localStorage) window.localStorage.setItem(startedKey, REQUEST_ID);
+        } catch (e) {}
+    }
 
     const res = await client.auth.signInWithOtp({{ email, options: {{ emailRedirectTo }} }});
     if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
@@ -376,7 +381,9 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str, 
     // Mark request as completed so reruns don't resend.
     if (REQUEST_ID) {{
         try {{
+            const startedKey = 'dsbg_magiclink_started_reqid_v1';
             const doneKey = 'dsbg_magiclink_done_reqid_v1';
+            if (window.localStorage) window.localStorage.removeItem(startedKey);
             if (window.localStorage) window.localStorage.setItem(doneKey, REQUEST_ID);
         }} catch (e) {{}}
     }}
@@ -717,6 +724,13 @@ def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
     js_key = f"dsbg_auth_magic_{request_id}" if request_id else "dsbg_auth_magic"
     res = _run_js(_js_login_magic_link(email, url, anon, request_id=request_id), key=js_key)
+
+    # Debug capture
+    try:
+        if st is not None:
+            st.session_state["_auth_last_magic_raw"] = res
+    except Exception:
+        pass
     # With streamlit-javascript 0.1.5, a placeholder 0/None can occur even when
     # Supabase successfully sends the email. Prefer a 'maybe sent' result.
     if _is_no_js_response(res):
@@ -728,6 +742,11 @@ def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None
             "warning": "No response from browser, but the email may still have been sent. Check your inbox.",
         }
     coerced = _coerce_js_dict(res)
+    try:
+        if st is not None:
+            st.session_state["_auth_last_magic_payload"] = coerced
+    except Exception:
+        pass
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
 
 

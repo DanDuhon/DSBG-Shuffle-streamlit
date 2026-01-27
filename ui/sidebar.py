@@ -226,6 +226,16 @@ def render_sidebar(settings: dict):
                     st.caption("Last logout payload")
                     st.write(_redact_payload(last_logout_payload) if isinstance(last_logout_payload, dict) else last_logout_payload)
 
+                last_magic_raw = st.session_state.get("_auth_last_magic_raw")
+                if last_magic_raw is not None:
+                    st.caption("Last magic-link raw")
+                    st.write(_redact_url(last_magic_raw) if isinstance(last_magic_raw, str) else last_magic_raw)
+
+                last_magic_payload = st.session_state.get("_auth_last_magic_payload")
+                if last_magic_payload is not None:
+                    st.caption("Last magic-link payload")
+                    st.write(_redact_payload(last_magic_payload) if isinstance(last_magic_payload, dict) else last_magic_payload)
+
         auth_err = st.session_state.get("_auth_last_error")
         if isinstance(auth_err, str) and auth_err.strip():
             st.sidebar.error(auth_err)
@@ -323,10 +333,25 @@ def render_sidebar(settings: dict):
                 except Exception:
                     reqid = "req"
 
-                st.session_state["_auth_magic_pending_req"] = reqid
-                st.session_state["_auth_magic_pending_email"] = (email or "").strip()
-                st.session_state["_auth_magic_pending_waited"] = False
-                st.rerun()
+                # Attempt send immediately; if the JS bridge returns a
+                # placeholder, fall back to a controlled rerun with the same
+                # request_id.
+                res = auth.send_magic_link(email, request_id=reqid)
+                if debug_perf:
+                    st.session_state["_auth_last_debug"] = {"action": "magic_link", "email": email, "response": res}
+
+                if isinstance(res, dict) and res.get("ok") is True:
+                    st.sidebar.success("Magic link sent. Check your email.")
+                elif isinstance(res, dict) and res.get("pending") is True:
+                    st.session_state["_auth_magic_pending_req"] = reqid
+                    st.session_state["_auth_magic_pending_email"] = (email or "").strip()
+                    st.session_state["_auth_magic_pending_waited"] = False
+                    st.rerun()
+                else:
+                    if isinstance(res, dict) and res.get("error"):
+                        st.session_state["_auth_last_error"] = str(res.get("error"))
+                    else:
+                        st.session_state["_auth_last_error"] = "Could not send magic link."
 
     st.sidebar.header("Settings")
     # Streamlit Cloud renders a Save UI (gated by login). Local/Docker auto-saves.
