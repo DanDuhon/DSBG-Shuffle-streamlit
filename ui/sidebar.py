@@ -277,76 +277,21 @@ def render_sidebar(settings: dict):
                 key="auth_magic_email",
                 placeholder="you@example.com",
             )
-
-            # Magic-link send can return a placeholder (0/None) on the first
-            # rerun with streamlit-javascript 0.1.5. Use a pending request_id
-            # + one controlled rerun to get a concrete response without
-            # sending multiple emails.
-            pending_req = st.session_state.get("_auth_magic_pending_req")
-            pending_email = st.session_state.get("_auth_magic_pending_email")
-            pending_waited = bool(st.session_state.get("_auth_magic_pending_waited", False))
-
-            if isinstance(pending_req, str) and pending_req and isinstance(pending_email, str) and pending_email:
-                res = auth.send_magic_link(pending_email, request_id=pending_req)
-                if debug_perf:
-                    st.session_state["_auth_last_debug"] = {
-                        "action": "magic_link_pending",
-                        "email": pending_email,
-                        "request_id": pending_req,
-                        "response": res,
-                    }
-
-                if isinstance(res, dict) and res.get("ok") is True:
-                    st.sidebar.success("Magic link sent. Check your email.")
-                    st.session_state.pop("_auth_magic_pending_req", None)
-                    st.session_state.pop("_auth_magic_pending_email", None)
-                    st.session_state.pop("_auth_magic_pending_waited", None)
-                elif isinstance(res, dict) and res.get("pending") is True and not pending_waited:
-                    st.session_state["_auth_magic_pending_waited"] = True
-                    st.rerun()
-                elif isinstance(res, dict) and res.get("pending") is True and pending_waited:
-                    st.sidebar.success("Magic link sent (likely). Check your email.")
-                    st.sidebar.caption("The browser component didn’t respond, but the email may still have been sent.")
-                    st.session_state.pop("_auth_magic_pending_req", None)
-                    st.session_state.pop("_auth_magic_pending_email", None)
-                    st.session_state.pop("_auth_magic_pending_waited", None)
-                else:
-                    if isinstance(res, dict) and res.get("error"):
-                        st.session_state["_auth_last_error"] = str(res.get("error"))
-                    else:
-                        st.session_state["_auth_last_error"] = "Could not send magic link."
-                    st.session_state.pop("_auth_magic_pending_req", None)
-                    st.session_state.pop("_auth_magic_pending_email", None)
-                    st.session_state.pop("_auth_magic_pending_waited", None)
-            send_disabled = isinstance(pending_req, str) and bool(pending_req)
             if st.sidebar.button(
                 "Send magic link",
                 use_container_width=True,
                 key="auth_magic_btn",
-                disabled=send_disabled,
             ):
                 st.session_state["_auth_last_error"] = ""
-                try:
-                    import uuid
-
-                    reqid = uuid.uuid4().hex
-                except Exception:
-                    reqid = "req"
-
-                # Attempt send immediately; if the JS bridge returns a
-                # placeholder, fall back to a controlled rerun with the same
-                # request_id.
-                res = auth.send_magic_link(email, request_id=reqid)
+                res = auth.send_magic_link(email)
                 if debug_perf:
                     st.session_state["_auth_last_debug"] = {"action": "magic_link", "email": email, "response": res}
 
                 if isinstance(res, dict) and res.get("ok") is True:
                     st.sidebar.success("Magic link sent. Check your email.")
-                elif isinstance(res, dict) and res.get("pending") is True:
-                    st.session_state["_auth_magic_pending_req"] = reqid
-                    st.session_state["_auth_magic_pending_email"] = (email or "").strip()
-                    st.session_state["_auth_magic_pending_waited"] = False
-                    st.rerun()
+                elif isinstance(res, dict) and res.get("maybe_sent") is True:
+                    st.sidebar.success("Magic link sent (likely). Check your email.")
+                    st.sidebar.caption("The browser component didn’t respond, but the email may still have been sent.")
                 else:
                     if isinstance(res, dict) and res.get("error"):
                         st.session_state["_auth_last_error"] = str(res.get("error"))

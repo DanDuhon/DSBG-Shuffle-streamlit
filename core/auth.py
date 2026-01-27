@@ -359,21 +359,21 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str, 
 
     // Idempotency across reruns: if we already sent this REQUEST_ID, do not send
     // again. If we already started it, report pending (avoid duplicate emails).
-    if (REQUEST_ID) {
-        try {
+    if (REQUEST_ID) {{
+        try {{
             const startedKey = 'dsbg_magiclink_started_reqid_v1';
             const doneKey = 'dsbg_magiclink_done_reqid_v1';
             const done = window.localStorage ? window.localStorage.getItem(doneKey) : null;
-            if (done && done === REQUEST_ID) {
-                return JSON.stringify({ ok: true, deduped: true });
-            }
+            if (done && done === REQUEST_ID) {{
+                return JSON.stringify({{ ok: true, deduped: true }});
+            }}
             const started = window.localStorage ? window.localStorage.getItem(startedKey) : null;
-            if (started && started === REQUEST_ID) {
-                return JSON.stringify({ ok: false, pending: true });
-            }
+            if (started && started === REQUEST_ID) {{
+                return JSON.stringify({{ ok: false, pending: true }});
+            }}
             if (window.localStorage) window.localStorage.setItem(startedKey, REQUEST_ID);
-        } catch (e) {}
-    }
+        }} catch (e) {{}}
+    }}
 
     const res = await client.auth.signInWithOtp({{ email, options: {{ emailRedirectTo }} }});
     if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
@@ -734,8 +734,6 @@ def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None
     # With streamlit-javascript 0.1.5, a placeholder 0/None can occur even when
     # Supabase successfully sends the email. Prefer a 'maybe sent' result.
     if _is_no_js_response(res):
-        if request_id:
-            return {"ok": False, "pending": True}
         return {
             "ok": True,
             "maybe_sent": True,
