@@ -396,6 +396,8 @@ def _render_campaign_play_tab(
 
     reward_souls = int(reward_totals.get("souls") or 0)
 
+    reward_treasure = int(reward_totals.get("treasure") or 0)
+
     # Shortcut rewards can come from the encounter or attached events
     reward_shortcuts = int(reward_totals.get("shortcut") or 0)
 
@@ -425,6 +427,7 @@ def _render_campaign_play_tab(
 
     has_any_rewards = (
         (reward_souls > 0)
+        or (reward_treasure > 0)
         or (dropped_souls > 0)
         or (reward_events > 0)
         or (reward_shortcuts > 0)
@@ -437,10 +440,12 @@ def _render_campaign_play_tab(
         )
     else:
         if not has_any_rewards:
-            st.caption("No soul, shortcut, or event rewards are configured for this encounter.")
+            st.caption("No soul, treasure, shortcut, or event rewards are configured for this encounter.")
         else:
             if reward_souls > 0:
                 st.markdown(f"- Souls reward for this encounter: **+{reward_souls}**")
+            if reward_treasure > 0:
+                st.markdown(f"- Treasure reward for this encounter: **draw {reward_treasure}**")
             if dropped_souls > 0:
                 st.markdown(f"- Dropped souls on this space: **+{dropped_souls}**")
             if reward_events > 0:

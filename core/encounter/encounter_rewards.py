@@ -1611,7 +1611,7 @@ V1_CHEST_COUNTS: Dict[str, int] = {
     "Halls of the Forsworn|Explorers": 1,
     "Unholy Tunnels|Explorers": 1,
     "Lost Grotto|Explorers": 1,
-    "Gallery of the Hidden Warrior": 1,
+    "Gallery of the Hidden Warrior|Explorers": 1,
     "Charred Keep|Iron Keep": 1,
     "Furnace Room|Iron Keep": 1,
     "Searing Hallway|Iron Keep": 1,

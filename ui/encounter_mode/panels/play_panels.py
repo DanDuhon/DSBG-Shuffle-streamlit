@@ -42,6 +42,7 @@ from ui.encounter_mode.state.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, EVENT_REWARDS
 from core.image_cache import get_image_data_uri_cached
 from ui.encounter_mode.helpers import _detect_edited_flag, _get_enemy_display_names
+from core.expansions import is_v2_expansion
 
 
 # ---------------------------------------------------------------------
@@ -304,15 +305,15 @@ def _render_objectives(encounter: dict, settings: dict) -> None:
 # ---------------------------------------------------------------------
 
 
-def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
-    """
-    Render a Rewards section for the encounter, combining:
-    - Encounter-level rewards from ENCOUNTER_REWARDS
-    - Trial rewards gated by their checkbox triggers
-    - Event-level rewards from EVENT_REWARDS for any attached events
-    """
-    st.markdown("#### Rewards")
+def compute_reward_totals(encounter: dict, settings: dict, play_state: dict) -> dict:
+    """Compute aggregated reward totals for the current encounter.
 
+    Uses the same V1/V2 split as the Encounter Play router:
+    - V2 if the encounter expansion is in core.expansions.V2_EXPANSIONS
+    - otherwise V1
+
+    Returns a dict compatible with Campaign Play's reward consumption.
+    """
     # Build encounter key and edited flag (mirrors _render_objectives)
     name = (
         encounter.get("encounter_name")
@@ -325,14 +326,16 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     edited = _detect_edited_flag(encounter_key, encounter, settings)
     player_count = get_player_count()
     enemy_names = _get_enemy_display_names(encounter)
-    is_v1 = _is_v1_encounter(encounter)
+    is_v2 = is_v2_expansion(expansion)
 
     # Trigger state (used for trials, counters, and modifiers)
-    triggers = get_triggers_for_encounter(
-        encounter_key=encounter_key,
-        edited=edited,
-    )
-    trigger_state = _ensure_trigger_state(encounter_key, triggers)
+    trigger_state: dict = {}
+    if is_v2:
+        triggers = get_triggers_for_encounter(
+            encounter_key=encounter_key,
+            edited=edited,
+        )
+        trigger_state = _ensure_trigger_state(encounter_key, triggers)
 
     # Aggregate totals across encounter + events
     totals = {
@@ -348,13 +351,15 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     special_lines: list[str] = []
     souls_multipliers: list[int] = []
 
+    timer_value = int((play_state or {}).get("timer", 0) or 0)
+
     # ---- Encounter-level rewards ----
     from core.encounter.encounter_rewards import get_reward_config_for_key  # local import to avoid cycles
 
-    if is_v1:
-        enc_cfg = get_v1_reward_config_for_encounter(encounter)
-    else:
+    if is_v2:
         enc_cfg = get_reward_config_for_key(encounter_key, edited=edited)
+    else:
+        enc_cfg = get_v1_reward_config_for_encounter(encounter)
 
     if enc_cfg:
         _apply_rewards_from_config(
@@ -366,14 +371,12 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
             trigger_state=trigger_state,
             player_count=player_count,
             enemy_names=enemy_names,
-            timer=play_state["timer"],
+            timer=timer_value,
         )
 
-    # ---- Event-level rewards ----
-    # V1 encounter cards cannot have attached events mechanically in Encounter Mode.
-    if not is_v1:
+    # ---- Event-level rewards (V2 only) ----
+    if is_v2:
         events = st.session_state.get("encounter_events", [])
-
         for ev in events:
             ev_name = ev.get("name") or ev.get("title") or ev.get("id")
             if not ev_name:
@@ -382,7 +385,6 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
             if not ev_rewards:
                 continue
 
-            # Wrap in a minimal config so we can reuse the same helper
             ev_cfg = {"rewards": ev_rewards}
             _apply_rewards_from_config(
                 ev_cfg,  # type: ignore[arg-type]
@@ -393,7 +395,7 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
                 trigger_state=trigger_state,
                 player_count=player_count,
                 enemy_names=enemy_names,
-                timer=play_state["timer"],
+                timer=timer_value,
             )
 
     # ---- Apply souls multipliers after everything else ----
@@ -405,18 +407,35 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
         if mult != 1:
             totals["souls"] *= mult
 
-    # Make the final totals available to other tabs (e.g. Campaign Play)
-    st.session_state["last_encounter_reward_totals"] = totals.copy()
+    return totals
+
+
+def store_reward_totals_for_campaign(encounter: dict, totals: dict) -> None:
+    """Store the last computed totals in session state for Campaign Play."""
+    st.session_state["last_encounter_reward_totals"] = (totals or {}).copy()
 
     # Remember which encounter produced these totals so Campaign Mode can
     # ignore stale rewards from other encounters.
     last_enc = st.session_state.get("last_encounter") or {}
-    slug = last_enc.get("slug") or encounter.get("slug")
+    slug = last_enc.get("slug") or (encounter or {}).get("slug")
     if slug:
         st.session_state["last_encounter_rewards_for_slug"] = slug
 
+
+def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
+    """
+    Render a Rewards section for the encounter, combining:
+    - Encounter-level rewards from ENCOUNTER_REWARDS
+    - Trial rewards gated by their checkbox triggers
+    - Event-level rewards from EVENT_REWARDS for any attached events
+    """
+    st.markdown("#### Rewards")
+
+    totals = compute_reward_totals(encounter, settings, play_state)
+    store_reward_totals_for_campaign(encounter, totals)
+
     # If nothing to show, bail out
-    if not any(totals.values()) and not special_lines:
+    if not any(totals.values()):
         st.caption("No reward data configured for this encounter.")
         return
 

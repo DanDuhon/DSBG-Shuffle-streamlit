@@ -497,6 +497,11 @@ def render(settings: dict, campaign: bool = False) -> None:
 
     ui_compact = bool(st.session_state.get("ui_compact", False))
 
+    # Always compute/store totals so Campaign Play can apply rewards,
+    # even if the Rewards panel isn't currently visible (e.g. compact mode).
+    totals = play_panels.compute_reward_totals(encounter, settings, play)
+    play_panels.store_reward_totals_for_campaign(encounter, totals)
+
     if ui_compact:
         play_panels._render_timer_and_phase(play)
         play_panels._render_turn_controls(
