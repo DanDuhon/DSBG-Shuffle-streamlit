@@ -175,7 +175,10 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
     window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_ANON_KEY,
-        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+        // NOTE: Streamlit components run in an iframe-like context where
+        // PKCE verifier storage can be unreliable across redirects/popups.
+        // Prefer implicit flow (hash tokens) to avoid PKCE code_verifier errors.
+        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' }} }}
     );
 
     const client = window.__dsbg_supabase_client;
@@ -196,17 +199,24 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
             }} catch (e) {{}}
         }};
 
-        // PKCE flow: ?code=...
+        // PKCE flow (legacy): ?code=...
         const code = u.searchParams.get('code');
         if (code) {{
             const ex = await client.auth.exchangeCodeForSession(code);
             if (ex && ex.error) {{
-                return JSON.stringify({{ ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) }});
+                const msg = String(ex.error.message || ex.error);
+                // If this is the common Streamlit/iframe PKCE verifier issue, do not
+                // trap the app in an error state with a lingering ?code=... in the URL.
+                // Clear the URL and let the user retry sign-in.
+                if (msg.toLowerCase().includes('code verifier') || msg.toLowerCase().includes('pkce')) {{
+                    maybeClearTopUrl();
+                }}
+                return JSON.stringify({{ ok: false, error: 'exchangeCodeForSession: ' + msg }});
             }}
             maybeClearTopUrl();
         }}
 
-        // Implicit flow fallback: #access_token=...&refresh_token=...
+        // Implicit flow: #access_token=...&refresh_token=...
         if (!code && u.hash) {{
             const parts = String(u.hash || '').split('#').filter(Boolean);
             const last = parts.length ? parts[parts.length - 1] : '';
@@ -282,7 +292,8 @@ def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
     window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_ANON_KEY,
-        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+        // See note in _js_get_session(): implicit is more reliable here.
+        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' }} }}
     );
     const client = window.__dsbg_supabase_client;
     if (!client) return JSON.stringify({{ ok: false, error: 'supabase client not initialized' }});
@@ -346,7 +357,8 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) 
     window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_ANON_KEY,
-        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+        // See note in _js_get_session(): implicit is more reliable here.
+        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' }} }}
     );
     const client = window.__dsbg_supabase_client;
     if (!client) return JSON.stringify({{ ok: false, error: 'supabase client not initialized' }});
@@ -404,7 +416,8 @@ def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:
         window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
             SUPABASE_URL,
             SUPABASE_ANON_KEY,
-            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+            // See note in _js_get_session(): implicit is more reliable here.
+            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' }} }}
         );
         const client = window.__dsbg_supabase_client;
 
@@ -436,7 +449,8 @@ def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:
         const verifyClient = window.supabase.createClient(
             SUPABASE_URL,
             SUPABASE_ANON_KEY,
-            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
+            // See note in _js_get_session(): implicit is more reliable here.
+            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' }} }}
         );
         let s = await verifyClient.auth.getSession();
         let sess = s && s.data ? s.data.session : null;
