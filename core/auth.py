@@ -306,12 +306,11 @@ def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
 }})()"""
 
 
-def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str, request_id: str | None = None) -> str:
+def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) -> str:
         return f"""(async () => {{
     const email = {json.dumps(email)};
     const SUPABASE_URL = {json.dumps(supabase_url)};
     const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
-    const REQUEST_ID = {json.dumps(request_id) if request_id else 'null'};
 
     const ensureLib = () => new Promise((resolve, reject) => {{
         try {{
@@ -357,36 +356,8 @@ def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str, 
     const u = new URL(String(topHref));
     const emailRedirectTo = u.origin + '/';
 
-    // Idempotency across reruns: if we already sent this REQUEST_ID, do not send
-    // again. If we already started it, report pending (avoid duplicate emails).
-    if (REQUEST_ID) {{
-        try {{
-            const startedKey = 'dsbg_magiclink_started_reqid_v1';
-            const doneKey = 'dsbg_magiclink_done_reqid_v1';
-            const done = window.localStorage ? window.localStorage.getItem(doneKey) : null;
-            if (done && done === REQUEST_ID) {{
-                return JSON.stringify({{ ok: true, deduped: true }});
-            }}
-            const started = window.localStorage ? window.localStorage.getItem(startedKey) : null;
-            if (started && started === REQUEST_ID) {{
-                return JSON.stringify({{ ok: false, pending: true }});
-            }}
-            if (window.localStorage) window.localStorage.setItem(startedKey, REQUEST_ID);
-        }} catch (e) {{}}
-    }}
-
     const res = await client.auth.signInWithOtp({{ email, options: {{ emailRedirectTo }} }});
     if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
-
-    // Mark request as completed so reruns don't resend.
-    if (REQUEST_ID) {{
-        try {{
-            const startedKey = 'dsbg_magiclink_started_reqid_v1';
-            const doneKey = 'dsbg_magiclink_done_reqid_v1';
-            if (window.localStorage) window.localStorage.removeItem(startedKey);
-            if (window.localStorage) window.localStorage.setItem(doneKey, REQUEST_ID);
-        }} catch (e) {{}}
-    }}
     return JSON.stringify({{ ok: true }});
 }})()"""
 
@@ -671,6 +642,10 @@ def clear_cached_session() -> None:
         st.session_state.pop("_dsbg_auth_waited_for_js", None)
         st.session_state.pop("_auth_last_session_raw", None)
         st.session_state.pop("_auth_last_session_payload", None)
+        st.session_state.pop("_auth_last_logout_raw", None)
+        st.session_state.pop("_auth_last_logout_payload", None)
+        st.session_state.pop("_auth_last_magic_raw", None)
+        st.session_state.pop("_auth_last_magic_payload", None)
     except Exception:
         return
 
@@ -711,7 +686,7 @@ def login_google() -> dict | None:
     return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
 
 
-def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None:
+def send_magic_link(email: str) -> dict | None:
     if not is_auth_ui_enabled():
         return {"ok": False, "error": "Auth UI is disabled."}
     email = (email or "").strip()
@@ -722,8 +697,7 @@ def send_magic_link(email: str, *, request_id: str | None = None) -> dict | None
     anon = _get_supabase_anon_key()
     if not url or not anon:
         return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
-    js_key = f"dsbg_auth_magic_{request_id}" if request_id else "dsbg_auth_magic"
-    res = _run_js(_js_login_magic_link(email, url, anon, request_id=request_id), key=js_key)
+    res = _run_js(_js_login_magic_link(email, url, anon), key="dsbg_auth_magic")
 
     # Debug capture
     try:
