@@ -17,16 +17,12 @@ from ui.event_mode.event_card_meta import (
     get_event_draw_rewards_map,
     get_event_rewards_map,
 )
+from core.expansions import V2_EXPANSIONS
 
 
 DATA_DIR = Path("data/events")
 ASSETS_DIR = Path("assets/events")
 DECK_STATE_KEY = "event_deck"
-V2_EXPANSIONS = [
-    "Painted World of Ariamis",
-    "Tomb of Giants",
-    "The Sunless City",
-]
 
 # --- Custom decks (user-authored) ---
 CUSTOM_DECKS_PATH = Path("data/custom_event_decks.json")

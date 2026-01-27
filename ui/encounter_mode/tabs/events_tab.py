@@ -47,6 +47,19 @@ def render(settings: Dict[str, Any]) -> None:
     if has_encounter and is_v1:
         st.caption("V1 encounter selected: Encounter Mode ignores attached events for V1 encounters.")
 
+        attached_n = len(st.session_state.get("encounter_events") or [])
+        if attached_n:
+            st.caption(f"Attached events currently in session: {attached_n}")
+            if st.button(
+                "Clear attached 🧹",
+                width="stretch",
+                key="enc_events_clear_attached_v1",
+            ):
+                _clear_attached_events()
+
+        st.info("Events are available for V2 encounters only.")
+        return
+
     card_w = _get_card_w(settings)
 
     configs = load_event_configs()
