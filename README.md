@@ -4,6 +4,17 @@ A Streamlit companion app for **Dark Souls: The Board Game** with local/offline 
 
 The app has a variety of modules that can enhance your DSBG experience either in preparation for play or at the table.
 
+## 📖 New to DSBG-Shuffle? Start Here!
+
+**For detailed, beginner-friendly setup instructions, see [SETUP.md](SETUP.md)**
+
+The SETUP.md guide includes:
+- Step-by-step instructions for complete beginners
+- How to install Python and Docker (with explanations of what they are)
+- Detailed local and Docker setup guides
+- How to access the app from other devices (tablets, phones, etc.)
+- Comprehensive troubleshooting section
+- Quick reference commands
 
 ## Quickstart (Local)
 
