@@ -6,6 +6,11 @@ The app has a variety of modules that can enhance your DSBG experience either in
 
 ## 📖 New to DSBG-Shuffle? Start Here!
 
+## Streamlit Cloud
+You can access this app here: https://dsbg-shuffle.streamlit.app/
+If you'd rather self-host it, see below.
+
+## Self-Hosting
 **For detailed, beginner-friendly setup instructions, see [SETUP.md](SETUP.md)**
 
 The SETUP.md guide includes:
@@ -76,27 +81,9 @@ Settings:
 - Docker runs persist `data/` in a volume (so updates/rebuilds keep your data).
 
 Streamlit Cloud:
-- Saving requires an account (Google OAuth, with email magic-link fallback).
+- Saving requires an account (Google OAuth or email magic-link).
 - When logged out, settings changes still affect the current session, but nothing is saved.
 
-## Streamlit Cloud Secrets
+## AI Disclaimer
 
-This app supports Streamlit Cloud configuration via Secrets.
-
-Recommended Secrets:
-
-- `DSBG_DEPLOYMENT = "cloud"` (enables Cloud-only behavior)
-- `DSBG_CACHE_EMBEDDED_FONTS = true` (keeps embedded fonts but avoids rebuilding base64 CSS on reruns)
-- `DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES = true` (prevents caching encounter-card asset images on Cloud)
-  - Note: when enabled, the app also tightens a few large in-process `lru_cache` sizes (enemy icon resizing + encounter availability checks) to reduce Cloud RAM pressure.
-- `DSBG_DEBUG_PERF = true` (optional; shows a small Diagnostics panel in the sidebar)
-
-If you use Supabase persistence, also set:
-
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY` (preferred)
-
-Then, in the Supabase dashboard:
-- Enable Auth providers: Google (primary) and Email (magic link fallback).
-- Create the `app_documents` table (see `core/supabase_store.py` docstring for the expected columns).
-- Enable Row Level Security (RLS) so users can only access their own rows.
+This app was built with the help of AI. For years I've wanted to have a version of DSBG-Shuffle that could be used on a mobile device because it just makes using it at the gaming table easier. Finally I turned to AI to help me set that up. It would have taken far longer without it. AI was also helpful in choosing the platform. I went with Streamlit because it's pretty much just Python and that means I will be able to support it and continue development without having to depend on AI.
