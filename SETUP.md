@@ -212,7 +212,7 @@ You'll need:
 #### Linux:
 Follow the official installation guide for your distribution: [Install Docker Engine](https://docs.docker.com/engine/install/)
 
-For Ubuntu/Debian:
+**For Ubuntu/Debian:**
 ```bash
 # Update package index
 sudo apt update
@@ -370,7 +370,8 @@ One of the great features of DSBG-Shuffle is that you can access it from other d
 #### macOS:
 1. Open Terminal
 2. Type: `ifconfig | grep "inet " | grep -v 127.0.0.1`
-3. The first result should be your local IP, like: `192.168.1.100`
+3. Look for an address starting with `192.168.` or `10.` (not `127.0.0.1`)
+   - Example: `192.168.1.100` or `10.0.1.50`
 
 Or use the GUI:
 1. System Preferences > Network
@@ -604,7 +605,7 @@ docker volume rm dsbg-shuffle-streamlit_dsbg_data
 # Windows
 ipconfig
 
-# macOS
+# macOS (look for 192.168.x.x or 10.x.x.x, not 127.0.0.1)
 ifconfig | grep "inet "
 
 # Linux
