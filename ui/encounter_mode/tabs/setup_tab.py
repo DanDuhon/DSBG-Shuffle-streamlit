@@ -41,6 +41,11 @@ from core.image_cache import (
 )
 from ui.shared.event_brief import format_event_brief_line
 
+try:
+    from ui.shared.memory_debug import memlog_checkpoint
+except Exception:  # pragma: no cover
+    memlog_checkpoint = None  # type: ignore
+
 
 def _chunk_list(items: list, chunk_size: int) -> list[list]:
     if chunk_size <= 0:
@@ -835,6 +840,21 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         if not enc_data and exp and nm:
                             enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
                         if exp and nm and lvl:
+                            if memlog_checkpoint is not None:
+                                try:
+                                    memlog_checkpoint(
+                                        st.session_state,
+                                        "setup:enc_img_render_start",
+                                        extra={
+                                            "exp": str(exp),
+                                            "encounter": str(nm),
+                                            "level": int(lvl),
+                                            "enemy_count": int(len(enemies or [])),
+                                        },
+                                    )
+                                except Exception:
+                                    pass
+
                             img = generate_encounter_image(
                                 exp,
                                 lvl,
@@ -843,7 +863,30 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                                 enemies,
                                 use_edited=use_edited,
                             )
+
+                            if memlog_checkpoint is not None:
+                                try:
+                                    memlog_checkpoint(
+                                        st.session_state,
+                                        "setup:enc_img_render_done",
+                                        extra={
+                                            "size": f"{getattr(img, 'width', None)}x{getattr(img, 'height', None)}",
+                                        },
+                                    )
+                                except Exception:
+                                    pass
+
                             st.image(img, width="stretch")
+
+                            if memlog_checkpoint is not None:
+                                try:
+                                    memlog_checkpoint(
+                                        st.session_state,
+                                        "setup:enc_img_st_image_done",
+                                        extra={"note": "after st.image"},
+                                    )
+                                except Exception:
+                                    pass
                         else:
                             st.caption("Encounter image unavailable.")
                     except Exception:

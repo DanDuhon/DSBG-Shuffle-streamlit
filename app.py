@@ -651,6 +651,8 @@ if _memory_debug_enabled():
         memlog_clear,
         memlog_export_json,
         memlog_get_events,
+        memtrace_arm,
+        memtrace_disarm,
         summarize_mapping,
     )
 
@@ -679,6 +681,17 @@ if _memory_debug_enabled():
                 value=bool(st.session_state.get("_memdbg_log_trace", False)),
                 key="memdbg_log_trace",
             )
+
+        if bool(st.session_state.get("_memdbg_log_trace", False)):
+            t1, t2 = st.columns(2)
+            with t1:
+                if st.button("Arm trace window", width="stretch", key="memdbg_trace_arm"):
+                    memtrace_arm(st.session_state)
+                    st.info("Trace armed: next two checkpoints will produce a diff.")
+            with t2:
+                if st.button("Disarm trace", width="stretch", key="memdbg_trace_disarm"):
+                    memtrace_disarm(st.session_state)
+                    st.rerun()
 
         st.session_state["_memdbg_sample_every"] = st.number_input(
             "Sample every N checkpoints",

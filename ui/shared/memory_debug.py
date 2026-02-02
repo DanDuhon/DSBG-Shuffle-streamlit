@@ -17,7 +17,7 @@ except Exception:  # pragma: no cover
 
 
 _TRACE_STARTED = False
-_LAST_TRACE_SNAPSHOT = None
+_TRACE_BASELINE_SNAPSHOT = None
 
 
 @dataclass(frozen=True)
@@ -249,6 +249,30 @@ def memlog_export_json(state: Any) -> str:
         return json.dumps({"events": []})
 
 
+def memtrace_arm(state: Any) -> None:
+    """Arm a short tracemalloc window.
+
+    When armed and trace logging is enabled, the *next* checkpoint will start
+    tracemalloc and record a baseline snapshot. The *following* checkpoint will
+    compute a diff from that baseline, record it on the event, then stop
+    tracemalloc.
+
+    This avoids leaving tracemalloc running across normal Streamlit reruns,
+    which can dramatically increase RSS on Streamlit Cloud.
+    """
+
+    if not isinstance(state, MutableMapping):
+        return
+    state["_memdbg_trace_armed"] = True
+
+
+def memtrace_disarm(state: Any) -> None:
+    if not isinstance(state, MutableMapping):
+        return
+    state.pop("_memdbg_trace_armed", None)
+    state.pop("_memdbg_trace_active", None)
+
+
 def _to_cache_info_dict(ci: Any) -> dict:
     try:
         # functools.lru_cache cache_info() returns a namedtuple.
@@ -329,21 +353,35 @@ def memlog_checkpoint(
         except Exception:
             pass
 
-    # Optional tracemalloc
+    # Optional tracemalloc (armed window mode).
+    # IMPORTANT: leaving tracemalloc running continuously in Streamlit Cloud can
+    # blow up RSS. We only trace within a short window between two checkpoints.
     if do_trace is None:
         do_trace = bool(state.get("_memdbg_log_trace", False))
+
     trace_top = None
     if do_trace and tracemalloc is not None:
-        global _TRACE_STARTED, _LAST_TRACE_SNAPSHOT
+        global _TRACE_STARTED, _TRACE_BASELINE_SNAPSHOT
         try:
-            if not _TRACE_STARTED:
-                tracemalloc.start(25)
-                _TRACE_STARTED = True
-                _LAST_TRACE_SNAPSHOT = tracemalloc.take_snapshot()
-            else:
+            armed = bool(state.get("_memdbg_trace_armed", False))
+            active = bool(state.get("_memdbg_trace_active", False))
+
+            if armed and not active:
+                # Start tracing and capture baseline.
+                if not _TRACE_STARTED:
+                    tracemalloc.start(25)
+                    _TRACE_STARTED = True
+                _TRACE_BASELINE_SNAPSHOT = tracemalloc.take_snapshot()
+                state["_memdbg_trace_active"] = True
+                state["_memdbg_trace_armed"] = False
+                trace_top = ["(trace armed: baseline captured; next checkpoint records diff)"]
+
+            elif active:
+                # Capture diff and stop tracing.
                 snap = tracemalloc.take_snapshot()
-                if _LAST_TRACE_SNAPSHOT is not None:
-                    stats = snap.compare_to(_LAST_TRACE_SNAPSHOT, trace_group_by)
+                base = _TRACE_BASELINE_SNAPSHOT
+                if base is not None:
+                    stats = snap.compare_to(base, trace_group_by)
                     top = []
                     for s in list(stats)[: max(1, int(trace_top_n))]:
                         try:
@@ -351,9 +389,17 @@ def memlog_checkpoint(
                         except Exception:
                             continue
                     trace_top = top
-                _LAST_TRACE_SNAPSHOT = snap
+
+                # Stop tracemalloc to release overhead.
+                try:
+                    tracemalloc.stop()
+                except Exception:
+                    pass
+                _TRACE_STARTED = False
+                _TRACE_BASELINE_SNAPSHOT = None
+                state.pop("_memdbg_trace_active", None)
+
         except Exception:
-            # Tracemalloc can fail in some environments; ignore.
             trace_top = None
 
     entry = {
