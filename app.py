@@ -724,6 +724,57 @@ if _memory_debug_enabled():
 
         events = memlog_get_events(st.session_state)
         if events:
+            # Optional: summarize deltas by label to quickly spot the hot step.
+            if st.button("Summarize checkpoint log", width="stretch", key="memdbg_summarize"):
+                by_label = {}
+                last_lru = None
+                for e in events:
+                    if not isinstance(e, dict):
+                        continue
+                    label = str(e.get("label") or "")
+                    delta = e.get("delta_mb")
+                    if isinstance(delta, (int, float)):
+                        agg = by_label.setdefault(label, {"count": 0, "sum_delta": 0.0, "max_delta": None, "min_delta": None})
+                        agg["count"] += 1
+                        agg["sum_delta"] += float(delta)
+                        mx = agg.get("max_delta")
+                        mn = agg.get("min_delta")
+                        agg["max_delta"] = float(delta) if mx is None else max(float(mx), float(delta))
+                        agg["min_delta"] = float(delta) if mn is None else min(float(mn), float(delta))
+
+                    extra = e.get("extra")
+                    if isinstance(extra, dict) and isinstance(extra.get("encgen_lru"), dict):
+                        last_lru = extra.get("encgen_lru")
+
+                rows = []
+                for label, agg in by_label.items():
+                    c = int(agg.get("count") or 0)
+                    s = float(agg.get("sum_delta") or 0.0)
+                    rows.append(
+                        {
+                            "label": label,
+                            "count": c,
+                            "sum_delta_mb": round(s, 3),
+                            "avg_delta_mb": round((s / c) if c else 0.0, 3),
+                            "max_delta_mb": agg.get("max_delta"),
+                            "min_delta_mb": agg.get("min_delta"),
+                        }
+                    )
+
+                rows.sort(key=lambda r: abs(float(r.get("sum_delta_mb") or 0.0)), reverse=True)
+                st.dataframe(rows, width="stretch", hide_index=True)
+
+                if isinstance(last_lru, dict) and last_lru:
+                    # Show the most recent cache sizes captured from encounter generation.
+                    lru_rows = []
+                    for k, ci in last_lru.items():
+                        if not isinstance(ci, dict):
+                            continue
+                        lru_rows.append({"cache": str(k), "currsize": ci.get("currsize"), "maxsize": ci.get("maxsize"), "hits": ci.get("hits"), "misses": ci.get("misses")})
+                    if lru_rows:
+                        st.markdown("**Latest encounter-image cache sizes**")
+                        st.dataframe(lru_rows, width="stretch", hide_index=True)
+
             # Show a compact table of the most recent events.
             show_n = min(200, len(events))
             rows = []
