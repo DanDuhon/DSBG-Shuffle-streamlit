@@ -2,6 +2,7 @@
 import streamlit as st
 from pathlib import Path
 from io import BytesIO
+from PIL import Image
 
 from core import auth
 from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
@@ -45,6 +46,42 @@ try:
     from ui.shared.memory_debug import memlog_checkpoint
 except Exception:  # pragma: no cover
     memlog_checkpoint = None  # type: ignore
+
+
+def _encode_image_as_jpeg_bytes(
+    img: object,
+    *,
+    quality: int = 80,
+    background_rgb: tuple[int, int, int] = (255, 255, 255),
+) -> bytes | None:
+    """Encode a PIL image-like object as JPEG bytes.
+
+    Streamlit's media store will retain whatever we pass into st.image.
+    Passing pre-encoded JPEG bytes tends to use less memory than letting
+    Streamlit encode PNG from an RGBA PIL image.
+    """
+
+    if not isinstance(img, Image.Image):
+        return None
+
+    try:
+        out = img
+        if out.mode in ("RGBA", "LA"):
+            rgba = out.convert("RGBA")
+            bg = Image.new("RGBA", rgba.size, background_rgb + (255,))
+            out = Image.alpha_composite(bg, rgba)
+        out = out.convert("RGB")
+
+        buf = BytesIO()
+        q = int(quality)
+        if q < 1:
+            q = 1
+        if q > 95:
+            q = 95
+        out.save(buf, format="JPEG", quality=q, optimize=True, progressive=True)
+        return buf.getvalue()
+    except Exception:
+        return None
 
 
 def _chunk_list(items: list, chunk_size: int) -> list[list]:
@@ -905,7 +942,30 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                                 except Exception:
                                     pass
 
-                            st.image(img, width="stretch")
+                            jpg = _encode_image_as_jpeg_bytes(img, quality=80)
+                            if memlog_checkpoint is not None:
+                                try:
+                                    memlog_checkpoint(
+                                        st.session_state,
+                                        "setup:enc_img_jpeg_encoded",
+                                        extra={
+                                            "bytes": int(len(jpg) if jpg else 0),
+                                            "quality": 80,
+                                        },
+                                    )
+                                except Exception:
+                                    pass
+
+                            # Explicitly drop the PIL image reference early.
+                            try:
+                                del img
+                            except Exception:
+                                pass
+
+                            if jpg:
+                                st.image(jpg, width="stretch")
+                            else:
+                                st.caption("Encounter image unavailable.")
 
                             if memlog_checkpoint is not None:
                                 try:
