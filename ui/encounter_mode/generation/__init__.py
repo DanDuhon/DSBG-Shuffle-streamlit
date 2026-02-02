@@ -39,6 +39,11 @@ _TIGHTEN_LRU = is_streamlit_cloud() and get_config_bool(
 _ENEMY_ICON_RGBA_CACHE_MAX = 256 if _TIGHTEN_LRU else 1024
 _ICON_RESIZED_CACHE_MAX = 512 if _TIGHTEN_LRU else 4096
 
+# Encounter JSON payloads can be large (alternatives lists). On Streamlit Cloud
+# we keep this cache small to avoid steady RSS growth when browsing many
+# encounters.
+_ENCOUNTER_JSON_CACHE_MAX = 64 if _TIGHTEN_LRU else 1024
+
 
 def _load_rgba_image_uncached(path: str) -> Image.Image:
     """Uncached RGBA image load.
@@ -298,7 +303,7 @@ def build_encounter_keywords(encounter_name, expansion, use_edited=False):
     return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
 
 
-@lru_cache(maxsize=1024)
+@lru_cache(maxsize=_ENCOUNTER_JSON_CACHE_MAX)
 def load_encounter(encounter_slug: str, character_count: int):
     """Load encounter JSON by slug and character count.
 
@@ -309,6 +314,18 @@ def load_encounter(encounter_slug: str, character_count: int):
     (Callers that want variant fallback should implement it at a higher level
     using the encounter index / available character-count variants.)
     """
+    file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
+    with open(file_path, "r", encoding="utf-8") as f:
+        return load(f)
+
+
+def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:
+    """Uncached variant of `load_encounter`.
+
+    Useful for Cloud low-memory diagnostics and paths that would otherwise cause
+    cache churn while browsing many encounters.
+    """
+
     file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
     with open(file_path, "r", encoding="utf-8") as f:
         return load(f)
