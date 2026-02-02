@@ -29,6 +29,46 @@ from ui.campaign_mode.state import (
 )
 
 
+_PENDING_WIDGET_RESETS_KEY = "_campaign_pending_widget_resets"
+
+
+def _queue_widget_reset(widget_key: str) -> None:
+    """Request that a widget session key be cleared on the *next* rerun.
+
+    Streamlit forbids modifying a widget-backed `st.session_state[key]` after the
+    widget is instantiated in the same run. To safely "reset" checkboxes after a
+    button click, we enqueue the key and clear it before widgets are created on
+    the subsequent rerun.
+    """
+
+    if not widget_key:
+        return
+
+    pending = st.session_state.get(_PENDING_WIDGET_RESETS_KEY)
+    if not isinstance(pending, list):
+        pending = []
+    if widget_key not in pending:
+        pending.append(widget_key)
+    st.session_state[_PENDING_WIDGET_RESETS_KEY] = pending
+
+
+def _apply_pending_widget_resets() -> None:
+    pending = st.session_state.get(_PENDING_WIDGET_RESETS_KEY)
+    if not pending:
+        return
+    if not isinstance(pending, list):
+        st.session_state.pop(_PENDING_WIDGET_RESETS_KEY, None)
+        return
+
+    for key in pending:
+        # Clearing the key (rather than setting False) ensures the widget will
+        # re-seed from its `value=` default on the next creation.
+        st.session_state.pop(str(key), None)
+
+    # Clear the queue.
+    st.session_state[_PENDING_WIDGET_RESETS_KEY] = []
+
+
 def _has_any_loaded_campaign() -> bool:
     """Return True if either V1 or V2 currently has a generated/loaded campaign."""
     v1 = st.session_state.get("campaign_v1_state")
@@ -87,6 +127,9 @@ def _render_v1_setup(
     player_count: int,
 ) -> Dict[str, Any]:
     state = _ensure_v1_state(player_count)
+
+    # Apply any pending checkbox resets *before* creating widgets.
+    _apply_pending_widget_resets()
     active_expansions = settings.get("active_expansions") or []
 
     mini_bosses = _filter_bosses(
@@ -219,8 +262,8 @@ def _render_v1_setup(
         st.session_state["campaign_v1_state"] = state
         # Generated campaigns are unsaved by default.
         clear_campaign_baseline(version="V1")
-        # Reset confirmation and rerun so the UI immediately reflects that a campaign exists.
-        st.session_state[confirm_key] = False
+        # Reset confirmation on the next run so we don't mutate widget state after creation.
+        _queue_widget_reset(confirm_key)
         st.session_state["campaign_generate_notice"] = "Campaign generated."
         st.rerun()
 
@@ -256,6 +299,9 @@ def _render_v2_setup(
     - Campaign generation creates encounter spaces with two choices each.
     """
     state = _ensure_v2_state(player_count)
+
+    # Apply any pending checkbox resets *before* creating widgets.
+    _apply_pending_widget_resets()
     active_expansions = settings.get("active_expansions") or []
 
     mini_bosses = _filter_bosses(
@@ -390,8 +436,8 @@ def _render_v2_setup(
         st.session_state["campaign_v2_state"] = state
         # Generated campaigns are unsaved by default.
         clear_campaign_baseline(version="V2")
-        # Reset confirmation and rerun so the UI immediately reflects that a campaign exists.
-        st.session_state[confirm_key] = False
+        # Reset confirmation on the next run so we don't mutate widget state after creation.
+        _queue_widget_reset(confirm_key)
         st.session_state["campaign_generate_notice"] = "Campaign generated."
         st.rerun()
 
@@ -422,6 +468,9 @@ def _render_save_load_section(
     current_state: Dict[str, Any],
     settings: Dict[str, Any],
 ) -> None:
+    # Apply any pending resets before creating Save/Load widgets.
+    _apply_pending_widget_resets()
+
     st.markdown("---")
     st.subheader("Save / Load campaign")
 
@@ -559,8 +608,8 @@ def _render_save_load_section(
                 ):
                     if selected_name != "<none>":
                         snapshot = campaigns[selected_name]
-                        # Reset confirmation checkbox for next time.
-                        st.session_state[f"campaign_load_confirm_overwrite_{version}"] = False
+                        # Reset confirmation checkbox next run (avoid mutating widget state).
+                        _queue_widget_reset(f"campaign_load_confirm_overwrite_{version}")
                         # One-shot load handoff:
                         # We cannot safely overwrite sidebar widget keys mid-run, so we
                         # stash the chosen snapshot under `pending_campaign_snapshot` and

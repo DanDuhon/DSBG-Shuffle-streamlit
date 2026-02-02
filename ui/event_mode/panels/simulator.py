@@ -76,7 +76,7 @@ def render_deck_simulator(
     preset_select_key: Optional[str] = None,
     extra_left_controls: Optional[Callable[[EventSimulatorContext], None]] = None,
     extra_metrics: Optional[Iterable[tuple[str, int]]] = None,
-    discard_mode: str = "container",  # "container" | "titles"
+    discard_mode: str = "titles",  # "titles" (container stack removed)
 ) -> EventSimulatorContext:
     """Render the shared Event Deck Simulator UI.
 
@@ -217,10 +217,10 @@ def render_deck_simulator(
 
         with right:
             st.markdown("### Discard")
-            if discard_mode == "titles":
-                render_discard_titles(ctx.deck_state)
-            else:
-                render_discard_container(ctx.deck_state)
+            # The stacked discard pile preview was removed to avoid data-URI/HTML
+            # rendering and reduce memory usage on Streamlit Cloud.
+            _ = discard_mode
+            render_discard_titles(ctx.deck_state)
 
         return ctx
 
@@ -306,9 +306,7 @@ def render_deck_simulator(
     )
 
     st.markdown("### Discard")
-    if discard_mode == "titles":
-        render_discard_titles(ctx.deck_state)
-    else:
-        render_discard_container(ctx.deck_state)
+    _ = discard_mode
+    render_discard_titles(ctx.deck_state)
 
     return ctx

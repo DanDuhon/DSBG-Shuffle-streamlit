@@ -539,3 +539,69 @@ if is_streamlit_cloud() and get_config_bool("DSBG_DEBUG_PERF", default=False):
             st.caption(f"Python PID: {os.getpid()}")
         except Exception:
             pass
+
+
+def _memory_debug_enabled() -> bool:
+    # Allow enabling locally via env/secrets, but default to off.
+    try:
+        return bool(get_config_bool("DSBG_DEBUG_MEMORY", default=False))
+    except Exception:
+        return False
+
+
+if _memory_debug_enabled():
+    from ui.shared.memory_debug import format_bytes, get_process_rss_mb, summarize_mapping
+
+    with st.sidebar.expander("Debug: Memory", expanded=False):
+        rss_now = get_process_rss_mb()
+        if rss_now is not None:
+            st.caption(f"Process RSS: {rss_now:.1f} MB")
+
+        # Compute-on-demand so we don't add overhead to normal runs.
+        if st.button("Compute session_state breakdown", use_container_width=True, key="memdbg_compute"):
+            total, top = summarize_mapping(
+                st.session_state,
+                top_n=30,
+                max_depth=6,
+                max_children=2000,
+            )
+            st.session_state["_memdbg_last"] = {
+                "total": int(total),
+                "top": [e.__dict__ for e in top],
+            }
+
+        last = st.session_state.get("_memdbg_last")
+        if isinstance(last, dict) and last.get("top"):
+            total_b = int(last.get("total") or 0)
+            st.caption(f"Approx session_state total: {format_bytes(total_b)}")
+            rows = []
+            for e in list(last.get("top") or []):
+                if not isinstance(e, dict):
+                    continue
+                rows.append(
+                    {
+                        "key": str(e.get("key")),
+                        "size": format_bytes(int(e.get("bytes") or 0)),
+                        "type": str(e.get("type_name") or ""),
+                    }
+                )
+            if rows:
+                st.dataframe(rows, use_container_width=True, hide_index=True)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Clear Streamlit caches", use_container_width=True, key="memdbg_clear_caches"):
+                try:
+                    st.cache_data.clear()
+                except Exception:
+                    pass
+                try:
+                    st.cache_resource.clear()
+                except Exception:
+                    pass
+                st.success("Cleared Streamlit caches.")
+                st.rerun()
+        with c2:
+            if st.button("Clear mem debug output", use_container_width=True, key="memdbg_clear_output"):
+                st.session_state.pop("_memdbg_last", None)
+                st.rerun()

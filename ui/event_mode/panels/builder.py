@@ -133,7 +133,9 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
             st.session_state[_BUILDER_SYNC_KEY] = True
             st.rerun()
 
-        del_disabled = needs_login or not (b.get("loaded_from") and b.get("loaded_from") in custom_decks)
+        del_disabled = (not can_persist) or not (
+            b.get("loaded_from") and b.get("loaded_from") in custom_decks
+        )
         if st.button("Delete loaded deck 🗑️", width="stretch", disabled=del_disabled):
             loaded = b.get("loaded_from")
             if loaded in custom_decks:

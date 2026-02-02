@@ -8,10 +8,8 @@ from core.behavior.generation import (
     render_data_card_cached,
     render_dual_boss_data_cards,
 )
-from core.image_cache import get_image_data_uri_cached, bytes_to_data_uri
 from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
-    SOULS_TOKEN_PATH,
     _default_sparks_max,
     _describe_v1_node_label,
     _reset_all_encounters_on_bonfire_return,
@@ -279,14 +277,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                             tile["label"] = f"{e} {name}"
                         souls_token_node_id = state.get("souls_token_node_id")
                         if souls_token_node_id is not None and tid == souls_token_node_id:
-                            # Insert a unique placeholder token into the ASCII label so we can
-                            # replace it with an <img> tag after HTML rendering (avoids trying
-                            # to embed images while building the text grid).
-                            token = f"__SOULS_IMG_{tid}__"
-                            tile["label"] = f"{tile.get('label')} {token}"
-                            if "_soul_img_tokens" not in locals():
-                                _soul_img_tokens = {}
-                            _soul_img_tokens[tid] = token
+                            tile["label"] = f"{tile.get('label')} (souls)"
                         continue
                     if kind == "boss":
                         stage = node.get("stage")
@@ -300,12 +291,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                             tile["label"] = f"{em} {boss_label_map.get(stage, tile.get('label') or 'Boss')}"
                         souls_token_node_id = state.get("souls_token_node_id")
                         if souls_token_node_id is not None and tid == souls_token_node_id:
-                            # Same placeholder trick for boss nodes.
-                            token = f"__SOULS_IMG_{tid}__"
-                            tile["label"] = f"{tile.get('label')} {token}"
-                            if "_soul_img_tokens" not in locals():
-                                _soul_img_tokens = {}
-                            _soul_img_tokens[tid] = token
+                            tile["label"] = f"{tile.get('label')} (souls)"
 
                 map_html = _render_ascii_map(ascii_tiles, current_id, visited=set(state.get("visited_nodes") or []), completed={n.get("id") for n in nodes if n.get("status")=="complete"})
                 lines = map_html.split("\n")
@@ -316,21 +302,6 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
                     + "<br>".join(safe_lines)
                     + "</div></div>"
                 )
-
-                tokens = globals().get("_soul_img_tokens") or locals().get("_soul_img_tokens") or {}
-                if tokens:
-                    # Post-process rendered HTML: replace placeholder tokens (and the legacy "◈")
-                    # with the Souls token image so the map can show dropped-souls locations.
-                    src = get_image_data_uri_cached(str(SOULS_TOKEN_PATH))
-                    if not src:
-                        p = Path(SOULS_TOKEN_PATH)
-                        if p.exists():
-                            data = p.read_bytes()
-                            src = bytes_to_data_uri(data, content_type="image/png")
-                    img_html = f'<img src="{src}" style="width:16px;height:16px;vertical-align:middle"/>'
-                    for tid, token in tokens.items():
-                        html = html.replace(token, img_html)
-                    html = html.replace("◈", img_html)
 
                 st.markdown(html, unsafe_allow_html=True)
 
@@ -1205,8 +1176,7 @@ def _render_ascii_map(tiles: Dict[str, Dict[str, Any]], cur_id: str, visited: Op
         if not isinstance(lbl, str):
             lbl = str(lbl or "")
         # common placeholder token pattern and any img tags or data URIs
-        cleaned = re.sub(r"__SOULS_IMG_[^\s]*__", "◈", lbl)
-        cleaned = re.sub(r"<img[^>]*>", "◈", cleaned)
+        cleaned = re.sub(r"<img[^>]*>", "◈", lbl)
         cleaned = re.sub(r"data:[^\s\"]+", "◈", cleaned)
         return len(cleaned)
 
@@ -1237,7 +1207,6 @@ def _render_ascii_map(tiles: Dict[str, Dict[str, Any]], cur_id: str, visited: Op
         # for later HTML replacement.
         def _clean_label(lbl: str) -> str:
             s = str(lbl or "")
-            s = re.sub(r"__SOULS_IMG_[^\s]*__", "◈", s)
             s = re.sub(r"<img[^>]*>", "◈", s)
             s = re.sub(r"data:[^\s\"]+", "◈", s)
             return s

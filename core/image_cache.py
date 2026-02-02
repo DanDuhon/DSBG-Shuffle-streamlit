@@ -62,6 +62,29 @@ for d in CACHE_DIRS.values():
 # -------------------------------------------------------------
 # Bytes helper (cached by file mtime)
 # -------------------------------------------------------------
+
+# Cache sizing
+# Streamlit Cloud memory can be as low as ~690MB. Keep caches conservative on
+# Cloud, while allowing a larger cache footprint for local runs.
+try:
+    _IS_CLOUD = bool(is_streamlit_cloud())
+except Exception:
+    _IS_CLOUD = False
+
+if _IS_CLOUD:
+    IMAGE_BYTES_CACHE_MAX_ENTRIES = 128
+    IMAGE_BYTES_CACHE_TTL_SECONDS = 60 * 60
+    PIL_IMAGE_CACHE_MAX_ENTRIES = 24
+    PIL_IMAGE_CACHE_TTL_SECONDS = 60 * 60
+    DATA_URI_CACHE_MAX_ENTRIES = 32
+    DATA_URI_CACHE_TTL_SECONDS = 15 * 60
+else:
+    IMAGE_BYTES_CACHE_MAX_ENTRIES = 512
+    IMAGE_BYTES_CACHE_TTL_SECONDS = 6 * 60 * 60
+    PIL_IMAGE_CACHE_MAX_ENTRIES = 96
+    PIL_IMAGE_CACHE_TTL_SECONDS = 6 * 60 * 60
+    DATA_URI_CACHE_MAX_ENTRIES = 128
+    DATA_URI_CACHE_TTL_SECONDS = 60 * 60
 def _normalize_path_str(path: str) -> str:
     # Many saved payloads may contain Windows-style backslashes; normalize so
     # the same data works on Streamlit Cloud (Linux).
@@ -72,7 +95,11 @@ def _stat_mtime_ns(path: Path) -> int:
     return int(path.stat().st_mtime_ns)
 
 
-@cache_data(show_spinner=False)
+@cache_data(
+    show_spinner=False,
+    max_entries=IMAGE_BYTES_CACHE_MAX_ENTRIES,
+    ttl=IMAGE_BYTES_CACHE_TTL_SECONDS,
+)
 def _get_image_bytes_cached(path_str: str, mtime_ns: int) -> bytes:
     """Internal cached reader keyed by (path, mtime).
 
@@ -98,7 +125,11 @@ def get_image_bytes_cached(path: str) -> bytes:
     return _get_image_bytes_cached(str(p), _stat_mtime_ns(p))
 
 
-@cache_data(show_spinner=False)
+@cache_data(
+    show_spinner=False,
+    max_entries=DATA_URI_CACHE_MAX_ENTRIES,
+    ttl=DATA_URI_CACHE_TTL_SECONDS,
+)
 def bytes_to_data_uri(data: object, mime: str = "image/png") -> str:
     """Convert raw bytes or a PIL Image to a data URI (cached by content hash).
 
@@ -150,7 +181,11 @@ def get_image_data_uri_cached(path: str) -> str:
 # -------------------------------------------------------------
 # PIL Image helpers (cached by file mtime)
 # -------------------------------------------------------------
-@cache_resource(show_spinner=False)
+@cache_resource(
+    show_spinner=False,
+    max_entries=PIL_IMAGE_CACHE_MAX_ENTRIES,
+    ttl=PIL_IMAGE_CACHE_TTL_SECONDS,
+)
 def _load_pil_image_cached_raw(
     path_str: str, mtime_ns: int, convert: str | None = None
 ) -> Image.Image:

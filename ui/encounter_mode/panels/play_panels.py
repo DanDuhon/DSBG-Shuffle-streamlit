@@ -40,7 +40,6 @@ from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.state.play_state import get_player_count, log_entry
 from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, EVENT_REWARDS
-from core.image_cache import get_image_data_uri_cached
 from ui.encounter_mode.helpers import _detect_edited_flag, _get_enemy_display_names
 from core.expansions import is_v2_expansion
 
@@ -49,7 +48,6 @@ from core.expansions import is_v2_expansion
 # Constants / small data tables
 # ---------------------------------------------------------------------
 
-TIMER_ICON_PATH = Path("assets") / "timer.png"
 from ui.encounter_mode.versioning import (
     is_v1_encounter as _is_v1_encounter,
     is_v2_encounter as _is_v2_encounter,
@@ -901,16 +899,9 @@ def _render_timer_and_phase(play_state: dict) -> None:
 
     # Left side: Timer [icon] [counter]
     with c1:
-        data_uri = get_image_data_uri_cached(str(TIMER_ICON_PATH))
-        img_tag = (
-            f"<img src='{data_uri}' "
-            f"style='height:18px; width:auto; margin:0 0.25rem;'/>"
-        )
-
         html = f"""
         <div style="display:flex; align-items:center; gap:0.35rem;">
             <span style="font-weight:600;">Timer</span>
-            {img_tag}
             <span style="font-size:1.2rem; font-weight:600;">{play_state['timer']}</span>
         </div>
         """

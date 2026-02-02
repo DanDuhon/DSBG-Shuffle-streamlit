@@ -13,10 +13,28 @@ except Exception:  # pragma: no cover
     st = None  # type: ignore
 
 
+def _cache_limits() -> dict:
+    # Keep Cloud caching conservative to avoid OOM; local can cache more.
+    try:
+        from core.settings_manager import is_streamlit_cloud
+
+        cloud = bool(is_streamlit_cloud())
+    except Exception:
+        cloud = False
+
+    if cloud:
+        return {"max_entries": 64, "ttl": 30 * 60}
+    return {"max_entries": 512, "ttl": 6 * 60 * 60}
+
+
 def cache_data(*args, **kwargs):
     """Streamlit cache decorator when available; no-op otherwise."""
 
     if st is not None:
+        # Apply conservative defaults unless caller overrides.
+        limits = _cache_limits()
+        kwargs.setdefault("max_entries", limits["max_entries"])
+        kwargs.setdefault("ttl", limits["ttl"])
         return st.cache_data(*args, **kwargs)
 
     def decorator(func):

@@ -11,7 +11,6 @@ from core.behavior.models import BehaviorEntry
 from ui.encounter_mode.generation import (
     editedEncounterKeywords,
     generate_encounter_image,
-    render_encounter_icons,
     build_encounter_keywords,
     load_encounter_data,
 )
@@ -36,6 +35,121 @@ from ui.event_mode.logic import (
 )
 from ui.event_mode.panels.deck_selector import render_active_event_deck_selector
 from core.image_cache import get_image_bytes_cached
+
+
+def _chunk_list(items: list, chunk_size: int) -> list[list]:
+    if chunk_size <= 0:
+        return [items]
+    return [items[i : i + chunk_size] for i in range(0, len(items), chunk_size)]
+
+
+def _render_icon_grid(tiles: list[dict], *, columns: int = 6) -> None:
+    """Render a list of icon tiles into a wrapped grid."""
+
+    if not tiles:
+        st.caption("—")
+        return
+
+    for row in _chunk_list(tiles, columns):
+        cols = st.columns(columns)
+        for i in range(columns):
+            with cols[i]:
+                if i >= len(row):
+                    continue
+                t = row[i]
+                path = t.get("path")
+                if path and Path(str(path)).is_file():
+                    st.image(str(path), width="stretch")
+
+
+def _render_encounter_setup_icons(current_encounter: dict) -> None:
+    """Render Party + Expansions Needed using Streamlit primitives.
+
+    This replaces the legacy HTML/data-URI icon strip to reduce memory use.
+    """
+
+    assets_dir = Path("assets")
+    chars_dir = assets_dir / "characters"
+    exps_dir = assets_dir / "expansions"
+
+    # PARTY (fixed 4 columns; party size is 1-4)
+    characters = list((st.session_state.get("user_settings") or {}).get("selected_characters") or [])
+    if characters:
+        st.markdown("##### Party")
+        party_tiles: list[dict] = []
+        for char in characters[:4]:
+            char_name = str(char)
+            party_tiles.append(
+                {
+                    "path": chars_dir / f"{char_name}.png",
+                    "label": char_name,
+                }
+            )
+        _render_icon_grid(party_tiles, columns=6)
+
+    # EXPANSIONS NEEDED (wrap to rows of 4)
+    enemies = list(current_encounter.get("enemies") or [])
+    expansions_used = list(current_encounter.get("expansions_used") or [])
+
+    st.markdown("##### Expansions Needed")
+    if not expansions_used:
+        st.caption("—")
+        return
+
+    enemy_ids = set([e.get("name") if isinstance(e, dict) else e for e in enemies])
+    icons: list[dict] = []
+
+    if any(exp in expansions_used for exp in ["Dark Souls The Board Game", "The Sunless City"]):
+        if 16 not in enemy_ids and 34 not in enemy_ids:
+            icons.append(
+                {
+                    "path": exps_dir / "Dark Souls The Board Game The Sunless City.png",
+                    "label": "Dark Souls The Board Game / The Sunless City",
+                }
+            )
+            expansions_used = [
+                exp
+                for exp in expansions_used
+                if exp not in ["Dark Souls The Board Game", "The Sunless City"]
+            ]
+        else:
+            if 16 in enemy_ids:
+                icons.append(
+                    {
+                        "path": exps_dir / "Dark Souls The Board Game.png",
+                        "label": "Dark Souls The Board Game",
+                    }
+                )
+            if 34 in enemy_ids:
+                icons.append(
+                    {
+                        "path": exps_dir / "The Sunless City.png",
+                        "label": "The Sunless City",
+                    }
+                )
+
+        for exp in [
+            exp
+            for exp in expansions_used
+            if exp not in {"Dark Souls The Board Game", "The Sunless City"}
+        ]:
+            icons.append({"path": exps_dir / f"{exp}.png", "label": exp})
+    else:
+        for exp in expansions_used:
+            icons.append({"path": exps_dir / f"{exp}.png", "label": exp})
+
+    # Deduplicate by filename
+    seen: set[str] = set()
+    unique_icons: list[dict] = []
+    for icon in icons:
+        p = icon.get("path")
+        key = str(p) if p else str(icon.get("label") or "")
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_icons.append(icon)
+
+    _render_icon_grid(unique_icons, columns=6)
 
 
 # --- Event attachment helpers -------------------------------------------------
@@ -505,11 +619,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             # Character / expansion icons
             if "current_encounter" in st.session_state:
-                icons_html = render_encounter_icons(st.session_state.current_encounter)
-                st.markdown(
-                    f'<div class="encounter-icons-wrapper">{icons_html}</div>',
-                    unsafe_allow_html=True,
-                )
+                _render_encounter_setup_icons(st.session_state.current_encounter)
 
             st.markdown("---")
 

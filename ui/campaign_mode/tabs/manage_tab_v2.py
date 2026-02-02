@@ -2,7 +2,6 @@
 import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
-from core.image_cache import get_image_data_uri_cached
 from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
@@ -203,12 +202,7 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
         with col:
             st.markdown(f"**{ev_type}**")
             path_str = str(ev.get("path") or "")
-            img_src = path_str
-            src = get_image_data_uri_cached(path_str)
-            if src:
-                img_src = src
-
-            st.image(img_src, width="stretch")
+            st.image(path_str, width="stretch")
             nm = str(ev.get("name") or ev.get("id") or ev_type).strip()
             if nm:
                 st.caption(nm)
@@ -857,9 +851,7 @@ def _render_v2_current_panel(
             if isinstance(rv, dict) and rv.get("path"):
                 w = _card_w()
                 p = Path(rv["path"])
-                src = get_image_data_uri_cached(str(p))
-
-                st.image(src or img_src, width=w)
+                st.image(str(p), width=w)
 
             return
 
@@ -936,12 +928,7 @@ def _render_v2_current_panel(
                     # Scout Ahead card under the encounter card(s)
                     if isinstance(rv, dict) and rv.get("path"):
                         w = _card_w()
-                        img_src = rv["path"]
-                        src = get_image_data_uri_cached(img_src)
-                        if src:
-                            img_src = src
-
-                        st.image(img_src, width=w)
+                        st.image(str(rv["path"]), width=w)
                     return
 
         # Normal: show the chosen encounter card
@@ -951,12 +938,7 @@ def _render_v2_current_panel(
         # Always show attached rendezvous card under the encounter card
         if isinstance(rv, dict) and rv.get("path"):
             w = _card_w()
-            img_src = rv["path"]
-            src = get_image_data_uri_cached(img_src)
-            if src:
-                img_src = src
-
-            st.image(img_src, width=w)
+            st.image(str(rv["path"]), width=w)
 
         return
 
