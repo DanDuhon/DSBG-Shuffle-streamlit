@@ -1020,7 +1020,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             st.markdown("#### Events")
 
             configs = load_event_configs()
-            render_active_event_deck_selector(
+            _ = render_active_event_deck_selector(
                 settings=settings,
                 configs=configs,
                 label="Active event deck",
@@ -1496,7 +1496,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         st.markdown("#### Events")
 
         configs = load_event_configs()
-        render_active_event_deck_selector(
+        _ = render_active_event_deck_selector(
             settings=settings,
             configs=configs,
             label="Active event deck",
