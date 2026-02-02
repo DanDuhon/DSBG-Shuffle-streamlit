@@ -56,6 +56,29 @@ def _load_enemy_icon_rgba_uncached(path: str) -> Image.Image:
         return im.convert("RGBA")
 
 
+def _load_base_card_rgba_uncached(
+    path: str,
+    *,
+    target_size: tuple[int, int] | None = None,
+) -> tuple[Image.Image, tuple[int, int]]:
+    """Load the base card image as RGBA, optionally using JPEG draft downsampling.
+
+    Returns (rgba_image, (orig_w, orig_h)).
+    """
+
+    with Image.open(path) as im:
+        orig_size = im.size
+        # Pillow can downsample JPEGs during decode via draft(), which is a big
+        # win for transient memory on Streamlit Cloud.
+        if target_size is not None:
+            try:
+                im.draft("RGB", target_size)
+            except Exception:
+                pass
+        rgba = im.convert("RGBA")
+    return rgba, (int(orig_size[0]), int(orig_size[1]))
+
+
 def _get_icon_resized_uncached(path: str, box_size: int) -> Tuple[Image.Image, Tuple[int, int]]:
     src = _load_enemy_icon_rgba_uncached(path)
     width, height = src.size
@@ -300,6 +323,7 @@ def generate_encounter_image(
     use_edited=False,
     *,
     bypass_image_caches: bool = False,
+    target_width_px: int | None = None,
 ):
     """Render the encounter card with enemy icons based on enemySlots layout."""
     # Some encounter filenames omit the level (e.g. "Gravelord Nito Setup").
@@ -312,13 +336,58 @@ def generate_encounter_image(
         if os.path.exists(edited_path):
             card_path = edited_path
 
+    # Determine scaling for low-res rendering.
+    target_w = None
+    try:
+        if target_width_px is not None:
+            tw = int(target_width_px)
+            if tw > 0:
+                target_w = tw
+    except Exception:
+        target_w = None
+
     # Base encounter card image can be large; on Streamlit Cloud low-memory paths we
     # want to avoid long-lived LRU-cached decoded images.
+    orig_w = None
+    orig_h = None
     if bypass_image_caches or _should_bypass_encounter_card_base_image_cache():
-        card_img = _load_rgba_image_uncached(str(card_path))
+        # Open once to get original dimensions (cheap) and to enable JPEG draft.
+        try:
+            with Image.open(card_path) as im0:
+                ow, oh = im0.size
+        except Exception:
+            ow, oh = (0, 0)
+
+        draft_target = None
+        if target_w is not None and ow and target_w < int(ow):
+            # Preserve aspect ratio.
+            th = max(1, int(round(float(oh) * (float(target_w) / float(ow)))))
+            draft_target = (int(target_w), int(th))
+
+        card_img, (orig_w, orig_h) = _load_base_card_rgba_uncached(str(card_path), target_size=draft_target)
     else:
         card_img = _load_rgba_image(str(card_path))
+        try:
+            orig_w, orig_h = card_img.size
+        except Exception:
+            orig_w, orig_h = (0, 0)
+
+    # Work on a fresh image.
     card_img = card_img.copy()
+
+    scale = 1.0
+    if target_w is not None and orig_w and target_w < int(orig_w):
+        try:
+            scale = float(target_w) / float(orig_w)
+        except Exception:
+            scale = 1.0
+        # Resize base card to reduce memory footprint.
+        try:
+            new_w = max(1, int(round(float(orig_w) * scale)))
+            new_h = max(1, int(round(float(orig_h) * scale)))
+            card_img = card_img.resize((new_w, new_h), resample=Image.Resampling.LANCZOS)
+        except Exception:
+            scale = 1.0
 
     # ---------------------------------------------------------
     # 1) Main enemy grid icons
@@ -355,10 +424,13 @@ def generate_encounter_image(
             enemy_index += 1
 
             icon_path = get_enemy_image_by_id(enemy_id)
+            box = int(size)
+            if scale != 1.0:
+                box = max(1, int(round(float(box) * scale)))
             if bypass_image_caches:
-                icon_img, icon_size = _get_icon_resized_uncached(str(icon_path), int(size))
+                icon_img, icon_size = _get_icon_resized_uncached(str(icon_path), box)
             else:
-                icon_img, icon_size = _get_icon_resized(str(icon_path), int(size))
+                icon_img, icon_size = _get_icon_resized(str(icon_path), box)
 
             # This is used to center the icon no matter its width or height.
             xOffset = int(round((size - icon_size[0]) / 2))
@@ -366,7 +438,11 @@ def generate_encounter_image(
 
             key = (slot_idx, i)
 
-            coords = (pos_table[key][0] + xOffset, pos_table[key][1] + yOffset)
+            px, py = pos_table[key]
+            if scale != 1.0:
+                px = int(round(float(px) * scale))
+                py = int(round(float(py) * scale))
+            coords = (px + xOffset, py + yOffset)
             card_img.alpha_composite(icon_img, dest=coords)
 
     # ---------------------------------------------------------
@@ -391,16 +467,24 @@ def generate_encounter_image(
 
         enemy_id = enemies[idx]
         icon_path = get_enemy_image_by_id(enemy_id)
+        box = int(cfg.size)
+        if scale != 1.0:
+            box = max(1, int(round(float(box) * scale)))
         if bypass_image_caches:
-            icon_img, icon_size = _get_icon_resized_uncached(str(icon_path), int(cfg.size))
+            icon_img, icon_size = _get_icon_resized_uncached(str(icon_path), box)
         else:
-            icon_img, icon_size = _get_icon_resized(str(icon_path), int(cfg.size))
+            icon_img, icon_size = _get_icon_resized(str(icon_path), box)
 
         # Center inside the cfg.size x cfg.size box whose top-left is (cfg.x, cfg.y)
         xOffset = int(round((cfg.size - icon_size[0]) / 2))
         yOffset = int(round((cfg.size - icon_size[1]) / 2))
 
-        dest = (cfg.x + xOffset, cfg.y + yOffset)
+        dx = int(cfg.x)
+        dy = int(cfg.y)
+        if scale != 1.0:
+            dx = int(round(float(dx) * scale))
+            dy = int(round(float(dy) * scale))
+        dest = (dx + xOffset, dy + yOffset)
         card_img.alpha_composite(icon_img, dest=dest)
     # ---------------------------------------------------------
     # 4) Render item reward text
@@ -416,8 +500,14 @@ def generate_encounter_image(
 
         pref = st.session_state.get("user_settings", {}).get("encounter_item_reward_mode", "Original")
 
-        # Fixed font + size per spec (cached)
-        font = _get_reward_font(25)
+        # Fixed font + size per spec (cached). Scale font when rendering low-res.
+        font_size = 25
+        if scale != 1.0:
+            try:
+                font_size = max(10, int(round(float(font_size) * scale)))
+            except Exception:
+                font_size = 25
+        font = _get_reward_font(font_size)
 
         def _wrap_text_to_lines(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
             words = str(text).split()
@@ -455,12 +545,20 @@ def generate_encounter_image(
 
             # Wrap long text to avoid overflowing the card. Optional per-entry `max_width` in pixels.
             max_width = int(entry.get("max_width", 200))
+            if scale != 1.0:
+                try:
+                    max_width = max(50, int(round(float(max_width) * scale)))
+                except Exception:
+                    pass
             lines = _wrap_text_to_lines(txt, font, max_width)
             # vertical spacing: use font height
             ascent, descent = font.getmetrics()
             line_h = ascent + descent
             x0 = int(pos[0])
             y0 = int(pos[1])
+            if scale != 1.0:
+                x0 = int(round(float(x0) * scale))
+                y0 = int(round(float(y0) * scale))
             for i, line in enumerate(lines):
                 draw.text((x0, y0 + i * line_h), line, font=font, fill=(0, 0, 0))
 
@@ -516,6 +614,10 @@ def generate_encounter_image(
 
         # Use pre-rendered gang images in assets/keywords instead of drawing text.
         gx, gy, gsize = pos_entry
+        if scale != 1.0:
+            gx = int(round(float(gx) * scale))
+            gy = int(round(float(gy) * scale))
+            gsize = max(1, int(round(float(gsize) * scale)))
 
         # Candidate filenames to support different naming conventions
         candidates = []

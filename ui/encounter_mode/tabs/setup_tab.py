@@ -863,6 +863,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                                 enemies,
                                 use_edited=use_edited,
                                 bypass_image_caches=True,
+                                target_width_px=640,
                             )
 
                             if memlog_checkpoint is not None:
