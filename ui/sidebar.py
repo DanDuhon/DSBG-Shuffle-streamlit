@@ -243,11 +243,11 @@ def render_sidebar(settings: dict):
         if auth.is_authenticated():
             ident = auth.get_user_email() or auth.get_user_id() or "(unknown user)"
             st.sidebar.caption(f"Signed in: {ident}")
-            if st.sidebar.button("Log out", use_container_width=True, key="auth_logout_btn"):
+            if st.sidebar.button("Log out", width="stretch", key="auth_logout_btn"):
                 auth.logout()
                 st.rerun()
         else:
-            if st.sidebar.button("Sign in with Google", use_container_width=True, key="auth_google_btn"):
+            if st.sidebar.button("Sign in with Google", width="stretch", key="auth_google_btn"):
                 st.session_state["_auth_last_error"] = ""
                 res = auth.login_google()
                 if debug_perf:
@@ -279,7 +279,7 @@ def render_sidebar(settings: dict):
             )
             if st.sidebar.button(
                 "Send magic link",
-                use_container_width=True,
+                width="stretch",
                 key="auth_magic_btn",
             ):
                 st.session_state["_auth_last_error"] = ""
@@ -662,7 +662,7 @@ def render_sidebar(settings: dict):
             if st.button(
                 "Save settings",
                 disabled=(not dirty) or needs_login or missing_auth_ui,
-                use_container_width=True,
+                width="stretch",
                 key="save_settings_btn",
             ):
                 old_active_expansions = list(applied_settings.get("active_expansions", []) or [])

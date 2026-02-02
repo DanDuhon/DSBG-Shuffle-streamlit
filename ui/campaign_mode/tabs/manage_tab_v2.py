@@ -25,6 +25,7 @@ from ui.campaign_mode.tabs.manage_tab_shared import (
 from ui.campaign_mode.tabs.manage_tab_v1 import _render_v1_current_panel
 from ui.campaign_mode.state import _get_settings, _get_player_count
 from ui.campaign_mode.ui_helpers import _render_party_icons
+from ui.shared.event_brief import format_event_brief_line
 
 
 _SCOUT_AHEAD_ID = "scout ahead"
@@ -175,11 +176,40 @@ def _v2_ensure_scout_ahead_alt_option(
 
 
 def _render_party_events_panel(state: Dict[str, Any]) -> None:
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+
     instants = state.get("instant_events_unresolved") or []
     consumables = state.get("party_consumable_events") or []
     orphans = state.get("orphaned_rendezvous_events") or []
 
     if not instants and not consumables and not orphans:
+        return
+
+    if cloud_low_memory:
+        st.markdown("#### Party events")
+        if isinstance(instants, list) and instants:
+            st.markdown("**Immediate**")
+            for ev in instants:
+                st.caption(format_event_brief_line(ev, include_type=True, max_len=160))
+        if isinstance(consumables, list) and consumables:
+            st.markdown("**Consumable**")
+            for ev in consumables:
+                st.caption(format_event_brief_line(ev, include_type=True, max_len=160))
+
+        if instants:
+            if st.button(
+                "Clear immediate event notifications 🧹",
+                key="campaign_clear_instant_events",
+                width="stretch",
+            ):
+                state["instant_events_unresolved"] = []
+                st.rerun()
+
+        if orphans:
+            st.markdown("**Rendezvous with no remaining encounter target**")
+            for ev in orphans:
+                if isinstance(ev, dict) and ev.get("name"):
+                    st.caption(str(ev["name"]))
         return
 
     # Unified 4-column grid for both Immediate and Consumable events.
@@ -238,6 +268,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             travel there for the first time.
     """
     settings = _get_settings()
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     campaign = state.get("campaign")
     if not isinstance(campaign, dict):
@@ -274,10 +305,19 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         col_bonfire, col_info = st.columns([1, 2])
 
         with col_bonfire:
-            st.image(str(BONFIRE_ICON_PATH), width="stretch")
+            if cloud_low_memory:
+                st.caption("Bonfire")
+            else:
+                st.image(str(BONFIRE_ICON_PATH), width="stretch")
 
         with col_info:
-            _render_party_icons(settings)
+            if cloud_low_memory:
+                chars = list(settings.get("selected_characters") or [])
+                if chars:
+                    st.markdown("##### Party")
+                    st.caption(", ".join(str(c) for c in chars[:4]))
+            else:
+                _render_party_icons(settings)
 
             player_count = _get_player_count(settings)
             sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
@@ -640,6 +680,7 @@ def _render_v2_path_row(
     allowed_destinations: Optional[Set[str]] = None,
     disable_travel: bool = False,
 ) -> None:
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
     label = _describe_v2_node_label(campaign, node)
     rv = node.get("rendezvous_event")
     if node.get("kind") == "encounter" and isinstance(rv, dict):
@@ -670,11 +711,20 @@ def _render_v2_path_row(
             if show_souls_token:
                 cur_cols = st.columns([1, 0.5])
                 with cur_cols[0]:
-                    st.image(str(PARTY_TOKEN_PATH), width=48)
+                    if cloud_low_memory:
+                        st.caption("Party")
+                    else:
+                        st.image(str(PARTY_TOKEN_PATH), width=48)
                 with cur_cols[1]:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
+                    if cloud_low_memory:
+                        st.caption("Souls")
+                    else:
+                        st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
-                st.image(str(PARTY_TOKEN_PATH), width=48)
+                if cloud_low_memory:
+                    st.caption("Party")
+                else:
+                    st.image(str(PARTY_TOKEN_PATH), width=48)
             return
 
         # If chapter is closed, encounters/bosses in this stage are no longer legal destinations
@@ -749,7 +799,10 @@ def _render_v2_path_row(
                         st.session_state["campaign_v2_state"] = state
                         st.rerun()
                 with cur_cols[1]:
-                    st.image(str(SOULS_TOKEN_PATH), width=32)
+                    if cloud_low_memory:
+                        st.caption("Souls")
+                    else:
+                        st.image(str(SOULS_TOKEN_PATH), width=32)
             else:
                 if st.button(
                     btn_label,
@@ -854,9 +907,12 @@ def _render_v2_current_panel(
 
             # Always show attached rendezvous card under the encounter card(s)
             if isinstance(rv, dict) and rv.get("path"):
-                w = _card_w()
-                p = Path(rv["path"])
-                st.image(str(p), width=w)
+                if cloud_low_memory:
+                    st.caption(format_event_brief_line(rv, include_type=True, max_len=180))
+                else:
+                    w = _card_w()
+                    p = Path(rv["path"])
+                    st.image(str(p), width=w)
 
             return
 
@@ -932,8 +988,11 @@ def _render_v2_current_panel(
 
                     # Scout Ahead card under the encounter card(s)
                     if isinstance(rv, dict) and rv.get("path"):
-                        w = _card_w()
-                        st.image(str(rv["path"]), width=w)
+                        if cloud_low_memory:
+                            st.caption(format_event_brief_line(rv, include_type=True, max_len=180))
+                        else:
+                            w = _card_w()
+                            st.image(str(rv["path"]), width=w)
                     return
 
         # Normal: show the chosen encounter card
@@ -942,8 +1001,11 @@ def _render_v2_current_panel(
 
         # Always show attached rendezvous card under the encounter card
         if isinstance(rv, dict) and rv.get("path"):
-            w = _card_w()
-            st.image(str(rv["path"]), width=w)
+            if cloud_low_memory:
+                st.caption(format_event_brief_line(rv, include_type=True, max_len=180))
+            else:
+                w = _card_w()
+                st.image(str(rv["path"]), width=w)
 
         return
 

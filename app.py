@@ -25,6 +25,88 @@ st.set_page_config(
 )
 
 
+def _cloud_low_memory_enabled() -> bool:
+    """Cloud-only: enable low-memory UX + aggressive cleanup.
+
+    Defaults to enabled on Streamlit Cloud.
+    """
+
+    try:
+        if not is_streamlit_cloud():
+            return False
+        return bool(get_config_bool("DSBG_CLOUD_LOW_MEMORY", default=True))
+    except Exception:
+        return False
+
+
+def _strip_image_fields_inplace(obj: object) -> None:
+    """Best-effort removal of heavyweight image payloads from nested dicts."""
+
+    if not isinstance(obj, dict):
+        return
+
+    for k in ("card_img", "card_bytes", "buf", "image", "img", "image_bytes"):
+        try:
+            obj.pop(k, None)
+        except Exception:
+            pass
+
+
+def _cloud_low_memory_sanitize_session_state() -> None:
+    """Drop heavyweight image payloads that can linger in session_state."""
+
+    # Encounter Mode: current encounter dict can hold PIL objects and PNG bytes.
+    try:
+        _strip_image_fields_inplace(st.session_state.get("current_encounter"))
+    except Exception:
+        pass
+
+    # Saved encounters (session cache only; persistence already strips images).
+    try:
+        saved = st.session_state.get("saved_encounters")
+        if isinstance(saved, dict):
+            for v in saved.values():
+                _strip_image_fields_inplace(v)
+    except Exception:
+        pass
+
+    # Any other known encounter/campaign frozen dicts.
+    for key in (
+        "encounter_play",
+        "campaign_v1_last_frozen",
+        "campaign_v2_last_frozen",
+    ):
+        try:
+            _strip_image_fields_inplace(st.session_state.get(key))
+        except Exception:
+            pass
+
+
+def _cloud_low_memory_cleanup_on_mode_switch(prev_mode: str | None, new_mode: str | None) -> None:
+    """Cloud-only cleanup when switching top-level modes.
+
+    Preserve core state (campaign progress, settings), but drop derived
+    heavyweight render artifacts.
+    """
+
+    # Encounter card images and buffers are the primary known offenders.
+    try:
+        _strip_image_fields_inplace(st.session_state.get("current_encounter"))
+    except Exception:
+        pass
+
+    # Clear per-mode transient render caches.
+    for k in (
+        "_memdbg_last",
+        "_dsbg_auth_js_used_this_run",
+        "_dsbg_js_keys_used_this_run",
+    ):
+        try:
+            st.session_state.pop(k, None)
+        except Exception:
+            pass
+
+
 
 
 def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
@@ -343,6 +425,12 @@ if auth.is_auth_ui_enabled():
 
 settings = st.session_state.user_settings
 
+# Cloud-only low-memory mode (affects UI + caching behavior). This is intentionally
+# session-state based so UI modules can gate behavior without adding new params.
+st.session_state["cloud_low_memory"] = bool(_cloud_low_memory_enabled())
+if st.session_state.get("cloud_low_memory"):
+    _cloud_low_memory_sanitize_session_state()
+
 # NG+ is read by game logic via st.session_state (see core.ngplus.get_current_ngplus_level).
 # Initialize it from persisted settings if not already set.
 if "ngplus_level" not in st.session_state:
@@ -482,11 +570,17 @@ if pending_boss:
         st.session_state["mode"] = "Boss Mode"
         st.session_state["boss_mode_pending_name"] = boss_name
     del st.session_state["pending_boss_mode_from_campaign"]
+
+prev_mode = st.session_state.get("_last_mode") or st.session_state.get("mode")
 mode = st.sidebar.radio(
     "Mode",
     ["Encounter Mode", "Event Mode", "Boss Mode", "Campaign Mode", "Character Mode", "Behavior Card Viewer"],
     key="mode",
 )
+
+if st.session_state.get("cloud_low_memory") and prev_mode != mode:
+    _cloud_low_memory_cleanup_on_mode_switch(prev_mode, mode)
+st.session_state["_last_mode"] = mode
 
 render_sidebar(settings)
 
@@ -558,7 +652,7 @@ if _memory_debug_enabled():
             st.caption(f"Process RSS: {rss_now:.1f} MB")
 
         # Compute-on-demand so we don't add overhead to normal runs.
-        if st.button("Compute session_state breakdown", use_container_width=True, key="memdbg_compute"):
+        if st.button("Compute session_state breakdown", width="stretch", key="memdbg_compute"):
             total, top = summarize_mapping(
                 st.session_state,
                 top_n=30,
@@ -586,11 +680,11 @@ if _memory_debug_enabled():
                     }
                 )
             if rows:
-                st.dataframe(rows, use_container_width=True, hide_index=True)
+                st.dataframe(rows, width="stretch", hide_index=True)
 
         c1, c2 = st.columns(2)
         with c1:
-            if st.button("Clear Streamlit caches", use_container_width=True, key="memdbg_clear_caches"):
+            if st.button("Clear Streamlit caches", width="stretch", key="memdbg_clear_caches"):
                 try:
                     st.cache_data.clear()
                 except Exception:
@@ -602,6 +696,6 @@ if _memory_debug_enabled():
                 st.success("Cleared Streamlit caches.")
                 st.rerun()
         with c2:
-            if st.button("Clear mem debug output", use_container_width=True, key="memdbg_clear_output"):
+            if st.button("Clear mem debug output", width="stretch", key="memdbg_clear_output"):
                 st.session_state.pop("_memdbg_last", None)
                 st.rerun()

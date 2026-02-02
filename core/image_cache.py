@@ -71,6 +71,20 @@ try:
 except Exception:
     _IS_CLOUD = False
 
+
+def _disable_all_image_caches() -> bool:
+    """Cloud-only: bypass all image-related caches.
+
+    Defaults to enabled on Streamlit Cloud.
+    """
+
+    try:
+        if not _IS_CLOUD:
+            return False
+        return bool(get_config_bool("DSBG_DISABLE_IMAGE_CACHES", default=True))
+    except Exception:
+        return False
+
 if _IS_CLOUD:
     IMAGE_BYTES_CACHE_MAX_ENTRIES = 128
     IMAGE_BYTES_CACHE_TTL_SECONDS = 60 * 60
@@ -183,6 +197,45 @@ def _get_image_thumbnail_bytes_cached(
     return buf.getvalue()
 
 
+def _get_image_thumbnail_bytes_uncached(
+    path_str: str,
+    *,
+    max_width: int,
+    fmt: str,
+    quality: int,
+    background_rgb: tuple[int, int, int],
+) -> bytes:
+    p = Path(path_str)
+    if not p.exists():
+        return b""
+
+    fmt_upper = str(fmt or "PNG").upper()
+    if fmt_upper not in ("PNG", "JPEG"):
+        fmt_upper = "PNG"
+    try:
+        q = int(quality)
+    except Exception:
+        q = 75
+    q = max(10, min(95, q))
+
+    try:
+        with Image.open(p) as opened:
+            img = ImageOps.exif_transpose(opened)
+            img.load()
+    except Exception:
+        return b""
+
+    img = _resize_to_width(img, int(max_width))
+
+    buf = io.BytesIO()
+    if fmt_upper == "JPEG":
+        img_rgb = _flatten_to_rgb(img, background_rgb=background_rgb)
+        img_rgb.save(buf, format="JPEG", quality=q, optimize=True)
+    else:
+        img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
 def get_image_thumbnail_bytes_cached(
     path: str,
     *,
@@ -200,6 +253,15 @@ def get_image_thumbnail_bytes_cached(
     if not p.exists():
         return b""
     w = int(max_width) if isinstance(max_width, int) else int(DEFAULT_THUMBNAIL_WIDTH_PX)
+    if _disable_all_image_caches() or _should_bypass_image_cache_for_path(p):
+        return _get_image_thumbnail_bytes_uncached(
+            str(p),
+            max_width=w,
+            fmt=fmt,
+            quality=quality,
+            background_rgb=background_rgb,
+        )
+
     return _get_image_thumbnail_bytes_cached(
         str(p),
         _stat_mtime_ns(p),
@@ -361,6 +423,11 @@ def _should_bypass_image_cache_for_path(p: Path) -> bool:
     try:
         if not is_streamlit_cloud():
             return False
+        # Cloud-only low-memory: disable all image caches by default.
+        if get_config_bool("DSBG_DISABLE_IMAGE_CACHES", default=True):
+            return True
+
+        # Legacy/targeted switch: disable only encounter-card image caches.
         if not get_config_bool("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False):
             return False
         return _is_encounter_card_asset_path(p)

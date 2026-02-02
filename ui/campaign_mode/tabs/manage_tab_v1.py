@@ -35,6 +35,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     - Right-hand panel with bonfire / encounter card / boss card
     """
     settings = _get_settings()
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     campaign = state.get("campaign")
     if not isinstance(campaign, dict):
@@ -61,7 +62,9 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
         with col_bonfire:
             # In compact UI, wrap the bonfire image in a collapsed expander to save space.
-            if bool(st.session_state.get("ui_compact")):
+            if cloud_low_memory:
+                st.caption("Bonfire")
+            elif bool(st.session_state.get("ui_compact")):
                 with st.expander("Bonfire", expanded=False):
                     st.image(str(BONFIRE_ICON_PATH), width="stretch")
             else:
@@ -69,7 +72,13 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
         with col_info:
             # Party icons above everything
-            _render_party_icons(settings)
+            if cloud_low_memory:
+                chars = list(settings.get("selected_characters") or [])
+                if chars:
+                    st.markdown("##### Party")
+                    st.caption(", ".join(str(c) for c in chars[:4]))
+            else:
+                _render_party_icons(settings)
 
             # Sparks: editable numeric input
             player_count = _get_player_count(settings)

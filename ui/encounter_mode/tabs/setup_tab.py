@@ -39,6 +39,7 @@ from core.image_cache import (
     get_image_bytes_cached,
     get_image_thumbnail_bytes_cached,
 )
+from ui.shared.event_brief import format_event_brief_line
 
 
 def _chunk_list(items: list, chunk_size: int) -> list[list]:
@@ -156,6 +157,35 @@ def _render_encounter_setup_icons(current_encounter: dict) -> None:
     _render_icon_grid(unique_icons, columns=6)
 
 
+def _render_encounter_setup_text_summary(current_encounter: dict) -> None:
+    """Cloud low-memory variant: show party + expansions as comma-separated text."""
+
+    settings = st.session_state.get("user_settings") or {}
+    characters = list(settings.get("selected_characters") or [])
+    st.markdown("##### Party")
+    if characters:
+        st.caption(", ".join(str(c) for c in characters[:4]))
+    else:
+        st.caption("—")
+
+    st.markdown("##### Expansions Needed")
+    expansions_used = list((current_encounter or {}).get("expansions_used") or [])
+    if expansions_used:
+        st.caption(", ".join(str(e) for e in expansions_used))
+    else:
+        st.caption("—")
+
+
+def _strip_encounter_heavy_fields_inplace(encounter: object) -> None:
+    if not isinstance(encounter, dict):
+        return
+    for k in ("card_img", "card_bytes", "buf", "encounter_data"):
+        try:
+            encounter.pop(k, None)
+        except Exception:
+            pass
+
+
 # --- Event attachment helpers -------------------------------------------------
 # Event attachment helper is provided by `ui.event_mode.logic`.
 
@@ -174,6 +204,11 @@ def _ensure_card_bytes_inplace(encounter: dict) -> bytes | None:
 
     This avoids re-encoding the same PIL image to PNG on every Streamlit rerun.
     """
+
+    # Cloud low-memory mode: never retain PNG bytes in session_state.
+    if bool(st.session_state.get("cloud_low_memory", False)):
+        return None
+
     try:
         existing = encounter.get("card_bytes")
         if isinstance(existing, (bytes, bytearray)) and existing:
@@ -244,6 +279,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
     - Right column: encounter card + attached event card.
     """
     active_expansions = settings.get("active_expansions", [])
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     # Require at least one selected character
     if not settings.get("selected_characters") or len(settings.get("selected_characters", [])) == 0:
@@ -491,6 +527,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         active_expansions,
                         selected_expansion,
                         use_edited,
+                        render_image=(not cloud_low_memory),
                     )
                     if not res.get("ok"):
                         final_res = res
@@ -507,6 +544,8 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                 if final_res and final_res.get("ok"):
                     st.session_state.current_encounter = final_res
+                    if cloud_low_memory:
+                        _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
                     # Reset Play tab state so the Play UI starts fresh for this new encounter
                     st.session_state["encounter_play"] = None
                     st.session_state["last_encounter"] = {
@@ -526,55 +565,72 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             # Original
             if original_clicked and selected_label and "current_encounter" in st.session_state:
-                current = st.session_state.current_encounter
-                res = render_original_encounter(
-                    current["encounter_data"],
-                    current["expansion"],
-                    current["encounter_name"],
-                    current["encounter_level"],
+                selected_encounter = filtered_encounters[display_names.index(selected_label)]
+
+                res = shuffle_encounter(
+                    selected_encounter,
+                    character_count,
+                    active_expansions,
+                    selected_expansion,
                     use_edited,
+                    use_original_enemies=True,
+                    render_image=(not cloud_low_memory),
                 )
-                if res:
+                if res and res.get("ok"):
                     # Mark this encounter as an Original render so Play uses the Hollow gang
                     res["force_gang"] = "Hollow"
                     st.session_state.current_encounter = res
+                    if cloud_low_memory:
+                        _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
                     # Reset Play tab state so the Play UI starts fresh for this original render
                     st.session_state["encounter_play"] = None
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
-                        "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
-                        "expansion": res["expansion"],
+                        "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
+                        "expansion": selected_expansion,
                         "character_count": character_count,
                         "edited": use_edited,
-                        "enemies": res["enemies"],
-                        "expansions_used": res["expansions_used"],
+                        "enemies": res.get("enemies"),
+                        "expansions_used": res.get("expansions_used"),
                     }
                     _apply_added_invaders_to_current_encounter()
 
             # Apply edited/original toggle when we already have a current encounter
             if toggle_changed and "current_encounter" in st.session_state:
-                current = st.session_state.current_encounter
-                res = apply_edited_toggle(
-                    current["encounter_data"],
-                    current["expansion"],
-                    current["encounter_name"],
-                    current["encounter_level"],
-                    use_edited,
-                    enemies=current["enemies"],
-                    combo=current["expansions_used"],
-                )
-                if res:
-                    st.session_state.current_encounter = res
-                    st.session_state["last_encounter"] = {
-                        "label": selected_label,
-                        "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
-                        "expansion": res["expansion"],
-                        "character_count": character_count,
-                        "edited": use_edited,
-                        "enemies": res["enemies"],
-                        "expansions_used": res["expansions_used"],
-                    }
-                    _apply_added_invaders_to_current_encounter()
+                if cloud_low_memory:
+                    # No stored images in low-memory mode; just drop any old artifacts.
+                    try:
+                        cur = st.session_state.current_encounter
+                        if isinstance(cur, dict):
+                            for k in ("card_img", "card_bytes", "buf"):
+                                cur.pop(k, None)
+                    except Exception:
+                        pass
+                else:
+                    current = st.session_state.current_encounter
+                    res = apply_edited_toggle(
+                        current["encounter_data"],
+                        current["expansion"],
+                        current["encounter_name"],
+                        current["encounter_level"],
+                        use_edited,
+                        enemies=current["enemies"],
+                        combo=current["expansions_used"],
+                    )
+                    if res:
+                        st.session_state.current_encounter = res
+                        if cloud_low_memory:
+                            _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
+                        st.session_state["last_encounter"] = {
+                            "label": selected_label,
+                            "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
+                            "expansion": res["expansion"],
+                            "character_count": character_count,
+                            "edited": use_edited,
+                            "enemies": res["enemies"],
+                            "expansions_used": res["expansions_used"],
+                        }
+                        _apply_added_invaders_to_current_encounter()
 
             # Auto-shuffle when encounter selection changes (and no explicit button pressed)
             if (
@@ -599,9 +655,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         active_expansions,
                         selected_expansion,
                         use_edited,
+                        render_image=(not cloud_low_memory),
                     )
                     if res.get("ok"):
                         st.session_state.current_encounter = res
+                        if cloud_low_memory:
+                            _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
                         st.session_state["last_encounter"] = {
                             "label": selected_label,
                             "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
@@ -623,7 +682,10 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             # Character / expansion icons
             if "current_encounter" in st.session_state:
-                _render_encounter_setup_icons(st.session_state.current_encounter)
+                if cloud_low_memory:
+                    _render_encounter_setup_text_summary(st.session_state.current_encounter)
+                else:
+                    _render_encounter_setup_icons(st.session_state.current_encounter)
 
             st.markdown("---")
 
@@ -690,36 +752,39 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
                         # Re-generate the encounter image (images are not persisted).
                         # Load encounter JSON on-demand if it wasn't saved in payload.
-                        try:
-                            exp = payload.get("expansion") or payload.get("expansions_used", [None])[0]
-                            lvl = int(payload.get("encounter_level") or payload.get("level") or 0)
-                            nm = payload.get("encounter_name") or payload.get("name")
-                            pc = int(payload.get("character_count") or character_count)
-                            enc_data = payload.get("encounter_data") or payload.get("data") or {}
-                            if not enc_data and exp and nm:
-                                enc_data = load_encounter_data(exp, nm, character_count=pc, level=lvl)
-
-                            card_img = generate_encounter_image(
-                                exp,
-                                lvl,
-                                nm,
-                                enc_data or {},
-                                payload.get("enemies") or [],
-                                use_edited=payload.get("edited", False),
-                            )
-                        except Exception:
-                            card_img = None
-
-                        if card_img is not None:
-                            payload["card_img"] = card_img
+                        if not cloud_low_memory:
                             try:
-                                buf = BytesIO()
-                                card_img.save(buf, format="PNG")
-                                payload["card_bytes"] = buf.getvalue()
+                                exp = payload.get("expansion") or payload.get("expansions_used", [None])[0]
+                                lvl = int(payload.get("encounter_level") or payload.get("level") or 0)
+                                nm = payload.get("encounter_name") or payload.get("name")
+                                pc = int(payload.get("character_count") or character_count)
+                                enc_data = payload.get("encounter_data") or payload.get("data") or {}
+                                if not enc_data and exp and nm:
+                                    enc_data = load_encounter_data(exp, nm, character_count=pc, level=lvl)
+
+                                card_img = generate_encounter_image(
+                                    exp,
+                                    lvl,
+                                    nm,
+                                    enc_data or {},
+                                    payload.get("enemies") or [],
+                                    use_edited=payload.get("edited", False),
+                                )
                             except Exception:
-                                payload.pop("card_bytes", None)
+                                card_img = None
+
+                            if card_img is not None:
+                                payload["card_img"] = card_img
+                                try:
+                                    buf = BytesIO()
+                                    card_img.save(buf, format="PNG")
+                                    payload["card_bytes"] = buf.getvalue()
+                                except Exception:
+                                    payload.pop("card_bytes", None)
 
                         st.session_state.current_encounter = payload
+                        if cloud_low_memory:
+                            _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
                         st.session_state.encounter_events = payload.get("events", [])
                         st.session_state["last_encounter"] = {
                             "label": payload.get("meta_label", load_name),
@@ -755,11 +820,36 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         with col_enc:
             if "current_encounter" in st.session_state:
                 encounter = st.session_state.current_encounter
-                img_bytes = _ensure_card_bytes_inplace(encounter)
-                if img_bytes:
-                    st.image(img_bytes, width="stretch")
+                if cloud_low_memory:
+                    # Render-on-demand without retaining PIL/bytes in session_state.
+                    try:
+                        exp = encounter.get("expansion")
+                        lvl = int(encounter.get("encounter_level") or encounter.get("level") or 0)
+                        nm = encounter.get("encounter_name")
+                        enemies = encounter.get("enemies") or []
+                        enc_data = encounter.get("encounter_data") or {}
+                        if not enc_data and exp and nm:
+                            enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
+                        if exp and nm and lvl:
+                            img = generate_encounter_image(
+                                exp,
+                                lvl,
+                                nm,
+                                enc_data or {},
+                                enemies,
+                                use_edited=use_edited,
+                            )
+                            st.image(img, width="stretch")
+                        else:
+                            st.caption("Encounter image unavailable.")
+                    except Exception:
+                        st.caption("Encounter image unavailable.")
                 else:
-                    st.caption("Encounter image unavailable.")
+                    img_bytes = _ensure_card_bytes_inplace(encounter)
+                    if img_bytes:
+                        st.image(img_bytes, width="stretch")
+                    else:
+                        st.caption("Encounter image unavailable.")
 
                 # Divider between card and rules
                 st.markdown(
@@ -839,25 +929,29 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             # Event card images
             if events:
-                thumb_w = int(get_default_thumbnail_width_px())
-                ncols = 3
-                for row_start in range(0, len(events), ncols):
-                    row_events = events[row_start:row_start + ncols]
-                    cols = st.columns(ncols)
+                if cloud_low_memory:
+                    for ev in events:
+                        st.caption(format_event_brief_line(ev, include_type=True, max_len=160))
+                else:
+                    thumb_w = int(get_default_thumbnail_width_px())
+                    ncols = 3
+                    for row_start in range(0, len(events), ncols):
+                        row_events = events[row_start:row_start + ncols]
+                        cols = st.columns(ncols)
 
-                    for i, ev in enumerate(row_events):
-                        with cols[i]:
-                            img = _event_img_path(ev)
-                            if img:
-                                ev["path"] = str(img)
-                                p = Path(ev["path"])
-                                thumb_bytes = get_image_thumbnail_bytes_cached(
-                                    str(p), max_width=thumb_w
-                                )
-                                if thumb_bytes:
-                                    st.image(thumb_bytes, width=thumb_w)
-                            else:
-                                st.caption("Event image missing.")
+                        for i, ev in enumerate(row_events):
+                            with cols[i]:
+                                img = _event_img_path(ev)
+                                if img:
+                                    ev["path"] = str(img)
+                                    p = Path(ev["path"])
+                                    thumb_bytes = get_image_thumbnail_bytes_cached(
+                                        str(p), max_width=thumb_w
+                                    )
+                                    if thumb_bytes:
+                                        st.image(thumb_bytes, width=thumb_w)
+                                else:
+                                    st.caption("Event image missing.")
     else:
         st.markdown("#### Encounter Setup")
 
@@ -1030,7 +1124,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     active_expansions,
                     selected_expansion,
                     use_edited,
-                    render_image=False,
+                    render_image=(not cloud_low_memory),
                 )
                 if not res.get("ok"):
                     final_res = res
@@ -1046,27 +1140,30 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 attempt += 1
 
             if final_res and final_res.get("ok"):
-                # Render the card once (PIL work), after we have a final enemy list.
-                if "card_img" not in final_res:
-                    card_img = generate_encounter_image(
-                        final_res["expansion"],
-                        final_res["encounter_level"],
-                        final_res["encounter_name"],
-                        final_res.get("encounter_data") or {},
-                        final_res.get("enemies") or [],
-                        use_edited,
-                    )
-                    final_res["card_img"] = card_img
-                    try:
-                        buf = BytesIO()
-                        card_img.save(buf, format="PNG")
-                        final_res["card_bytes"] = buf.getvalue()
-                    except Exception:
-                        final_res.pop("card_bytes", None)
-                else:
-                    _ensure_card_bytes_inplace(final_res)
+                if not cloud_low_memory:
+                    # Render the card once (PIL work), after we have a final enemy list.
+                    if "card_img" not in final_res:
+                        card_img = generate_encounter_image(
+                            final_res["expansion"],
+                            final_res["encounter_level"],
+                            final_res["encounter_name"],
+                            final_res.get("encounter_data") or {},
+                            final_res.get("enemies") or [],
+                            use_edited,
+                        )
+                        final_res["card_img"] = card_img
+                        try:
+                            buf = BytesIO()
+                            card_img.save(buf, format="PNG")
+                            final_res["card_bytes"] = buf.getvalue()
+                        except Exception:
+                            final_res.pop("card_bytes", None)
+                    else:
+                        _ensure_card_bytes_inplace(final_res)
 
                 st.session_state.current_encounter = final_res
+                if cloud_low_memory:
+                    _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
                 # Reset Play tab state so the Play UI starts fresh for this new encounter
                 st.session_state["encounter_play"] = None
                 st.session_state["last_encounter"] = {
@@ -1086,56 +1183,71 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
         # Original
         if original_clicked and selected_label and "current_encounter" in st.session_state:
-            current = st.session_state.current_encounter
-            res = render_original_encounter(
-                current["encounter_data"],
-                current["expansion"],
-                current["encounter_name"],
-                current["encounter_level"],
+            selected_encounter = filtered_encounters[display_names.index(selected_label)]
+
+            res = shuffle_encounter(
+                selected_encounter,
+                character_count,
+                active_expansions,
+                selected_expansion,
                 use_edited,
+                use_original_enemies=True,
+                render_image=(not cloud_low_memory),
             )
-            if res:
+            if res and res.get("ok"):
                 # Mark this encounter as an Original render so Play uses the Hollow gang
                 res["force_gang"] = "Hollow"
                 st.session_state.current_encounter = res
-                _ensure_card_bytes_inplace(st.session_state.current_encounter)
+                if cloud_low_memory:
+                    _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
+                if not cloud_low_memory:
+                    _ensure_card_bytes_inplace(st.session_state.current_encounter)
                 # Reset Play tab state so the Play UI starts fresh for this original render
                 st.session_state["encounter_play"] = None
                 st.session_state["last_encounter"] = {
                     "label": selected_label,
-                    "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
-                    "expansion": res["expansion"],
+                    "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
+                    "expansion": selected_expansion,
                     "character_count": character_count,
                     "edited": use_edited,
-                    "enemies": res["enemies"],
-                    "expansions_used": res["expansions_used"],
+                    "enemies": res.get("enemies"),
+                    "expansions_used": res.get("expansions_used"),
                 }
                 _apply_added_invaders_to_current_encounter()
 
         # Apply edited/original toggle when we already have a current encounter
         if toggle_changed and "current_encounter" in st.session_state:
-            current = st.session_state.current_encounter
-            res = apply_edited_toggle(
-                current["encounter_data"],
-                current["expansion"],
-                current["encounter_name"],
-                current["encounter_level"],
-                use_edited,
-                enemies=current["enemies"],
-                combo=current["expansions_used"],
-            )
-            if res:
-                st.session_state.current_encounter = res
-                st.session_state["last_encounter"] = {
-                    "label": selected_label,
-                    "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
-                    "expansion": res["expansion"],
-                    "character_count": character_count,
-                    "edited": use_edited,
-                    "enemies": res["enemies"],
-                    "expansions_used": res["expansions_used"],
-                }
-                _apply_added_invaders_to_current_encounter()
+            if cloud_low_memory:
+                try:
+                    cur = st.session_state.current_encounter
+                    if isinstance(cur, dict):
+                        for k in ("card_img", "card_bytes", "buf"):
+                            cur.pop(k, None)
+                except Exception:
+                    pass
+            else:
+                current = st.session_state.current_encounter
+                res = apply_edited_toggle(
+                    current["encounter_data"],
+                    current["expansion"],
+                    current["encounter_name"],
+                    current["encounter_level"],
+                    use_edited,
+                    enemies=current["enemies"],
+                    combo=current["expansions_used"],
+                )
+                if res:
+                    st.session_state.current_encounter = res
+                    st.session_state["last_encounter"] = {
+                        "label": selected_label,
+                        "slug": f"{res['expansion']}_{res['encounter_level']}_{res['encounter_name']}",
+                        "expansion": res["expansion"],
+                        "character_count": character_count,
+                        "edited": use_edited,
+                        "enemies": res["enemies"],
+                        "expansions_used": res["expansions_used"],
+                    }
+                    _apply_added_invaders_to_current_encounter()
 
         # Auto-shuffle when encounter selection changes (and no explicit button pressed)
         if (
@@ -1159,10 +1271,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     active_expansions,
                     selected_expansion,
                     use_edited,
+                    render_image=(not cloud_low_memory),
                 )
                 if res.get("ok"):
                     st.session_state.current_encounter = res
-                    _ensure_card_bytes_inplace(st.session_state.current_encounter)
+                    if cloud_low_memory:
+                        _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
                     st.session_state["last_encounter"] = {
                         "label": selected_label,
                         "slug": f"{selected_expansion}_{selected_encounter['level']}_{selected_encounter['name']}",
@@ -1180,11 +1294,35 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     
         if "current_encounter" in st.session_state:
             encounter = st.session_state.current_encounter
-            img_bytes = _ensure_card_bytes_inplace(encounter)
-            if img_bytes:
-                st.image(img_bytes, width="stretch")
+            if cloud_low_memory:
+                try:
+                    exp = encounter.get("expansion")
+                    lvl = int(encounter.get("encounter_level") or encounter.get("level") or 0)
+                    nm = encounter.get("encounter_name")
+                    enemies = encounter.get("enemies") or []
+                    enc_data = encounter.get("encounter_data") or {}
+                    if not enc_data and exp and nm:
+                        enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
+                    if exp and nm and lvl:
+                        img = generate_encounter_image(
+                            exp,
+                            lvl,
+                            nm,
+                            enc_data or {},
+                            enemies,
+                            use_edited=use_edited,
+                        )
+                        st.image(img, width="stretch")
+                    else:
+                        st.caption("Encounter image unavailable.")
+                except Exception:
+                    st.caption("Encounter image unavailable.")
             else:
-                st.caption("Encounter image unavailable.")
+                img_bytes = _ensure_card_bytes_inplace(encounter)
+                if img_bytes:
+                    st.image(img_bytes, width="stretch")
+                else:
+                    st.caption("Encounter image unavailable.")
 
             # Divider between card and rules
             st.markdown(
@@ -1262,16 +1400,20 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             st.caption("No events attached yet.")
 
         # Event card images
-        for ev in events:
-            img = _event_img_path(ev)
-            if img:
-                # migrate in-place so future code can rely on "path"
-                ev["path"] = str(img)
-                # Show image directly
-                # If `img` is a path or bytes, `st.image` will handle it.
-                st.image(str(img), width="stretch")
+        if events:
+            if cloud_low_memory:
+                for ev in events:
+                    st.caption(format_event_brief_line(ev, include_type=True, max_len=160))
             else:
-                st.caption("Event image missing.")
+                for ev in events:
+                    img = _event_img_path(ev)
+                    if img:
+                        # migrate in-place so future code can rely on "path"
+                        ev["path"] = str(img)
+                        # Show image directly
+                        st.image(str(img), width="stretch")
+                    else:
+                        st.caption("Event image missing.")
 
 
 # -------------------------------------------------------------------------
@@ -1367,6 +1509,8 @@ def _apply_added_invaders_to_current_encounter() -> None:
 
     encounter["invaders"] = combined
     st.session_state.current_encounter = encounter
+    if bool(st.session_state.get("cloud_low_memory", False)):
+        _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
 
 
 def _restore_added_invaders_from_payload(payload: dict) -> None:
