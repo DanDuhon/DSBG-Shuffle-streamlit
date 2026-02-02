@@ -25,6 +25,11 @@ from ui.character_mode.data_io import _find_data_file, _load_json_list
 from core.settings_manager import get_config_bool, is_streamlit_cloud
 from core.expansions import is_v2_expansion
 
+try:
+    from ui.shared.memory_debug import memlog_checkpoint
+except Exception:  # pragma: no cover
+    memlog_checkpoint = None  # type: ignore
+
 
 INVADERS_PATH = Path("data/invaders.json")
 HARD_MAX_INVADERS_BY_LEVEL = {
@@ -552,8 +557,54 @@ def shuffle_encounter(
     level = int(selected_encounter["level"])
     encounter_slug = f"{selected_expansion}_{level}_{name}"
 
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "shuffle:enter",
+                extra={
+                    "op": "shuffle_encounter",
+                    "encounter": str(name),
+                    "level": int(level),
+                    "char_count": int(character_count),
+                    "campaign": bool(campaign_mode),
+                    "render_image": bool(render_image),
+                    "use_original": bool(use_original_enemies),
+                },
+            )
+        except Exception:
+            pass
+
     # `load_encounter` is cached; never mutate the returned dict in-place.
     encounter_data = dict(load_encounter(encounter_slug, character_count) or {})
+
+    if memlog_checkpoint is not None:
+        try:
+            load_ci = None
+            try:
+                load_ci = load_encounter.cache_info()  # type: ignore[attr-defined]
+            except Exception:
+                load_ci = None
+
+            memlog_checkpoint(
+                st.session_state,
+                "shuffle:loaded_json",
+                extra={
+                    "slug": str(encounter_slug),
+                    "keys": int(len(encounter_data.keys())) if isinstance(encounter_data, dict) else None,
+                    "alts": int(len((encounter_data.get("alternatives") or {}).keys())) if isinstance(encounter_data, dict) else None,
+                    "load_encounter_cache": {
+                        "hits": getattr(load_ci, "hits", None),
+                        "misses": getattr(load_ci, "misses", None),
+                        "maxsize": getattr(load_ci, "maxsize", None),
+                        "currsize": getattr(load_ci, "currsize", None),
+                    }
+                    if load_ci is not None
+                    else None,
+                },
+            )
+        except Exception:
+            pass
     # If caller requested the original enemy list, use it (respect invader limits).
     if use_original_enemies:
         enemies = encounter_data.get("original")
@@ -608,10 +659,39 @@ def shuffle_encounter(
                 "message": f"No valid alternatives under current invader limit (level {level} max invaders = {limit}).",
             }
 
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "shuffle:enemies_selected",
+                extra={
+                    "combo": combo,
+                    "enemy_count": int(len(enemies or [])) if enemies is not None else 0,
+                    "inv_limit": int(_get_invader_limit_for_level(level)),
+                },
+            )
+        except Exception:
+            pass
+
     # Handle Similar Soul Cost item replacements when user requested
     settings = settings or st.session_state.get("user_settings") or {}
     pref = settings.get("encounter_item_reward_mode", "Original")
     if pref in ("Similar Soul Cost", "Same Item Tier"):
+        if memlog_checkpoint is not None:
+            try:
+                ss = st.session_state
+                item_cache = ss.get("item_cost_cache")
+                memlog_checkpoint(
+                    ss,
+                    "shuffle:reward_replace_enter",
+                    extra={
+                        "mode": str(pref),
+                        "item_cost_cache_entries": int(len(item_cache)) if isinstance(item_cache, dict) else 0,
+                    },
+                )
+            except Exception:
+                pass
+
         entries = ENCOUNTER_ORIGINAL_REWARDS.get((name, selected_expansion), []) or []
         if entries:
             # Use cached JSON loader to avoid re-reading files on every shuffle
@@ -673,6 +753,19 @@ def shuffle_encounter(
             cache_key = str(party_sig)
             cost_map = ss["item_cost_cache"].get(cache_key)
             if cost_map is None:
+                if memlog_checkpoint is not None:
+                    try:
+                        memlog_checkpoint(
+                            ss,
+                            "shuffle:item_cost_cache_miss",
+                            extra={
+                                "party_sig_len": int(len(party_sig)),
+                                "cache_entries_before": int(len(ss.get("item_cost_cache") or {})),
+                            },
+                        )
+                    except Exception:
+                        pass
+
                 # Compute cost for all items once for this party and store in cache
                 cost_map = {}
                 all_items = list(hand_items) + list(armor_items) + list(weapon_upgrades) + list(armor_upgrades)
@@ -682,6 +775,19 @@ def shuffle_encounter(
                     cost = stats.get("average") if stats.get("average") is not None else stats.get("sum", 0)
                     cost_map[item_name] = cost
                 ss["item_cost_cache"][cache_key] = cost_map
+
+                if memlog_checkpoint is not None:
+                    try:
+                        memlog_checkpoint(
+                            ss,
+                            "shuffle:item_cost_cache_store",
+                            extra={
+                                "cache_entries_after": int(len(ss.get("item_cost_cache") or {})),
+                                "items_priced": int(len(cost_map)),
+                            },
+                        )
+                    except Exception:
+                        pass
 
             # helper to normalize item metadata from either top-level or nested `source` keys
             def _meta(item):
@@ -966,6 +1072,20 @@ def shuffle_encounter(
                 encounter_data = dict(encounter_data) if encounter_data is not None else {}
                 encounter_data.setdefault("_shuffled_reward_replacements", {}).update(replacements)
 
+            if memlog_checkpoint is not None:
+                try:
+                    ss = st.session_state
+                    memlog_checkpoint(
+                        ss,
+                        "shuffle:reward_replace_done",
+                        extra={
+                            "replacements": int(len(replacements)),
+                            "item_cost_cache_entries": int(len(ss.get("item_cost_cache") or {})) if isinstance(ss.get("item_cost_cache"), dict) else 0,
+                        },
+                    )
+                except Exception:
+                    pass
+
     # Allow callers (notably Setup tab retry loops) to choose enemies without
     # paying the cost of PIL rendering every attempt.
     if not render_image:
@@ -979,13 +1099,73 @@ def shuffle_encounter(
             "expansions_used": combo.split(",") if isinstance(combo, str) else combo,
         }
 
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(st.session_state, "shuffle:render_start", extra={"slug": str(encounter_slug)})
+        except Exception:
+            pass
+
     card_img = generate_encounter_image(
         selected_expansion, level, name, encounter_data, enemies, use_edited
     )
 
+    if memlog_checkpoint is not None:
+        try:
+            # Include encounter image generation cache stats (best-effort).
+            cache_stats = None
+            try:
+                import ui.encounter_mode.generation as _encgen
+
+                cache_stats = {
+                    "_load_rgba_image": getattr(getattr(_encgen, "_load_rgba_image", None), "cache_info", lambda: None)(),
+                    "_load_enemy_icon_rgba": getattr(getattr(_encgen, "_load_enemy_icon_rgba", None), "cache_info", lambda: None)(),
+                    "_get_icon_resized": getattr(getattr(_encgen, "_get_icon_resized", None), "cache_info", lambda: None)(),
+                    "_get_reward_font": getattr(getattr(_encgen, "_get_reward_font", None), "cache_info", lambda: None)(),
+                    "_get_resized_gang_image": getattr(getattr(_encgen, "_get_resized_gang_image", None), "cache_info", lambda: None)(),
+                }
+                # Convert cache_info namedtuples to plain dicts.
+                for k, ci in list(cache_stats.items()):
+                    if ci is None:
+                        cache_stats[k] = None
+                        continue
+                    try:
+                        cache_stats[k] = {
+                            "hits": getattr(ci, "hits", None),
+                            "misses": getattr(ci, "misses", None),
+                            "maxsize": getattr(ci, "maxsize", None),
+                            "currsize": getattr(ci, "currsize", None),
+                        }
+                    except Exception:
+                        cache_stats[k] = None
+            except Exception:
+                cache_stats = None
+
+            memlog_checkpoint(
+                st.session_state,
+                "shuffle:render_done",
+                extra={
+                    "img": f"{getattr(card_img, 'width', None)}x{getattr(card_img, 'height', None)}",
+                    "encgen_lru": cache_stats,
+                },
+            )
+        except Exception:
+            pass
+
     buf = BytesIO()
     card_img.save(buf, format="PNG")
     buf.seek(0)
+
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "shuffle:png_encoded",
+                extra={
+                    "png_bytes": int(buf.getbuffer().nbytes) if buf is not None else None,
+                },
+            )
+        except Exception:
+            pass
 
     return {
         "ok": True,

@@ -1,5 +1,11 @@
 import random
 from typing import Any, Dict, List, Optional
+import streamlit as st
+
+try:
+    from ui.shared.memory_debug import memlog_checkpoint
+except Exception:  # pragma: no cover
+    memlog_checkpoint = None  # type: ignore
 from ui.encounter_mode.logic import (
     _list_encounters_cached,
     _load_valid_sets_cached,
@@ -107,6 +113,20 @@ def _pick_random_campaign_encounter(
     settings: Optional[Dict[str, Any]] = None,
     eligibility_fn=_is_v1_campaign_eligible,
 ) -> Dict[str, Any]:
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:pick_encounter_enter",
+                extra={
+                    "level": int(level),
+                    "char_count": int(character_count),
+                    "active_expansions": int(len(active_expansions or [])),
+                },
+            )
+        except Exception:
+            pass
+
     filtered_expansions = filter_expansions(
         encounters_by_expansion,
         character_count,
@@ -150,6 +170,20 @@ def _pick_random_campaign_encounter(
             f"No valid level {level_int} encounters in any expansion "
             "for current party/expansion settings."
         )
+
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:candidates_built",
+                extra={
+                    "level": int(level_int),
+                    "candidate_expansions": int(len(candidate_expansions)),
+                    "flat_candidates": int(sum(len(v) for _, v in candidate_expansions)),
+                },
+            )
+        except Exception:
+            pass
 
     last_error_msg: Optional[str] = None
 
@@ -216,6 +250,22 @@ def _pick_random_campaign_encounter(
             campaign_mode=True,
             render_image=False,
         )
+
+        if memlog_checkpoint is not None:
+            try:
+                memlog_checkpoint(
+                    st.session_state,
+                    "camp:shuffle_attempt",
+                    extra={
+                        "level": int(level_int),
+                        "exp": str(exp_choice),
+                        "encounter": str(base_enc.get("name")),
+                        "ok": bool(res.get("ok")),
+                        "msg": str(res.get("message") or "")[:200],
+                    },
+                )
+            except Exception:
+                pass
         return res
 
     while flat_candidates:
@@ -234,6 +284,21 @@ def _pick_random_campaign_encounter(
                     "expansions_used": res.get("expansions_used") or [],
                     "edited": bool(res.get("edited", False)),
                 }
+
+                if memlog_checkpoint is not None:
+                    try:
+                        memlog_checkpoint(
+                            st.session_state,
+                            "camp:shuffle_success",
+                            extra={
+                                "level": int(level_int),
+                                "exp": str(frozen.get("expansion")),
+                                "encounter": str(frozen.get("encounter_name")),
+                                "enemy_count": int(len(frozen.get("enemies") or [])),
+                            },
+                        )
+                    except Exception:
+                        pass
                 return frozen
 
             last_error_msg = res.get("message") or last_error_msg
@@ -325,6 +390,18 @@ def _generate_v1_campaign(
     settings: Dict[str, Any],
     state: Dict[str, Any],
 ) -> Dict[str, Any]:
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:v1_generate_enter",
+                extra={
+                    "active_expansions": int(len((settings.get("active_expansions") or []))),
+                },
+            )
+        except Exception:
+            pass
+
     player_count = get_player_count_from_settings(settings)
     active_expansions = settings.get("active_expansions") or []
 
@@ -334,6 +411,20 @@ def _generate_v1_campaign(
 
     valid_sets = _load_valid_sets_cached()
     resolved_bosses = _resolve_v1_bosses_for_campaign(bosses_by_name, settings, state)
+
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:v1_data_loaded",
+                extra={
+                    "player_count": int(player_count),
+                    "expansions": int(len(active_expansions or [])),
+                    "encounter_exps": int(len(encounters_by_expansion or {})),
+                },
+            )
+        except Exception:
+            pass
 
     campaign: Dict[str, Any] = {
         "version": "V1",
@@ -441,6 +532,18 @@ def _generate_v1_campaign(
     if mega_name:
         _add_stage("mega", mega_name)
 
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:v1_generate_done",
+                extra={
+                    "nodes": int(len(campaign.get("nodes") or [])),
+                },
+            )
+        except Exception:
+            pass
+
     return campaign
 
 
@@ -449,6 +552,18 @@ def _generate_v2_campaign(
     settings: Dict[str, Any],
     state: Dict[str, Any],
 ) -> Dict[str, Any]:
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:v2_generate_enter",
+                extra={
+                    "active_expansions": int(len((settings.get("active_expansions") or []))),
+                },
+            )
+        except Exception:
+            pass
+
     player_count = get_player_count_from_settings(settings)
     active_expansions = settings.get("active_expansions") or []
 
@@ -461,6 +576,20 @@ def _generate_v2_campaign(
 
     valid_sets = _load_valid_sets_cached()
     resolved_bosses = _resolve_v1_bosses_for_campaign(bosses_by_name, settings, state)
+
+    if memlog_checkpoint is not None:
+        try:
+            memlog_checkpoint(
+                st.session_state,
+                "camp:v2_data_loaded",
+                extra={
+                    "player_count": int(player_count),
+                    "expansions": int(len(active_expansions or [])),
+                    "encounter_exps": int(len(encounters_by_expansion or {})),
+                },
+            )
+        except Exception:
+            pass
 
     campaign: Dict[str, Any] = {
         "version": "V2",

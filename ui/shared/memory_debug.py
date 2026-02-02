@@ -1,9 +1,22 @@
 from __future__ import annotations
 
+import json
 import os
 import sys
+import time
 from dataclasses import dataclass
 from typing import Any, Iterable
+
+
+# Tracemalloc is optional and only enabled when explicitly requested.
+try:  # pragma: no cover
+    import tracemalloc
+except Exception:  # pragma: no cover
+    tracemalloc = None  # type: ignore
+
+
+_TRACE_STARTED = False
+_LAST_TRACE_SNAPSHOT = None
 
 
 @dataclass(frozen=True)
@@ -187,3 +200,186 @@ def get_process_rss_mb() -> float | None:
         return None
 
     return None
+
+
+def _utc_now_iso() -> str:
+    try:
+        # Avoid importing datetime on the hot path unless needed.
+        import datetime as _dt
+
+        return _dt.datetime.now(tz=_dt.timezone.utc).isoformat(timespec="seconds")
+    except Exception:
+        return ""
+
+
+def memlog_clear(state: Any) -> None:
+    """Clear the in-memory memlog stored in `state` (e.g. st.session_state)."""
+
+    if not isinstance(state, dict):
+        return
+    state.pop("_memdbg_events", None)
+    state.pop("_memdbg_last_rss", None)
+    state.pop("_memdbg_seq", None)
+
+
+def memlog_get_events(state: Any) -> list[dict]:
+    if not isinstance(state, dict):
+        return []
+    ev = state.get("_memdbg_events")
+    if isinstance(ev, list):
+        # Only return JSON-safe dicts.
+        out: list[dict] = []
+        for e in ev:
+            if isinstance(e, dict):
+                out.append(e)
+        return out
+    return []
+
+
+def memlog_export_json(state: Any) -> str:
+    """Export memlog events as a JSON string (safe for st.download_button)."""
+    payload = {
+        "exported_at": _utc_now_iso(),
+        "events": memlog_get_events(state),
+    }
+    try:
+        return json.dumps(payload, indent=2, sort_keys=False)
+    except Exception:
+        return json.dumps({"events": []})
+
+
+def _to_cache_info_dict(ci: Any) -> dict:
+    try:
+        # functools.lru_cache cache_info() returns a namedtuple.
+        return {
+            "hits": int(getattr(ci, "hits")),
+            "misses": int(getattr(ci, "misses")),
+            "maxsize": getattr(ci, "maxsize"),
+            "currsize": int(getattr(ci, "currsize")),
+        }
+    except Exception:
+        return {}
+
+
+def memlog_checkpoint(
+    state: Any,
+    label: str,
+    *,
+    extra: dict | None = None,
+    force: bool = False,
+    max_events: int = 500,
+    do_gc: bool | None = None,
+    do_trace: bool | None = None,
+    trace_top_n: int = 12,
+    trace_group_by: str = "lineno",
+) -> dict | None:
+    """Append a memory checkpoint entry into `state`.
+
+    Intended storage: `st.session_state`.
+
+    Behavior:
+    - Records RSS (MB) and delta since last checkpoint.
+    - Optionally runs `gc.collect()` and/or `tracemalloc` snapshot diffs.
+    - Caps log size to `max_events` to avoid becoming a memory problem.
+    """
+
+    if not isinstance(state, dict):
+        return None
+
+    enabled = bool(state.get("_memdbg_log_enabled", False))
+    if not enabled and not force:
+        return None
+
+    # Sampling control (optional).
+    try:
+        sample_every = int(state.get("_memdbg_sample_every", 1) or 1)
+    except Exception:
+        sample_every = 1
+    sample_every = max(1, sample_every)
+
+    seq = int(state.get("_memdbg_seq", 0) or 0) + 1
+    state["_memdbg_seq"] = seq
+    if not force and sample_every > 1 and (seq % sample_every) != 0:
+        return None
+
+    rss_now = get_process_rss_mb()
+    last_rss = state.get("_memdbg_last_rss")
+    try:
+        last_rss_f = float(last_rss) if last_rss is not None else None
+    except Exception:
+        last_rss_f = None
+    delta = (float(rss_now) - float(last_rss_f)) if (rss_now is not None and last_rss_f is not None) else None
+    if rss_now is not None:
+        state["_memdbg_last_rss"] = float(rss_now)
+
+    # Optional GC
+    if do_gc is None:
+        do_gc = bool(state.get("_memdbg_log_gc", False))
+    gc_ms = None
+    gc_counts = None
+    if do_gc:
+        try:
+            import gc
+
+            gc_counts = list(gc.get_count())
+            t0 = time.perf_counter()
+            gc.collect()
+            gc_ms = (time.perf_counter() - t0) * 1000.0
+        except Exception:
+            pass
+
+    # Optional tracemalloc
+    if do_trace is None:
+        do_trace = bool(state.get("_memdbg_log_trace", False))
+    trace_top = None
+    if do_trace and tracemalloc is not None:
+        global _TRACE_STARTED, _LAST_TRACE_SNAPSHOT
+        try:
+            if not _TRACE_STARTED:
+                tracemalloc.start(25)
+                _TRACE_STARTED = True
+                _LAST_TRACE_SNAPSHOT = tracemalloc.take_snapshot()
+            else:
+                snap = tracemalloc.take_snapshot()
+                if _LAST_TRACE_SNAPSHOT is not None:
+                    stats = snap.compare_to(_LAST_TRACE_SNAPSHOT, trace_group_by)
+                    top = []
+                    for s in list(stats)[: max(1, int(trace_top_n))]:
+                        try:
+                            top.append(str(s))
+                        except Exception:
+                            continue
+                    trace_top = top
+                _LAST_TRACE_SNAPSHOT = snap
+        except Exception:
+            # Tracemalloc can fail in some environments; ignore.
+            trace_top = None
+
+    entry = {
+        "t": time.time(),
+        "ts": _utc_now_iso(),
+        "seq": int(seq),
+        "label": str(label),
+        "rss_mb": float(rss_now) if rss_now is not None else None,
+        "delta_mb": float(delta) if delta is not None else None,
+        "gc_ms": float(gc_ms) if gc_ms is not None else None,
+        "gc_counts": gc_counts,
+        "trace_top": trace_top,
+        "extra": extra if isinstance(extra, dict) else None,
+    }
+
+    events = state.get("_memdbg_events")
+    if not isinstance(events, list):
+        events = []
+        state["_memdbg_events"] = events
+
+    events.append(entry)
+    try:
+        max_n = max(50, int(max_events))
+    except Exception:
+        max_n = 500
+    if len(events) > max_n:
+        # Trim from the front.
+        del events[0 : len(events) - max_n]
+
+    return entry

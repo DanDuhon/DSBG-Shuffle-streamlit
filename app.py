@@ -644,12 +644,113 @@ def _memory_debug_enabled() -> bool:
 
 
 if _memory_debug_enabled():
-    from ui.shared.memory_debug import format_bytes, get_process_rss_mb, summarize_mapping
+    from ui.shared.memory_debug import (
+        format_bytes,
+        get_process_rss_mb,
+        memlog_checkpoint,
+        memlog_clear,
+        memlog_export_json,
+        memlog_get_events,
+        summarize_mapping,
+    )
 
     with st.sidebar.expander("Debug: Memory", expanded=False):
         rss_now = get_process_rss_mb()
         if rss_now is not None:
             st.caption(f"Process RSS: {rss_now:.1f} MB")
+
+        st.markdown("##### Checkpoint log")
+        c1, c2, c3 = st.columns([1.2, 1, 1])
+        with c1:
+            st.session_state["_memdbg_log_enabled"] = st.checkbox(
+                "Enable checkpoint logging",
+                value=bool(st.session_state.get("_memdbg_log_enabled", False)),
+                key="memdbg_log_enabled",
+            )
+        with c2:
+            st.session_state["_memdbg_log_gc"] = st.checkbox(
+                "GC at checkpoint",
+                value=bool(st.session_state.get("_memdbg_log_gc", False)),
+                key="memdbg_log_gc",
+            )
+        with c3:
+            st.session_state["_memdbg_log_trace"] = st.checkbox(
+                "Trace alloc (slow)",
+                value=bool(st.session_state.get("_memdbg_log_trace", False)),
+                key="memdbg_log_trace",
+            )
+
+        st.session_state["_memdbg_sample_every"] = st.number_input(
+            "Sample every N checkpoints",
+            min_value=1,
+            max_value=100,
+            value=int(st.session_state.get("_memdbg_sample_every", 1) or 1),
+            step=1,
+            help="Higher values reduce log volume in tight loops.",
+            key="memdbg_sample_every",
+        )
+
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            if st.button("Checkpoint now", width="stretch", key="memdbg_checkpoint_now"):
+                memlog_checkpoint(st.session_state, "manual", force=True, extra={"where": "sidebar"})
+                st.rerun()
+        with b2:
+            if st.button("Clear checkpoint log", width="stretch", key="memdbg_clear_log"):
+                memlog_clear(st.session_state)
+                st.rerun()
+        with b3:
+            st.download_button(
+                "Export log JSON",
+                data=memlog_export_json(st.session_state),
+                file_name="dsbg_memlog.json",
+                mime="application/json",
+                use_container_width=True,
+                key="memdbg_export_log",
+            )
+
+        events = memlog_get_events(st.session_state)
+        if events:
+            # Show a compact table of the most recent events.
+            show_n = min(200, len(events))
+            rows = []
+            for e in events[-show_n:]:
+                if not isinstance(e, dict):
+                    continue
+                extra = e.get("extra")
+                extra_str = ""
+                if isinstance(extra, dict) and extra:
+                    # Keep the table readable; full payload is in the JSON export.
+                    try:
+                        # Prefer small highlights.
+                        keys = [k for k in ("op", "level", "encounter", "stage", "attempt", "ok") if k in extra]
+                        if keys:
+                            extra_str = ", ".join(f"{k}={extra.get(k)!r}" for k in keys)
+                        else:
+                            extra_str = str(list(extra.keys())[:6])
+                    except Exception:
+                        extra_str = "(extra)"
+
+                trace = e.get("trace_top")
+                trace_hint = ""
+                if isinstance(trace, list) and trace:
+                    trace_hint = str(trace[0])
+
+                rows.append(
+                    {
+                        "seq": e.get("seq"),
+                        "label": e.get("label"),
+                        "rss_mb": e.get("rss_mb"),
+                        "delta_mb": e.get("delta_mb"),
+                        "gc_ms": e.get("gc_ms"),
+                        "extra": extra_str,
+                        "trace_top": trace_hint,
+                    }
+                )
+
+            st.dataframe(rows, width="stretch", hide_index=True)
+        else:
+            st.caption("No checkpoints yet. Enable logging, then run a shuffle or generate a campaign.")
 
         # Compute-on-demand so we don't add overhead to normal runs.
         if st.button("Compute session_state breakdown", width="stretch", key="memdbg_compute"):
