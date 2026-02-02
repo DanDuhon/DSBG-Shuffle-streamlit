@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+from collections.abc import MutableMapping
 from dataclasses import dataclass
 from typing import Any, Iterable
 
@@ -215,7 +216,7 @@ def _utc_now_iso() -> str:
 def memlog_clear(state: Any) -> None:
     """Clear the in-memory memlog stored in `state` (e.g. st.session_state)."""
 
-    if not isinstance(state, dict):
+    if not isinstance(state, MutableMapping):
         return
     state.pop("_memdbg_events", None)
     state.pop("_memdbg_last_rss", None)
@@ -223,7 +224,7 @@ def memlog_clear(state: Any) -> None:
 
 
 def memlog_get_events(state: Any) -> list[dict]:
-    if not isinstance(state, dict):
+    if not isinstance(state, MutableMapping):
         return []
     ev = state.get("_memdbg_events")
     if isinstance(ev, list):
@@ -283,7 +284,7 @@ def memlog_checkpoint(
     - Caps log size to `max_events` to avoid becoming a memory problem.
     """
 
-    if not isinstance(state, dict):
+    if not isinstance(state, MutableMapping):
         return None
 
     enabled = bool(state.get("_memdbg_log_enabled", False))
