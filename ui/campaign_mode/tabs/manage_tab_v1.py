@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Set
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
 from core.behavior.generation import (
     render_data_card_cached,
+    render_data_card_uncached,
     render_dual_boss_data_cards,
 )
 from ui.campaign_mode.core import (
@@ -510,6 +511,8 @@ def _render_v1_current_panel(
     kind = current_node.get("kind")
     st.markdown("#### Current space")
 
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+
     # Bonfire
     if kind == "bonfire":
         st.caption("Resting at the bonfire.")
@@ -537,6 +540,7 @@ def _render_v1_current_panel(
             # Load raw behavior JSON directly (cache-aware)
             json_path = Path("data") / "behaviors" / f"{boss_name}.json"
             from ui.campaign_mode.persistence import load_json_file
+
             raw_data = load_json_file(json_path)
             if raw_data is None:
                 raise RuntimeError(f"Failed to load behavior JSON for '{boss_name}'")
@@ -552,16 +556,25 @@ def _render_v1_current_panel(
             else:
                 if boss_name == "Executioner's Chariot":
                     data_path = (
-                        BEHAVIOR_CARDS_PATH
-                        + "Executioner's Chariot - Skeletal Horse.jpg"
+                        BEHAVIOR_CARDS_PATH + "Executioner's Chariot - Skeletal Horse.jpg"
                     )
                 else:
                     data_path = BEHAVIOR_CARDS_PATH + f"{boss_name} - data.jpg"
-                img = render_data_card_cached(
-                    data_path,
-                    raw_data,
-                    is_boss=True,
-                )
+
+                # Cloud low-memory: still show images, but avoid Streamlit cache
+                # retention of large PNG bytes.
+                if cloud_low_memory:
+                    img = render_data_card_uncached(
+                        data_path,
+                        raw_data,
+                        is_boss=True,
+                    )
+                else:
+                    img = render_data_card_cached(
+                        data_path,
+                        raw_data,
+                        is_boss=True,
+                    )
                 st.image(img, width="stretch")
         else:
             st.markdown(f"**{prefix}: Unknown**")

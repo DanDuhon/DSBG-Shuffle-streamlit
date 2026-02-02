@@ -237,6 +237,8 @@ def render_original_encounter(
     encounter_level,
     use_edited,
     enemies=None,
+    *,
+    include_bytes: bool = True,
 ):
     """Re-render the original encounter image (not shuffled)."""
     if enemies is None:
@@ -251,9 +253,11 @@ def render_original_encounter(
         use_edited,
     )
 
-    buf = BytesIO()
-    card_img.save(buf, format="PNG")
-    card_bytes = buf.getvalue()
+    card_bytes = None
+    if include_bytes:
+        buf = BytesIO()
+        card_img.save(buf, format="PNG")
+        card_bytes = buf.getvalue()
 
     return {
         "ok": True,

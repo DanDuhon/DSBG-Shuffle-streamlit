@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
-from core.behavior.generation import render_data_card_cached
+from core.behavior.generation import render_data_card_cached, render_data_card_uncached
 from ui.boss_mode.executioners_chariot_death_race import EXECUTIONERS_CHARIOT_NAME
 from ui.boss_mode.panels.encounter_setups import render_ec_mega_boss_setup_panel
 from ui.campaign_mode.core import _card_w
@@ -14,15 +14,17 @@ def try_render_chariot_data_card(*, cfg, state) -> bool:
     data_col, setup_col = st.columns([1, 1])
 
     with data_col:
+        cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+        render_data = render_data_card_uncached if cloud_low_memory else render_data_card_cached
         if not st.session_state.get("chariot_heatup_done", False):
-            img = render_data_card_cached(
+            img = render_data(
                 BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner's Chariot.jpg",
                 cfg.raw,
                 is_boss=True,
                 no_edits=True,
             )
         else:
-            img = render_data_card_cached(
+            img = render_data(
                 BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
                 cfg.raw,
                 is_boss=True,

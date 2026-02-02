@@ -96,6 +96,23 @@ def render_behavior_card_cached(
     )
 
 
+def render_behavior_card_uncached(
+    base_path: str,
+    behavior_json: Dict[str, Any],
+    is_boss: bool,
+    base_card: Optional[bytes] = None,
+) -> bytes:
+    """Uncached variant of `render_behavior_card_cached`.
+
+    Used for Streamlit Cloud low-memory mode to avoid `st.cache_data` retaining
+    large rendered PNG byte arrays.
+    """
+
+    return render_behavior_card(
+        base_path, behavior_json, is_boss=is_boss, base_card=base_card
+    )
+
+
 def infer_category(cfg) -> str:
     """
     Map a BehaviorConfig to one of our UI categories using:
@@ -334,6 +351,72 @@ def render_data_card(
         _draw_text(base, "heatup2", str(raw_json["heatup2"]), is_boss)
 
     # --- regular enemy: show dodge (comes from behavior.dodge) ---
+    if not is_boss:
+        beh = raw_json.get("behavior") or {}
+        if "dodge" in beh:
+            _draw_text(base, "dodge", str(beh["dodge"]), is_boss)
+            return render_behavior_card(
+                base_path, raw_json["behavior"], is_boss=False, base_card=base
+            )
+
+    buf = io.BytesIO()
+    base.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def render_data_card_uncached(
+    base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
+) -> bytes:
+    """Uncached variant of `render_data_card`.
+
+    Streamlit's `st.cache_data` can retain large PNG bytes and drive RSS up on
+    Streamlit Cloud. This helper renders on-demand without using Streamlit
+    caching, so callers can still display images while avoiding cache retention.
+    """
+
+    base = load_pil_image_cached(base_path, convert="RGBA").copy()
+    if no_edits:
+        buf = io.BytesIO()
+        base.save(buf, format="PNG")
+        return buf.getvalue()
+
+    try:
+        bp_stem = Path(base_path).stem
+    except Exception:
+        bp_stem = str(base_path)
+    if "Paladin Leeroy" in bp_stem:
+        level = get_current_ngplus_level()
+        text = f"The first time Leeroy's health would be\nreduced to 0, set his health to {2 + level} instead."
+        draw = ImageDraw.Draw(base)
+        font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
+        font = ImageFont.truetype(str(font_path), 33)
+        draw.text((97, 855), text, font=font, fill="black")
+    elif "Maneater Mildred" in bp_stem:
+        level = get_current_ngplus_level()
+        heal = 1 if level <= 2 else 2 if level <= 4 else 3
+        text = f"If Mildred's attack damages one or more\ncharacters, she gains {heal} health."
+        draw = ImageDraw.Draw(base)
+        font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
+        font = ImageFont.truetype(str(font_path), 33)
+        draw.text((97, 855), text, font=font, fill="black")
+
+    if "armor" in raw_json:
+        _draw_text(base, "armor", str(raw_json["armor"]), is_boss)
+    if "health" in raw_json:
+        _draw_text(base, "health", str(raw_json["health"]), is_boss)
+    if "resist" in raw_json:
+        _draw_text(base, "resist", str(raw_json["resist"]), is_boss)
+    if "text" in raw_json:
+        _draw_text(base, "text", str(raw_json["text"]), is_boss)
+    if "range" in raw_json:
+        _draw_text(base, "range", str(raw_json["range"]), is_boss)
+
+    if is_boss and isinstance(raw_json.get("heatup"), int):
+        _draw_text(base, "heatup", str(raw_json["heatup"]), is_boss)
+    if is_boss and isinstance(raw_json.get("heatup1"), int):
+        _draw_text(base, "heatup1", str(raw_json["heatup1"]), is_boss)
+        _draw_text(base, "heatup2", str(raw_json["heatup2"]), is_boss)
+
     if not is_boss:
         beh = raw_json.get("behavior") or {}
         if "dodge" in beh:

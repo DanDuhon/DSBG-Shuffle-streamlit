@@ -9,7 +9,9 @@ from core.behavior.assets import BEHAVIOR_CARDS_PATH, CARD_BACK, _behavior_image
 from core.behavior.generation import (
     build_behavior_catalog,
     render_data_card_cached,
+    render_data_card_uncached,
     render_behavior_card_cached,
+    render_behavior_card_uncached,
 )
 from core.image_cache import get_image_bytes_cached
 from core.behavior.logic import (
@@ -436,8 +438,14 @@ def _get_invader_card_images(
     data_bytes: Optional[bytes] = None
     behavior_bytes: Optional[bytes] = None
 
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_data = render_data_card_uncached if cloud_low_memory else render_data_card_cached
+    render_behavior = (
+        render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    )
+
     data_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
-    data_bytes = render_data_card_cached(
+    data_bytes = render_data(
         data_path,
         cfg.raw,
         is_boss=True,  # invaders use boss-style data cards
@@ -461,7 +469,7 @@ def _get_invader_card_images(
     beh_json = cfg.behaviors.get(beh_key, {})
     current_path = _behavior_image_path(cfg, beh_key)
 
-    behavior_bytes = render_behavior_card_cached(
+    behavior_bytes = render_behavior(
         current_path,
         beh_json,
         is_boss=True,  # boss-style layout

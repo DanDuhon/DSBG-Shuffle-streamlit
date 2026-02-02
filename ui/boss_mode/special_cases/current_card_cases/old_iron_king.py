@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.behavior.assets import _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from ui.boss_mode.old_iron_king_blasted_nodes import (
     OLD_IRON_KING_NAME,
     OIK_FIRE_BEAM_PREFIX,
@@ -34,7 +34,9 @@ def try_render_old_iron_king_current(*, cfg, state, current) -> bool:
         state["oik_blasted_current_mode"] = mode
 
     beam_path = _behavior_image_path(cfg, current)
-    beam_img = render_behavior_card_cached(
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_behavior = render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    beam_img = render_behavior(
         beam_path,
         cfg.behaviors.get(current, {}),
         is_boss=True,

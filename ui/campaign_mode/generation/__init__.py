@@ -214,6 +214,7 @@ def _pick_random_campaign_encounter(
             ),
             settings=settings_snapshot,
             campaign_mode=True,
+            render_image=False,
         )
         return res
 

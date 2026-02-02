@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.behavior.assets import _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from ui.boss_mode.guardian_dragon_fiery_breath import (
     GUARDIAN_CAGE_PREFIX,
     GUARDIAN_DRAGON_NAME,
@@ -39,7 +39,9 @@ def try_render_guardian_dragon_current(*, cfg, state, current) -> bool:
     cage_beh = cfg.behaviors.get(current, {}) or {}
     cage_beh_no_dodge = dict(cage_beh)
     cage_beh_no_dodge.pop("dodge", None)
-    cage_img = render_behavior_card_cached(
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_behavior = render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    cage_img = render_behavior(
         cage_path,
         cage_beh_no_dodge,
         is_boss=True,

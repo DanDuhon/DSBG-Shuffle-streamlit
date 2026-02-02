@@ -26,7 +26,11 @@ from core.encounter.encounter_triggers import (
 from core.encounter import timer as timer_mod
 
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
-from core.behavior.generation import render_data_card_cached, build_behavior_catalog
+from core.behavior.generation import (
+    build_behavior_catalog,
+    render_data_card_cached,
+    render_data_card_uncached,
+)
 from core.behavior.logic import load_behavior, _read_behavior_json
 from core.behavior.models import BehaviorEntry
 from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
@@ -2049,7 +2053,9 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                 data_card_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data_The Shine of Gold.jpg"
             else:
                 data_card_path = BEHAVIOR_CARDS_PATH + f"{enemy_name} - data.jpg"
-            data_bytes = render_data_card_cached(
+            cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+            render_data = render_data_card_uncached if cloud_low_memory else render_data_card_cached
+            data_bytes = render_data(
                 data_card_path,
                 raw_for_render,
                 is_boss=(entry.tier == "boss"),

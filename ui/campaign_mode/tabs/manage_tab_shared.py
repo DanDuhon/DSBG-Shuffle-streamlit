@@ -276,6 +276,8 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
     """
     Shared helper to render a frozen campaign encounter card (V1 or V2).
     """
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+
     expansion = frozen.get("expansion")
     level = frozen.get("encounter_level")
     name = frozen.get("encounter_name")
@@ -302,6 +304,7 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
         level,
         use_edited,
         enemies=enemies,
+        include_bytes=not cloud_low_memory,
     )
     if res and res.get("ok"):
         img = res["card_img"]

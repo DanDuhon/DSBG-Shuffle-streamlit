@@ -4,9 +4,11 @@ import streamlit as st
 
 from core import behavior_decks as bd
 from core import behavior_icons as bi
-from core.behavior_render_cache import (
+from core.behavior.generation import (
     render_data_card_cached,
+    render_data_card_uncached,
     render_behavior_card_cached,
+    render_behavior_card_uncached,
 )
 
 BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
@@ -84,12 +86,18 @@ def render():
 
     st.markdown(f"**Selected:** {cfg.name}")
 
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_data = render_data_card_uncached if cloud_low_memory else render_data_card_cached
+    render_behavior = (
+        render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    )
+
     # --- Regular enemy preview ---
     if "behavior" in cfg.raw:
         st.markdown("_Regular enemy_")
 
         data_card_path = f"{BEHAVIOR_CARDS_PATH}{cfg.name} - data.jpg"
-        img_bytes = render_data_card_cached(data_card_path, cfg.raw, is_boss=False)
+        img_bytes = render_data(data_card_path, cfg.raw, is_boss=False)
         st.image(
             img_bytes,
             caption=f"{cfg.name} (NG+{level})" if level else cfg.name,
@@ -121,7 +129,7 @@ def render():
         data_cards = cfg.data_cards or [f"{cfg.name} - data.jpg"]
         main_path = f"{BEHAVIOR_CARDS_PATH}{Path(data_cards[0]).name}"
 
-        img_bytes = render_data_card_cached(main_path, cfg.raw, is_boss=True)
+        img_bytes = render_data(main_path, cfg.raw, is_boss=True)
         st.image(
             img_bytes,
             caption=f"{cfg.name} (NG+{level})" if level else cfg.name,
@@ -149,7 +157,7 @@ def render():
     for idx, bname in enumerate(selected_behaviors):
         clean_name = bd._strip_behavior_suffix(str(bname))
         base_path = f"{BEHAVIOR_CARDS_PATH}{cfg.name} - {clean_name}.jpg"
-        img_bytes = render_behavior_card_cached(
+        img_bytes = render_behavior(
             base_path,
             cfg.behaviors[bname],
             is_boss=True,

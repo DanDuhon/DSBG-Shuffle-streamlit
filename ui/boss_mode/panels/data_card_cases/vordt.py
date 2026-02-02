@@ -1,7 +1,12 @@
 import streamlit as st
 
 from core.behavior.assets import _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached, render_data_card_cached
+from core.behavior.generation import (
+    render_behavior_card_cached,
+    render_behavior_card_uncached,
+    render_data_card_cached,
+    render_data_card_uncached,
+)
 from core.behavior.priscilla_overlay import overlay_priscilla_arcs
 from ui.campaign_mode.core import _card_w
 
@@ -14,7 +19,13 @@ def try_render_vordt_data_card(*, cfg, state) -> bool:
     if not data_path:
         return True
 
-    data_img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_data = render_data_card_uncached if cloud_low_memory else render_data_card_cached
+    render_behavior = (
+        render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    )
+
+    data_img = render_data(data_path, cfg.raw, is_boss=True)
 
     if state.get("vordt_frostbreath_active", False):
         frost_key = None
@@ -26,7 +37,7 @@ def try_render_vordt_data_card(*, cfg, state) -> bool:
 
         if frost_key:
             frost_path = _behavior_image_path(cfg, frost_key)
-            frost_img = render_behavior_card_cached(
+            frost_img = render_behavior(
                 frost_path,
                 cfg.behaviors[frost_key],
                 is_boss=True,

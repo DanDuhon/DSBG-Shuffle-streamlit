@@ -6,15 +6,28 @@ from PIL import Image, ImageOps
 from core.settings_manager import load_settings, save_settings
 from core import behavior_decks as bd
 from core import behavior_icons as bi
-from core.behavior_render_cache import (
+from core.behavior.generation import (
     render_data_card_cached,
+    render_data_card_uncached,
     render_behavior_card_cached,
-    render_behavior_deck_cached,
+    render_behavior_card_uncached,
 )
 
 
 BEHAVIOR_CARDS_PATH = "assets/behavior cards/"
 CARD_BACK = "assets/behavior cards/back.jpg"
+
+
+def _render_data_card(*args, **kwargs):
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    func = render_data_card_uncached if cloud_low_memory else render_data_card_cached
+    return func(*args, **kwargs)
+
+
+def _render_behavior_card(*args, **kwargs):
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    func = render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    return func(*args, **kwargs)
 
 
 def _behavior_image_path(cfg, behavior_name: str) -> str:
@@ -611,7 +624,7 @@ def render():
         cols = st.columns(2)
         with cols[0]:
             data_card = BEHAVIOR_CARDS_PATH + f"{cfg.name} - data.jpg"
-            img_bytes = render_data_card_cached(data_card, cfg.raw, is_boss=False)
+            img_bytes = _render_data_card(data_card, cfg.raw, is_boss=False)
             st.image(img_bytes)
         return
 
@@ -657,14 +670,14 @@ def render():
     # Special rules for Chariot data card display based on phase.
     if cfg.name == "Executioner Chariot":
         if not st.session_state.get("chariot_heatup_done", False):
-            edited_img = render_data_card_cached(
+            edited_img = _render_data_card(
                 BEHAVIOR_CARDS_PATH + f"{cfg.name} - Executioner Chariot.jpg",
                 cfg.raw,
                 is_boss=True,
                 no_edits=True,
             )
         else:
-            edited_img = render_data_card_cached(
+            edited_img = _render_data_card(
                 BEHAVIOR_CARDS_PATH + f"{cfg.name} - Skeletal Horse.jpg",
                 cfg.raw,
                 is_boss=True,
@@ -687,10 +700,10 @@ def render():
     else:
         for i, data_path in enumerate(state["display_cards"]):
             if i == 0:
-                edited_img = render_data_card_cached(data_path, cfg.raw, is_boss=True)
+                edited_img = _render_data_card(data_path, cfg.raw, is_boss=True)
             else:
                 card_name = Path(data_path).stem.split(" - ")[-1]
-                edited_img = render_behavior_card_cached(
+                edited_img = _render_behavior_card(
                     data_path, cfg.raw[card_name], is_boss=True
                 )
             with cols[i if i < len(cols) else -1]:
@@ -706,8 +719,14 @@ def render():
     cfg.entities = render_health_tracker(cfg, state)
 
     # --- Auto Heat-Up Prompt ---
-    if st.session_state.get("pending_heatup_prompt", False) and not st.session_state.get("heatup_done", False) and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}:
-        st.warning(f"⚠️ The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} has entered Heat-Up range!")
+    if (
+        st.session_state.get("pending_heatup_prompt", False)
+        and not st.session_state.get("heatup_done", False)
+        and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}
+    ):
+        st.warning(
+            f"⚠️ The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} has entered Heat-Up range!"
+        )
 
         confirm_cols = st.columns([1, 1])
         with confirm_cols[0]:
@@ -725,6 +744,7 @@ def render():
                 _clear_heatup_prompt()
                 st.session_state["heatup_done"] = False
                 st.rerun()
+
     elif st.session_state.get("pending_heatup_prompt", False):
         boss = st.session_state.get("pending_heatup_target")
         if boss == "Old Dragonslayer":
@@ -796,7 +816,7 @@ def render():
             if move_card:
                 st.caption(f"{len(state['vordt_move_discard'])} movement cards played")
                 st.image(
-                    render_behavior_card_cached(
+                    _render_behavior_card(
                         move_path,
                         cfg.behaviors.get(move_card, {}),
                         is_boss=True,
@@ -807,7 +827,7 @@ def render():
             if atk_card:
                 st.caption(f"{len(state['vordt_attack_discard'])} attack cards played")
                 st.image(
-                    render_behavior_card_cached(
+                    _render_behavior_card(
                         atk_path,
                         cfg.behaviors.get(atk_card, {}),
                         is_boss=True,
@@ -828,7 +848,7 @@ def render():
                         cfg.raw, current_name, boss_name=cfg.name
                     )
                 else:
-                    edited_behavior = render_behavior_card_cached(
+                    edited_behavior = _render_behavior_card(
                         _behavior_image_path(cfg, current_name),
                         cfg.behaviors.get(current_name, {}),
                         is_boss=True,
@@ -845,9 +865,7 @@ def render():
             beh_json = cfg.behaviors.get(beh_key, {})
             print(beh_json)
             current_path = _behavior_image_path(cfg, beh_key)
-            edited_behavior = render_behavior_card_cached(
-                current_path, beh_json, is_boss=True
-            )
+            edited_behavior = _render_behavior_card(current_path, beh_json, is_boss=True)
             st.image(edited_behavior)
 
     # --- Action buttons

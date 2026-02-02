@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.behavior.assets import _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from ui.campaign_mode.core import _card_w
 
 
@@ -16,7 +16,9 @@ def try_render_vordt_current(*, cfg, state, current) -> bool:
         move_path = _behavior_image_path(cfg, move_card)
         w = _card_w()
 
-        move_img = render_behavior_card_cached(
+        cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+        render_behavior = render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+        move_img = render_behavior(
             move_path,
             cfg.behaviors.get(move_card, {}),
             is_boss=True,
@@ -26,7 +28,7 @@ def try_render_vordt_current(*, cfg, state, current) -> bool:
     with c2:
         atk_path = _behavior_image_path(cfg, atk_card)
         w = _card_w()
-        atk_img = render_behavior_card_cached(
+        atk_img = render_behavior(
             atk_path,
             cfg.behaviors.get(atk_card, {}),
             is_boss=True,

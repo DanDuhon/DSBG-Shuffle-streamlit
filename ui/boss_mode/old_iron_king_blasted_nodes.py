@@ -7,7 +7,7 @@ from typing import Dict, List, Sequence, Tuple
 from PIL import Image
 from pathlib import Path
 
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path
 from ui.boss_mode.aoe_pattern_utils import (
     NODE_COORDS,
@@ -237,7 +237,11 @@ def _oik_render_blasted_nodes(cfg, pattern: Dict[str, object]) -> Image.Image:
 
     pattern is {"dest": (x, y), "aoe": [(x, y), ...]}
     """
-    base = render_behavior_card_cached(
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_behavior = (
+        render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    )
+    base = render_behavior(
         _behavior_image_path(cfg, OIK_BLASTED_NODES_NAME),
         cfg.behaviors.get(OIK_BLASTED_NODES_NAME, {}),
         is_boss=True,

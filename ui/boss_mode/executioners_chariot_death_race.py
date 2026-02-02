@@ -285,21 +285,26 @@ def _ec_render_death_race_aoe(cfg, pattern: Dict[str, object]) -> Image.Image:
     # File: "assets/behavior cards/Executioner's Chariot - Death Race AoE.jpg"
     base_path = BEHAVIOR_CARDS_PATH + f"{cfg.name} - Death Race AoE.jpg"
 
-    base = render_behavior_card_cached(
-        base_path,
-        {},  # no JSON rules to apply; this is a pure AoE reference card
-        is_boss=True,
-    )
-
-    # Convert cached output to a PIL Image we can edit.
-    if isinstance(base, Image.Image):
-        base_img = base.convert("RGBA")
-    elif isinstance(base, (bytes, bytearray)):
-        base_img = Image.open(io.BytesIO(base)).convert("RGBA")
-    elif isinstance(base, str):
-        base_img = Image.open(base).convert("RGBA")
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    if cloud_low_memory:
+        # Low-memory: avoid Streamlit cache retention; open base art directly.
+        base_img = Image.open(base_path).convert("RGBA")
     else:
-        base_img = Image.open(base).convert("RGBA")
+        base = render_behavior_card_cached(
+            base_path,
+            {},  # no JSON rules to apply; this is a pure AoE reference card
+            is_boss=True,
+        )
+
+        # Convert cached output to a PIL Image we can edit.
+        if isinstance(base, Image.Image):
+            base_img = base.convert("RGBA")
+        elif isinstance(base, (bytes, bytearray)):
+            base_img = Image.open(io.BytesIO(base)).convert("RGBA")
+        elif isinstance(base, str):
+            base_img = Image.open(base).convert("RGBA")
+        else:
+            base_img = Image.open(base).convert("RGBA")
 
     assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
 

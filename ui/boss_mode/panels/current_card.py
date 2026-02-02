@@ -4,7 +4,7 @@ import streamlit as st
 
 from core.image_cache import get_image_bytes_cached
 from core.behavior.assets import CARD_BACK, _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from core.behavior.priscilla_overlay import overlay_priscilla_arcs
 from ui.boss_mode.special_cases.current_card import render_special_current_card
 from ui.campaign_mode.core import _card_w
@@ -22,7 +22,13 @@ def render_current_card_column(*, cfg, state) -> None:
     else:
         if not render_special_current_card(cfg=cfg, state=state, current=current):
             base_path = _behavior_image_path(cfg, current)
-            img = render_behavior_card_cached(
+            cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+            render_behavior = (
+                render_behavior_card_uncached
+                if cloud_low_memory
+                else render_behavior_card_cached
+            )
+            img = render_behavior(
                 base_path,
                 cfg.behaviors[current],
                 is_boss=True,

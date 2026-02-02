@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.behavior.assets import _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from ui.campaign_mode.core import _card_w
 
 
@@ -12,7 +12,9 @@ def try_render_gaping_dragon_current(*, cfg, state, current) -> bool:
         return False
 
     stomach_path = _behavior_image_path(cfg, current)
-    stomach_img = render_behavior_card_cached(
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_behavior = render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    stomach_img = render_behavior(
         stomach_path,
         cfg.behaviors[current],
         is_boss=True,
@@ -26,7 +28,7 @@ def try_render_gaping_dragon_current(*, cfg, state, current) -> bool:
 
     if crawl_key:
         crawl_path = _behavior_image_path(cfg, crawl_key)
-        crawl_img = render_behavior_card_cached(
+        crawl_img = render_behavior(
             crawl_path,
             cfg.behaviors[crawl_key],
             is_boss=True,

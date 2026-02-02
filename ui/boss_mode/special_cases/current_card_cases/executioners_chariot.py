@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.behavior.assets import _behavior_image_path
-from core.behavior.generation import render_behavior_card_cached
+from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from ui.boss_mode.executioners_chariot_death_race import (
     DEATH_RACE_BEHAVIOR_NAME,
     EXECUTIONERS_CHARIOT_NAME,
@@ -37,7 +37,9 @@ def try_render_executioners_chariot_current(*, cfg, state, current) -> bool:
         state["ec_death_race_current_mode"] = mode
 
     death_race_path = _behavior_image_path(cfg, current)
-    death_race_img = render_behavior_card_cached(
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+    render_behavior = render_behavior_card_uncached if cloud_low_memory else render_behavior_card_cached
+    death_race_img = render_behavior(
         death_race_path,
         cfg.behaviors.get(current, {}),
         is_boss=True,
