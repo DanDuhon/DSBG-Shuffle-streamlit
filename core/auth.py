@@ -575,27 +575,15 @@ def ensure_session_loaded() -> Optional[AuthSession]:
 
     val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
     if _is_no_js_response(val):
-        # streamlit-javascript often returns None on the first rerun after
-        # insertion. We want to trigger *one* immediate rerun so auth can
-        # hydrate without requiring the user to click something.
+        # streamlit-javascript can return None/0 on initial renders.
+        # Previously this code called st.stop() to force an immediate rerun, but
+        # that can leave the sidebar half-rendered if JS never responds.
         #
-        # IMPORTANT: never do this on reruns triggered by auth buttons, or we'd
-        # swallow the click.
+        # Instead, record that we attempted hydration and continue rendering.
         try:
-            pressed = False
-            for k in ("auth_google_btn", "auth_magic_btn", "auth_logout_btn"):
-                try:
-                    if bool(st.session_state.get(k)):
-                        pressed = True
-                        break
-                except Exception:
-                    continue
-
-            if not pressed and not bool(st.session_state.get("_dsbg_auth_waited_for_js", False)):
+            if not bool(st.session_state.get("_dsbg_auth_waited_for_js", False)):
                 st.session_state["_dsbg_auth_waited_for_js"] = True
-                st.stop()
         except Exception:
-            # Never let auth hydration break the app.
             pass
         return None
 
