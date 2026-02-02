@@ -40,6 +40,46 @@ _ENEMY_ICON_RGBA_CACHE_MAX = 256 if _TIGHTEN_LRU else 1024
 _ICON_RESIZED_CACHE_MAX = 512 if _TIGHTEN_LRU else 4096
 
 
+def _load_rgba_image_uncached(path: str) -> Image.Image:
+    """Uncached RGBA image load.
+
+    Use this on Streamlit Cloud low-memory paths to avoid retaining decoded
+    images in long-lived LRU caches.
+    """
+
+    with Image.open(path) as im:
+        return im.convert("RGBA")
+
+
+def _load_enemy_icon_rgba_uncached(path: str) -> Image.Image:
+    with Image.open(path) as im:
+        return im.convert("RGBA")
+
+
+def _get_icon_resized_uncached(path: str, box_size: int) -> Tuple[Image.Image, Tuple[int, int]]:
+    src = _load_enemy_icon_rgba_uncached(path)
+    width, height = src.size
+    max_side = width if width > height else height
+    if max_side <= 0:
+        img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+        return img, (1, 1)
+
+    s = int(box_size) / max_side
+    icon_size = (int(round(width * s)), int(round(height * s)))
+    resized = src.resize(icon_size, Image.Resampling.LANCZOS)
+    return resized, icon_size
+
+
+def _get_resized_gang_image_uncached(path: str, target_height_px: int) -> Image.Image:
+    src = _load_rgba_image_uncached(path)
+    gw, gh = src.size
+    if gh <= 0:
+        return Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+    scale = int(target_height_px) / gh
+    new_size = (int(round(gw * scale)), int(round(gh * scale)))
+    return src.resize(new_size, Image.Resampling.LANCZOS)
+
+
 @lru_cache(maxsize=8)
 def _get_reward_font(size: int) -> ImageFont.FreeTypeFont:
     try:
@@ -258,6 +298,8 @@ def generate_encounter_image(
     data: dict,
     enemies: list[int],
     use_edited=False,
+    *,
+    bypass_image_caches: bool = False,
 ):
     """Render the encounter card with enemy icons based on enemySlots layout."""
     # Some encounter filenames omit the level (e.g. "Gravelord Nito Setup").
@@ -270,10 +312,10 @@ def generate_encounter_image(
         if os.path.exists(edited_path):
             card_path = edited_path
 
-    # Base encounter card image can be large; on Streamlit Cloud we optionally bypass
-    # caching to reduce long-lived memory usage.
-    if _should_bypass_encounter_card_base_image_cache():
-        card_img = Image.open(card_path).convert("RGBA")
+    # Base encounter card image can be large; on Streamlit Cloud low-memory paths we
+    # want to avoid long-lived LRU-cached decoded images.
+    if bypass_image_caches or _should_bypass_encounter_card_base_image_cache():
+        card_img = _load_rgba_image_uncached(str(card_path))
     else:
         card_img = _load_rgba_image(str(card_path))
     card_img = card_img.copy()
@@ -313,7 +355,10 @@ def generate_encounter_image(
             enemy_index += 1
 
             icon_path = get_enemy_image_by_id(enemy_id)
-            icon_img, icon_size = _get_icon_resized(str(icon_path), int(size))
+            if bypass_image_caches:
+                icon_img, icon_size = _get_icon_resized_uncached(str(icon_path), int(size))
+            else:
+                icon_img, icon_size = _get_icon_resized(str(icon_path), int(size))
 
             # This is used to center the icon no matter its width or height.
             xOffset = int(round((size - icon_size[0]) / 2))
@@ -346,7 +391,10 @@ def generate_encounter_image(
 
         enemy_id = enemies[idx]
         icon_path = get_enemy_image_by_id(enemy_id)
-        icon_img, icon_size = _get_icon_resized(str(icon_path), int(cfg.size))
+        if bypass_image_caches:
+            icon_img, icon_size = _get_icon_resized_uncached(str(icon_path), int(cfg.size))
+        else:
+            icon_img, icon_size = _get_icon_resized(str(icon_path), int(cfg.size))
 
         # Center inside the cfg.size x cfg.size box whose top-left is (cfg.x, cfg.y)
         xOffset = int(round((cfg.size - icon_size[0]) / 2))
@@ -485,7 +533,10 @@ def generate_encounter_image(
                 break
 
         if gang_img_path:
-            gimg = _get_resized_gang_image(str(gang_img_path), int(gsize))
+            if bypass_image_caches:
+                gimg = _get_resized_gang_image_uncached(str(gang_img_path), int(gsize))
+            else:
+                gimg = _get_resized_gang_image(str(gang_img_path), int(gsize))
             # Composite centered on the requested point
             card_img.alpha_composite(gimg, dest=(gx, gy))
 

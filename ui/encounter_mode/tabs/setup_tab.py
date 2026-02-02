@@ -862,15 +862,43 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                                 enc_data or {},
                                 enemies,
                                 use_edited=use_edited,
+                                bypass_image_caches=True,
                             )
 
                             if memlog_checkpoint is not None:
                                 try:
+                                    cache_stats = None
+                                    try:
+                                        import ui.encounter_mode.generation as _encgen
+
+                                        cache_stats = {
+                                            "_load_rgba_image": getattr(getattr(_encgen, "_load_rgba_image", None), "cache_info", lambda: None)(),
+                                            "_load_enemy_icon_rgba": getattr(getattr(_encgen, "_load_enemy_icon_rgba", None), "cache_info", lambda: None)(),
+                                            "_get_icon_resized": getattr(getattr(_encgen, "_get_icon_resized", None), "cache_info", lambda: None)(),
+                                            "_get_resized_gang_image": getattr(getattr(_encgen, "_get_resized_gang_image", None), "cache_info", lambda: None)(),
+                                        }
+                                        for k, ci in list(cache_stats.items()):
+                                            if ci is None:
+                                                cache_stats[k] = None
+                                                continue
+                                            try:
+                                                cache_stats[k] = {
+                                                    "hits": getattr(ci, "hits", None),
+                                                    "misses": getattr(ci, "misses", None),
+                                                    "maxsize": getattr(ci, "maxsize", None),
+                                                    "currsize": getattr(ci, "currsize", None),
+                                                }
+                                            except Exception:
+                                                cache_stats[k] = None
+                                    except Exception:
+                                        cache_stats = None
+
                                     memlog_checkpoint(
                                         st.session_state,
                                         "setup:enc_img_render_done",
                                         extra={
                                             "size": f"{getattr(img, 'width', None)}x{getattr(img, 'height', None)}",
+                                            "encgen_lru": cache_stats,
                                         },
                                     )
                                 except Exception:
