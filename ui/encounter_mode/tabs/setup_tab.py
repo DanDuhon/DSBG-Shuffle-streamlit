@@ -244,10 +244,10 @@ def _event_img_path(ev: dict) -> str | None:
 def _ensure_card_bytes_inplace(encounter: dict) -> bytes | None:
     """Ensure encounter["card_bytes"] is present for display.
 
-    This avoids re-encoding the same PIL image to PNG on every Streamlit rerun.
+    This avoids re-encoding the same PIL image to JPEG on every Streamlit rerun.
     """
 
-    # Cloud low-memory mode: never retain PNG bytes in session_state.
+    # Cloud low-memory mode: never retain bytes in session_state.
     if bool(st.session_state.get("cloud_low_memory", False)):
         return None
 
@@ -263,9 +263,9 @@ def _ensure_card_bytes_inplace(encounter: dict) -> bytes | None:
         return None
 
     try:
-        buf = BytesIO()
-        img.save(buf, format="PNG")
-        data = buf.getvalue()
+        data = _encode_image_as_jpeg_bytes(img, quality=85)
+        if not data:
+            return None
         encounter["card_bytes"] = data
         return data
     except Exception:
@@ -297,9 +297,7 @@ def render_original_encounter(
 
     card_bytes = None
     if include_bytes:
-        buf = BytesIO()
-        card_img.save(buf, format="PNG")
-        card_bytes = buf.getvalue()
+        card_bytes = _encode_image_as_jpeg_bytes(card_img, quality=85)
 
     return {
         "ok": True,
@@ -822,9 +820,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                             if card_img is not None:
                                 payload["card_img"] = card_img
                                 try:
-                                    buf = BytesIO()
-                                    card_img.save(buf, format="PNG")
-                                    payload["card_bytes"] = buf.getvalue()
+                                    data = _encode_image_as_jpeg_bytes(card_img, quality=85)
+                                    if data:
+                                        payload["card_bytes"] = data
+                                    else:
+                                        payload.pop("card_bytes", None)
                                 except Exception:
                                     payload.pop("card_bytes", None)
 
@@ -1289,9 +1289,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         )
                         final_res["card_img"] = card_img
                         try:
-                            buf = BytesIO()
-                            card_img.save(buf, format="PNG")
-                            final_res["card_bytes"] = buf.getvalue()
+                            data = _encode_image_as_jpeg_bytes(card_img, quality=85)
+                            if data:
+                                final_res["card_bytes"] = data
+                            else:
+                                final_res.pop("card_bytes", None)
                         except Exception:
                             final_res.pop("card_bytes", None)
                     else:

@@ -31,6 +31,37 @@ except Exception:  # pragma: no cover
     memlog_checkpoint = None  # type: ignore
 
 
+def _encode_pil_to_jpeg_bytes(img: object, *, quality: int = 85) -> bytes | None:
+    """Encode a PIL image-like object to JPEG bytes (flatten alpha to white)."""
+
+    try:
+        from PIL import Image
+    except Exception:
+        return None
+
+    if not isinstance(img, Image.Image):
+        return None
+
+    try:
+        out = img
+        if out.mode in ("RGBA", "LA"):
+            rgba = out.convert("RGBA")
+            bg = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+            out = Image.alpha_composite(bg, rgba)
+        out = out.convert("RGB")
+
+        buf = BytesIO()
+        q = int(quality)
+        if q < 1:
+            q = 1
+        if q > 95:
+            q = 95
+        out.save(buf, format="JPEG", quality=q, optimize=True, progressive=True)
+        return buf.getvalue()
+    except Exception:
+        return None
+
+
 INVADERS_PATH = Path("data/invaders.json")
 HARD_MAX_INVADERS_BY_LEVEL = {
     1: 2,
@@ -363,7 +394,9 @@ def apply_edited_toggle(encounter_data, expansion, encounter_name, encounter_lev
     )
 
     buf = BytesIO()
-    card_img.save(buf, format="PNG")
+    data = _encode_pil_to_jpeg_bytes(card_img, quality=85)
+    if data:
+        buf.write(data)
     buf.seek(0)
 
     return {
@@ -1152,7 +1185,9 @@ def shuffle_encounter(
             pass
 
     buf = BytesIO()
-    card_img.save(buf, format="PNG")
+    data = _encode_pil_to_jpeg_bytes(card_img, quality=85)
+    if data:
+        buf.write(data)
     buf.seek(0)
 
     if memlog_checkpoint is not None:
@@ -1162,6 +1197,7 @@ def shuffle_encounter(
                 "shuffle:png_encoded",
                 extra={
                     "png_bytes": int(buf.getbuffer().nbytes) if buf is not None else None,
+                    "format": "JPEG",
                 },
             )
         except Exception:
