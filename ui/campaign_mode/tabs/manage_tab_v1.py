@@ -63,9 +63,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
         with col_bonfire:
             # In compact UI, wrap the bonfire image in a collapsed expander to save space.
-            if cloud_low_memory:
-                st.caption("Bonfire")
-            elif bool(st.session_state.get("ui_compact")):
+            if bool(st.session_state.get("ui_compact")):
                 with st.expander("Bonfire", expanded=False):
                     st.image(str(BONFIRE_ICON_PATH), width="stretch")
             else:

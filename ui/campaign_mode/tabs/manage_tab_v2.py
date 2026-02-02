@@ -305,10 +305,7 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         col_bonfire, col_info = st.columns([1, 2])
 
         with col_bonfire:
-            if cloud_low_memory:
-                st.caption("Bonfire")
-            else:
-                st.image(str(BONFIRE_ICON_PATH), width="stretch")
+            st.image(str(BONFIRE_ICON_PATH), width="stretch")
 
         with col_info:
             if cloud_low_memory:
