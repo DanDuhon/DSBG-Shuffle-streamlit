@@ -511,8 +511,9 @@ def generate_encounter_image(
                 icon_img, icon_size = _get_icon_resized(str(icon_path), box)
 
             # This is used to center the icon no matter its width or height.
-            xOffset = int(round((size - icon_size[0]) / 2))
-            yOffset = int(round((size - icon_size[1]) / 2))
+            # IMPORTANT: use the scaled slot size (`box`), not the unscaled `size`.
+            xOffset = int(round((box - icon_size[0]) / 2))
+            yOffset = int(round((box - icon_size[1]) / 2))
 
             key = (slot_idx, i)
 
@@ -554,8 +555,9 @@ def generate_encounter_image(
             icon_img, icon_size = _get_icon_resized(str(icon_path), box)
 
         # Center inside the cfg.size x cfg.size box whose top-left is (cfg.x, cfg.y)
-        xOffset = int(round((cfg.size - icon_size[0]) / 2))
-        yOffset = int(round((cfg.size - icon_size[1]) / 2))
+        # IMPORTANT: use the scaled slot size (`box`), not the unscaled cfg.size.
+        xOffset = int(round((box - icon_size[0]) / 2))
+        yOffset = int(round((box - icon_size[1]) / 2))
 
         dx = int(cfg.x)
         dy = int(cfg.y)
