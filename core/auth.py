@@ -67,24 +67,27 @@ def _run_js(code: str, *, key: str) -> Any:
             pass
 
     # Compatibility: different streamlit-javascript versions have different
-    # signatures; prefer the positional form that supports default=None and key.
+    # signatures. Prefer keyword-based signatures first (newer versions), then
+    # fall back to older positional variants.
     try:
-        # Common signature: st_javascript(js_code, default, key, ...)
-        return st_javascript(code, None, key)
-    except TypeError:
         try:
-            # Newer signature: st_javascript(js_code, key=...)
+            # Common modern signature: st_javascript(js_code, key=...)
             return st_javascript(code, key=key)
         except TypeError:
             try:
                 return st_javascript(js_code=code, key=key)
             except TypeError:
-                # Last resort: call positionally.
+                # Older signature: st_javascript(code, waiting_text)
                 try:
-                    # streamlit-javascript 0.1.5 supports (code, waiting_text)
                     return st_javascript(code, "Waiting for response")
                 except TypeError:
                     return st_javascript(code)
+    except Exception as e:
+        # Defensive: if the app accidentally creates the same JS component twice
+        # in a single rerun, don't crash the whole app.
+        if e.__class__.__name__ == "StreamlitDuplicateElementKey":
+            return None
+        raise
 
 
 def _is_no_js_response(val: Any) -> bool:

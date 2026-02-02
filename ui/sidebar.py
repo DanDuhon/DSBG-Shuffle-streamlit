@@ -101,7 +101,8 @@ def render_sidebar(settings: dict):
     # Cloud-only Account UI (Google OAuth primary + magic link fallback).
     if auth.is_auth_ui_enabled():
         st.sidebar.header("Account")
-        auth.ensure_session_loaded()
+        sess = auth.ensure_session_loaded()
+        authed = bool(sess and sess.user_id and sess.access_token)
 
         debug_perf_raw = str(get_config_str("DSBG_DEBUG_PERF") or "").strip().lower()
         debug_perf = debug_perf_raw in {"1", "true", "yes", "y", "on"}
@@ -240,8 +241,8 @@ def render_sidebar(settings: dict):
         if isinstance(auth_err, str) and auth_err.strip():
             st.sidebar.error(auth_err)
 
-        if auth.is_authenticated():
-            ident = auth.get_user_email() or auth.get_user_id() or "(unknown user)"
+        if authed:
+            ident = (sess.email if sess else None) or (sess.user_id if sess else None) or "(unknown user)"
             st.sidebar.caption(f"Signed in: {ident}")
             if st.sidebar.button("Log out", width="stretch", key="auth_logout_btn"):
                 auth.logout()
