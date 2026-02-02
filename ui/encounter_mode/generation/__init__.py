@@ -39,10 +39,10 @@ _TIGHTEN_LRU = is_streamlit_cloud() and get_config_bool(
 _ENEMY_ICON_RGBA_CACHE_MAX = 256 if _TIGHTEN_LRU else 1024
 _ICON_RESIZED_CACHE_MAX = 512 if _TIGHTEN_LRU else 4096
 
-# Encounter JSON payloads can be large (alternatives lists). On Streamlit Cloud
-# we keep this cache small to avoid steady RSS growth when browsing many
-# encounters.
-_ENCOUNTER_JSON_CACHE_MAX = 64 if _TIGHTEN_LRU else 1024
+def _load_encounter_from_disk(encounter_slug: str, character_count: int) -> dict:
+    file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
+    with open(file_path, "r", encoding="utf-8") as f:
+        return load(f)
 
 
 def _load_rgba_image_uncached(path: str) -> Image.Image:
@@ -303,32 +303,93 @@ def build_encounter_keywords(encounter_name, expansion, use_edited=False):
     return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
 
 
-@lru_cache(maxsize=_ENCOUNTER_JSON_CACHE_MAX)
+def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:
+    """Uncached encounter JSON load."""
+
+    return _load_encounter_from_disk(encounter_slug, character_count)
+
+
+# -----------------------------------------------------------------------------
+# Encounter JSON caching
+# -----------------------------------------------------------------------------
+# Encounter JSON payloads can be large (especially alternatives lists). On
+# Streamlit Cloud we want *predictable* memory use while still keeping shuffling
+# on the current encounter fast.
+#
+# Strategy:
+# - Cloud tighten-LRU mode: cache only the most recently requested encounter
+#   (single-entry cache).
+# - Otherwise: use an LRU cache (larger local/dev footprint is OK).
+
+from collections import namedtuple
+
+_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+
+_SINGLE_ENCOUNTER_CACHE_KEY: tuple[str, int] | None = None
+_SINGLE_ENCOUNTER_CACHE_VALUE: dict | None = None
+_SINGLE_ENCOUNTER_CACHE_HITS = 0
+_SINGLE_ENCOUNTER_CACHE_MISSES = 0
+
+
+@lru_cache(maxsize=1024)
+def _load_encounter_lru(encounter_slug: str, character_count: int) -> dict:
+    return _load_encounter_from_disk(encounter_slug, character_count)
+
+
 def load_encounter(encounter_slug: str, character_count: int):
     """Load encounter JSON by slug and character count.
 
-    Current behavior: loads the exact file:
-    `data/encounters/{encounter_slug}_{character_count}.json`.
-
-    If the file is missing, this function raises `FileNotFoundError`.
-    (Callers that want variant fallback should implement it at a higher level
-    using the encounter index / available character-count variants.)
-    """
-    file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
-    with open(file_path, "r", encoding="utf-8") as f:
-        return load(f)
-
-
-def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:
-    """Uncached variant of `load_encounter`.
-
-    Useful for Cloud low-memory diagnostics and paths that would otherwise cause
-    cache churn while browsing many encounters.
+    Cloud tighten-LRU mode caches only the current encounter JSON.
     """
 
-    file_path = ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
-    with open(file_path, "r", encoding="utf-8") as f:
-        return load(f)
+    global _SINGLE_ENCOUNTER_CACHE_KEY, _SINGLE_ENCOUNTER_CACHE_VALUE
+    global _SINGLE_ENCOUNTER_CACHE_HITS, _SINGLE_ENCOUNTER_CACHE_MISSES
+
+    key = (str(encounter_slug), int(character_count))
+
+    if _TIGHTEN_LRU:
+        if _SINGLE_ENCOUNTER_CACHE_KEY == key and isinstance(_SINGLE_ENCOUNTER_CACHE_VALUE, dict):
+            _SINGLE_ENCOUNTER_CACHE_HITS += 1
+            return _SINGLE_ENCOUNTER_CACHE_VALUE
+
+        _SINGLE_ENCOUNTER_CACHE_MISSES += 1
+        data = _load_encounter_from_disk(key[0], key[1])
+        _SINGLE_ENCOUNTER_CACHE_KEY = key
+        _SINGLE_ENCOUNTER_CACHE_VALUE = data
+        return data
+
+    return _load_encounter_lru(key[0], key[1])
+
+
+def _load_encounter_cache_info():
+    if _TIGHTEN_LRU:
+        curr = 1 if _SINGLE_ENCOUNTER_CACHE_KEY is not None else 0
+        return _CacheInfo(_SINGLE_ENCOUNTER_CACHE_HITS, _SINGLE_ENCOUNTER_CACHE_MISSES, 1, curr)
+    try:
+        ci = _load_encounter_lru.cache_info()
+        return _CacheInfo(int(ci.hits), int(ci.misses), ci.maxsize, int(ci.currsize))
+    except Exception:
+        return _CacheInfo(0, 0, 1024, 0)
+
+
+def _load_encounter_cache_clear():
+    global _SINGLE_ENCOUNTER_CACHE_KEY, _SINGLE_ENCOUNTER_CACHE_VALUE
+    global _SINGLE_ENCOUNTER_CACHE_HITS, _SINGLE_ENCOUNTER_CACHE_MISSES
+    if _TIGHTEN_LRU:
+        _SINGLE_ENCOUNTER_CACHE_KEY = None
+        _SINGLE_ENCOUNTER_CACHE_VALUE = None
+        _SINGLE_ENCOUNTER_CACHE_HITS = 0
+        _SINGLE_ENCOUNTER_CACHE_MISSES = 0
+        return
+    try:
+        _load_encounter_lru.cache_clear()
+    except Exception:
+        pass
+
+
+# Attach hooks so existing diagnostics (memlog) can call `load_encounter.cache_info()`.
+load_encounter.cache_info = _load_encounter_cache_info  # type: ignore[attr-defined]
+load_encounter.cache_clear = _load_encounter_cache_clear  # type: ignore[attr-defined]
 
 
 def generate_encounter_image(
