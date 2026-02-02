@@ -11,7 +11,7 @@ Provides disk-persistent caching for:
 """
 
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageOps
 import io
 import base64
 from functools import lru_cache
@@ -78,6 +78,10 @@ if _IS_CLOUD:
     PIL_IMAGE_CACHE_TTL_SECONDS = 60 * 60
     DATA_URI_CACHE_MAX_ENTRIES = 32
     DATA_URI_CACHE_TTL_SECONDS = 15 * 60
+
+    THUMBNAIL_CACHE_MAX_ENTRIES = 256
+    THUMBNAIL_CACHE_TTL_SECONDS = 60 * 60
+    DEFAULT_THUMBNAIL_WIDTH_PX = 140
 else:
     IMAGE_BYTES_CACHE_MAX_ENTRIES = 512
     IMAGE_BYTES_CACHE_TTL_SECONDS = 6 * 60 * 60
@@ -85,6 +89,125 @@ else:
     PIL_IMAGE_CACHE_TTL_SECONDS = 6 * 60 * 60
     DATA_URI_CACHE_MAX_ENTRIES = 128
     DATA_URI_CACHE_TTL_SECONDS = 60 * 60
+
+    THUMBNAIL_CACHE_MAX_ENTRIES = 1024
+    THUMBNAIL_CACHE_TTL_SECONDS = 6 * 60 * 60
+    DEFAULT_THUMBNAIL_WIDTH_PX = 200
+
+
+def get_default_thumbnail_width_px() -> int:
+    """Default thumbnail width (pixels).
+
+    This is intentionally smaller on Streamlit Cloud to reduce per-session image
+    decode/retention pressure when rendering large lists/grids.
+    """
+
+    return int(DEFAULT_THUMBNAIL_WIDTH_PX)
+
+
+def _resample_filter():
+    # Pillow compatibility shim (Resampling enum introduced in newer versions)
+    try:
+        return Image.Resampling.LANCZOS  # type: ignore[attr-defined]
+    except Exception:
+        return Image.LANCZOS
+
+
+def _flatten_to_rgb(img: Image.Image, background_rgb: tuple[int, int, int]) -> Image.Image:
+    if img.mode == "RGB":
+        return img
+    if img.mode not in ("RGBA", "LA"):
+        img = img.convert("RGBA")
+    bg = Image.new("RGB", img.size, color=background_rgb)
+    bg.paste(img, mask=img.split()[-1])
+    return bg
+
+
+def _resize_to_width(img: Image.Image, max_width: int) -> Image.Image:
+    if max_width <= 0:
+        return img
+    if img.width <= max_width:
+        return img
+    new_h = max(1, int(round(img.height * (max_width / float(img.width)))))
+    return img.resize((int(max_width), new_h), resample=_resample_filter())
+
+
+@cache_data(
+    show_spinner=False,
+    max_entries=THUMBNAIL_CACHE_MAX_ENTRIES,
+    ttl=THUMBNAIL_CACHE_TTL_SECONDS,
+)
+def _get_image_thumbnail_bytes_cached(
+    path_str: str,
+    mtime_ns: int,
+    max_width: int,
+    fmt: str,
+    quality: int,
+    background_rgb: tuple[int, int, int],
+) -> bytes:
+    """Return resized/encoded thumbnail bytes for an image file.
+
+    Keyed by (path, mtime, options) so updates to the file invalidate the cache.
+    """
+
+    p = Path(path_str)
+    if not p.exists():
+        return b""
+
+    # Ensure deterministic, safe options
+    fmt_upper = str(fmt or "PNG").upper()
+    if fmt_upper not in ("PNG", "JPEG"):
+        fmt_upper = "PNG"
+    try:
+        q = int(quality)
+    except Exception:
+        q = 75
+    q = max(10, min(95, q))
+
+    try:
+        with Image.open(p) as opened:
+            img = ImageOps.exif_transpose(opened)
+            img.load()
+    except Exception:
+        return b""
+
+    img = _resize_to_width(img, int(max_width))
+
+    buf = io.BytesIO()
+    if fmt_upper == "JPEG":
+        img_rgb = _flatten_to_rgb(img, background_rgb=background_rgb)
+        img_rgb.save(buf, format="JPEG", quality=q, optimize=True)
+    else:
+        # PNG keeps alpha if present.
+        img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def get_image_thumbnail_bytes_cached(
+    path: str,
+    *,
+    max_width: int | None = None,
+    fmt: str = "PNG",
+    quality: int = 75,
+    background_rgb: tuple[int, int, int] = (18, 18, 18),
+) -> bytes:
+    """Public helper: return thumbnail bytes for `path` (cached).
+
+    Returns empty bytes if the path is missing or unreadable.
+    """
+
+    p = Path(_normalize_path_str(path))
+    if not p.exists():
+        return b""
+    w = int(max_width) if isinstance(max_width, int) else int(DEFAULT_THUMBNAIL_WIDTH_PX)
+    return _get_image_thumbnail_bytes_cached(
+        str(p),
+        _stat_mtime_ns(p),
+        w,
+        fmt,
+        quality,
+        background_rgb,
+    )
 def _normalize_path_str(path: str) -> str:
     # Many saved payloads may contain Windows-style backslashes; normalize so
     # the same data works on Streamlit Cloud (Linux).

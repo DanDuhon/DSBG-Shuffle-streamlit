@@ -7,7 +7,10 @@ import streamlit as st
 
 from core import auth
 from core.settings_manager import _has_supabase_config, is_streamlit_cloud
-from core.image_cache import get_image_bytes_cached
+from core.image_cache import (
+    get_default_thumbnail_width_px,
+    get_image_thumbnail_bytes_cached,
+)
 from ui.event_mode.logic import (
     list_all_event_cards,
     load_custom_event_decks,
@@ -197,6 +200,8 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
 
     sync = bool(st.session_state.pop(_BUILDER_SYNC_KEY, False))
 
+    thumb_w = int(get_default_thumbnail_width_px())
+
     for c in cards:
         img_path = Path(str(c["image_path"])).as_posix()
         if show_only_selected and img_path not in cards_map2:
@@ -219,9 +224,9 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
         )
         with r_img:
             p = Path(img_path)
-            img_bytes = get_image_bytes_cached(str(p))
-            if img_bytes:
-                st.image(img_bytes, width="stretch")
+            thumb_bytes = get_image_thumbnail_bytes_cached(str(p), max_width=thumb_w)
+            if thumb_bytes:
+                st.image(thumb_bytes, width=thumb_w)
             st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
         with r_id:
             st.caption(card_id)

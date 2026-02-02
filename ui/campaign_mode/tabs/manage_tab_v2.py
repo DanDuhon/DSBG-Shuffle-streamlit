@@ -2,6 +2,8 @@
 import streamlit as st
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
+
+from core.image_cache import get_default_thumbnail_width_px, get_image_thumbnail_bytes_cached
 from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     PARTY_TOKEN_PATH,
@@ -182,6 +184,7 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
 
     # Unified 4-column grid for both Immediate and Consumable events.
     cols = st.columns(4)
+    thumb_w = int(get_default_thumbnail_width_px())
 
     # Build a typed list of events so we can render them into the 4-column
     # grid while still labeling each card with its type above the image.
@@ -202,7 +205,9 @@ def _render_party_events_panel(state: Dict[str, Any]) -> None:
         with col:
             st.markdown(f"**{ev_type}**")
             path_str = str(ev.get("path") or "")
-            st.image(path_str, width="stretch")
+            thumb_bytes = get_image_thumbnail_bytes_cached(path_str, max_width=thumb_w)
+            if thumb_bytes:
+                st.image(thumb_bytes, width=thumb_w)
             nm = str(ev.get("name") or ev.get("id") or ev_type).strip()
             if nm:
                 st.caption(nm)

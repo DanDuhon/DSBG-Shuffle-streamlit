@@ -34,7 +34,11 @@ from ui.event_mode.logic import (
     _attach_event_to_current_encounter,
 )
 from ui.event_mode.panels.deck_selector import render_active_event_deck_selector
-from core.image_cache import get_image_bytes_cached
+from core.image_cache import (
+    get_default_thumbnail_width_px,
+    get_image_bytes_cached,
+    get_image_thumbnail_bytes_cached,
+)
 
 
 def _chunk_list(items: list, chunk_size: int) -> list[list]:
@@ -835,6 +839,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
 
             # Event card images
             if events:
+                thumb_w = int(get_default_thumbnail_width_px())
                 ncols = 3
                 for row_start in range(0, len(events), ncols):
                     row_events = events[row_start:row_start + ncols]
@@ -846,10 +851,11 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                             if img:
                                 ev["path"] = str(img)
                                 p = Path(ev["path"])
-                                img_bytes = get_image_bytes_cached(str(p))
-
-                                if img_bytes:
-                                    st.image(img_bytes, width="stretch")
+                                thumb_bytes = get_image_thumbnail_bytes_cached(
+                                    str(p), max_width=thumb_w
+                                )
+                                if thumb_bytes:
+                                    st.image(thumb_bytes, width=thumb_w)
                             else:
                                 st.caption("Event image missing.")
     else:
