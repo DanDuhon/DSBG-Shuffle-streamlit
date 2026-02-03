@@ -26,6 +26,7 @@ from ui.campaign_mode.state import (
     _ensure_v1_state,
     _ensure_v2_state,
     clear_other_campaign_state,
+    queue_widget_set,
 )
 
 
@@ -258,7 +259,7 @@ def _render_v1_setup(
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
         sparks_key = "campaign_v1_sparks_campaign"
-        st.session_state[sparks_key] = sparks_max
+        queue_widget_set(sparks_key, sparks_max)
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
         st.session_state["campaign_v1_state"] = state
@@ -434,7 +435,7 @@ def _render_v2_setup(
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
         sparks_key = "campaign_v2_sparks_campaign"
-        st.session_state[sparks_key] = sparks_max
+        queue_widget_set(sparks_key, sparks_max)
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
         st.session_state["campaign_v2_state"] = state

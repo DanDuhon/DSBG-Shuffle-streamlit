@@ -14,7 +14,8 @@ from ui.campaign_mode.state import (
     _get_player_count,
     _get_settings,
     _ensure_v1_state,
-    _ensure_v2_state
+    _ensure_v2_state,
+    queue_widget_set,
 )
 from ui.encounter_mode.tabs import play_tab as encounter_play_tab
 from ui.event_mode.logic import (
@@ -487,7 +488,7 @@ def _render_campaign_play_tab(
                         if active_version == "V1"
                         else "campaign_v2_souls_campaign"
                     )
-                    st.session_state[souls_key] = new_souls
+                    queue_widget_set(souls_key, new_souls)
 
                 # Consume events used in THIS fight (rendezvous on this node + party consumables)
                 _consume_fight_attached_events(state, current_node)
@@ -504,7 +505,7 @@ def _render_campaign_play_tab(
                     # Keep campaign soul widget synced if draw rewards added souls
                     new_souls = int(state.get("souls") or 0)
                     souls_key = "campaign_v2_souls_campaign"
-                    st.session_state[souls_key] = new_souls
+                    queue_widget_set(souls_key, new_souls)
 
                 # Mark this encounter node as completed so movement to the
                 # next encounter/boss becomes legal. For V2, also record shortcut unlocks.
@@ -534,7 +535,7 @@ def _render_campaign_play_tab(
                     if active_version == "V1"
                     else "campaign_v2_sparks_campaign"
                 )
-                st.session_state[sparks_key] = int(state.get("sparks") or 0)
+                queue_widget_set(sparks_key, int(state.get("sparks") or 0))
 
                 # Events attached to this encounter do not persist to the next one.
                 st.session_state["encounter_events"] = []
@@ -588,7 +589,7 @@ def _render_campaign_play_tab(
 
             # Reset soul cache to 0 on failure (dropped souls stay on the map instead)
             state["souls"] = 0
-            st.session_state[souls_key] = 0
+            queue_widget_set(souls_key, 0)
 
             # Decrement Sparks, but never below 0
             if sparks_cur > 0:
@@ -602,7 +603,7 @@ def _render_campaign_play_tab(
                 if active_version == "V1"
                 else "campaign_v2_sparks_campaign"
             )
-            st.session_state[sparks_key] = int(state.get("sparks") or 0)
+            queue_widget_set(sparks_key, int(state.get("sparks") or 0))
 
             # When the party returns to the bonfire, all encounters that
             # were marked complete become incomplete again. Shortcuts remain.

@@ -23,7 +23,7 @@ from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_campaign_save_controls,
 )
 from ui.campaign_mode.tabs.manage_tab_v1 import _render_v1_current_panel
-from ui.campaign_mode.state import _get_settings, _get_player_count
+from ui.campaign_mode.state import _get_settings, _get_player_count, apply_pending_widget_sets
 from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.shared.event_brief import format_event_brief_line
 
@@ -268,6 +268,8 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             travel there for the first time.
     """
     settings = _get_settings()
+    # Apply any cross-tab widget sync requests before instantiating widgets.
+    apply_pending_widget_sets()
     cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     campaign = state.get("campaign")

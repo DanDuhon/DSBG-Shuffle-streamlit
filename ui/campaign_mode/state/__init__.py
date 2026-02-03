@@ -5,6 +5,9 @@ from ui.campaign_mode.core import _default_sparks_max
 from ui.campaign_mode.helpers import get_player_count_from_settings
 
 
+_PENDING_WIDGET_SETS_KEY = "_campaign_pending_widget_sets"
+
+
 def _get_settings() -> Dict[str, Any]:
     settings = st.session_state.get("user_settings")
     if settings is None:
@@ -15,6 +18,44 @@ def _get_settings() -> Dict[str, Any]:
 
 def _get_player_count(settings: Dict[str, Any]) -> int:
     return get_player_count_from_settings(settings)
+
+
+def queue_widget_set(widget_key: str, value: Any) -> None:
+    """Request that a widget-backed session key be set on the *next* rerun.
+
+    Streamlit forbids mutating `st.session_state[key]` for a widget key after the
+    widget is instantiated within a run. Many Campaign widgets (e.g., Sparks)
+    exist on tabs that still execute during reruns, so button handlers in other
+    tabs must avoid directly setting those keys.
+
+    Use `apply_pending_widget_sets()` early in tab rendering (before widgets are
+    created) to apply these queued values.
+    """
+
+    if not widget_key:
+        return
+
+    pending = st.session_state.get(_PENDING_WIDGET_SETS_KEY)
+    if not isinstance(pending, dict):
+        pending = {}
+    pending[str(widget_key)] = value
+    st.session_state[_PENDING_WIDGET_SETS_KEY] = pending
+
+
+def apply_pending_widget_sets() -> None:
+    """Apply any queued widget key updates.
+
+    Must be called before widgets that use those keys are instantiated.
+    """
+
+    pending = st.session_state.get(_PENDING_WIDGET_SETS_KEY)
+    if not isinstance(pending, dict) or not pending:
+        return
+
+    for k, v in list(pending.items()):
+        st.session_state[str(k)] = v
+
+    st.session_state[_PENDING_WIDGET_SETS_KEY] = {}
 
 
 def _ensure_campaign_event_state(state: Dict[str, Any]) -> None:
