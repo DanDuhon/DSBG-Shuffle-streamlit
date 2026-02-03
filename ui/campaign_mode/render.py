@@ -8,6 +8,7 @@ from ui.campaign_mode.tabs.setup_tab import (
     _render_v1_setup,
     _render_v2_setup,
 )
+from ui.campaign_mode.tabs.boss_fight_tab import _render_campaign_boss_fight_tab
 from ui.campaign_mode.tabs.manage_tab import _render_campaign_tab
 from ui.campaign_mode.tabs.play_tab import _render_campaign_play_tab
 
@@ -28,7 +29,7 @@ def render() -> None:
         prev = st.session_state.get("_campaign_mode_tab_last")
         tab = st.radio(
             "Campaign Mode",
-            ["Setup", "Manage Campaign", "Play Encounter"],
+            ["Setup", "Manage Campaign", "Play Encounter", "Boss Fight"],
             horizontal=True,
             key="campaign_mode_tab",
         )
@@ -57,11 +58,15 @@ def render() -> None:
             _render_campaign_play_tab(bosses, invaders)
             return
 
+        if tab == "Boss Fight":
+            _render_campaign_boss_fight_tab(bosses, invaders)
+            return
+
         _render_campaign_tab(bosses, invaders)
         return
 
-    setup_tab, campaign_tab, play_tab = st.tabs(
-        ["Setup", "Manage Campaign", "Play Encounter"]
+    setup_tab, campaign_tab, play_tab, boss_fight_tab = st.tabs(
+        ["Setup", "Manage Campaign", "Play Encounter", "Boss Fight"]
     )
 
     with setup_tab:
@@ -81,3 +86,6 @@ def render() -> None:
 
     with campaign_tab:
         _render_campaign_tab(bosses, invaders)
+
+    with boss_fight_tab:
+        _render_campaign_boss_fight_tab(bosses, invaders)

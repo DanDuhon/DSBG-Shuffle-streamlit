@@ -162,8 +162,10 @@ def _apply_boss_defeated(
     # Sync the widget-backed Sparks value on next rerun.
     if version == "V2":
         queue_widget_set("campaign_v2_sparks_campaign", int(state.get("sparks") or 0))
+        queue_widget_set("campaign_v2_souls_campaign", int(state.get("souls") or 0))
     else:
         queue_widget_set("campaign_v1_sparks_campaign", int(state.get("sparks") or 0))
+        queue_widget_set("campaign_v1_souls_campaign", int(state.get("souls") or 0))
 
     st.session_state[state_key] = state
 
@@ -253,7 +255,40 @@ def _render_boss_outcome_controls(
 
     version = str(campaign.get("version") or "V1").upper()
 
+    # --- Victory reward preview (includes dropped souls pickup if present)
+    node_id = current_node.get("id")
+    stage = current_node.get("stage")
+
+    player_count = int(campaign.get("player_count") or 0)
+    sparks_cur = int(state.get("sparks") or 0)
+    sparks_max = int(state.get("sparks_max") or sparks_cur)
+    souls_cur = int(state.get("souls") or 0)
+
+    token_node_id = state.get("souls_token_node_id")
+    token_amount = int(state.get("souls_token_amount") or 0)
+    dropped_amount = int(state.get("dropped_souls") or 0)
+
+    pickup = 0
+    if token_node_id is not None and node_id is not None and str(token_node_id) == str(node_id):
+        pickup = max(token_amount, dropped_amount)
+
+    boss_reward_souls = 0
+    spark_note = ""
+    if version == "V2":
+        if stage == "mini":
+            boss_reward_souls = player_count + 6
+        spark_note = f"Sparks: {sparks_cur} → {sparks_cur + 1}"
+    else:
+        boss_reward_souls = player_count * sparks_cur if (player_count > 0 and sparks_cur > 0) else 0
+        spark_note = f"Sparks: {sparks_cur} → {sparks_max}"
+
+    total_souls_gain = boss_reward_souls + pickup
+    souls_note = f"Souls: +{total_souls_gain}" if total_souls_gain else "Souls: +0"
+    if pickup:
+        souls_note += f" (includes +{pickup} dropped souls pickup)"
+
     st.markdown("#### Boss outcome")
+    st.caption(f"On victory: {souls_note}. {spark_note}.")
     col_win, col_fail = st.columns(2)
 
     with col_win:

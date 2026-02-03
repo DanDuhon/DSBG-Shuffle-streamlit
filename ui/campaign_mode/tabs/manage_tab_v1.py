@@ -16,7 +16,6 @@ from ui.campaign_mode.core import (
     _reset_all_encounters_on_bonfire_return,
 )
 from ui.campaign_mode.tabs.manage_tab_shared import (
-    _render_boss_outcome_controls,
     _render_campaign_encounter_card,
     _render_campaign_save_controls,
 )
@@ -497,7 +496,6 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     with col_detail:
         _render_v1_current_panel(campaign, current_node)
         _render_campaign_save_controls(version="V1", state=state, settings=settings)
-        _render_boss_outcome_controls(state, campaign, current_node)
 
     # Persist updated state
     st.session_state["campaign_v1_state"] = state
@@ -511,7 +509,7 @@ def _render_v1_current_panel(
     Right-hand panel for V1:
     - Bonfire: bonfire image
     - Encounter: card
-    - Boss: fully rendered data card + 'Start Boss Fight' (jumps to Boss Mode)
+    - Boss: fully rendered data card
     """
     kind = current_node.get("kind")
     st.markdown("#### Current space")
@@ -586,19 +584,6 @@ def _render_v1_current_panel(
             st.caption("No boss selected for this space.")
 
         st.markdown("<div style='height:0.05rem'></div>", unsafe_allow_html=True)
-
-        if st.button(
-            "Start Boss Fight ⚔️",
-            key=f"campaign_v1_start_boss_{current_node.get('id')}",
-            width="stretch",
-        ):
-            if not boss_name:
-                st.warning("No boss configured for this node.")
-            else:
-                st.session_state["pending_boss_mode_from_campaign"] = {
-                    "boss_name": boss_name
-                }
-                st.rerun()
         return
 
 
