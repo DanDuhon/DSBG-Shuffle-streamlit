@@ -252,7 +252,9 @@ def _render_v1_setup(
             campaign = _generate_v1_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
         player_count = _get_player_count(settings)
-        sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+        sparks_max = int(_default_sparks_max(player_count))
+        if sparks_max < 1:
+            sparks_max = 1
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
         sparks_key = "campaign_v1_sparks_campaign"
@@ -426,7 +428,9 @@ def _render_v2_setup(
             campaign = _generate_v2_campaign(bosses_by_name, settings, state)
         state["campaign"] = campaign
         player_count = _get_player_count(settings)
-        sparks_max = int(state.get("sparks_max", _default_sparks_max(player_count)))
+        sparks_max = int(_default_sparks_max(player_count))
+        if sparks_max < 1:
+            sparks_max = 1
         state["sparks_max"] = sparks_max
         state["sparks"] = sparks_max
         sparks_key = "campaign_v2_sparks_campaign"

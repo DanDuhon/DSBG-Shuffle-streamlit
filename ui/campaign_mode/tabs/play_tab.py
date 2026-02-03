@@ -527,6 +527,15 @@ def _render_campaign_play_tab(
 
                 st.session_state[state_key] = state
 
+                # Keep the Campaign Management sparks widget in sync so Manage
+                # doesn't overwrite state with a stale widget value.
+                sparks_key = (
+                    "campaign_v1_sparks_campaign"
+                    if active_version == "V1"
+                    else "campaign_v2_sparks_campaign"
+                )
+                st.session_state[sparks_key] = int(state.get("sparks") or 0)
+
                 # Events attached to this encounter do not persist to the next one.
                 st.session_state["encounter_events"] = []
 
