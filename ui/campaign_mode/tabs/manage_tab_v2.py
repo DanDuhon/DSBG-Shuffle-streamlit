@@ -23,7 +23,12 @@ from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_campaign_save_controls,
 )
 from ui.campaign_mode.tabs.manage_tab_v1 import _render_v1_current_panel
-from ui.campaign_mode.state import _get_settings, _get_player_count, apply_pending_widget_sets
+from ui.campaign_mode.state import (
+    _get_settings,
+    _get_player_count,
+    apply_pending_widget_sets,
+    queue_widget_set,
+)
 from ui.campaign_mode.ui_helpers import _render_party_icons
 from ui.shared.event_brief import format_event_brief_line
 
@@ -581,8 +586,8 @@ def _render_v2_campaign_compact(
                     sparks_cur = int(state.get("sparks") or 0)
                     state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
 
-                    # Force widget to re-seed on rerun
-                    st.session_state.pop("campaign_v2_sparks_campaign", None)
+                    # Sync widget-backed Sparks value on next rerun.
+                    queue_widget_set("campaign_v2_sparks_campaign", int(state.get("sparks") or 0))
 
                     st.session_state["campaign_v2_state"] = state
                     st.rerun()
@@ -759,8 +764,8 @@ def _render_v2_path_row(
                 campaign["current_node_id"] = "bonfire"
                 state["campaign"] = campaign
 
-                # Force widget to re-seed on rerun
-                st.session_state.pop("campaign_v2_sparks_campaign", None)
+                # Sync widget-backed Sparks value on next rerun.
+                queue_widget_set("campaign_v2_sparks_campaign", int(state.get("sparks") or 0))
 
                 st.session_state["campaign_v2_state"] = state
                 st.rerun()

@@ -20,7 +20,12 @@ from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_campaign_encounter_card,
     _render_campaign_save_controls,
 )
-from ui.campaign_mode.state import _get_settings, _get_player_count, apply_pending_widget_sets
+from ui.campaign_mode.state import (
+    _get_settings,
+    _get_player_count,
+    apply_pending_widget_sets,
+    queue_widget_set,
+)
 from ui.campaign_mode.ui_helpers import _render_party_icons
 
 
@@ -359,7 +364,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
             state["sparks"] = sparks_cur - 1 if sparks_cur > 0 else 0
             campaign["current_node_id"] = "bonfire"
             state["campaign"] = campaign
-            st.session_state.pop("campaign_v1_sparks_campaign", None)
+            queue_widget_set("campaign_v1_sparks_campaign", int(state.get("sparks") or 0))
             st.session_state["campaign_v1_state"] = state
             st.rerun()
 

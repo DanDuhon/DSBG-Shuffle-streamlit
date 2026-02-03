@@ -14,6 +14,7 @@ from ui.campaign_mode.core import (
 from ui.encounter_mode.tabs.setup_tab import render_original_encounter
 from ui.encounter_mode.generation import load_encounter_data
 from ui.campaign_mode.helpers import get_player_count_from_settings
+from ui.campaign_mode.state import queue_widget_set
 
 
 def _frozen_sig(
@@ -158,11 +159,11 @@ def _apply_boss_defeated(
     # Clear any stale "dropped_souls" trackers if you use them elsewhere
     state.pop("dropped_souls", None)
 
-    # Force the Sparks widget to re-seed from updated state on rerun
+    # Sync the widget-backed Sparks value on next rerun.
     if version == "V2":
-        st.session_state.pop("campaign_v2_sparks_campaign", None)
+        queue_widget_set("campaign_v2_sparks_campaign", int(state.get("sparks") or 0))
     else:
-        st.session_state.pop("campaign_v1_sparks_campaign", None)
+        queue_widget_set("campaign_v1_sparks_campaign", int(state.get("sparks") or 0))
 
     st.session_state[state_key] = state
 
@@ -215,13 +216,13 @@ def _apply_boss_failure(
     # Party returns to the bonfire
     campaign["current_node_id"] = "bonfire"
     state["campaign"] = campaign
-    # Force the Sparks and Soul cache widgets to re-seed on rerun
+    # Sync the widget-backed Sparks/Souls values on next rerun.
     if version == "V2":
-        st.session_state.pop("campaign_v2_sparks_campaign", None)
-        st.session_state.pop("campaign_v2_souls_campaign", None)
+        queue_widget_set("campaign_v2_sparks_campaign", int(state.get("sparks") or 0))
+        queue_widget_set("campaign_v2_souls_campaign", int(state.get("souls") or 0))
     else:
-        st.session_state.pop("campaign_v1_sparks_campaign", None)
-        st.session_state.pop("campaign_v1_souls_campaign", None)
+        queue_widget_set("campaign_v1_sparks_campaign", int(state.get("sparks") or 0))
+        queue_widget_set("campaign_v1_souls_campaign", int(state.get("souls") or 0))
 
     st.session_state[state_key] = state
 
