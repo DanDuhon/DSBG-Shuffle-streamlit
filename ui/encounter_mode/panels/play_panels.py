@@ -1953,9 +1953,19 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
     # -------------------------
     if invader_entries:
         st.markdown("#### Invaders")
-        for entry in invader_entries:
-            # Render as a full-width block (invader_stack does its own 2-column layout).
-            invader_panel.render_invader_stack(entry, encounter)
+
+        # Render invaders into the same column grid density as enemies.
+        # This prevents invader cards from becoming oversized when enemies
+        # are displayed in a tighter grid (e.g., V1 uses 4 columns).
+        inv_cols_count = max(1, min(ncols, len(invader_entries)))
+        if inv_cols_count == 1:
+            inv_cols = [st.container()]
+        else:
+            inv_cols = list(st.columns(inv_cols_count, gap="medium"))
+
+        for i, entry in enumerate(invader_entries):
+            with inv_cols[i % inv_cols_count]:
+                invader_panel.render_invader_stack(entry, encounter)
 
         if enemy_entries:
             st.divider()

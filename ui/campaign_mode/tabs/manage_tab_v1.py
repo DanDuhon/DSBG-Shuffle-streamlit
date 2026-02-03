@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from core.behavior.assets import BEHAVIOR_CARDS_PATH
 from core.behavior.generation import (
+    build_behavior_catalog,
     render_data_card_cached,
     render_data_card_uncached,
     render_dual_boss_data_cards,
 )
+from ui.encounter_mode.panels.invader_panel import _get_invader_behavior_entries_for_encounter
 from ui.campaign_mode.core import (
     BONFIRE_ICON_PATH,
     _default_sparks_max,
@@ -26,6 +28,193 @@ from ui.campaign_mode.state import (
     queue_widget_set,
 )
 from ui.campaign_mode.ui_helpers import _render_party_icons
+
+
+# ---------------------------------------------------------------------------
+# Campaign V1: optional invader configuration (mirrors Encounter Mode behavior)
+# ---------------------------------------------------------------------------
+
+_KIRK_KNIGHT = "kirk, knight of thorns"
+_KIRK_LONGFINGER = "longfinger kirk"
+
+
+def _norm_invader_name(name: str) -> str:
+    return str(name).strip().lower()
+
+
+def _extract_invader_names(raw_invaders: Any) -> list[str]:
+    if not raw_invaders:
+        return []
+    if not isinstance(raw_invaders, (list, tuple)):
+        raw_invaders = [raw_invaders]
+
+    names: list[str] = []
+    for item in raw_invaders:
+        if isinstance(item, dict):
+            name = item.get("name") or item.get("display_name") or item.get("id")
+        else:
+            name = str(item)
+        if name:
+            names.append(str(name))
+    return names
+
+
+def _get_all_invader_names() -> list[str]:
+    """Return all invader names from the behavior catalog (cached in session_state)."""
+    catalog = st.session_state.get("behavior_catalog")
+    if catalog is None:
+        catalog = build_behavior_catalog()
+        st.session_state["behavior_catalog"] = catalog
+
+    result: list[str] = []
+    for per_cat in catalog.values():
+        for entry in per_cat:
+            if getattr(entry, "is_invader", False) and getattr(entry, "name", None):
+                result.append(entry.name)
+    return result
+
+
+def _persist_v1_frozen_update(*, campaign: Dict[str, Any], current_node: Dict[str, Any], frozen: Dict[str, Any]) -> None:
+    """Persist mutated frozen encounter data into Campaign V1 session state and rerun."""
+    current_node["frozen"] = frozen
+    current_node["revealed"] = True
+
+    # Update the canonical V1 state snapshot if present.
+    v1_state = st.session_state.get("campaign_v1_state")
+    if isinstance(v1_state, dict):
+        v1_campaign = v1_state.get("campaign")
+        if isinstance(v1_campaign, dict):
+            v1_state["campaign"] = v1_campaign
+        else:
+            v1_state["campaign"] = campaign
+        st.session_state["campaign_v1_state"] = v1_state
+    else:
+        st.session_state["campaign_v1_state"] = {"campaign": campaign}
+
+    st.rerun()
+
+
+def _render_v1_invader_setup_controls(*, campaign: Dict[str, Any], current_node: Dict[str, Any], frozen: Dict[str, Any]) -> None:
+    """Invader add/remove UI for the current Campaign V1 encounter.
+
+    Rules (kept consistent with Encounter Mode):
+    - Locked invaders are derived from encounter enemies (ignoring any existing frozen['invaders']).
+      They cannot be removed here.
+    - Added invaders can be removed.
+    - No duplicates.
+    - 'Kirk, Knight of Thorns' and 'Longfinger Kirk' are mutually exclusive.
+    """
+    node_id = str(current_node.get("id") or "?")
+    key_prefix = f"campaign_v1_invaders_{node_id}"
+
+    with st.expander("Invaders for this encounter", expanded=False):
+        st.caption(
+            "Add extra invaders to this encounter. "
+            "Invaders that are part of the encounter setup itself "
+            "cannot be removed here."
+        )
+
+        # Locked invaders from enemies only
+        enc_for_auto = dict(frozen)
+        enc_for_auto.pop("invaders", None)
+        locked_entries = _get_invader_behavior_entries_for_encounter(enc_for_auto)
+        locked_names = [e.name for e in locked_entries]
+
+        if locked_names:
+            st.markdown("**From encounter enemies (cannot remove):**")
+            for name in locked_names:
+                st.markdown(f"- {name}")
+
+        locked_norms = {_norm_invader_name(n) for n in locked_names}
+
+        # Added invaders are stored on frozen['invaders'] but exclude locked
+        stored_names = _extract_invader_names(frozen.get("invaders"))
+        added_names = [n for n in stored_names if _norm_invader_name(n) not in locked_norms]
+
+        # De-dupe added names (preserve order)
+        seen_added: set[str] = set()
+        added_unique: list[str] = []
+        for n in added_names:
+            kn = _norm_invader_name(n)
+            if kn in seen_added:
+                continue
+            seen_added.add(kn)
+            added_unique.append(n)
+        added_names = added_unique
+
+        if added_names:
+            st.markdown("**Added invaders:**")
+            for idx, name in enumerate(added_names):
+                c1, c2 = st.columns([3, 1])
+                with c1:
+                    st.markdown(f"- {name}")
+                with c2:
+                    if st.button("❌", key=f"{key_prefix}_remove_{idx}", width="stretch"):
+                        added_names = [n for n in added_names if _norm_invader_name(n) != _norm_invader_name(name)]
+
+                        if not added_names:
+                            frozen.pop("invaders", None)
+                        else:
+                            combined: list[str] = []
+                            seen: set[str] = set()
+                            for n in locked_names + added_names:
+                                kn = _norm_invader_name(n)
+                                if kn in seen:
+                                    continue
+                                seen.add(kn)
+                                combined.append(n)
+                            frozen["invaders"] = combined
+
+                        _persist_v1_frozen_update(campaign=campaign, current_node=current_node, frozen=frozen)
+
+        # Add new invader
+        present_norms = {_norm_invader_name(n) for n in (locked_names + added_names)}
+
+        candidate_names: list[str] = []
+        for nm in sorted(_get_all_invader_names()):
+            kn = _norm_invader_name(nm)
+            if kn in present_norms:
+                continue
+            if kn == _KIRK_KNIGHT and _KIRK_LONGFINGER in present_norms:
+                continue
+            if kn == _KIRK_LONGFINGER and _KIRK_KNIGHT in present_norms:
+                continue
+            candidate_names.append(nm)
+
+        if not candidate_names:
+            st.caption("No additional invaders available to add.")
+            return
+
+        choice = st.selectbox(
+            "Add invader:",
+            options=["(none)"] + candidate_names,
+            key=f"{key_prefix}_add_select",
+        )
+
+        if choice != "(none)" and st.button(
+            "Add invader ➕",
+            key=f"{key_prefix}_add_btn",
+            width="stretch",
+        ):
+            if _norm_invader_name(choice) not in present_norms:
+                new_added = added_names + [choice]
+
+                combined: list[str] = []
+                seen: set[str] = set()
+                for n in locked_names + new_added:
+                    kn = _norm_invader_name(n)
+                    if kn in seen:
+                        continue
+                    seen.add(kn)
+                    combined.append(n)
+                frozen["invaders"] = combined
+
+                _persist_v1_frozen_update(campaign=campaign, current_node=current_node, frozen=frozen)
+
+        st.caption(
+            "Note: 'Kirk, Knight of Thorns' and 'Longfinger Kirk' "
+            "cannot both be present in the same encounter."
+        )
 
 
 def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -> None:
@@ -525,6 +714,13 @@ def _render_v1_current_panel(
     if kind == "encounter":
         frozen = current_node.get("frozen") or {}
         _render_campaign_encounter_card(frozen)
+
+        if isinstance(frozen, dict):
+            _render_v1_invader_setup_controls(
+                campaign=campaign,
+                current_node=current_node,
+                frozen=frozen,
+            )
         return
 
     # Boss
