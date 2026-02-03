@@ -611,6 +611,18 @@ def shuffle_encounter(
     # `load_encounter` is cached; never mutate the returned dict in-place.
     encounter_data = dict(load_encounter(encounter_slug, character_count) or {})
 
+    # Campaign Mode commonly calls into shuffle logic in bulk (campaign generation,
+    # scout-ahead pools, rerolls). In these paths, encounter card image rendering is
+    # pure UI sugar but very expensive (PIL decode/compose) and can balloon memory.
+    # Match the Cloud behavior by default: do not render images in Campaign Mode
+    # shuffles unless explicitly opted-in.
+    if campaign_mode and render_image:
+        effective_settings = settings
+        if effective_settings is None:
+            effective_settings = st.session_state.get("user_settings") or {}
+        if not bool((effective_settings or {}).get("campaign_shuffle_render_images", False)):
+            render_image = False
+
     if memlog_checkpoint is not None:
         try:
             load_ci = None

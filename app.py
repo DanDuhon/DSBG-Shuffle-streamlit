@@ -506,6 +506,22 @@ if pending:
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
     loaded_state = snapshot.get("state", {}) or {}
     st.session_state[state_key] = loaded_state
+
+    # IMPORTANT: Clear widget-backed keys so numeric inputs re-seed from the
+    # loaded snapshot rather than retaining stale values from a previous session.
+    # This is especially important on Streamlit Cloud, where users frequently
+    # load/save across logins and reruns.
+    for k in (
+        "campaign_v1_sparks_campaign",
+        "campaign_v1_souls_campaign",
+        "campaign_v2_sparks_campaign",
+        "campaign_v2_souls_campaign",
+    ):
+        try:
+            st.session_state.pop(k, None)
+        except Exception:
+            pass
+
     # Mark this loaded campaign as clean (no unsaved changes yet).
     set_campaign_baseline(version=snap_version, state=loaded_state)
 

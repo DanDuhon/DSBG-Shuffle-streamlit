@@ -176,6 +176,15 @@ def _hash_json(obj: Any) -> str:
 
 def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     draw = ImageDraw.Draw(img)
+
+    # Normalize incoming value. Some data sources may provide None, which
+    # would otherwise become the string "None" and crash numeric parsing.
+    if value is None:
+        return
+    value_str = str(value).strip()
+    if not value_str or value_str.lower() == "none":
+        return
+
     # choose coord key prefix
     prefix = "boss" if is_boss else "enemy"
     coord_key = f"{prefix}_{key}"
@@ -184,8 +193,13 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
     # to int, but fall back to a large value for non-numeric strings.
     is_non_numeric = False
     if coord_key == "enemy_health":
-        val_int = int(value)
-        if val_int >= 10:
+        try:
+            val_int = int(value_str)
+            if val_int >= 10:
+                coord_key = "boss_health"
+        except Exception:
+            # Non-numeric (e.g., "∞") or malformed data (e.g., "None").
+            is_non_numeric = True
             coord_key = "boss_health"
     if coord_key not in coords_map:
         return
@@ -214,7 +228,7 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
             return
 
     font = FONTS.get(key, ImageFont.load_default())
-    draw.text((x, y), value, font=font, fill=style["fill"])
+    draw.text((x, y), value_str, font=font, fill=style["fill"])
 
 
 def _overlay_effect_icons(
