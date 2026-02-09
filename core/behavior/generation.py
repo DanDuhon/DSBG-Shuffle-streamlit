@@ -511,7 +511,7 @@ def render_behavior_card(
 
     if is_boss:
         if "repeat" in behavior_json:
-            icon_path = f"{ICONS_DIR}\\repeat_{behavior_json['repeat']}.png"
+            icon_path = ICONS_DIR / f"repeat_{behavior_json['repeat']}.png"
             icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
             x, y = coords_map[repeat_icon_slot]
             base.alpha_composite(icon, (x, y))
