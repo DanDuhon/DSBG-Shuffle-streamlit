@@ -272,11 +272,21 @@ def render_sidebar(settings: dict):
                         st.sidebar.success("Signed in. You can close the Google tab.")
                     else:
                         st.sidebar.caption("Google sign-in opened in a new tab. Finish sign-in there, then return here.")
+            # helper caption for users who may be on mobile or have pop-up blockers
+            st.sidebar.caption(
+                "Requires pop-ups and must run in a full browser window. "
+                "If the login tab doesn’t open, allow pop-ups or try another browser."
+            )
 
             email = st.sidebar.text_input(
                 "Email (magic link)",
                 key="auth_magic_email",
                 placeholder="you@example.com",
+            )
+            # warn users about the same-browser requirement
+            st.sidebar.caption(
+                "Magic links only work in the browser where the request was made. "
+                "Opening the email in a different device/browser/app will fail."
             )
             if st.sidebar.button(
                 "Send magic link",

@@ -10,6 +10,12 @@ The app has a variety of modules that can enhance your DSBG experience either in
 You can access this app here: https://dsbg-shuffle.streamlit.app/
 If you'd rather self-host it, see below.
 
+> **Login notes:**
+> - The cloud site uses Supabase for per-account saving; you can sign in with Google or an email magic link.
+> - **Magic links must be opened in the same browser** where you requested them; opening the email in a different device or an in‑app webview will fail with a PKCE error. If you get this error, copy/paste the link from the email into your browser - that should work.
+> - Google sign‑in requires pop‑ups—allow them or try a different browser if no new tab appears.
+
+
 ## Self-Hosting
 **For detailed, beginner-friendly setup instructions, see [SETUP.md](SETUP.md)**
 

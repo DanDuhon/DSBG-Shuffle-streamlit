@@ -204,7 +204,14 @@ def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
         if (code) {{
             const ex = await client.auth.exchangeCodeForSession(code);
             if (ex && ex.error) {{
-                return JSON.stringify({{ ok: false, error: 'exchangeCodeForSession: ' + String(ex.error.message || ex.error) }});
+                // Supabase sometimes returns a long message about PKCE verifier missing.
+                // Expose a flag so Python can provide a friendlier message.
+                const msg = String(ex.error.message || ex.error);
+                const out = {{ ok: false, error: 'exchangeCodeForSession: ' + msg }};
+                if (msg && msg.toLowerCase().includes('pkce')) {{
+                    out.pkce_error = true;
+                }}
+                return JSON.stringify(out);
             }}
             maybeClearTopUrl();
         }}
@@ -609,6 +616,13 @@ def ensure_session_loaded() -> Optional[AuthSession]:
     if isinstance(payload, dict) and payload.get("ok") is False:
         try:
             err = payload.get("error")
+            if isinstance(payload.get("pkce_error"), bool) and payload.get("pkce_error"):
+                # override with friendly explanation (don't expose full supabase text)
+                err = (
+                    "Magic link login failed because the link was opened in a different "
+                    "browser or device (PKCE verifier missing). "
+                    "Open the link in the same browser where you requested it."
+                )
             if isinstance(err, str) and err.strip():
                 st.session_state["_auth_last_error"] = err
         except Exception:
