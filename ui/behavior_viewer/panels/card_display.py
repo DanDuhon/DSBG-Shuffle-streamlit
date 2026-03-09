@@ -8,6 +8,7 @@ from pathlib import Path
 from core.behavior.assets import _behavior_image_path
 from core.behavior.generation import (
     render_behavior_card_cached,
+    render_behavior_card_uncached,
     render_data_card_cached,
     render_dual_boss_behavior_card,
     render_dual_boss_data_cards,
@@ -130,12 +131,17 @@ def render_card_display(
                 st.image(img_bytes, width=card_width)
                 return
             img_path = _behavior_image_path(cfg, sel)
-            thumb = get_image_thumbnail_bytes_cached(
-                str(Path(img_path)),
-                max_width=int(card_width),
+            # In low-memory environments we avoid caching large PNGs, but still
+            # render the behavior onto the base image so icons appear. Use the
+            # uncached renderer variant to prevent storing large blobs in
+            # Streamlit cache while preserving icon compositing.
+            img_bytes = render_behavior_card_uncached(
+                img_path,
+                beh,
+                is_boss=(entry.tier != "enemy"),
             )
-            if thumb:
-                st.image(thumb, width=card_width)
+            if img_bytes:
+                st.image(img_bytes, width=card_width)
             else:
                 st.caption("Card image unavailable.")
         except Exception:
