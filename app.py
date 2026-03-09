@@ -15,8 +15,13 @@ from ui.character_mode.render import render as character_mode_render
 from ui.behavior_viewer.render import render as behavior_viewer_render
 from core import auth
 from core.settings_manager import get_config_bool, is_streamlit_cloud, load_settings, save_settings
+from core.debug import setup_logging
+from core.debug import serialize_session_state_to_json
 
 _APP_START = time.perf_counter()
+
+# Initialize app logging (writes logs/campaign_debug.log)
+logger = setup_logging()
 
 st.set_page_config(
     page_title="DSBG-Shuffle",
@@ -494,6 +499,14 @@ if pending:
     snap_name = pending.get("name")
     snapshot = pending.get("snapshot", {}) or {}
 
+    # Log pre-load session_state for remote debugging (Streamlit Cloud friendly)
+    try:
+        logger.info("Pending campaign snapshot detected: %s", str(snap_name))
+        pre_state_json = serialize_session_state_to_json(st.session_state)
+        logger.debug("pre_pending_snapshot_session_state: %s", pre_state_json)
+    except Exception:
+        logger.exception("Failed to serialize pre-pending session_state")
+
     snap_version = snapshot.get("rules_version", "V1")
     st.session_state["campaign_rules_version"] = snap_version
 
@@ -554,6 +567,13 @@ if pending:
     st.session_state["user_settings"] = settings
     st.session_state["_settings_allow_save"] = True
     save_settings(settings)
+
+    # Log post-load session_state so we can compare what changed on Cloud runs
+    try:
+        post_state_json = serialize_session_state_to_json(st.session_state)
+        logger.debug("post_pending_snapshot_session_state: %s", post_state_json)
+    except Exception:
+        logger.exception("Failed to serialize post-pending session_state")
     st.session_state["_settings_allow_save"] = False
 
     # One-shot notice for Campaign Mode UI

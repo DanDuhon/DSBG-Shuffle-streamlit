@@ -1,0 +1,1292 @@
+{
+  "ts": 1773077092,
+  "state": {
+    "enemy_incl_25": true,
+    "enemy_incl_29": true,
+    "enemy_incl_26": true,
+    "exp_active_painted_world_of_ariamis": true,
+    "sidebar_ngplus_expanded": false,
+    "exp_active_black_dragon_kalameet": true,
+    "party_char_assassin": true,
+    "campaign_v1_main_boss": "Random",
+    "v1_travel_encounter:mini:0": false,
+    "enemy_incl_9": true,
+    "event_deck": {
+      "draw_pile": [
+        "assets\\events\\Forgotten Supplies.jpg",
+        "assets\\events\\Rite of Rekindling.jpg",
+        "assets\\events\\Pine Resin.jpg",
+        "assets\\events\\Firekeeper's Boon.jpg",
+        "assets\\events\\Big Pilgrim's Key.jpg",
+        "assets\\events\\Rare Vagrant.jpg",
+        "assets\\events\\Scrying Stone.jpg",
+        "assets\\events\\Bleak Bonfire Ascetic.jpg",
+        "assets\\events\\Lifegem.jpg",
+        "assets\\events\\Virulent Bonfire Ascetic.jpg",
+        "assets\\events\\Fleeting Glory.jpg",
+        "assets\\events\\Undead Merchant.jpg",
+        "assets\\events\\Blacksmith's Trial.jpg",
+        "assets\\events\\Frozen Bonfire Ascetic.jpg",
+        "assets\\events\\Firekeeper's Boon.jpg",
+        "assets\\events\\Fleeting Glory.jpg",
+        "assets\\events\\Skeletal Reforging.jpg",
+        "assets\\events\\Trustworthy Promise.jpg",
+        "assets\\events\\Scout Ahead.jpg",
+        "assets\\events\\Obscured Knowledge.jpg",
+        "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
+        "assets\\events\\Lost Envoy.jpg",
+        "assets\\events\\Repair Powder.jpg",
+        "assets\\events\\Forgotten Supplies.jpg",
+        "assets\\events\\Princess Guard.jpg",
+        "assets\\events\\Unhallowed Offering.jpg",
+        "assets\\events\\Trustworthy Promise.jpg",
+        "assets\\events\\Undead Merchant.jpg",
+        "assets\\events\\Skeletal Reforging.jpg",
+        "assets\\events\\Martial Bonfire Ascetic.jpg",
+        "assets\\events\\Lost to Time.jpg",
+        "assets\\events\\Stolen Artifact.jpg",
+        "assets\\events\\Hearty Bonfire Ascetic.jpg",
+        "assets\\events\\Stolen Artifact.jpg",
+        "assets\\events\\Alluring Skull.jpg",
+        "assets\\events\\Scout Ahead.jpg",
+        "assets\\events\\Cracked Bonfire Ascetic.jpg",
+        "assets\\events\\Green Blossom.jpg"
+      ],
+      "discard_pile": [],
+      "current_card": null,
+      "preset": "Mixed V2"
+    },
+    "campaign_v1_generate_confirm_overwrite": false,
+    "enemy_incl_36": true,
+    "enemy_incl_17": true,
+    "edited_encounters_global": false,
+    "player_count": 1,
+    "enemy_incl_3": true,
+    "exp_active_tomb_of_giants": true,
+    "enemy_incl_30": true,
+    "campaign_rules_version_widget": "V1",
+    "party_char_herald": false,
+    "exp_active_the_last_giant": true,
+    "enemy_incl_48": true,
+    "enemy_incl_42": true,
+    "user_settings": {
+      "ngplus_level": 0,
+      "active_expansions": [
+        "Painted World of Ariamis",
+        "The Sunless City",
+        "Tomb of Giants",
+        "Dark Souls The Board Game",
+        "Darkroot",
+        "Explorers",
+        "Iron Keep",
+        "Characters Expansion",
+        "Phantoms",
+        "Executioner's Chariot",
+        "Asylum Demon",
+        "Black Dragon Kalameet",
+        "Gaping Dragon",
+        "Guardian Dragon",
+        "Manus, Father of the Abyss",
+        "Old Iron King",
+        "The Four Kings",
+        "The Last Giant",
+        "Vordt of the Boreal Valley"
+      ],
+      "selected_characters": [
+        "Assassin"
+      ],
+      "edited_toggles": {
+        "No Safe Haven|Painted World of Ariamis": false,
+        "The Grand Hall|The Sunless City": false,
+        "Illusionary Doorway|The Sunless City": false,
+        "Kingdom's Messengers|The Sunless City": false,
+        "The Bell Tower|The Sunless City": false,
+        "Flooded Fortress|The Sunless City": false,
+        "Bridge Too Far|Tomb of Giants": false,
+        "Far From the Sun|Tomb of Giants": false,
+        "The First Bastion|Painted World of Ariamis": false,
+        "Depths of the Cathedral|The Sunless City": false,
+        "Frozen Revolutions|Painted World of Ariamis": false,
+        "Eye of the Storm|Painted World of Ariamis": false,
+        "Twilight Falls|The Sunless City": false,
+        "Grim Reunion|The Sunless City": false,
+        "Inhospitable Ground|Painted World of Ariamis": false,
+        "Monstrous Maw|Painted World of Ariamis": false,
+        "Central Plaza|Painted World of Ariamis": false,
+        "Deathly Freeze|Painted World of Ariamis": false,
+        "Velka's Chosen|Painted World of Ariamis": false,
+        "Dark Resurrection|Tomb of Giants": false,
+        "Parish Church|The Sunless City": false,
+        "The Hellkite Bridge|The Sunless City": false,
+        "Trophy Room|The Sunless City": false,
+        "Lost Chapel|Tomb of Giants": false,
+        "Maze of the Dead|Tomb of Giants": false,
+        "The Abandoned Chest|Tomb of Giants": false,
+        "The Mass Grave|Tomb of Giants": false,
+        "Urns of the Fallen|Tomb of Giants": false,
+        "Death's Precipice|Tomb of Giants": false,
+        "Last Shred of Light|Tomb of Giants": false,
+        "The Locked Grave|Tomb of Giants": false,
+        "The Skeleton Ball|Tomb of Giants": false,
+        "Central Plaza|The Sunless City": false
+      },
+      "max_invaders_per_level": {
+        "1": 2,
+        "2": 3,
+        "3": 5,
+        "4": 4
+      },
+      "event_deck": {
+        "draw_pile": [
+          "assets\\events\\Forgotten Supplies.jpg",
+          "assets\\events\\Rite of Rekindling.jpg",
+          "assets\\events\\Pine Resin.jpg",
+          "assets\\events\\Firekeeper's Boon.jpg",
+          "assets\\events\\Big Pilgrim's Key.jpg",
+          "assets\\events\\Rare Vagrant.jpg",
+          "assets\\events\\Scrying Stone.jpg",
+          "assets\\events\\Bleak Bonfire Ascetic.jpg",
+          "assets\\events\\Lifegem.jpg",
+          "assets\\events\\Virulent Bonfire Ascetic.jpg",
+          "assets\\events\\Fleeting Glory.jpg",
+          "assets\\events\\Undead Merchant.jpg",
+          "assets\\events\\Blacksmith's Trial.jpg",
+          "assets\\events\\Frozen Bonfire Ascetic.jpg",
+          "assets\\events\\Firekeeper's Boon.jpg",
+          "assets\\events\\Fleeting Glory.jpg",
+          "assets\\events\\Skeletal Reforging.jpg",
+          "assets\\events\\Trustworthy Promise.jpg",
+          "assets\\events\\Scout Ahead.jpg",
+          "assets\\events\\Obscured Knowledge.jpg",
+          "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
+          "assets\\events\\Lost Envoy.jpg",
+          "assets\\events\\Repair Powder.jpg",
+          "assets\\events\\Forgotten Supplies.jpg",
+          "assets\\events\\Princess Guard.jpg",
+          "assets\\events\\Unhallowed Offering.jpg",
+          "assets\\events\\Trustworthy Promise.jpg",
+          "assets\\events\\Undead Merchant.jpg",
+          "assets\\events\\Skeletal Reforging.jpg",
+          "assets\\events\\Martial Bonfire Ascetic.jpg",
+          "assets\\events\\Lost to Time.jpg",
+          "assets\\events\\Stolen Artifact.jpg",
+          "assets\\events\\Hearty Bonfire Ascetic.jpg",
+          "assets\\events\\Stolen Artifact.jpg",
+          "assets\\events\\Alluring Skull.jpg",
+          "assets\\events\\Scout Ahead.jpg",
+          "assets\\events\\Cracked Bonfire Ascetic.jpg",
+          "assets\\events\\Green Blossom.jpg"
+        ],
+        "discard_pile": [],
+        "current_card": null,
+        "preset": "Mixed V2"
+      },
+      "event_preset": "Mixed V2",
+      "behavior_deck_saves": [],
+      "ui_card_width": 340,
+      "only_original_enemies_for_campaigns": false,
+      "enemy_included": {
+        "6": true,
+        "14": true,
+        "16": true,
+        "23": true,
+        "25": true,
+        "27": true,
+        "8": true,
+        "17": true,
+        "18": true,
+        "22": true,
+        "24": true,
+        "32": true,
+        "33": true,
+        "4": true,
+        "11": true,
+        "26": true,
+        "1": true,
+        "2": true,
+        "3": true,
+        "15": true,
+        "5": true,
+        "7": true,
+        "9": true,
+        "20": true,
+        "21": true,
+        "31": true,
+        "34": true,
+        "12": true,
+        "13": true,
+        "19": true,
+        "28": true,
+        "29": true,
+        "30": true,
+        "10": true,
+        "47": true,
+        "48": true,
+        "35": true,
+        "36": true,
+        "37": true,
+        "38": true,
+        "39": true,
+        "40": true,
+        "41": true,
+        "42": true,
+        "43": true,
+        "44": true,
+        "45": true,
+        "46": true
+      },
+      "ui_compact": false,
+      "edited_encounters_global": false,
+      "rules_show_only_in_phase": true,
+      "encounter_item_reward_mode": "Similar Soul Cost",
+      "ngplus_increase_nodes": true
+    },
+    "exp_active_explorers": true,
+    "enemy_incl_32": true,
+    "_dsbg_js_keys_used_this_run": [],
+    "campaign_v1_only_original_enemies": false,
+    "exp_active_guardian_dragon": true,
+    "enemy_incl_7": true,
+    "enemy_incl_11": true,
+    "_settings_draft": {
+      "ngplus_level": 0,
+      "active_expansions": [
+        "Painted World of Ariamis",
+        "The Sunless City",
+        "Tomb of Giants",
+        "Dark Souls The Board Game",
+        "Darkroot",
+        "Explorers",
+        "Iron Keep",
+        "Characters Expansion",
+        "Phantoms",
+        "Executioner's Chariot",
+        "Asylum Demon",
+        "Black Dragon Kalameet",
+        "Gaping Dragon",
+        "Guardian Dragon",
+        "Manus, Father of the Abyss",
+        "Old Iron King",
+        "The Four Kings",
+        "The Last Giant",
+        "Vordt of the Boreal Valley"
+      ],
+      "selected_characters": [
+        "Assassin"
+      ],
+      "edited_toggles": {
+        "No Safe Haven|Painted World of Ariamis": false,
+        "The Grand Hall|The Sunless City": false,
+        "Illusionary Doorway|The Sunless City": false,
+        "Kingdom's Messengers|The Sunless City": false,
+        "The Bell Tower|The Sunless City": false,
+        "Flooded Fortress|The Sunless City": false,
+        "Bridge Too Far|Tomb of Giants": false,
+        "Far From the Sun|Tomb of Giants": false,
+        "The First Bastion|Painted World of Ariamis": false,
+        "Depths of the Cathedral|The Sunless City": false,
+        "Frozen Revolutions|Painted World of Ariamis": false,
+        "Eye of the Storm|Painted World of Ariamis": false,
+        "Twilight Falls|The Sunless City": false,
+        "Grim Reunion|The Sunless City": false,
+        "Inhospitable Ground|Painted World of Ariamis": false,
+        "Monstrous Maw|Painted World of Ariamis": false,
+        "Central Plaza|Painted World of Ariamis": false,
+        "Deathly Freeze|Painted World of Ariamis": false,
+        "Velka's Chosen|Painted World of Ariamis": false,
+        "Dark Resurrection|Tomb of Giants": false,
+        "Parish Church|The Sunless City": false,
+        "The Hellkite Bridge|The Sunless City": false,
+        "Trophy Room|The Sunless City": false,
+        "Lost Chapel|Tomb of Giants": false,
+        "Maze of the Dead|Tomb of Giants": false,
+        "The Abandoned Chest|Tomb of Giants": false,
+        "The Mass Grave|Tomb of Giants": false,
+        "Urns of the Fallen|Tomb of Giants": false,
+        "Death's Precipice|Tomb of Giants": false,
+        "Last Shred of Light|Tomb of Giants": false,
+        "The Locked Grave|Tomb of Giants": false,
+        "The Skeleton Ball|Tomb of Giants": false,
+        "Central Plaza|The Sunless City": false
+      },
+      "max_invaders_per_level": {
+        "1": 2,
+        "2": 3,
+        "3": 5,
+        "4": 4
+      },
+      "event_deck": {
+        "draw_pile": [
+          "assets\\events\\Forgotten Supplies.jpg",
+          "assets\\events\\Rite of Rekindling.jpg",
+          "assets\\events\\Pine Resin.jpg",
+          "assets\\events\\Firekeeper's Boon.jpg",
+          "assets\\events\\Big Pilgrim's Key.jpg",
+          "assets\\events\\Rare Vagrant.jpg",
+          "assets\\events\\Scrying Stone.jpg",
+          "assets\\events\\Bleak Bonfire Ascetic.jpg",
+          "assets\\events\\Lifegem.jpg",
+          "assets\\events\\Virulent Bonfire Ascetic.jpg",
+          "assets\\events\\Fleeting Glory.jpg",
+          "assets\\events\\Undead Merchant.jpg",
+          "assets\\events\\Blacksmith's Trial.jpg",
+          "assets\\events\\Frozen Bonfire Ascetic.jpg",
+          "assets\\events\\Firekeeper's Boon.jpg",
+          "assets\\events\\Fleeting Glory.jpg",
+          "assets\\events\\Skeletal Reforging.jpg",
+          "assets\\events\\Trustworthy Promise.jpg",
+          "assets\\events\\Scout Ahead.jpg",
+          "assets\\events\\Obscured Knowledge.jpg",
+          "assets\\events\\Bloodstained Bonfire Ascetic.jpg",
+          "assets\\events\\Lost Envoy.jpg",
+          "assets\\events\\Repair Powder.jpg",
+          "assets\\events\\Forgotten Supplies.jpg",
+          "assets\\events\\Princess Guard.jpg",
+          "assets\\events\\Unhallowed Offering.jpg",
+          "assets\\events\\Trustworthy Promise.jpg",
+          "assets\\events\\Undead Merchant.jpg",
+          "assets\\events\\Skeletal Reforging.jpg",
+          "assets\\events\\Martial Bonfire Ascetic.jpg",
+          "assets\\events\\Lost to Time.jpg",
+          "assets\\events\\Stolen Artifact.jpg",
+          "assets\\events\\Hearty Bonfire Ascetic.jpg",
+          "assets\\events\\Stolen Artifact.jpg",
+          "assets\\events\\Alluring Skull.jpg",
+          "assets\\events\\Scout Ahead.jpg",
+          "assets\\events\\Cracked Bonfire Ascetic.jpg",
+          "assets\\events\\Green Blossom.jpg"
+        ],
+        "discard_pile": [],
+        "current_card": null,
+        "preset": "Mixed V2"
+      },
+      "event_preset": "Mixed V2",
+      "behavior_deck_saves": [],
+      "ui_card_width": 340,
+      "only_original_enemies_for_campaigns": false,
+      "enemy_included": {
+        "6": true,
+        "14": true,
+        "16": true,
+        "23": true,
+        "25": true,
+        "27": true,
+        "8": true,
+        "17": true,
+        "18": true,
+        "22": true,
+        "24": true,
+        "32": true,
+        "33": true,
+        "4": true,
+        "11": true,
+        "26": true,
+        "1": true,
+        "2": true,
+        "3": true,
+        "15": true,
+        "5": true,
+        "7": true,
+        "9": true,
+        "20": true,
+        "21": true,
+        "31": true,
+        "34": true,
+        "12": true,
+        "13": true,
+        "19": true,
+        "28": true,
+        "29": true,
+        "30": true,
+        "10": true,
+        "47": true,
+        "48": true,
+        "35": true,
+        "36": true,
+        "37": true,
+        "38": true,
+        "39": true,
+        "40": true,
+        "41": true,
+        "42": true,
+        "43": true,
+        "44": true,
+        "45": true,
+        "46": true
+      },
+      "ui_compact": false,
+      "edited_encounters_global": false,
+      "rules_show_only_in_phase": true,
+      "encounter_item_reward_mode": "Similar Soul Cost",
+      "ngplus_increase_nodes": true
+    },
+    "campaign_v1_souls_campaign": 0,
+    "ngplus_level": 0,
+    "campaign_manage_save_btn_v1": false,
+    "v1_return_button": false,
+    "enemy_incl_2": true,
+    "exp_active_asylum_demon": true,
+    "party_char_knight": false,
+    "_dsbg_auth_js_used_this_run": false,
+    "enemy_incl_6": true,
+    "enemy_incl_27": true,
+    "_campaign_rules_version_last": "V1",
+    "ngplus_increase_nodes": true,
+    "exp_active_gaping_dragon": true,
+    "enemy_incl_43": true,
+    "_last_mode": "Campaign Mode",
+    "encounter_added_invaders_by_key": {},
+    "enemy_incl_14": true,
+    "campaign_debug_dump_V1": true,
+    "exp_active_executioner_s_chariot": true,
+    "party_char_thief": false,
+    "cap_invaders_lvl_3": 5,
+    "encounter_triggers": {
+      "Cloak and Feathers|Painted World of Ariamis": {}
+    },
+    "enemy_incl_47": true,
+    "exp_active_darkroot": true,
+    "enemy_incl_23": true,
+    "enemy_incl_33": true,
+    "enemy_incl_8": true,
+    "enemy_incl_22": true,
+    "_campaign_pending_widget_sets": {},
+    "enemy_incl_10": true,
+    "exp_active_characters_expansion": true,
+    "party_char_deprived": false,
+    "_settings_draft_base_fp": "d3104c120d319b56ebbe3dfb6d1ad89f940c99b4df62e9c951da583d1df9f03b",
+    "campaign_rules_version": "V1",
+    "party_char_pyromancer": false,
+    "enemy_incl_31": true,
+    "party_char_sorcerer": false,
+    "campaign_v1_sparks_campaign": 5,
+    "campaign_v1_state": {
+      "bosses": {
+        "mini": "Random",
+        "main": "Random",
+        "mega": "None"
+      },
+      "souls": 0,
+      "sparks_max": 5,
+      "sparks": 5,
+      "party_consumable_events": [],
+      "instant_events_unresolved": [],
+      "orphaned_rendezvous_events": [],
+      "only_original_enemies": false,
+      "campaign": {
+        "version": "V1",
+        "player_count": 1,
+        "bosses": {
+          "mini": {
+            "name": "Black Knight",
+            "was_random": true
+          },
+          "main": {
+            "name": "Dancer of the Boreal Valley",
+            "was_random": true
+          },
+          "mega": {
+            "name": null,
+            "was_random": false
+          }
+        },
+        "nodes": [
+          {
+            "id": "bonfire",
+            "kind": "bonfire"
+          },
+          {
+            "id": "encounter:mini:0",
+            "kind": "encounter",
+            "stage": "mini",
+            "index": 0,
+            "level": 1,
+            "frozen": {
+              "expansion": "Dark Souls The Board Game",
+              "encounter_level": 1,
+              "encounter_name": "Dark Hollow",
+              "enemies": [
+                16
+              ],
+              "expansions_used": [
+                "Dark Souls The Board Game"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:mini:1",
+            "kind": "encounter",
+            "stage": "mini",
+            "index": 1,
+            "level": 1,
+            "frozen": {
+              "expansion": "Iron Keep",
+              "encounter_level": 1,
+              "encounter_name": "Blazing Plaza",
+              "enemies": [
+                31,
+                21,
+                1
+              ],
+              "expansions_used": [
+                "Iron Keep",
+                "Painted World of Ariamis"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:mini:2",
+            "kind": "encounter",
+            "stage": "mini",
+            "index": 2,
+            "level": 1,
+            "frozen": {
+              "expansion": "Darkroot",
+              "encounter_level": 1,
+              "encounter_name": "Fearful Woods",
+              "enemies": [
+                26,
+                9,
+                16
+              ],
+              "expansions_used": [
+                "Explorers",
+                "Dark Souls The Board Game",
+                "Painted World of Ariamis"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:mini:3",
+            "kind": "encounter",
+            "stage": "mini",
+            "index": 3,
+            "level": 2,
+            "frozen": {
+              "expansion": "Dark Souls The Board Game",
+              "encounter_level": 2,
+              "encounter_name": "Temple of the Deeps",
+              "enemies": [
+                6,
+                14,
+                21,
+                14,
+                11
+              ],
+              "expansions_used": [
+                "Explorers",
+                "Dark Souls The Board Game",
+                "Painted World of Ariamis"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "boss:mini",
+            "kind": "boss",
+            "stage": "mini",
+            "boss_name": "Black Knight",
+            "was_random": true,
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:main:0",
+            "kind": "encounter",
+            "stage": "main",
+            "index": 0,
+            "level": 2,
+            "frozen": {
+              "expansion": "Darkroot",
+              "encounter_level": 2,
+              "encounter_name": "Black Bog",
+              "enemies": [
+                14,
+                14,
+                10,
+                3
+              ],
+              "expansions_used": [
+                "Executioner's Chariot",
+                "Iron Keep",
+                "Dark Souls The Board Game"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:main:1",
+            "kind": "encounter",
+            "stage": "main",
+            "index": 1,
+            "level": 2,
+            "frozen": {
+              "expansion": "Dark Souls The Board Game",
+              "encounter_level": 2,
+              "encounter_name": "Sentinel's Wrath",
+              "enemies": [
+                23
+              ],
+              "expansions_used": [
+                "Dark Souls The Board Game"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:main:2",
+            "kind": "encounter",
+            "stage": "main",
+            "index": 2,
+            "level": 3,
+            "frozen": {
+              "expansion": "Dark Souls The Board Game",
+              "encounter_level": 3,
+              "encounter_name": "Perished Depths",
+              "enemies": [
+                38,
+                28,
+                22,
+                10,
+                30
+              ],
+              "expansions_used": [
+                "Darkroot",
+                "Phantoms",
+                "Executioner's Chariot",
+                "Tomb of Giants"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "encounter:main:3",
+            "kind": "encounter",
+            "stage": "main",
+            "index": 3,
+            "level": 3,
+            "frozen": {
+              "expansion": "Dark Souls The Board Game",
+              "encounter_level": 3,
+              "encounter_name": "Dilapidated Bridge",
+              "enemies": [
+                17,
+                11,
+                14,
+                20,
+                11,
+                14
+              ],
+              "expansions_used": [
+                "The Sunless City",
+                "Painted World of Ariamis",
+                "Explorers",
+                "Darkroot"
+              ],
+              "edited": false
+            },
+            "status": "locked",
+            "revealed": false
+          },
+          {
+            "id": "boss:main",
+            "kind": "boss",
+            "stage": "main",
+            "boss_name": "Dancer of the Boreal Valley",
+            "was_random": true,
+            "status": "locked",
+            "revealed": false
+          }
+        ],
+        "current_node_id": "bonfire"
+      },
+      "souls_token_node_id": null,
+      "souls_token_amount": 0,
+      "_chapter_expanded": {
+        "mini": true,
+        "main": false,
+        "mega": false
+      },
+      "_stage_completed": {
+        "mini": false,
+        "main": false,
+        "mega": false
+      },
+      "_last_layouts": {
+        "mini": {
+          "key": "v1:mini:c693e91a312c9918f9021eed7063c41a:bonfire,boss:mini,encounter:mini:0,encounter:mini:1,encounter:mini:2,encounter:mini:3",
+          "layout": {
+            "bonfire": {
+              "id": "bonfire",
+              "label": "🔥Bonfire",
+              "kind": "bonfire",
+              "x": 0,
+              "y": 0,
+              "level": 0,
+              "neighbors": [
+                "encounter:mini:0"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:0",
+                  "N"
+                ]
+              ],
+              "doors": [
+                "N"
+              ],
+              "connected": [
+                "encounter:mini:0"
+              ]
+            },
+            "encounter:mini:0": {
+              "id": "encounter:mini:0",
+              "label": "1️⃣Unknown",
+              "kind": "encounter",
+              "x": 0,
+              "y": -1,
+              "level": 1,
+              "neighbors": [
+                "bonfire",
+                "encounter:mini:1"
+              ],
+              "neighbor_dirs": [
+                [
+                  "bonfire",
+                  "S"
+                ],
+                [
+                  "encounter:mini:1",
+                  "N"
+                ]
+              ],
+              "doors": [
+                "S",
+                "N"
+              ],
+              "connected": [
+                "bonfire",
+                "encounter:mini:1"
+              ]
+            },
+            "encounter:mini:1": {
+              "id": "encounter:mini:1",
+              "label": "1️⃣Unknown",
+              "kind": "encounter",
+              "x": 0,
+              "y": -2,
+              "level": 1,
+              "neighbors": [
+                "encounter:mini:0",
+                "encounter:mini:2",
+                "boss:mini"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:0",
+                  "S"
+                ],
+                [
+                  "encounter:mini:2",
+                  "N"
+                ],
+                [
+                  "boss:mini",
+                  "W"
+                ]
+              ],
+              "doors": [
+                "S",
+                "N",
+                "W"
+              ],
+              "connected": [
+                "encounter:mini:0",
+                "encounter:mini:2"
+              ]
+            },
+            "encounter:mini:2": {
+              "id": "encounter:mini:2",
+              "label": "1️⃣Unknown",
+              "kind": "encounter",
+              "x": 0,
+              "y": -3,
+              "level": 1,
+              "neighbors": [
+                "encounter:mini:1",
+                "encounter:mini:3"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:1",
+                  "S"
+                ],
+                [
+                  "encounter:mini:3",
+                  "W"
+                ]
+              ],
+              "doors": [
+                "S",
+                "W"
+              ],
+              "connected": [
+                "encounter:mini:1",
+                "encounter:mini:3"
+              ]
+            },
+            "encounter:mini:3": {
+              "id": "encounter:mini:3",
+              "label": "2️⃣Unknown",
+              "kind": "encounter",
+              "x": -1,
+              "y": -3,
+              "level": 2,
+              "neighbors": [
+                "encounter:mini:2",
+                "boss:mini"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:2",
+                  "E"
+                ],
+                [
+                  "boss:mini",
+                  "S"
+                ]
+              ],
+              "doors": [
+                "S",
+                "E"
+              ],
+              "connected": [
+                "encounter:mini:2",
+                "boss:mini"
+              ]
+            },
+            "boss:mini": {
+              "id": "boss:mini",
+              "label": "Black Knight",
+              "kind": "boss",
+              "x": -1,
+              "y": -2,
+              "level": 3,
+              "neighbors": [
+                "encounter:mini:1",
+                "encounter:mini:3"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:mini:1",
+                  "E"
+                ],
+                [
+                  "encounter:mini:3",
+                  "N"
+                ]
+              ],
+              "doors": [
+                "N"
+              ],
+              "connected": [
+                "encounter:mini:3"
+              ]
+            },
+            "__gen_trace__": {
+              "sampled": [
+                "3",
+                "2",
+                "3",
+                "2"
+              ],
+              "type_map": {
+                "encounter:mini:0": "3",
+                "encounter:mini:1": "2",
+                "encounter:mini:2": "3",
+                "encounter:mini:3": "2"
+              },
+              "required_threes": 2,
+              "placed_order": [
+                "encounter:mini:0"
+              ],
+              "allowed_count": {
+                "bonfire": 1,
+                "encounter:mini:0": 3,
+                "encounter:mini:1": 3,
+                "encounter:mini:2": 3,
+                "encounter:mini:3": 2,
+                "boss:mini": 1
+              },
+              "occupied_positions": {
+                "bonfire": [
+                  0,
+                  0
+                ],
+                "encounter:mini:0": [
+                  0,
+                  -1
+                ],
+                "encounter:mini:1": [
+                  0,
+                  -2
+                ],
+                "encounter:mini:2": [
+                  0,
+                  -3
+                ],
+                "encounter:mini:3": [
+                  -1,
+                  -3
+                ],
+                "boss:mini": [
+                  -1,
+                  -2
+                ]
+              },
+              "neighbor_dirs": [],
+              "connected": []
+            }
+          }
+        },
+        "main": {
+          "key": "v1:main:753b7d1213d49bfd69b485dae0292e37:bonfire,boss:main,encounter:main:0,encounter:main:1,encounter:main:2,encounter:main:3",
+          "layout": {
+            "bonfire": {
+              "id": "bonfire",
+              "label": "🔥Bonfire",
+              "kind": "bonfire",
+              "x": 0,
+              "y": 0,
+              "level": 0,
+              "neighbors": [
+                "encounter:main:0"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:main:0",
+                  "N"
+                ]
+              ],
+              "doors": [
+                "N"
+              ],
+              "connected": [
+                "encounter:main:0"
+              ]
+            },
+            "encounter:main:0": {
+              "id": "encounter:main:0",
+              "label": "2️⃣Unknown",
+              "kind": "encounter",
+              "x": 0,
+              "y": -1,
+              "level": 2,
+              "neighbors": [
+                "bonfire",
+                "encounter:main:1"
+              ],
+              "neighbor_dirs": [
+                [
+                  "bonfire",
+                  "S"
+                ],
+                [
+                  "encounter:main:1",
+                  "N"
+                ]
+              ],
+              "doors": [
+                "S",
+                "N"
+              ],
+              "connected": [
+                "bonfire",
+                "encounter:main:1"
+              ]
+            },
+            "encounter:main:1": {
+              "id": "encounter:main:1",
+              "label": "2️⃣Unknown",
+              "kind": "encounter",
+              "x": 0,
+              "y": -2,
+              "level": 2,
+              "neighbors": [
+                "encounter:main:0",
+                "encounter:main:2"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:main:0",
+                  "S"
+                ],
+                [
+                  "encounter:main:2",
+                  "N"
+                ]
+              ],
+              "doors": [
+                "S",
+                "N"
+              ],
+              "connected": [
+                "encounter:main:0",
+                "encounter:main:2"
+              ]
+            },
+            "encounter:main:2": {
+              "id": "encounter:main:2",
+              "label": "3️⃣Unknown",
+              "kind": "encounter",
+              "x": 0,
+              "y": -3,
+              "level": 3,
+              "neighbors": [
+                "encounter:main:1",
+                "encounter:main:3"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:main:1",
+                  "S"
+                ],
+                [
+                  "encounter:main:3",
+                  "E"
+                ]
+              ],
+              "doors": [
+                "S",
+                "E"
+              ],
+              "connected": [
+                "encounter:main:1",
+                "encounter:main:3"
+              ]
+            },
+            "encounter:main:3": {
+              "id": "encounter:main:3",
+              "label": "3️⃣Unknown",
+              "kind": "encounter",
+              "x": 1,
+              "y": -3,
+              "level": 3,
+              "neighbors": [
+                "encounter:main:2",
+                "boss:main"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:main:2",
+                  "W"
+                ],
+                [
+                  "boss:main",
+                  "E"
+                ]
+              ],
+              "doors": [
+                "W",
+                "E"
+              ],
+              "connected": [
+                "encounter:main:2",
+                "boss:main"
+              ]
+            },
+            "boss:main": {
+              "id": "boss:main",
+              "label": "Dancer of the Boreal Valley",
+              "kind": "boss",
+              "x": 2,
+              "y": -3,
+              "level": 4,
+              "neighbors": [
+                "encounter:main:3"
+              ],
+              "neighbor_dirs": [
+                [
+                  "encounter:main:3",
+                  "W"
+                ]
+              ],
+              "doors": [
+                "W"
+              ],
+              "connected": [
+                "encounter:main:3"
+              ]
+            },
+            "__gen_trace__": {
+              "sampled": [
+                "3",
+                "2",
+                "3",
+                "2"
+              ],
+              "type_map": {
+                "encounter:main:0": "3",
+                "encounter:main:1": "2",
+                "encounter:main:2": "3",
+                "encounter:main:3": "2"
+              },
+              "required_threes": 2,
+              "placed_order": [
+                "encounter:main:0"
+              ],
+              "allowed_count": {
+                "bonfire": 1,
+                "encounter:main:0": 3,
+                "encounter:main:1": 3,
+                "encounter:main:2": 3,
+                "encounter:main:3": 3,
+                "boss:main": 1
+              },
+              "occupied_positions": {
+                "bonfire": [
+                  0,
+                  0
+                ],
+                "encounter:main:0": [
+                  0,
+                  -1
+                ],
+                "encounter:main:1": [
+                  0,
+                  -2
+                ],
+                "encounter:main:2": [
+                  0,
+                  -3
+                ],
+                "encounter:main:3": [
+                  1,
+                  -3
+                ],
+                "boss:main": [
+                  2,
+                  -3
+                ]
+              },
+              "neighbor_dirs": [],
+              "connected": []
+            }
+          }
+        },
+        "mega": {
+          "key": "v1:mega:3d8fa207152fd3e3d288228329f90c77:bonfire",
+          "layout": {
+            "bonfire": {
+              "id": "bonfire",
+              "label": "🔥Bonfire",
+              "kind": "bonfire",
+              "x": 0,
+              "y": 0,
+              "level": 0,
+              "neighbors": [],
+              "neighbor_dirs": [],
+              "doors": [],
+              "connected": []
+            },
+            "__gen_trace__": {
+              "sampled": [],
+              "type_map": {},
+              "required_threes": 0,
+              "placed_order": [],
+              "allowed_count": {
+                "bonfire": 1
+              },
+              "occupied_positions": {
+                "bonfire": [
+                  0,
+                  0
+                ]
+              },
+              "neighbor_dirs": [],
+              "connected": []
+            }
+          }
+        }
+      }
+    },
+    "enemy_incl_18": true,
+    "exp_active_vordt_of_the_boreal_valley": true,
+    "saved_encounters": {},
+    "enemy_incl_38": true,
+    "enemy_incl_40": true,
+    "enemy_incl_44": true,
+    "last_toggle": false,
+    "enemy_incl_1": true,
+    "enemy_incl_13": true,
+    "behavior_catalog": "defaultdict(<class 'list'>, {'Regular Enemies': [BehaviorEntry(name='Alonne Bow Knight', category='Regular Enemies', path=WindowsPath('data/behaviors/Alonne Bow Knight.json'), tier='enemy', is_invader=False, order_num=2), BehaviorEntry(name='Alonne Knight Captain', category='Regular Enemies', path=WindowsPath('data/behaviors/Alonne Knight Captain.json'), tier='enemy', is_invader=False, order_num=8), BehaviorEntry(name='Alonne Sword Knight', category='Regular Enemies', path=WindowsPath('data/behaviors/Alonne Sword Knight.json'), tier='enemy', is_invader=False, order_num=5), BehaviorEntry(name='Black Hollow Mage', category='Regular Enemies', path=WindowsPath('data/behaviors/Black Hollow Mage.json'), tier='enemy', is_invader=False, order_num=8), BehaviorEntry(name='Bonewheel Skeleton', category='Regular Enemies', path=WindowsPath('data/behaviors/Bonewheel Skeleton.json'), tier='enemy', is_invader=False, order_num=7), BehaviorEntry(name='Crossbow Hollow', category='Regular Enemies', path=WindowsPath('data/behaviors/Crossbow Hollow.json'), tier='enemy', is_invader=False, order_num=2), BehaviorEntry(name='Crow Demon', category='Regular Enemies', path=WindowsPath('data/behaviors/Crow Demon.json'), tier='enemy', is_invader=False, order_num=9), BehaviorEntry(name='Demonic Foliage', category='Regular Enemies', path=WindowsPath('data/behaviors/Demonic Foliage.json'), tier='enemy', is_invader=False, order_num=3), BehaviorEntry(name='Engorged Zombie', category='Regular Enemies', path=WindowsPath('data/behaviors/Engorged Zombie.json'), tier='enemy', is_invader=False, order_num=8), BehaviorEntry(name='Falchion Skeleton', category='Regular Enemies', path=WindowsPath('data/behaviors/Falchion Skeleton.json'), tier='enemy', is_invader=False, order_num=4), BehaviorEntry(name='Firebomb Hollow', category='Regular Enemies', path=WindowsPath('data/behaviors/Firebomb Hollow.json'), tier='enemy', is_invader=False, order_num=2), BehaviorEntry(name='Giant Skeleton Archer', category='Regular Enemies', path=WindowsPath('data/behaviors/Giant Skeleton Archer.json'), tier='enemy', is_invader=False, order_num=1), BehaviorEntry(name='Giant Skeleton Soldier', category='Regular Enemies', path=WindowsPath('data/behaviors/Giant Skeleton Soldier.json'), tier='enemy', is_invader=False, order_num=2), BehaviorEntry(name='Hollow Soldier', category='Regular Enemies', path=WindowsPath('data/behaviors/Hollow Soldier.json'), tier='enemy', is_invader=False, order_num=5), BehaviorEntry(name='Ironclad Soldier', category='Regular Enemies', path=WindowsPath('data/behaviors/Ironclad Soldier.json'), tier='enemy', is_invader=False, order_num=6), BehaviorEntry(name='Large Hollow Soldier', category='Regular Enemies', path=WindowsPath('data/behaviors/Large Hollow Soldier.json'), tier='enemy', is_invader=False, order_num=6), BehaviorEntry(name='Mimic', category='Regular Enemies', path=WindowsPath('data/behaviors/Mimic.json'), tier='enemy', is_invader=False, order_num=4), BehaviorEntry(name='Mushroom Child', category='Regular Enemies', path=WindowsPath('data/behaviors/Mushroom Child.json'), tier='enemy', is_invader=False, order_num=2), BehaviorEntry(name='Mushroom Parent', category='Regular Enemies', path=WindowsPath('data/behaviors/Mushroom Parent.json'), tier='enemy', is_invader=False, order_num=1), BehaviorEntry(name='Necromancer', category='Regular Enemies', path=WindowsPath('data/behaviors/Necromancer.json'), tier='enemy', is_invader=False, order_num=7), BehaviorEntry(name='Phalanx', category='Regular Enemies', path=WindowsPath('data/behaviors/Phalanx.json'), tier='enemy', is_invader=False, order_num=4), BehaviorEntry(name='Phalanx Hollow', category='Regular Enemies', path=WindowsPath('data/behaviors/Phalanx Hollow.json'), tier='enemy', is_invader=False, order_num=4), BehaviorEntry(name='Plow Scarecrow', category='Regular Enemies', path=WindowsPath('data/behaviors/Plow Scarecrow.json'), tier='enemy', is_invader=False, order_num=4), BehaviorEntry(name='Sentinel', category='Regular Enemies', path=WindowsPath('data/behaviors/Sentinel.json'), tier='enemy', is_invader=False, order_num=9), BehaviorEntry(name='Shears Scarecrow', category='Regular Enemies', path=WindowsPath('data/behaviors/Shears Scarecrow.json'), tier='enemy', is_invader=False, order_num=8), BehaviorEntry(name='Silver Knight Greatbowman', category='Regular Enemies', path=WindowsPath('data/behaviors/Silver Knight Greatbowman.json'), tier='enemy', is_invader=False, order_num=3), BehaviorEntry(name='Silver Knight Spearman', category='Regular Enemies', path=WindowsPath('data/behaviors/Silver Knight Spearman.json'), tier='enemy', is_invader=False, order_num=8), BehaviorEntry(name='Silver Knight Swordsman', category='Regular Enemies', path=WindowsPath('data/behaviors/Silver Knight Swordsman.json'), tier='enemy', is_invader=False, order_num=7), BehaviorEntry(name='Skeleton Archer', category='Regular Enemies', path=WindowsPath('data/behaviors/Skeleton Archer.json'), tier='enemy', is_invader=False, order_num=3), BehaviorEntry(name='Skeleton Beast', category='Regular Enemies', path=WindowsPath('data/behaviors/Skeleton Beast.json'), tier='enemy', is_invader=False, order_num=6), BehaviorEntry(name='Skeleton Soldier', category='Regular Enemies', path=WindowsPath('data/behaviors/Skeleton Soldier.json'), tier='enemy', is_invader=False, order_num=5), BehaviorEntry(name='Snow Rat', category='Regular Enemies', path=WindowsPath('data/behaviors/Snow Rat.json'), tier='enemy', is_invader=False, order_num=1), BehaviorEntry(name='Stone Guardian', category='Regular Enemies', path=WindowsPath('data/behaviors/Stone Guardian.json'), tier='enemy', is_invader=False, order_num=6), BehaviorEntry(name='Stone Knight', category='Regular Enemies', path=WindowsPath('data/behaviors/Stone Knight.json'), tier='enemy', is_invader=False, order_num=7)], 'Invaders': [BehaviorEntry(name='Armorer Dennis', category='Invaders', path=WindowsPath('data/behaviors/Armorer Dennis.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Fencer Sharron', category='Invaders', path=WindowsPath('data/behaviors/Fencer Sharron.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Hungry Mimic', category='Invaders', path=WindowsPath('data/behaviors/Hungry Mimic.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Invader Brylex', category='Invaders', path=WindowsPath('data/behaviors/Invader Brylex.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Kirk, Knight of Thorns', category='Invaders', path=WindowsPath('data/behaviors/Kirk, Knight of Thorns.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Longfinger Kirk', category='Invaders', path=WindowsPath('data/behaviors/Longfinger Kirk.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Maldron the Assassin', category='Invaders', path=WindowsPath('data/behaviors/Maldron the Assassin.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Maneater Mildred', category='Invaders', path=WindowsPath('data/behaviors/Maneater Mildred.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Marvelous Chester', category='Invaders', path=WindowsPath('data/behaviors/Marvelous Chester.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Melinda the Butcher', category='Invaders', path=WindowsPath('data/behaviors/Melinda the Butcher.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Oliver the Collector', category='Invaders', path=WindowsPath('data/behaviors/Oliver the Collector.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Paladin Leeroy', category='Invaders', path=WindowsPath('data/behaviors/Paladin Leeroy.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Voracious Mimic', category='Invaders', path=WindowsPath('data/behaviors/Voracious Mimic.json'), tier='boss', is_invader=True, order_num=10), BehaviorEntry(name='Xanthous King Jeremiah', category='Invaders', path=WindowsPath('data/behaviors/Xanthous King Jeremiah.json'), tier='boss', is_invader=True, order_num=10)], 'Main Bosses': [BehaviorEntry(name='Artorias', category='Main Bosses', path=WindowsPath('data/behaviors/Artorias.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Crossbreed Priscilla', category='Main Bosses', path=WindowsPath('data/behaviors/Crossbreed Priscilla.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Dancer of the Boreal Valley', category='Main Bosses', path=WindowsPath('data/behaviors/Dancer of the Boreal Valley.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Gravelord Nito', category='Main Bosses', path=WindowsPath('data/behaviors/Gravelord Nito.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Great Grey Wolf Sif', category='Main Bosses', path=WindowsPath('data/behaviors/Great Grey Wolf Sif.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Ornstein & Smough', category='Main Bosses', path=WindowsPath('data/behaviors/Ornstein & Smough.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Sir Alonne', category='Main Bosses', path=WindowsPath('data/behaviors/Sir Alonne.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Smelter Demon', category='Main Bosses', path=WindowsPath('data/behaviors/Smelter Demon.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='The Pursuer', category='Main Bosses', path=WindowsPath('data/behaviors/The Pursuer.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='priscilla_arcs', category='Main Bosses', path=WindowsPath('data/behaviors/priscilla_arcs.json'), tier='boss', is_invader=False, order_num=10)], 'Mini Bosses': [BehaviorEntry(name='Asylum Demon', category='Mini Bosses', path=WindowsPath('data/behaviors/Asylum Demon.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Black Knight', category='Mini Bosses', path=WindowsPath('data/behaviors/Black Knight.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Boreal Outrider Knight', category='Mini Bosses', path=WindowsPath('data/behaviors/Boreal Outrider Knight.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Gargoyle', category='Mini Bosses', path=WindowsPath('data/behaviors/Gargoyle.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Heavy Knight', category='Mini Bosses', path=WindowsPath('data/behaviors/Heavy Knight.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Old Dragonslayer', category='Mini Bosses', path=WindowsPath('data/behaviors/Old Dragonslayer.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Titanite Demon', category='Mini Bosses', path=WindowsPath('data/behaviors/Titanite Demon.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Winged Knight', category='Mini Bosses', path=WindowsPath('data/behaviors/Winged Knight.json'), tier='boss', is_invader=False, order_num=10)], 'Mega Bosses': [BehaviorEntry(name='Black Dragon Kalameet', category='Mega Bosses', path=WindowsPath('data/behaviors/Black Dragon Kalameet.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name=\"Executioner's Chariot\", category='Mega Bosses', path=WindowsPath(\"data/behaviors/Executioner's Chariot.json\"), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Gaping Dragon', category='Mega Bosses', path=WindowsPath('data/behaviors/Gaping Dragon.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Guardian Dragon', category='Mega Bosses', path=WindowsPath('data/behaviors/Guardian Dragon.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Manus, Father of the Abyss', category='Mega Bosses', path=WindowsPath('data/behaviors/Manus, Father of the Abyss.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Old Iron King', category='Mega Bosses', path=WindowsPath('data/behaviors/Old Iron King.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Stray Demon', category='Mega Bosses', path=WindowsPath('data/behaviors/Stray Demon.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='The Four Kings', category='Mega Bosses', path=WindowsPath('data/behaviors/The Four Kings.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='The Last Giant', category='Mega Bosses', path=WindowsPath('data/behaviors/The Last Giant.json'), tier='boss', is_invader=False, order_num=10), BehaviorEntry(name='Vordt of the Boreal Valley', category='Mega Bosses', path=WindowsPath('data/behaviors/Vordt of the Boreal Valley.json'), tier='boss', is_invader=False, order_num=10)]})",
+    "campaign_manage_save_name_v1": "",
+    "exp_active_phantoms": true,
+    "_campaign_pending_widget_resets": [],
+    "enemy_incl_15": true,
+    "exp_active_dark_souls_the_board_game": true,
+    "campaign_v1_generate": false,
+    "cap_invaders_lvl_1": 2,
+    "party_char_mercenary": false,
+    "enemy_incl_5": true,
+    "enemy_incl_12": true,
+    "enemy_incl_37": true,
+    "party_char_warrior": false,
+    "exp_active_manus__father_of_the_abyss": true,
+    "exp_active_iron_keep": true,
+    "campaign_v1_mini_boss": "Random",
+    "enemy_incl_24": true,
+    "enemy_incl_16": true,
+    "ui_card_width": 340,
+    "exp_active_the_sunless_city": true,
+    "encounter_last_trigger_messages": [],
+    "enemy_incl_19": true,
+    "enemy_incl_20": true,
+    "_settings_ui_base_fp": "d3104c120d319b56ebbe3dfb6d1ad89f940c99b4df62e9c951da583d1df9f03b",
+    "enemy_incl_41": true,
+    "mode": "Campaign Mode",
+    "exp_active_old_iron_king": true,
+    "party_char_cleric": false,
+    "ui_compact": false,
+    "campaign_name_V1": "",
+    "cap_invaders_lvl_2": 3,
+    "cap_invaders_lvl_4": 4,
+    "enemy_incl_39": true,
+    "enemy_incl_35": true,
+    "enemy_incl_46": true,
+    "rules_show_only_in_phase": true,
+    "enemy_incl_28": true,
+    "campaign_save_V1": false,
+    "enemy_incl_21": true,
+    "campaign_v1_mega_boss": "None",
+    "cloud_low_memory": false,
+    "enemy_incl_45": true,
+    "enemy_incl_34": true,
+    "exp_active_the_four_kings": true,
+    "enemy_incl_4": true,
+    "encounter_play": {
+      "encounter_id": "Cloak and Feathers",
+      "phase": "enemy",
+      "timer": 0,
+      "enemy_phase_entry": 1,
+      "log": []
+    }
+  }
+}

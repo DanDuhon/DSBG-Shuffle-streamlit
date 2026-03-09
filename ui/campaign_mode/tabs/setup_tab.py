@@ -1,6 +1,7 @@
 #ui/campaign_mode/setup_tab.py
 import streamlit as st
 from typing import Any, Dict
+import logging
 
 from core import auth
 from ui.campaign_mode.core import _default_sparks_max
@@ -28,6 +29,7 @@ from ui.campaign_mode.state import (
     clear_other_campaign_state,
     queue_widget_set,
 )
+from core.debug import dump_session_state
 
 
 _PENDING_WIDGET_RESETS_KEY = "_campaign_pending_widget_resets"
@@ -657,4 +659,44 @@ def _render_save_load_section(
                 )
             else:
                 st.success(f"Loaded campaign '{name}' (no sidebar changes).")
+
+        # --- Debug expander: session-state dumper ---
+        try:
+            with st.expander("Debug (developer)"):
+                if st.button("Dump session_state to file", key=f"campaign_debug_dump_{version}"):
+                    try:
+                        # Pass the Streamlit session_state object directly; the
+                        # dumper is resilient to it and will extract keys.
+                        path = dump_session_state(st.session_state)
+                        logging.getLogger("dsbg").info(f"Wrote session_state dump: {path}")
+                        st.success(f"Wrote session_state dump: {path}")
+                    except Exception as e:
+                        logging.getLogger("dsbg").exception("Failed to write session_state dump")
+                        st.error(f"Failed to write session_state dump: {e}")
+                if st.button("Show session_state in UI", key=f"campaign_debug_show_{version}"):
+                    try:
+                        # Build a safe dict for UI display by converting non-serializable
+                        # values to strings.
+                        def _safe(v):
+                            try:
+                                import json as _json
+
+                                _json.dumps(v)
+                                return v
+                            except Exception:
+                                try:
+                                    return str(v)
+                                except Exception:
+                                    return "<unserializable>"
+
+                        ss = {}
+                        for k, val in dict(st.session_state).items():
+                            ss[str(k)] = _safe(val)
+
+                        st.json(ss)
+                    except Exception:
+                        logging.getLogger("dsbg").exception("Failed to render session_state in UI")
+                        st.error("Failed to render session_state in UI")
+        except Exception:
+            logging.getLogger("dsbg").exception("Debug expander failed")
 
