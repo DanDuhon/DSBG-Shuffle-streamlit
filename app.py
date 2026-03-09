@@ -17,6 +17,7 @@ from core import auth
 from core.settings_manager import get_config_bool, is_streamlit_cloud, load_settings, save_settings
 from core.debug import setup_logging
 from core.debug import serialize_session_state_to_json, make_light_campaign
+from core.debug import write_last_frozen
 
 _APP_START = time.perf_counter()
 
@@ -527,6 +528,10 @@ if pending:
         if camp is not None:
             last_key = "campaign_v1_last_frozen" if snap_version == "V1" else "campaign_v2_last_frozen"
             st.session_state[last_key] = make_light_campaign(camp)
+            try:
+                write_last_frozen(snap_version, st.session_state[last_key])
+            except Exception:
+                logger.exception("Failed to write last_frozen to disk from pending snapshot")
     except Exception:
         logger.exception("Failed to set campaign last_frozen from pending snapshot")
 

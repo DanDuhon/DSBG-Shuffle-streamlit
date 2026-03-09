@@ -168,3 +168,34 @@ def make_light_campaign(campaign: Any) -> Any:
             return str(campaign)
 
     return compact
+
+
+def write_last_frozen(version: str, compact_campaign: Any, out_dir: str = "data") -> str:
+    """Write compact campaign JSON to `data/last_frozen_V{N}.json`.
+
+    Returns the path written.
+    """
+    try:
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        fn = Path(out_dir) / f"last_frozen_{str(version).lower()}.json"
+        with fn.open("w", encoding="utf-8") as fh:
+            json.dump({"version": version, "campaign": compact_campaign}, fh, ensure_ascii=False, indent=2)
+        return str(fn)
+    except Exception:
+        raise
+
+
+def read_last_frozen(version: str, in_dir: str = "data") -> Any:
+    """Read compact campaign JSON previously written by `write_last_frozen`.
+
+    Returns the compact campaign dict or None if missing/unreadable.
+    """
+    try:
+        fn = Path(in_dir) / f"last_frozen_{str(version).lower()}.json"
+        if not fn.exists():
+            return None
+        with fn.open("r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        return payload.get("campaign")
+    except Exception:
+        return None

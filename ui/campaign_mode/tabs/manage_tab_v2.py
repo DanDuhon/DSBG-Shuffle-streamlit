@@ -477,6 +477,18 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
         # campaign was generated or loaded. This mitigates Streamlit Cloud
         # reclaiming large objects.
         fallback = st.session_state.get("campaign_v2_last_frozen")
+        # If session missing fallback, attempt to read from disk
+        if fallback is None:
+            try:
+                from core.debug import read_last_frozen
+
+                disk_f = read_last_frozen("V2")
+                if isinstance(disk_f, dict):
+                    logging.getLogger("dsbg").info("Loaded campaign_v2_last_frozen from disk")
+                    fallback = disk_f
+            except Exception:
+                logging.getLogger("dsbg").exception("Failed to read campaign_v2_last_frozen from disk")
+
         if isinstance(fallback, dict):
             logging.getLogger("dsbg").info("Restoring V2 campaign from campaign_v2_last_frozen fallback")
             st.warning(
