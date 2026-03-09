@@ -1954,10 +1954,9 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
     if invader_entries:
         st.markdown("#### Invaders")
 
-        # Render invaders into the same column grid density as enemies.
-        # This prevents invader cards from becoming oversized when enemies
-        # are displayed in a tighter grid (e.g., V1 uses 4 columns).
-        inv_cols_count = max(1, min(ncols, len(invader_entries)))
+        # Render invaders into the same column grid density as enemies,
+        # but cap at 2 columns so many invaders don't shrink the cards too much.
+        inv_cols_count = max(1, min(2, len(invader_entries)))
         if inv_cols_count == 1:
             inv_cols = [st.container()]
         else:
