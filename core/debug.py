@@ -128,3 +128,43 @@ def serialize_session_state_to_json(session_state: Any) -> str:
         return json.dumps(serializable, default=str, ensure_ascii=False)
     except Exception:
         return str(serializable)
+
+
+def make_light_campaign(campaign: Any) -> Any:
+    """Produce a compact, JSON-friendly snapshot of a campaign.
+
+    This selects a few common, essential fields (if present) and
+    returns a shallow dict suitable for keeping as an in-session
+    fallback that is less likely to be swept by cloud low-memory
+    sanitizers.
+    """
+    if not isinstance(campaign, dict):
+        return campaign
+
+    keys = [
+        "name",
+        "bosses",
+        "nodes",
+        "encounters",
+        "seed",
+        "player_count",
+        "current_node_id",
+        "version",
+        "rules",
+    ]
+    compact: dict = {}
+    for k in keys:
+        try:
+            if k in campaign:
+                compact[k] = campaign[k]
+        except Exception:
+            continue
+
+    # If none of the canonical keys were present, fall back to a shallow copy
+    if not compact:
+        try:
+            return dict(campaign)
+        except Exception:
+            return str(campaign)
+
+    return compact

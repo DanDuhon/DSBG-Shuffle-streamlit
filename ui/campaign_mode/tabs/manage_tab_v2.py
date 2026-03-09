@@ -1,5 +1,6 @@
 # ui/campaign_mode/manage_tab_v2.py
 import streamlit as st
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -470,9 +471,24 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     campaign = state.get("campaign")
+    campaign = state.get("campaign")
     if not isinstance(campaign, dict):
-        st.info("Generate a V2 campaign in the Setup tab to begin.")
-        return
+        # Try to recover from a compact fallback stored in-session when the
+        # campaign was generated or loaded. This mitigates Streamlit Cloud
+        # reclaiming large objects.
+        fallback = st.session_state.get("campaign_v2_last_frozen")
+        if isinstance(fallback, dict):
+            logging.getLogger("dsbg").info("Restoring V2 campaign from campaign_v2_last_frozen fallback")
+            st.warning(
+                "Campaign data was missing; restored from a lightweight snapshot. "
+                "Please save the campaign if you want it to persist."
+            )
+            state["campaign"] = fallback
+            st.session_state["campaign_v2_state"] = state
+            campaign = state.get("campaign")
+        else:
+            st.info("Generate a V2 campaign in the Setup tab to begin.")
+            return
 
     nodes = campaign.get("nodes") or []
     if not nodes:
