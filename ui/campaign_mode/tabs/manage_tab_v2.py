@@ -1042,6 +1042,9 @@ def _render_v2_current_panel(
     kind = current_node.get("kind")
     st.markdown("#### Current space")
 
+    # Local cloud flag for this panel (used when deciding compact rendering)
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
+
     # Bonfire
     if kind == "bonfire":
         st.caption("Resting at the bonfire.")
