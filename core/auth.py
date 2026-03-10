@@ -121,8 +121,42 @@ def logout() -> None:
     st.session_state.pop(_AUTH_SESSION_KEY, None)
     cookies.remove(_COOKIE_KEY)
 
+def send_recovery_code(email: str) -> dict:
+    client = _get_supabase_client()
+    try:
+        # Triggers the Reset Password email template
+        client.auth.reset_password_for_email(email)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def verify_and_set_password(email: str, code: str, new_password: str) -> dict:
+    client = _get_supabase_client()
+    try:
+        # 1. Verify the 6-digit recovery code
+        res = client.auth.verify_otp({"email": email, "token": code, "type": "recovery"})
+        
+        # 2. Bind the new password to the existing OAuth/Magic Link account
+        client.auth.update_user({"password": new_password})
+        
+        # 3. Hydrate session memory and cookies
+        st.session_state[_AUTH_SESSION_KEY] = {
+            "user_id": res.user.id,
+            "email": res.user.email,
+            "access_token": res.session.access_token
+        }
+        cookie_data = json.dumps({
+            "access_token": res.session.access_token,
+            "refresh_token": res.session.refresh_token
+        })
+        cookies.set(_COOKIE_KEY, cookie_data, max_age=2592000)
+        
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 def render_auth_ui():
-    """Drop-in UI component to render the login/signup form."""
+    """Drop-in UI component to render the login/signup/migrate form."""
     if not is_auth_ui_enabled():
         return
 
@@ -130,32 +164,62 @@ def render_auth_ui():
         st.sidebar.caption(f"Logged in as: {get_user_email()}")
         if st.sidebar.button("Log Out"):
             logout()
-            time.sleep(0.5) # Ensure cookie deletion registers before reload
+            time.sleep(0.5) 
             st.rerun()
         return
 
     with st.sidebar.form("auth_form"):
         st.write("Account Access")
         email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        action = st.radio("Action", ["Log In", "Sign Up"], horizontal=True)
-        submit = st.form_submit_button("Submit")
+        
+        action = st.radio("Action", ["Log In", "Sign Up", "Reset/Migrate"], horizontal=True)
+        
+        if action in ["Log In", "Sign Up"]:
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Submit")
 
-        if submit:
-            if not email or not password:
-                st.error("Email and password required.")
-            elif action == "Log In":
-                res = login(email, password)
-                if res["ok"]: 
-                    time.sleep(0.5) # Ensure cookie registers before reload
-                    st.rerun()
-                else: 
-                    st.error(res["error"])
-            else:
-                res = sign_up(email, password)
-                if res["ok"]:
-                    st.success("Account created. You are now logged in.")
-                    time.sleep(1)
-                    st.rerun()
+            if submit:
+                if not email or not password:
+                    st.error("Email and password required.")
+                elif action == "Log In":
+                    res = login(email, password)
+                    if res["ok"]: 
+                        time.sleep(0.5) 
+                        st.rerun()
+                    else: 
+                        st.error(res["error"])
                 else:
-                    st.error(res["error"])
+                    res = sign_up(email, password)
+                    if res["ok"]:
+                        st.success("Account created. You are now logged in.")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error(res["error"])
+        else:
+            # OTP Migration and Recovery Flow
+            st.caption("Previously used Google/Magic Link? Use this to set a password and recover your data.")
+            code = st.text_input("6-Digit Code (Leave blank to request)")
+            new_password = st.text_input("New Password", type="password")
+            submit = st.form_submit_button("Submit")
+
+            if submit:
+                if not email:
+                    st.error("Email required.")
+                elif not code:
+                    res = send_recovery_code(email)
+                    if res["ok"]:
+                        st.success("Code sent! Check your email, enter it below, and set your new password.")
+                    else:
+                        st.error(res["error"])
+                else:
+                    if not new_password:
+                        st.error("Please enter a new password.")
+                    else:
+                        res = verify_and_set_password(email, code, new_password)
+                        if res["ok"]:
+                            st.success("Password set! You are now logged in.")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error(res["error"])
