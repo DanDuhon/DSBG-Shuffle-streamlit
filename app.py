@@ -396,15 +396,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Auth session hydration should run at most once per rerun.
-# `core.auth.ensure_session_loaded()` uses this flag to avoid creating
-# duplicate streamlit-javascript components in the same run.
-try:
-    st.session_state["_dsbg_auth_js_used_this_run"] = False
-    st.session_state["_dsbg_js_keys_used_this_run"] = []
-except Exception:
-    pass
-
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
     st.session_state.user_settings = load_settings()
