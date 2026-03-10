@@ -29,7 +29,7 @@ from ui.campaign_mode.state import (
     clear_other_campaign_state,
     queue_widget_set,
 )
-from core.debug import dump_session_state, make_light_campaign
+from core.debug import dump_session_state
 
 
 _PENDING_WIDGET_RESETS_KEY = "_campaign_pending_widget_resets"
@@ -264,14 +264,6 @@ def _render_v1_setup(
         queue_widget_set(sparks_key, sparks_max)
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
-        # Persist a compact fallback snapshot to survive cloud low-memory reclamation.
-        try:
-            camp = state.get("campaign")
-            if camp is not None:
-                st.session_state["campaign_v1_last_frozen"] = make_light_campaign(camp)
-        except Exception:
-            logging.getLogger("dsbg").exception("Failed to set campaign_v1_last_frozen")
-
         st.session_state["campaign_v1_state"] = state
         # Generated campaigns are unsaved by default.
         clear_campaign_baseline(version="V1")
@@ -448,14 +440,6 @@ def _render_v2_setup(
         queue_widget_set(sparks_key, sparks_max)
         state["souls_token_node_id"] = None
         state["souls_token_amount"] = 0
-        # Persist a compact fallback snapshot to survive cloud low-memory reclamation.
-        try:
-            camp = state.get("campaign")
-            if camp is not None:
-                st.session_state["campaign_v2_last_frozen"] = make_light_campaign(camp)
-        except Exception:
-            logging.getLogger("dsbg").exception("Failed to set campaign_v2_last_frozen")
-
         st.session_state["campaign_v2_state"] = state
         # Generated campaigns are unsaved by default.
         clear_campaign_baseline(version="V2")

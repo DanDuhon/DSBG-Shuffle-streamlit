@@ -1,6 +1,5 @@
 # ui/campaign_mode/manage_tab_v1.py
 import streamlit as st
-import logging
 import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -236,22 +235,8 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
 
     campaign = state.get("campaign")
     if not isinstance(campaign, dict):
-        # Attempt fallback from a compact in-session snapshot written at
-        # generation/load time. This helps in Streamlit Cloud/mobile cases
-        # where large `campaign` payloads can be reclaimed.
-        fallback = st.session_state.get("campaign_v1_last_frozen")
-        if isinstance(fallback, dict):
-            logging.getLogger("dsbg").info("Restoring V1 campaign from campaign_v1_last_frozen fallback")
-            st.warning(
-                "Campaign data was missing; restored from a lightweight snapshot. "
-                "Please save the campaign if you want it to persist."
-            )
-            state["campaign"] = fallback
-            st.session_state["campaign_v1_state"] = state
-            campaign = state.get("campaign")
-        else:
-            st.info("Generate a V1 campaign in the Setup tab to begin.")
-            return
+        st.info("Generate a V1 campaign in the Setup tab to begin.")
+        return
 
     nodes = campaign.get("nodes") or []
     if not nodes:

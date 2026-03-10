@@ -16,7 +16,7 @@ from ui.behavior_viewer.render import render as behavior_viewer_render
 from core import auth
 from core.settings_manager import get_config_bool, is_streamlit_cloud, load_settings, save_settings
 from core.debug import setup_logging
-from core.debug import serialize_session_state_to_json, make_light_campaign
+from core.debug import serialize_session_state_to_json
 
 _APP_START = time.perf_counter()
 
@@ -519,16 +519,6 @@ if pending:
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
     loaded_state = snapshot.get("state", {}) or {}
     st.session_state[state_key] = loaded_state
-
-    # Persist a compact fallback snapshot so Manage tabs can recover if the
-    # full `campaign` payload is later reclaimed by Streamlit Cloud.
-    try:
-        camp = loaded_state.get("campaign") if isinstance(loaded_state, dict) else None
-        if camp is not None:
-            last_key = "campaign_v1_last_frozen" if snap_version == "V1" else "campaign_v2_last_frozen"
-            st.session_state[last_key] = make_light_campaign(camp)
-    except Exception:
-        logger.exception("Failed to set campaign last_frozen from pending snapshot")
 
     # IMPORTANT: Clear widget-backed keys so numeric inputs re-seed from the
     # loaded snapshot rather than retaining stale values from a previous session.
