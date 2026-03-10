@@ -5,7 +5,9 @@ from pathlib import Path
 import base64
 import os
 import time
+import json
 
+from streamlit_local_storage import LocalStorage
 from ui.sidebar import render_sidebar
 from ui.encounter_mode.render import render as encounter_mode_render
 from ui.boss_mode.render import render as boss_mode_render
@@ -458,8 +460,6 @@ if st.session_state.pop("_settings_just_saved", False):
             except Exception:
                 pass
 
-
-
 # --- One-shot cross-tab handoff: Campaign Mode -> app bootstrap ---
 # Campaign Setup tab cannot safely overwrite sidebar widget keys after widgets
 # are instantiated on the current run. Instead it sets:
@@ -576,6 +576,33 @@ if pending:
     # Clear the pending snapshot flag
     del st.session_state["pending_campaign_snapshot"]
 
+    local_storage = LocalStorage()
+
+    # Isolate saves between accounts on shared devices, or default to 'guest'
+    current_user = auth.get_user_id() or "guest"
+    cache_key = f"dsbg_campaign_cache_{current_user}"
+
+# 1. READ CACHE ON APP LOAD
+# We skip reading the cache if a user just loaded a cloud save (`pending`) 
+# or if we have already hydrated the cache in this session.
+if not pending and not st.session_state.get("campaign_loaded_from_cache"):
+    cached_data = local_storage.getItem(cache_key)
+    
+    # Wait for the JS bridge to return a definitive answer (ignores the initial None)
+    if cached_data is not None:
+        st.session_state["campaign_loaded_from_cache"] = True
+        
+        # If valid state exists, inject it into session_state
+        if isinstance(cached_data, dict) and "state" in cached_data:
+            loaded_version = cached_data.get("rules_version", "V2")
+            st.session_state["campaign_rules_version"] = loaded_version
+            st.session_state["campaign_rules_version_widget"] = loaded_version
+            
+            state_key = "campaign_v1_state" if loaded_version == "V1" else "campaign_v2_state"
+            st.session_state[state_key] = cached_data["state"]
+            
+            st.toast("Recovered unsaved campaign progress from device.", icon="💾")
+
 # Sidebar: expansions + party + NG+
 
 selected_characters = settings.get("selected_characters", [])
@@ -630,6 +657,20 @@ elif mode == "Character Mode":
     character_mode_render(settings)
 elif mode == "Behavior Card Viewer":
     behavior_viewer_render()
+
+# 2. WRITE CACHE ON STATE CHANGE
+# Captures changes made by the UI modules before the script finishes execution.
+if mode == "Campaign Mode":
+    active_version = st.session_state.get("campaign_rules_version", "V2")
+    state_key = "campaign_v1_state" if active_version == "V1" else "campaign_v2_state"
+    live_state = st.session_state.get(state_key)
+    
+    if live_state:
+        # Fingerprint the dictionary to avoid spamming the JS bridge with identical data
+        state_str = json.dumps(live_state, sort_keys=True)
+        if st.session_state.get("_last_cached_campaign_fp") != state_str:
+            local_storage.setItem(cache_key, {"rules_version": active_version, "state": live_state})
+            st.session_state["_last_cached_campaign_fp"] = state_str
 
 
 def _rss_mb() -> float | None:
