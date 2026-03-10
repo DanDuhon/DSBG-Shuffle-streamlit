@@ -706,6 +706,12 @@ def _render_save_load_section(
                         path = make_compact_dump(st.session_state, out_path="logs/compact_dump.json")
                         logging.getLogger("dsbg").info(f"Wrote compact session_state dump: {path}")
                         st.success(f"Wrote compact session_state dump: {path}")
+                        try:
+                            with open(path, "rb") as fh:
+                                data = fh.read()
+                            st.download_button("Download compact dump", data=data, file_name="compact_dump.json", mime="application/json")
+                        except Exception:
+                            logging.getLogger("dsbg").exception("Failed to read compact dump for download")
                     except Exception as e:
                         logging.getLogger("dsbg").exception("Failed to write compact session_state dump")
                         st.error(f"Failed to write compact session_state dump: {e}")
