@@ -576,11 +576,11 @@ if pending:
     # Clear the pending snapshot flag
     del st.session_state["pending_campaign_snapshot"]
 
-    local_storage = LocalStorage()
+local_storage = LocalStorage()
 
-    # Isolate saves between accounts on shared devices, or default to 'guest'
-    current_user = auth.get_user_id() or "guest"
-    cache_key = f"dsbg_campaign_cache_{current_user}"
+# Isolate saves between accounts on shared devices, or default to 'guest'
+current_user = auth.get_user_id() or "guest"
+cache_key = f"dsbg_campaign_cache_{current_user}"
 
 # 1. READ CACHE ON APP LOAD
 # We skip reading the cache if a user just loaded a cloud save (`pending`) 
