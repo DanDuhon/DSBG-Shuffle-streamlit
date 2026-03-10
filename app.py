@@ -667,6 +667,12 @@ elif mode == "Boss Mode":
 elif mode == "Campaign Mode":
     campaign_mode_render()
 elif mode == "Character Mode":
+    # Purge legacy string values from Streamlit's widget cache
+    for k in ["cm_tier_str_i", "cm_tier_dex_i", "cm_tier_itl_i", "cm_tier_fth_i"]:
+        val = st.session_state.get(k)
+        if isinstance(val, str) and not val.isdigit():
+            st.session_state.pop(k, None)
+            
     character_mode_render(settings)
 elif mode == "Behavior Card Viewer":
     behavior_viewer_render()
