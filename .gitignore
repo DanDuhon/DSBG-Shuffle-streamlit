@@ -3,9 +3,17 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.qodo
-*.venv
-*.vscode
+
+# Environments
+.venv/
+venv/
+env/
+
+# IDEs
+.vscode/
+.qodo/
+
+# Scripts & Docs
 blah.py
 blah2.py
 rename_encounters.py
