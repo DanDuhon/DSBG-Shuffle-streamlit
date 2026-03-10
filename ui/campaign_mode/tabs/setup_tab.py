@@ -29,7 +29,7 @@ from ui.campaign_mode.state import (
     clear_other_campaign_state,
     queue_widget_set,
 )
-from core.debug import dump_session_state, make_light_campaign, write_last_frozen
+from core.debug import dump_session_state, make_light_campaign
 
 
 _PENDING_WIDGET_RESETS_KEY = "_campaign_pending_widget_resets"
@@ -268,13 +268,7 @@ def _render_v1_setup(
         try:
             camp = state.get("campaign")
             if camp is not None:
-                compact = make_light_campaign(camp)
-                st.session_state["campaign_v1_last_frozen"] = compact
-                try:
-                    path = write_last_frozen("V1", compact)
-                    logging.getLogger("dsbg").info(f"Wrote campaign_v1_last_frozen to {path}")
-                except Exception:
-                    logging.getLogger("dsbg").exception("Failed to write campaign_v1_last_frozen to disk")
+                st.session_state["campaign_v1_last_frozen"] = make_light_campaign(camp)
         except Exception:
             logging.getLogger("dsbg").exception("Failed to set campaign_v1_last_frozen")
 
@@ -458,13 +452,7 @@ def _render_v2_setup(
         try:
             camp = state.get("campaign")
             if camp is not None:
-                compact = make_light_campaign(camp)
-                st.session_state["campaign_v2_last_frozen"] = compact
-                try:
-                    path = write_last_frozen("V2", compact)
-                    logging.getLogger("dsbg").info(f"Wrote campaign_v2_last_frozen to {path}")
-                except Exception:
-                    logging.getLogger("dsbg").exception("Failed to write campaign_v2_last_frozen to disk")
+                st.session_state["campaign_v2_last_frozen"] = make_light_campaign(camp)
         except Exception:
             logging.getLogger("dsbg").exception("Failed to set campaign_v2_last_frozen")
 
