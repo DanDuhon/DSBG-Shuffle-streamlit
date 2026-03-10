@@ -29,7 +29,7 @@ from ui.campaign_mode.state import (
     clear_other_campaign_state,
     queue_widget_set,
 )
-from core.debug import dump_session_state, make_light_campaign, write_last_frozen, make_compact_dump
+from core.debug import dump_session_state, make_light_campaign, write_last_frozen
 
 
 _PENDING_WIDGET_RESETS_KEY = "_campaign_pending_widget_resets"
@@ -701,14 +701,6 @@ def _render_save_load_section(
                     except Exception as e:
                         logging.getLogger("dsbg").exception("Failed to write session_state dump")
                         st.error(f"Failed to write session_state dump: {e}")
-                if st.button("Dump compact session_state (Cloud-friendly)", key=f"campaign_debug_compact_dump_{version}"):
-                    try:
-                        path = make_compact_dump(st.session_state, out_path="logs/compact_dump.json")
-                        logging.getLogger("dsbg").info(f"Wrote compact session_state dump: {path}")
-                        st.success(f"Wrote compact session_state dump: {path}")
-                    except Exception as e:
-                        logging.getLogger("dsbg").exception("Failed to write compact session_state dump")
-                        st.error(f"Failed to write compact session_state dump: {e}")
                 if st.button("Show session_state in UI", key=f"campaign_debug_show_{version}"):
                     try:
                         # Build a safe dict for UI display by converting non-serializable
