@@ -604,7 +604,6 @@ if not pending and not st.session_state.get("campaign_loaded_from_cache"):
 # --- Character Mode Cache Read ---
 char_cache_key = f"dsbg_character_cache_{current_user}"
 
-# Do not read cache if the user just clicked "Load" from their saved builds
 if not st.session_state.get("cm_pending_build") and not st.session_state.get("character_loaded_from_cache"):
     char_cached_data = local_storage.getItem(char_cache_key)
     
@@ -612,7 +611,14 @@ if not st.session_state.get("cm_pending_build") and not st.session_state.get("ch
         st.session_state["character_loaded_from_cache"] = True
         
         if isinstance(char_cached_data, dict) and "class_name" in char_cached_data:
-            # Inject the cached dictionary into your existing handoff key
+            # Clean up tier indices to prevent legacy string crashes
+            tiers = char_cached_data.get("tier_indices", {})
+            for k in ["str", "dex", "itl", "fth"]:
+                val = tiers.get(k)
+                if isinstance(val, str) and not val.isdigit():
+                    tiers[k] = 0
+            
+            # Inject the sanitized cached dictionary
             st.session_state["cm_pending_build"] = char_cached_data
             st.toast("Recovered character build from device.", icon="🛡️")
 
