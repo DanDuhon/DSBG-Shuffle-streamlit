@@ -199,3 +199,67 @@ def read_last_frozen(version: str, in_dir: str = "data") -> Any:
         return payload.get("campaign")
     except Exception:
         return None
+
+
+def make_compact_dump(session_state: Any, out_path: str = "logs/compact_dump.json") -> str:
+    """Write a compact JSON dump containing only keys useful for debugging cloud reclaim.
+
+    Keys included: cloud_low_memory, campaign_v1_state, campaign_v2_state,
+    campaign_v1_last_frozen, campaign_v2_last_frozen, pending_campaign_snapshot,
+    campaign_load_notice, campaign_rules_version, campaign_rules_version_widget.
+
+    Returns the path written.
+    """
+    keys = [
+        "cloud_low_memory",
+        "campaign_v1_state",
+        "campaign_v2_state",
+        "campaign_v1_last_frozen",
+        "campaign_v2_last_frozen",
+        "pending_campaign_snapshot",
+        "campaign_load_notice",
+        "campaign_rules_version",
+        "campaign_rules_version_widget",
+    ]
+
+    def _clean_val(v: Any):
+        try:
+            json.dumps(v)
+            return v
+        except Exception:
+            try:
+                return str(v)
+            except Exception:
+                return None
+
+    # Extract serializable snapshot
+    serial: dict = {}
+    try:
+        if isinstance(session_state, dict):
+            ss_iter = session_state.items()
+        elif hasattr(session_state, "items") and callable(getattr(session_state, "items")):
+            ss_iter = session_state.items()
+        elif hasattr(session_state, "__dict__"):
+            ss_iter = session_state.__dict__.items()
+        else:
+            ss_iter = vars(session_state).items()
+    except Exception:
+        ss_iter = []
+
+    src = {k: v for k, v in ss_iter}
+    for k in keys:
+        if k in src:
+            serial[k] = _clean_val(src.get(k))
+        else:
+            serial[k] = None
+
+    Path(Path(out_path).parent).mkdir(parents=True, exist_ok=True)
+    try:
+        with open(out_path, "w", encoding="utf-8") as fh:
+            json.dump({"ts": int(time.time()), "compact": serial}, fh, indent=2, ensure_ascii=False)
+        return out_path
+    except Exception:
+        # Fallback: try to write a minimal text file
+        with open(out_path, "w", encoding="utf-8") as fh:
+            fh.write(str({"ts": int(time.time()), "compact": serial}))
+        return out_path

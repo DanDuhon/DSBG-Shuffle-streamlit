@@ -1,1 +1,2 @@
 2026-03-09 12:24:52,175 INFO dsbg: Wrote session_state dump: data\debug\session_dump_1773077092.json
+2026-03-09 15:22:55,454 INFO dsbg: Wrote campaign_v1_last_frozen to data\last_frozen_v1.json
