@@ -133,7 +133,7 @@ def send_recovery_code(email: str) -> dict:
 def verify_and_set_password(email: str, code: str, new_password: str) -> dict:
     client = _get_supabase_client()
     try:
-        # 1. Verify the 6-digit recovery code
+        # 1. Verify the 8-digit recovery code
         res = client.auth.verify_otp({"email": email, "token": code, "type": "recovery"})
         
         # 2. Bind the new password to the existing OAuth/Magic Link account
@@ -199,7 +199,7 @@ def render_auth_ui():
         else:
             # OTP Migration and Recovery Flow
             st.caption("Previously used Google/Magic Link? Use this to set a password and recover your data.")
-            code = st.text_input("6-Digit Code (Leave blank to request)")
+            code = st.text_input("8-Digit Code (Leave blank to request)")
             new_password = st.text_input("New Password", type="password")
             submit = st.form_submit_button("Submit")
 
