@@ -114,8 +114,6 @@ def _cloud_low_memory_cleanup_on_mode_switch(prev_mode: str | None, new_mode: st
             pass
 
 
-
-
 def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
     """Return an @font-face rule embedding a local TTF as a data URI.
 
@@ -603,6 +601,21 @@ if not pending and not st.session_state.get("campaign_loaded_from_cache"):
             
             st.toast("Recovered unsaved campaign progress from device.", icon="💾")
 
+# --- Character Mode Cache Read ---
+char_cache_key = f"dsbg_character_cache_{current_user}"
+
+# Do not read cache if the user just clicked "Load" from their saved builds
+if not st.session_state.get("cm_pending_build") and not st.session_state.get("character_loaded_from_cache"):
+    char_cached_data = local_storage.getItem(char_cache_key)
+    
+    if char_cached_data is not None:
+        st.session_state["character_loaded_from_cache"] = True
+        
+        if isinstance(char_cached_data, dict) and "class_name" in char_cached_data:
+            # Inject the cached dictionary into your existing handoff key
+            st.session_state["cm_pending_build"] = char_cached_data
+            st.toast("Recovered character build from device.", icon="🛡️")
+
 # Sidebar: expansions + party + NG+
 
 selected_characters = settings.get("selected_characters", [])
@@ -671,6 +684,24 @@ if mode == "Campaign Mode":
         if st.session_state.get("_last_cached_campaign_fp") != state_str:
             local_storage.setItem(cache_key, {"rules_version": active_version, "state": live_state})
             st.session_state["_last_cached_campaign_fp"] = state_str
+# --- Character Mode Cache Write ---
+elif mode == "Character Mode":
+    # 1. Reconstruct the live build state from fragmented session keys
+    live_char_state = {
+        "class_name": st.session_state.get("cm_persist_class"),
+        "tier_indices": st.session_state.get("cm_persist_tiers", {}),
+        "selected_armor_id": st.session_state.get("cm_selected_armor_id", ""),
+        "selected_armor_upgrade_ids": list(st.session_state.get("cm_selected_armor_upgrade_ids") or []),
+        "selected_hand_ids": list(st.session_state.get("cm_selected_hand_ids") or []),
+        "selected_weapon_upgrade_ids_by_hand": dict(st.session_state.get("cm_selected_weapon_upgrade_ids_by_hand") or {}),
+    }
+    
+    # 2. Only write to cache if the class is defined (meaning the UI has initialized)
+    if live_char_state["class_name"]:
+        char_state_str = json.dumps(live_char_state, sort_keys=True)
+        if st.session_state.get("_last_cached_character_fp") != char_state_str:
+            local_storage.setItem(char_cache_key, live_char_state)
+            st.session_state["_last_cached_character_fp"] = char_state_str
 
 
 def _rss_mb() -> float | None:
