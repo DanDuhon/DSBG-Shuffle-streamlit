@@ -1,9 +1,8 @@
-import json
 import random
 
 import streamlit as st
 
-from ui.encounter_mode.generation import generate_encounter_image
+from ui.encounter_mode.generation import generate_encounter_image, load_encounter
 from ui.campaign_mode.core import _card_w
 from ui.campaign_mode.helpers import get_player_count_from_settings
 from ui.encounter_mode.assets import ENCOUNTER_CARDS_DIR
@@ -38,25 +37,21 @@ def _candidates_from_alternatives(alts, *, settings: dict) -> list:
     return candidates
 
 
-def _load_json_cached(*, json_path: str, cache_key: str):
-    if cache_key not in st.session_state:
-        with open(json_path, "r", encoding="utf-8") as f:
-            st.session_state[cache_key] = json.load(f)
-    return st.session_state[cache_key]
-
-
 def render_nito_setup_panel() -> None:
     """Render Gravelord Nito Setup encounter card with Shuffle/Original."""
 
     n = _party_size_1_to_4()
-    json_path = f"data/encounters/Tomb of Giants_3_Gravelord Nito Setup_{n}.json"
-    encounter_data = _load_json_cached(
-        json_path=json_path,
-        cache_key=f"nito_setup_data::{n}",
-    )
+    # `load_encounter` is a process-wide, byte-bounded cache shared by every
+    # session. Stashing the parsed JSON in session_state instead pinned ~8 MB
+    # per party size, per user, for the life of the session and was never
+    # evicted (not even by Reset).
+    encounter_data = load_encounter("Tomb of Giants_3_Gravelord Nito Setup", n)
 
-    enemies_key = "nito_setup_enemies"
-    mode_key = "nito_setup_mode"
+    # Scope the chosen enemies to the party size: `alternatives` differs for
+    # every n, so a globally-keyed selection kept rendering a setup rolled
+    # against the previous party size.
+    enemies_key = f"nito_setup_enemies::{n}"
+    mode_key = f"nito_setup_mode::{n}"
 
     if enemies_key not in st.session_state:
         st.session_state[enemies_key] = encounter_data.get("original")
@@ -105,14 +100,12 @@ def render_ec_mega_boss_setup_panel() -> None:
     """Render Executioner's Chariot Mega Boss Setup encounter card with Shuffle/Original."""
 
     n = _party_size_1_to_4()
-    json_path = f"data/encounters/Executioner's Chariot_4_Mega Boss Setup_{n}.json"
-    encounter_data = _load_json_cached(
-        json_path=json_path,
-        cache_key=f"ec_mega_setup_data::{n}",
-    )
+    # See render_nito_setup_panel: process-wide cache instead of session_state,
+    # and party-size-scoped selection keys.
+    encounter_data = load_encounter("Executioner's Chariot_4_Mega Boss Setup", n)
 
-    enemies_key = "ec_mega_setup_enemies"
-    mode_key = "ec_mega_setup_mode"
+    enemies_key = f"ec_mega_setup_enemies::{n}"
+    mode_key = f"ec_mega_setup_mode::{n}"
 
     if enemies_key not in st.session_state:
         st.session_state[enemies_key] = encounter_data.get("original")
@@ -129,6 +122,10 @@ def render_ec_mega_boss_setup_panel() -> None:
             if candidates:
                 st.session_state[enemies_key] = random.choice(candidates)
                 st.session_state[mode_key] = "shuffled"
+            else:
+                # Match the Nito panel: fall back rather than silently no-op.
+                st.session_state[enemies_key] = encounter_data.get("original")
+                st.session_state[mode_key] = "original"
 
     with col_original:
         if st.button("Original Setup 🔁", key="ec_mega_original", width="stretch"):

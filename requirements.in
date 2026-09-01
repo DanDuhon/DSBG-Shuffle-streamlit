@@ -1,0 +1,22 @@
+# Direct dependencies — the packages this app imports itself.
+#
+# This file is the human-facing source of truth. It is NOT installed by the
+# Docker image or by Streamlit Community Cloud; both install the fully pinned
+# requirements.txt, which is generated from this file.
+#
+# Target interpreter: CPython 3.14 (see .python-version). Streamlit Community
+# Cloud defaults to 3.12, so the Python version must also be set to 3.14 in the
+# app's Advanced settings.
+#
+# To change a dependency:
+#   1. edit the pin below
+#   2. .venv/Scripts/python.exe -m pip install -r requirements.in
+#   3. smoke-test the app
+#   4. .venv/Scripts/python.exe -m pip freeze --exclude-editable > requirements.txt
+#      (then re-add the header comment at the top of requirements.txt)
+streamlit==1.63.0
+pillow==12.3.0
+requests==2.34.2
+supabase==2.31.0
+streamlit-cookies-controller==0.0.4
+streamlit-local-storage==0.0.25

@@ -12,6 +12,7 @@ from ui.campaign_mode.generation import (
     _generate_v2_campaign,
 )
 from ui.campaign_mode.persistence import(
+    CampaignsUnavailable,
     get_campaigns,
     _save_campaigns,
 )
@@ -511,6 +512,11 @@ def _render_save_load_section(
     st.markdown("---")
     st.subheader("Save / Load campaign")
 
+    # One-shot notice carried across the post-save rerun (see the save handler).
+    save_notice = st.session_state.pop("campaign_save_notice", None)
+    if save_notice:
+        st.success(str(save_notice))
+
     cloud_mode = bool(is_streamlit_cloud())
     supabase_ready = bool(_has_supabase_config())
     can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
@@ -519,7 +525,17 @@ def _render_save_load_section(
     elif cloud_mode and not auth.is_authenticated():
         st.caption("Log in to save.")
 
-    campaigns = get_campaigns()
+    try:
+        campaigns = get_campaigns()
+        campaigns_available = True
+    except CampaignsUnavailable:
+        campaigns = {}
+        campaigns_available = False
+        st.error(
+            "Could not reach the campaign store, so your saved campaigns can't "
+            "be listed right now. They have not been deleted — check your "
+            "connection and reload."
+        )
 
     if bool(st.session_state.get("ui_compact")):
         col_save = st.container()
@@ -608,7 +624,15 @@ def _render_save_load_section(
                         )
                     else:
                         set_campaign_baseline(version=version, state=current_state)
-                        st.success(f"Saved campaign '{name}'.")
+                        # Rerun so the Load/Delete controls appear immediately.
+                        # They are rendered from `campaigns`, which is read at
+                        # the top of this function; without a rerun the newly
+                        # saved campaign can be missed for that run. Delete and
+                        # Generate already rerun for the same reason.
+                        st.session_state["campaign_save_notice"] = (
+                            f"Saved campaign '{name}'."
+                        )
+                        st.rerun()
 
     # ----- LOAD / DELETE -----
     with col_load:
@@ -693,7 +717,8 @@ def _render_save_load_section(
                                 f"Could not delete campaign '{selected_name}'. "
                                 "Check your connection and try again."
                             )
-        else:
+        elif campaigns_available:
+            # Only claim there are none when we actually got a reliable answer.
             st.caption("No saved campaigns yet.")
 
         # One-shot notice: appears directly under the load controls

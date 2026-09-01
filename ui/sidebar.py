@@ -198,17 +198,27 @@ def render_sidebar(settings: dict):
         except Exception:
             st.session_state["ngplus_level"] = 0
 
-    current_ng = int(st.session_state.get("ngplus_level", 0))
+    # The widget below reads its value from this key, so clamp it here: an
+    # out-of-range value (e.g. from a hand-edited settings file) would be
+    # rejected by number_input's min/max.
+    try:
+        current_ng = int(st.session_state.get("ngplus_level", 0) or 0)
+    except Exception:
+        current_ng = 0
+    current_ng = max(0, min(current_ng, MAX_NGPLUS_LEVEL))
+    st.session_state["ngplus_level"] = current_ng
 
     with st.sidebar.expander(
         f"⬆️ New Game+ (Current: NG+{current_ng})",
         expanded=bool(st.session_state.get("sidebar_ngplus_expanded", False)),
     ):
+        # No `value=`: the widget is keyed and its value is seeded via
+        # session_state above. Passing both makes Streamlit warn and ignore
+        # `value=` anyway.
         level = st.number_input(
             "NG+ Level",
             min_value=0,
             max_value=MAX_NGPLUS_LEVEL,
-            value=max(0, min(int(current_ng), MAX_NGPLUS_LEVEL)),
             step=1,
             key="ngplus_level",
             on_change=_ngplus_level_changed,
@@ -344,25 +354,37 @@ def render_sidebar(settings: dict):
     # values on rerun when `settings` baseline changes.
     if "ui_card_width" not in st.session_state:
         st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
+    # The slider reads its value from this key, so keep it inside the widget's
+    # min/max and on its step grid; a stale or hand-edited value would be
+    # rejected.
+    try:
+        _card_w = int(st.session_state.get("ui_card_width", 360) or 360)
+    except Exception:
+        _card_w = 360
+    _card_w = max(240, min(_card_w, 560))
+    st.session_state["ui_card_width"] = _card_w - ((_card_w - 240) % 10)
 
-        # Encounter item reward shuffle setting
-        # Options control how encounters that specify a particular item reward are handled.
-        # Persist the choice in user_settings as `encounter_item_reward_mode`.
-        modes = [
-            "Similar Soul Cost",
-            "Same Item Tier",
-            "Original",
-        ]
-        prev_mode = settings.get("encounter_item_reward_mode", "Original")
-        with st.sidebar.expander("💎 Item Swap", expanded=False):
-            mode = st.selectbox(
-                "When an encounter rewards a specific item, treat it as:",
-                options=modes,
-                index=modes.index(prev_mode) if prev_mode in modes else modes.index("Original"),
-                key="encounter_item_reward_mode",
-            )
-            settings["encounter_item_reward_mode"] = mode
-            st.session_state["_settings_draft"] = settings
+    # Encounter item reward shuffle setting
+    # Options control how encounters that specify a particular item reward are handled.
+    # Persist the choice in user_settings as `encounter_item_reward_mode`.
+    # NOTE: this block was previously indented into the `ui_card_width` init
+    # above, so the Item Swap expander only rendered on the first run of a
+    # session and then vanished from the sidebar on every later rerun.
+    modes = [
+        "Similar Soul Cost",
+        "Same Item Tier",
+        "Original",
+    ]
+    prev_mode = settings.get("encounter_item_reward_mode", "Original")
+    with st.sidebar.expander("💎 Item Swap", expanded=False):
+        mode = st.selectbox(
+            "When an encounter rewards a specific item, treat it as:",
+            options=modes,
+            index=modes.index(prev_mode) if prev_mode in modes else modes.index("Original"),
+            key="encounter_item_reward_mode",
+        )
+        settings["encounter_item_reward_mode"] = mode
+        st.session_state["_settings_draft"] = settings
 
     # Rules display preference: show phase-only rules/triggers only in their phase
     prev_rules_pref = bool(settings.get("rules_show_only_in_phase", True))
@@ -422,13 +444,14 @@ def render_sidebar(settings: dict):
                 st.write(f"{emoji} {enc_name} ({enc_exp})")
 
     with st.sidebar.expander("🖼️ Card Display", expanded=False):
+        # No `value=`: the widget is keyed and seeded via session_state above.
+        # Passing both makes Streamlit warn and ignore `value=` anyway.
         st.slider(
             "Card width (px)",
             min_value=240,
             max_value=560,
             step=10,
             key="ui_card_width",
-            value=int(st.session_state["ui_card_width"]),
         )
         st.caption("This scales the size of boss cards and event cards in Encounter Mode's Event tab.")
 

@@ -4,7 +4,11 @@ import streamlit as st
 from typing import Any, Dict, Optional
 
 from core import auth
-from ui.campaign_mode.persistence import get_campaigns, _save_campaigns
+from ui.campaign_mode.persistence import (
+    CampaignsUnavailable,
+    get_campaigns,
+    _save_campaigns,
+)
 
 from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 from ui.campaign_mode.persistence.dirty import set_campaign_baseline
@@ -369,6 +373,11 @@ def _render_campaign_save_controls(
     st.markdown("---")
     st.markdown("##### Save campaign")
 
+    # One-shot notice carried across the post-save rerun (see the save handler).
+    save_notice = st.session_state.pop("campaign_manage_save_notice", None)
+    if save_notice:
+        st.success(str(save_notice))
+
     cloud_mode = bool(is_streamlit_cloud())
     supabase_ready = bool(_has_supabase_config())
     can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
@@ -377,7 +386,14 @@ def _render_campaign_save_controls(
     elif cloud_mode and not auth.is_authenticated():
         st.caption("Log in to save.")
 
-    campaigns = get_campaigns()
+    try:
+        campaigns = get_campaigns()
+    except CampaignsUnavailable:
+        campaigns = {}
+        st.error(
+            "Could not reach the campaign store. Existing saves can't be listed "
+            "right now — they have not been deleted."
+        )
     saved_names = sorted((campaigns or {}).keys())
 
     pick_key = f"campaign_manage_save_pick_{version.lower()}"
@@ -483,4 +499,7 @@ def _render_campaign_save_controls(
             return
 
         set_campaign_baseline(version=version, state=state)
-        st.success(f"Saved campaign '{name}'.")
+        # Rerun so the picker above refreshes with the new name immediately;
+        # it is built from `campaigns`, which is read before this handler runs.
+        st.session_state["campaign_manage_save_notice"] = f"Saved campaign '{name}'."
+        st.rerun()

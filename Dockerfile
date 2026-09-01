@@ -1,4 +1,6 @@
-FROM python:3.11-slim
+# Must match .python-version and the local venv: the pinned dependency set in
+# requirements.txt is resolved for CPython 3.14 (cp314 wheels).
+FROM python:3.14-slim
 
 # Prevent Python from writing pyc files and buffering stdout
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -6,14 +8,13 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# System deps (add only if needed later)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python deps first for layer caching
+# Install Python deps first for layer caching.
+# `--only-binary=:all:` makes the build fail loudly if a wheel is ever missing
+# for this platform, instead of silently falling back to a source build (which
+# is why no compiler toolchain is installed here). Every pin in the lock file
+# has a cp314 manylinux wheel today.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 
 # Copy app source
 COPY . .

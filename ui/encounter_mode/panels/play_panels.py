@@ -32,6 +32,7 @@ from core.behavior.generation import (
     render_data_card_uncached,
 )
 from core.behavior.logic import load_behavior, _read_behavior_json
+from ui.encounter_mode.generation import _get_enemy_health_from_behavior
 from core.behavior.models import BehaviorEntry
 from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level, _is_number
 from ui.encounter_mode.data.enemies import enemyNames
@@ -194,14 +195,11 @@ def _detect_gang_name(encounter: dict) -> Optional[str]:
                 name = str(eid)
 
             if name:
-                # load base behavior JSON to read default health.
-                # apply_ngplus=False is required: gang membership is defined by
+                # Base (non-NG+) health, memoised. Gang membership is defined by
                 # BASE health 1, and NG+ adds +1 HP per level to health 1-3, so
                 # scaled values never match and gang rules silently stop firing.
-                cfg = load_behavior(
-                    Path("data/behaviors") / f"{name}.json", apply_ngplus=False
-                )
-                health = int(cfg.raw.get("health", 1))
+                # This runs once per enemy per rerun, so the cache matters.
+                health = _get_enemy_health_from_behavior(name)
 
         if not name:
             continue
@@ -869,11 +867,10 @@ def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, 
             else:
                 current_encounter_rules.append(r)
 
-    # Compute gang info early so Gang can be shown even when no other rules exist
+    # Gang info is needed below only as a presence check; `_render_gang_rule`
+    # resolves the actual name itself. (A `gang_name_preview` was computed here
+    # and never read, doubling the per-rerun behavior loads on this path.)
     encounter_keywords = _get_encounter_keywords(encounter, settings)
-    gang_name_preview = None
-    if "gang" in encounter_keywords:
-        gang_name_preview = _detect_gang_name(encounter)
 
     events = st.session_state.get("encounter_events", []) or []
     event_rule_groups: list[tuple[str, list]] = []

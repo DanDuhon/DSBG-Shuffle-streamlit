@@ -1,5 +1,6 @@
 #ui/encounter_mode/generation.py
 import streamlit as st
+from collections import OrderedDict, namedtuple
 from functools import lru_cache
 import os
 from typing import Dict, Tuple
@@ -117,14 +118,90 @@ def _get_reward_font(size: int) -> ImageFont.FreeTypeFont:
         return ImageFont.load_default()
 
 
-@lru_cache(maxsize=256)
+_MISSING = object()
+
+
+class _ByteBoundedCache:
+    """LRU cache bounded by an approximate byte budget rather than entry count.
+
+    Entry-count limits are a poor fit for this app's assets: a single cache can
+    hold both a 0.6 MB gang strip and a 5 MB encounter card, so `maxsize=N` says
+    nothing useful about memory. Callers supply a weight per entry.
+    """
+
+    def __init__(self, max_bytes: int) -> None:
+        self.max_bytes = int(max_bytes)
+        self.hits = 0
+        self.misses = 0
+        self.bytes = 0
+        self._data: OrderedDict = OrderedDict()
+        self._weights: dict = {}
+
+    def get(self, key):
+        value = self._data.get(key, _MISSING)
+        if value is _MISSING:
+            self.misses += 1
+            return _MISSING
+        self._data.move_to_end(key)
+        self.hits += 1
+        return value
+
+    def put(self, key, value, weight: int) -> None:
+        weight = max(1, int(weight))
+        # An entry bigger than the whole budget is returned but never retained.
+        if weight > self.max_bytes:
+            return
+        if key in self._data:
+            self.bytes -= self._weights.pop(key, 0)
+        self._data[key] = value
+        self._data.move_to_end(key)
+        self._weights[key] = weight
+        self.bytes += weight
+        while self.bytes > self.max_bytes and len(self._data) > 1:
+            old_key, _ = self._data.popitem(last=False)
+            self.bytes -= self._weights.pop(old_key, 0)
+
+    def clear(self) -> None:
+        self._data.clear()
+        self._weights.clear()
+        self.bytes = 0
+        self.hits = 0
+        self.misses = 0
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+
+def _rgba_image_cache_budget_bytes() -> int:
+    """Byte budget for decoded RGBA images (override with DSBG_IMAGE_CACHE_MB)."""
+    try:
+        mb = int(os.environ.get("DSBG_IMAGE_CACHE_MB", "") or 0)
+    except ValueError:
+        mb = 0
+    if mb <= 0:
+        mb = 48 if is_streamlit_cloud() else 160
+    return mb * 1024 * 1024
+
+
+# 249 encounter card images decode to ~5 MB each as RGBA; the previous
+# `maxsize=256` exceeded that count, so the entire ~1.2 GB set could accumulate.
+_rgba_image_cache = _ByteBoundedCache(_rgba_image_cache_budget_bytes())
+
+
 def _load_rgba_image(path: str) -> Image.Image:
-    """Load an RGBA image from disk.
+    """Load an RGBA image from disk, memoised under a byte budget.
 
     NOTE: Returned image must be treated as read-only.
     Callers should `copy()` before mutating/compositing.
     """
-    return Image.open(path).convert("RGBA")
+    cached = _rgba_image_cache.get(path)
+    if cached is not _MISSING:
+        return cached
+
+    img = Image.open(path).convert("RGBA")
+    w, h = img.size
+    _rgba_image_cache.put(path, img, w * h * 4)
+    return img
 
 
 def _should_bypass_encounter_card_base_image_cache() -> bool:
@@ -327,9 +404,17 @@ def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:
 # Strategy:
 # - Cloud tighten-LRU mode: cache only the most recently requested encounter
 #   (single-entry cache).
-# - Otherwise: use an LRU cache (larger local/dev footprint is OK).
-
-from collections import namedtuple
+# - Otherwise: an LRU bounded by BYTES rather than entry count.
+#
+# Byte-bounding matters because these files are extremely skewed: the median is
+# ~20 KB but the largest is 4.7 MB on disk (~16 MB parsed), across 864 files
+# totalling 544 MB. A count-based `maxsize=1024` never evicted anything — the
+# whole corpus could accumulate, roughly 1.9 GB parsed. A byte budget keeps
+# hundreds of typical encounters resident while capping the worst case.
+#
+# Repeated *filtering* does not depend on this cache: viability is memoised
+# separately as a bool in `logic._encounter_has_viable_alternative_cached`.
+# This cache exists to keep re-shuffles of the current encounter fast.
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
@@ -339,9 +424,53 @@ _SINGLE_ENCOUNTER_CACHE_HITS = 0
 _SINGLE_ENCOUNTER_CACHE_MISSES = 0
 
 
-@lru_cache(maxsize=1024)
+def _encounter_cache_budget_bytes() -> int:
+    """Byte budget for the encounter JSON cache (override with DSBG_ENCOUNTER_CACHE_MB)."""
+    try:
+        mb = int(os.environ.get("DSBG_ENCOUNTER_CACHE_MB", "") or 0)
+    except ValueError:
+        mb = 0
+    if mb <= 0:
+        mb = 64 if is_streamlit_cloud() else 192
+    return mb * 1024 * 1024
+
+
+_ENCOUNTER_CACHE_MAX_BYTES = _encounter_cache_budget_bytes()
+_encounter_cache = _ByteBoundedCache(_ENCOUNTER_CACHE_MAX_BYTES)
+
+
+# Parsed JSON costs several times its on-disk size as Python objects. Measured
+# across this dataset: 4.70 MB file -> ~16.4 MB parsed, 0.02 MB -> ~0.09 MB, so
+# ~3.5-4.5x. Weighting by file size x this factor makes the byte budget below an
+# approximation of RETAINED MEMORY rather than of disk bytes.
+_ENCOUNTER_PARSE_FACTOR = 4
+
+
+def _encounter_weight(encounter_slug: str, character_count: int) -> int:
+    """Approximate retained memory for an encounter, from its on-disk size.
+
+    File size is free to obtain and proportional to the parsed cost, which is
+    all the budget needs.
+    """
+    try:
+        size = (
+            ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
+        ).stat().st_size
+    except OSError:
+        return 1
+    return max(1, size * _ENCOUNTER_PARSE_FACTOR)
+
+
 def _load_encounter_lru(encounter_slug: str, character_count: int) -> dict:
-    return _load_encounter_from_disk(encounter_slug, character_count)
+    """Load an encounter, memoised under a byte budget (LRU eviction)."""
+    key = (encounter_slug, character_count)
+    cached = _encounter_cache.get(key)
+    if cached is not _MISSING:
+        return cached
+
+    data = _load_encounter_from_disk(encounter_slug, character_count)
+    _encounter_cache.put(key, data, _encounter_weight(encounter_slug, character_count))
+    return data
 
 
 def load_encounter(encounter_slug: str, character_count: int):
@@ -373,11 +502,18 @@ def _load_encounter_cache_info():
     if _TIGHTEN_LRU:
         curr = 1 if _SINGLE_ENCOUNTER_CACHE_KEY is not None else 0
         return _CacheInfo(_SINGLE_ENCOUNTER_CACHE_HITS, _SINGLE_ENCOUNTER_CACHE_MISSES, 1, curr)
-    try:
-        ci = _load_encounter_lru.cache_info()
-        return _CacheInfo(int(ci.hits), int(ci.misses), ci.maxsize, int(ci.currsize))
-    except Exception:
-        return _CacheInfo(0, 0, 1024, 0)
+    # `maxsize` is reported in MB (the budget), `currsize` as the entry count.
+    return _CacheInfo(
+        _encounter_cache.hits,
+        _encounter_cache.misses,
+        _ENCOUNTER_CACHE_MAX_BYTES // (1024 * 1024),
+        len(_encounter_cache),
+    )
+
+
+def _load_encounter_cache_bytes() -> int:
+    """Bytes currently attributed to the encounter JSON cache."""
+    return 0 if _TIGHTEN_LRU else _encounter_cache.bytes
 
 
 def _load_encounter_cache_clear():
@@ -389,10 +525,7 @@ def _load_encounter_cache_clear():
         _SINGLE_ENCOUNTER_CACHE_HITS = 0
         _SINGLE_ENCOUNTER_CACHE_MISSES = 0
         return
-    try:
-        _load_encounter_lru.cache_clear()
-    except Exception:
-        pass
+    _encounter_cache.clear()
 
 
 # Attach hooks so existing diagnostics (memlog) can call `load_encounter.cache_info()`.

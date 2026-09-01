@@ -2,9 +2,42 @@
 from __future__ import annotations
 
 import random
+from functools import lru_cache
+from pathlib import Path
 from typing import Callable, Iterable, List, Sequence, Tuple
 
+from PIL import Image
+
+from core.behavior.assets import BEHAVIOR_CARDS_PATH
+from core.image_cache import load_pil_image_cached
+
 Coord = Tuple[int, int]
+
+# AoE overlay icons are fixed-size and identical across all four AoE bosses.
+# Each renderer used to re-open both PNGs and LANCZOS-resize them on EVERY
+# rerun — including HP-slider ticks and sidebar changes, not just new draws.
+_AOE_ICON_SIZE: Coord = (250, 250)
+_DEST_ICON_SIZE: Coord = (122, 122)
+
+
+@lru_cache(maxsize=4)
+def _resized_overlay_icon(name: str, size: Coord) -> Image.Image:
+    path = Path(BEHAVIOR_CARDS_PATH).parent / "behavior icons" / name
+    return load_pil_image_cached(str(path), convert="RGBA").resize(
+        size, Image.Resampling.LANCZOS
+    )
+
+
+def get_aoe_overlay_icons() -> Tuple[Image.Image, Image.Image]:
+    """Return the (aoe, destination) overlay icons, decoded and resized once.
+
+    Read-only: callers composite these onto their own base image and must not
+    mutate them.
+    """
+    return (
+        _resized_overlay_icon("aoe_node.png", _AOE_ICON_SIZE),
+        _resized_overlay_icon("destination_node.png", _DEST_ICON_SIZE),
+    )
 
 # Shared grid used by Guardian Dragon, Kalameet, etc.
 NODE_COORDS: List[Coord] = [
