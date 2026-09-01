@@ -86,19 +86,18 @@ def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
     # Damage in left/middle/right regions
     for side in ("left", "middle", "right"):
         region = card.get(side)
-        if (
-            isinstance(region, dict)
-            and "damage" in region
-            and isinstance(region["damage"], (int, float))
-        ):
+        if not isinstance(region, dict):
+            continue
+
+        if _is_number(region.get("damage")):
             region = deepcopy(region)
             region["damage"] = damage_for_level(int(region["damage"]), level)
             card[side] = region
-        
+
         # Also scale numeric push values on the region (some move-attacks
         # encode their push as a numeric `push` field). Preserve boolean
         # `push` flags (they indicate presence rather than amount).
-        if _is_number(region["push"]):
+        if _is_number(region.get("push")):
             region = deepcopy(region)
             region["push"] = damage_for_level(int(region["push"]), level)
             card[side] = region

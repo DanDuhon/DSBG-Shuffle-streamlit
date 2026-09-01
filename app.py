@@ -3,6 +3,7 @@ import streamlit as st
 
 from pathlib import Path
 import base64
+import copy
 import os
 import time
 import json
@@ -533,7 +534,10 @@ if pending:
 
     # Restore campaign state dict for correct version
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
-    loaded_state = snapshot.get("state", {}) or {}
+    # Deep-copy: the snapshot's state belongs to the persistence layer's cached
+    # campaigns dict. Assigning it directly would make live play mutate the
+    # saved copy in place (and make a same-session load a no-op).
+    loaded_state = copy.deepcopy(snapshot.get("state", {}) or {})
     st.session_state[state_key] = loaded_state
 
     # IMPORTANT: Clear widget-backed keys so numeric inputs re-seed from the

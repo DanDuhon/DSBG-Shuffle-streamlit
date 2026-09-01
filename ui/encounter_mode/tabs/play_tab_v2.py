@@ -459,7 +459,9 @@ def render(settings: dict, campaign: bool = False) -> None:
             play["timer"] = int(init)
             play_state.log_entry(play, f"Timer initialized to {init} by encounter rule")
 
-    action = play_state.apply_pending_action(play, timer_behavior)
+    action = play_state.apply_pending_action(
+        play, timer_behavior, trigger_scope_key=encounter_key
+    )
 
     # Apply any encounter rules that have side-effects when they become
     # active. For example, some rules may reset the Timer to 0 when the

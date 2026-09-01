@@ -1,8 +1,11 @@
 from pathlib import Path
 from typing import Any, Dict
 import json
+import logging
 import os
 import streamlit as st
+
+logger = logging.getLogger(__name__)
 
 from core import supabase_store
 from core import auth
@@ -97,19 +100,29 @@ def _load_campaigns(*, reload: bool = False) -> Dict[str, Any]:
     return _load_json_object(CAMPAIGNS_PATH, reload=reload)
 
 
-def _save_campaigns(campaigns: Dict[str, Any]) -> None:
+def _save_campaigns(campaigns: Dict[str, Any]) -> bool:
+    """Persist all campaigns. Returns True only if everything was written.
+
+    Callers MUST check the result before marking the campaign clean or telling
+    the user it saved: a silent failure here previously left the dirty flag
+    cleared, so the user got a success message and lost their progress with no
+    warning.
+    """
     # Supabase-backed persistence: upsert each campaign as a separate row.
     if is_streamlit_cloud() and _has_supabase_config():
         user_id = auth.get_user_id()
         access_token = auth.get_access_token()
         if not user_id or not access_token:
-            return
+            logger.warning("Campaign save skipped: not authenticated.")
+            return False
 
+        ok = True
         for name, obj in (campaigns or {}).items():
             try:
                 supabase_store.upsert_document("campaign", name, obj, user_id=user_id, access_token=access_token)
             except Exception:
-                pass
+                logger.warning("Campaign upsert failed for %r.", name, exc_info=True)
+                ok = False
 
         # Delete remote campaigns not present locally
         try:
@@ -117,16 +130,23 @@ def _save_campaigns(campaigns: Dict[str, Any]) -> None:
             for r in remote:
                 if r not in campaigns:
                     try:
-                        supabase_store.delete_document("campaign", r, user_id=user_id, access_token=access_token)
+                        if not supabase_store.delete_document(
+                            "campaign", r, user_id=user_id, access_token=access_token
+                        ):
+                            logger.warning("Campaign delete reported failure for %r.", r)
+                            ok = False
                     except Exception:
-                        pass
+                        logger.warning("Campaign delete failed for %r.", r, exc_info=True)
+                        ok = False
         except Exception:
-            pass
-        return
+            logger.warning("Could not reconcile remote campaign list.", exc_info=True)
+            ok = False
+        return ok
 
     # Streamlit Cloud should never persist anonymously to local JSON.
     if is_streamlit_cloud():
-        return
+        logger.warning("Campaign save skipped: no Supabase config on Cloud.")
+        return False
 
     CAMPAIGNS_PATH.parent.mkdir(parents=True, exist_ok=True)
     # Write to a temporary file and atomically replace the target to
@@ -147,13 +167,16 @@ def _save_campaigns(campaigns: Dict[str, Any]) -> None:
         # Update cache
         _JSON_CACHE[str(CAMPAIGNS_PATH)] = campaigns
     except Exception:
+        logger.exception("Campaign save to %s failed.", CAMPAIGNS_PATH)
         # Cleanup temp file on failure
         try:
             if tmp_path.exists():
                 tmp_path.unlink()
         except Exception:
-            pass
-        raise
+            logger.warning("Could not remove temp file %s.", tmp_path, exc_info=True)
+        return False
+
+    return True
 
 
 def clear_json_cache() -> None:

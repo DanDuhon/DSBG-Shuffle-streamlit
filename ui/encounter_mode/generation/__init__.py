@@ -162,8 +162,16 @@ def _get_icon_resized(path: str, box_size: int) -> Tuple[Image.Image, Tuple[int,
 
 @lru_cache(maxsize=256)
 def _get_enemy_health_from_behavior(name: str) -> int:
+    """Base (non-NG+) health for an enemy, used for gang detection.
+
+    apply_ngplus=False is required for two reasons: gang membership is defined
+    by BASE health 1, and this result is cached by name only — an NG+-scaled
+    value would be pinned across NG+ level changes.
+    """
     try:
-        cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+        cfg = load_behavior(
+            Path("data/behaviors") / f"{name}.json", apply_ngplus=False
+        )
         return int(cfg.raw.get("health", 1))
     except Exception:
         return 1

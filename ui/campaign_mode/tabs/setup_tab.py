@@ -1,4 +1,5 @@
 #ui/campaign_mode/setup_tab.py
+import copy
 import streamlit as st
 from typing import Any, Dict
 import logging
@@ -112,13 +113,42 @@ def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
     version = st.radio("Rules version", **radio_kwargs)
 
     # Option B: switching versions clears the other version's state so
-    # completion/status cannot leak across.
+    # completion/status cannot leak across. Discarding UNSAVED progress that way
+    # is irreversible, so defer it behind an explicit confirmation (Generate and
+    # Load already gate the same kind of destruction).
     if version != prev_version:
-        clear_other_campaign_state(keep_version=version)
+        if campaign_has_unsaved_changes(version=prev_version):
+            st.session_state["_campaign_pending_discard"] = prev_version
+        else:
+            clear_other_campaign_state(keep_version=version)
+            st.session_state.pop("_campaign_pending_discard", None)
 
     # This is now safe; no widget with this key exists
     st.session_state["campaign_rules_version"] = version
     st.session_state["_campaign_rules_version_last"] = version
+
+    pending = st.session_state.get("_campaign_pending_discard")
+    if pending == version:
+        # Switched back to it; nothing to discard.
+        st.session_state.pop("_campaign_pending_discard", None)
+    elif pending:
+        if campaign_has_unsaved_changes(version=pending):
+            st.warning(
+                f"Your {pending} campaign has unsaved changes. It is being kept "
+                f"for now — save it below, or switch back to {pending} to keep "
+                "playing it. Discarding it cannot be undone."
+            )
+            if st.button(
+                f"Discard unsaved {pending} campaign",
+                key=f"campaign_discard_{pending}",
+            ):
+                clear_other_campaign_state(keep_version=version)
+                st.session_state.pop("_campaign_pending_discard", None)
+                st.rerun()
+        else:
+            # It got saved in the meantime; clearing is safe now.
+            clear_other_campaign_state(keep_version=version)
+            st.session_state.pop("_campaign_pending_discard", None)
 
     st.markdown("---")
     return version, player_count
@@ -554,7 +584,11 @@ def _render_save_load_section(
                     # session key.
                     snapshot = {
                         "rules_version": version,
-                        "state": current_state,
+                        # Deep-copy: `current_state` is the live session_state
+                        # dict. Storing it by reference makes the saved snapshot
+                        # keep mutating as the user keeps playing, so the next
+                        # save of ANY campaign rewrites this one's file entry.
+                        "state": copy.deepcopy(current_state),
                         "sidebar_settings": {
                             "active_expansions": settings.get("active_expansions"),
                             "selected_characters": settings.get("selected_characters"),
@@ -564,9 +598,17 @@ def _render_save_load_section(
                         },
                     }
                     campaigns[name] = snapshot
-                    _save_campaigns(campaigns)
-                    set_campaign_baseline(version=version, state=current_state)
-                    st.success(f"Saved campaign '{name}'.")
+                    if not _save_campaigns(campaigns):
+                        # Leave the campaign dirty so the user keeps their
+                        # overwrite warnings and knows it is still unsaved.
+                        campaigns.pop(name, None)
+                        st.error(
+                            f"Could not save campaign '{name}'. Your progress is "
+                            "still unsaved — check your connection and try again."
+                        )
+                    else:
+                        set_campaign_baseline(version=version, state=current_state)
+                        st.success(f"Saved campaign '{name}'.")
 
     # ----- LOAD / DELETE -----
     with col_load:
@@ -639,10 +681,18 @@ def _render_save_load_section(
                     if selected_name == "<none>":
                         st.error("Select a campaign to delete.")
                     else:
-                        campaigns.pop(selected_name, None)
-                        _save_campaigns(campaigns)
-                        st.success(f"Deleted campaign '{selected_name}'.")
-                        st.rerun()
+                        removed = campaigns.pop(selected_name, None)
+                        if _save_campaigns(campaigns):
+                            st.success(f"Deleted campaign '{selected_name}'.")
+                            st.rerun()
+                        else:
+                            # Put it back so the list still matches what is stored.
+                            if removed is not None:
+                                campaigns[selected_name] = removed
+                            st.error(
+                                f"Could not delete campaign '{selected_name}'. "
+                                "Check your connection and try again."
+                            )
         else:
             st.caption("No saved campaigns yet.")
 

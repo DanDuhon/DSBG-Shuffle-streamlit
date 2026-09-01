@@ -19,10 +19,15 @@ def try_render_kalameet_current(*, cfg, state, current) -> bool:
     ):
         return False
 
-    last_key = f"boss_mode_last_current::{cfg.name}"
-    last_current = st.session_state.get(last_key)
-    is_new_draw = last_current != current
-    st.session_state[last_key] = current
+    # Key off the draw counter, not the card name. Kalameet has only two
+    # Hellfire cards (and just one before heat-up), so comparing names meant a
+    # redraw of the same-named card looked like "not a new draw" and the cached
+    # pattern was reused — freezing the 8-pattern Fiery Ruin deck on pattern 1.
+    draw_token = st.session_state.get("boss_mode_draw_token", 0)
+    last_key = f"boss_mode_last_draw::{cfg.name}"
+    last_draw = st.session_state.get(last_key)
+    is_new_draw = last_draw != draw_token
+    st.session_state[last_key] = draw_token
 
     mode = "generated" if st.session_state.get("kalameet_aoe_generate", False) else "deck"
 

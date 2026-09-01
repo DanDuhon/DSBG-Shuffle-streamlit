@@ -236,7 +236,9 @@ def render():
     # --- Auto Heat-Up Prompt ---
     if (
         st.session_state.get("pending_heatup_prompt", False)
-        and (cfg.name == "Vordt of the Boreal Valley" or not st.session_state.get("heatup_done", False))
+        # Per-boss state, not a global session key: a global made confirming a
+        # heat-up on one boss suppress this prompt for every other boss.
+        and (cfg.name == "Vordt of the Boreal Valley" or not state.get("heatup_done", False))
         and cfg.name not in {"Old Dragonslayer", "Ornstein & Smough"}
     ):
         st.warning(f"The {'invader' if cfg.raw.get('is_invader', False) else 'boss'} has entered Heat-Up range!")
@@ -251,12 +253,12 @@ def render():
                 st.session_state["pending_heatup_target"] = None
                 st.session_state["pending_heatup_type"] = None
                 if cfg.name not in {"Old Dragonslayer", "Ornstein & Smough", "Vordt of the Boreal Valley"}:
-                    st.session_state["heatup_done"] = True
+                    state["heatup_done"] = True
                 st.rerun()
         with confirm_cols[1]:
             if st.button("Cancel ❌", key="cancel_heatup", width="stretch"):
                 clear_heatup_prompt()
-                st.session_state["heatup_done"] = False
+                state["heatup_done"] = False
                 st.rerun()
     elif st.session_state.get("pending_heatup_prompt", False):
         boss = st.session_state.get("pending_heatup_target")

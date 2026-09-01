@@ -33,7 +33,7 @@ from core.behavior.generation import (
 )
 from core.behavior.logic import load_behavior, _read_behavior_json
 from core.behavior.models import BehaviorEntry
-from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
+from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level, _is_number
 from ui.encounter_mode.data.enemies import enemyNames
 from ui.encounter_mode.data.keywords import (
     encounterKeywords,
@@ -118,12 +118,26 @@ def _render_keywords_summary(encounter: dict, settings: dict) -> None:
 
 
 def _render_rule_block(rendered_text: str, *, prefix: str = "", key_hint: Optional[str] = None) -> None:
-    if ":" not in rendered_text:
-        if prefix:
-            st.markdown(f"- {prefix}{rendered_text}", unsafe_allow_html=True)
-        else:
-            st.markdown(f"- {rendered_text}", unsafe_allow_html=True)
-    
+    """Render one rule as a bullet.
+
+    Rules shaped like "Label: body" show the label emphasised; everything else
+    renders as-is. Both branches must render: text containing a ':' previously
+    fell through with no `else` and was silently dropped, which blanked the
+    compact Rules panel and the timer-gated "Upcoming rules" list.
+    """
+    _ = key_hint  # accepted by callers; no widget is created here
+
+    text = (rendered_text or "").strip()
+    if not text:
+        return
+
+    head, sep, tail = text.partition(":")
+    body = tail.strip().replace("\n", "<br>")
+    # Treat a short, sentence-free lead-in as a label ("Snowstorm: ...").
+    if sep and body and len(head) <= 40 and "." not in head:
+        st.markdown(f"- {prefix}**{head.strip()}:** {body}", unsafe_allow_html=True)
+    else:
+        st.markdown(f"- {prefix}{text}".replace("\n", "<br>"), unsafe_allow_html=True)
 
 
 def _has_top_level_colon(template: str | None) -> bool:
@@ -180,8 +194,13 @@ def _detect_gang_name(encounter: dict) -> Optional[str]:
                 name = str(eid)
 
             if name:
-                # load base behavior JSON to read default health
-                cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+                # load base behavior JSON to read default health.
+                # apply_ngplus=False is required: gang membership is defined by
+                # BASE health 1, and NG+ adds +1 HP per level to health 1-3, so
+                # scaled values never match and gang rules silently stop firing.
+                cfg = load_behavior(
+                    Path("data/behaviors") / f"{name}.json", apply_ngplus=False
+                )
                 health = int(cfg.raw.get("health", 1))
 
         if not name:
@@ -2034,28 +2053,34 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                             candidates.append(v)
 
                 for beh in candidates:
-                    top_type = str(beh.get("type", "")).lower()
-
                     for slot in ("left", "middle", "right"):
                         spec = beh.get(slot)
                         if not isinstance(spec, dict):
                             continue
 
-                        # If the card is a move-type, add stagger to any attack node
-                        if top_type == "move":
-                            effects = spec.setdefault("effect", [])
-                            if isinstance(effects, list) and "stagger" not in effects:
-                                effects.append("stagger")
-                                hanging_rafters_changed = True
+                        # "If a character is pushed by an enemy attack, they
+                        # suffer Stagger." Two shapes carry a push, and `type`
+                        # lives on the slot (never on the card root, which is
+                        # what the old check read — so it never fired):
+                        #   - physical/magic attack with a boolean `push` flag
+                        #   - move whose numeric `push` is the damage it deals
+                        slot_type = str(spec.get("type", "")).lower()
+                        push = spec.get("push")
+                        if slot_type in ("physical", "magic"):
+                            pushes = push is True
+                        elif slot_type == "move":
+                            pushes = _is_number(push) and push > 0
+                        else:
+                            pushes = False
 
-                        # Also add stagger to any attack that has push (flag or type)
-                        has_push = bool(spec.get("push")) or (spec.get("type") == "push")
-                        if has_push:
-                            effects = spec.setdefault("effect", [])
-                            if isinstance(effects, list) and "stagger" not in effects:
-                                effects.append("stagger")
-                                hanging_rafters_changed = True
-                
+                        if not pushes:
+                            continue
+
+                        effects = spec.setdefault("effect", [])
+                        if isinstance(effects, list) and "stagger" not in effects:
+                            effects.append("stagger")
+                            hanging_rafters_changed = True
+
 
             # Special-case: use alternate data card for certain enemies in The Shine of Gold
             if enemy_name in ("Mimic", "Phalanx") and (encounter.get("encounter_name") == "The Shine of Gold" or encounter.get("name") == "The Shine of Gold"):

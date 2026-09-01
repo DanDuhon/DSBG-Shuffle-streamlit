@@ -504,3 +504,17 @@ def render_sidebar(settings: dict):
         save_settings(settings)
         st.session_state["_settings_draft_base_fp"] = settings_fingerprint(settings)
 
+    # Record the settings fingerprint AFTER this run's own write-backs.
+    #
+    # In local/Docker mode `settings` IS `applied_settings`, so the normal
+    # write-backs above (active_expansions, selected_characters, ...) change the
+    # fingerprint. Leaving `_settings_ui_base_fp` at its pre-write value made the
+    # NEXT run see `ui_base_changed=True` and re-seed every checkbox key from
+    # settings — overwriting the click the user had just made, which is why
+    # checkboxes appeared to need two clicks.
+    #
+    # A genuine external replacement of `user_settings` (Save on Cloud, loading a
+    # campaign snapshot, switching accounts) still changes the fingerprint
+    # relative to this value, so the intended re-seed continues to happen.
+    st.session_state["_settings_ui_base_fp"] = settings_fingerprint(applied_settings)
+

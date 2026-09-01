@@ -349,9 +349,13 @@ def _reset_deck(state, cfg):
     ss.pop("hp_tracker", None)
     ss.pop("last_edit", None)
     ss["deck_reset_id"] = ss.get("deck_reset_id", 0) + 1
-    ss["chariot_heatup_done"] = False
     ss["pending_heatup_prompt"] = False
-    ss["heatup_done"] = False
+    # Heat-up state belongs to the boss being reset. These were global, so
+    # resetting ANY boss un-heat-upped an in-progress fight for another one —
+    # `chariot_heatup_done` in particular is the Chariot's only heat-up record.
+    state["heatup_done"] = False
+    if cfg.name == "Executioner's Chariot":
+        ss["chariot_heatup_done"] = False
     ss["behavior_cfg"] = cfg
 
 def _manual_heatup(state):
@@ -382,7 +386,8 @@ def _manual_heatup(state):
         ss["pending_heatup_target"] = None
         ss["pending_heatup_type"] = None
         if cfg.name not in {"Old Dragonslayer", "Ornstein & Smough", "Vordt of the Boreal Valley"}:
-            ss["heatup_done"] = True
+            # Per-boss, not global: see _reset_deck.
+            state["heatup_done"] = True
         
 
 def _ornstein_smough_heatup_ui(state, cfg):

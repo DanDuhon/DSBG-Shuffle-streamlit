@@ -43,13 +43,16 @@ def render_heatup_prompt(*, cfg, state) -> None:
                     "Ornstein & Smough",
                     "Vordt of the Boreal Valley",
                 }:
-                    st.session_state["heatup_done"] = True
+                    # Per-boss, matching the read above. Writing the global key
+                    # here leaked the flag to every other boss and to the
+                    # Behavior Card Viewer.
+                    state["heatup_done"] = True
                 st.rerun()
 
         with confirm_cols[1]:
             if st.button("Cancel ❌", key="boss_mode_cancel_heatup", width="stretch"):
                 clear_heatup_prompt()
-                st.session_state["heatup_done"] = False
+                state["heatup_done"] = False
                 st.rerun()
 
     elif st.session_state.get("pending_heatup_prompt", False):

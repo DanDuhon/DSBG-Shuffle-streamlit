@@ -1,4 +1,5 @@
 # ui/campaign_mode/manage_tab_shared.py
+import copy
 import streamlit as st
 from typing import Any, Dict, Optional
 
@@ -458,7 +459,11 @@ def _render_campaign_save_controls(
         state["name"] = name
         snapshot = {
             "rules_version": version,
-            "state": state,
+            # Deep-copy: `state` is the live session_state dict. Storing it by
+            # reference makes the saved snapshot keep mutating as the user keeps
+            # playing, so the next save of ANY campaign rewrites this one's file
+            # entry with current progress.
+            "state": copy.deepcopy(state),
             "sidebar_settings": {
                 "active_expansions": settings.get("active_expansions"),
                 "selected_characters": settings.get("selected_characters"),
@@ -467,6 +472,15 @@ def _render_campaign_save_controls(
         }
 
         campaigns[name] = snapshot
-        _save_campaigns(campaigns)
+        if not _save_campaigns(campaigns):
+            # Leave the campaign dirty so the user keeps their overwrite warnings
+            # and knows the progress is still unsaved.
+            campaigns.pop(name, None)
+            st.error(
+                f"Could not save campaign '{name}'. Your progress is still "
+                "unsaved — check your connection and try again."
+            )
+            return
+
         set_campaign_baseline(version=version, state=state)
         st.success(f"Saved campaign '{name}'.")

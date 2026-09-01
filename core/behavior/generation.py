@@ -2,10 +2,13 @@
 import json
 import hashlib
 import io
+import logging
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 from typing import Dict, Any, Optional
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 try:
     import streamlit as st  # type: ignore
@@ -523,9 +526,14 @@ def render_behavior_card(
     if is_boss:
         if "repeat" in behavior_json:
             icon_path = ICONS_DIR / f"repeat_{behavior_json['repeat']}.png"
-            icon = load_pil_image_cached(str(icon_path), convert="RGBA")
-            x, y = coords_map[repeat_icon_slot]
-            base.alpha_composite(icon, (x, y))
+            # A missing repeat_N.png should degrade to "no repeat icon" rather
+            # than take the whole card render down.
+            if icon_path.exists():
+                icon = load_pil_image_cached(str(icon_path), convert="RGBA")
+                x, y = coords_map[repeat_icon_slot]
+                base.alpha_composite(icon, (x, y))
+            else:
+                logger.warning("Missing repeat icon: %s", icon_path)
         if "dodge" in behavior_json:
             _draw_text(base, "dodge", str(behavior_json["dodge"]), is_boss)
 

@@ -1021,6 +1021,7 @@ def _render_v2_current_panel(
     - Boss: same as V1 (including Boss Mode handoff).
     """
     kind = current_node.get("kind")
+    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
     st.markdown("#### Current space")
 
     # Bonfire

@@ -394,6 +394,19 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 kind="checkbox",
                 phase="player",
             ),
+            # Tile 2 has traps; the souls reward is 1 per trap token the party
+            # has FLIPPED (the inverse of Abandoned and Forgotten, which counts
+            # the ones left face down). The reward previously pointed at a
+            # non-existent id, so it always evaluated to 0.
+            EncounterTrigger(
+                id="gleaming_silver_flipped_traps",
+                label="Flipped trap tokens",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
+                phase="player",
+            ),
         ],
     },
     "Parish Church|The Sunless City": {
@@ -509,6 +522,17 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 label="Lever activated.",
                 template="Respawn all enemies.",
                 kind="checkbox",
+                phase="player",
+            ),
+            # Required by the "souls per enemy killed" reward for this
+            # encounter; without it that reward always evaluated to 0.
+            EncounterTrigger(
+                id="bridge_too_far_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
                 phase="player",
             ),
         ],
@@ -634,6 +658,17 @@ ENCOUNTER_TRIGGERS: EncounterTriggersMap = {
                 label="Spawn a {enemy8} on Tile 3, the closest Enemy Spawn Node to the character.",
                 template="Trial complete",
                 kind="checkbox",
+                phase="player",
+            ),
+            # Required by the "souls per enemy killed" reward for this
+            # encounter; without it that reward always evaluated to 0.
+            EncounterTrigger(
+                id="the_locked_grave_kills",
+                label="Enemies killed",
+                kind="counter",
+                template="",
+                min_value=0,
+                max_value=None,
                 phase="player",
             ),
         ],
