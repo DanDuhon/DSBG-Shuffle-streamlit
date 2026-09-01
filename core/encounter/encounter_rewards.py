@@ -1056,7 +1056,7 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
                 {
                     "type": "treasure",
                     "flat": 2,
-                    "trial_trigger_id": "grim_reunion_trial",
+                    "trial_trigger_id": "the_grand_hall_trial",
                 },
             ]
         },

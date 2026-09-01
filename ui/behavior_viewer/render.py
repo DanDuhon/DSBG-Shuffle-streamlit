@@ -10,10 +10,8 @@ from ui.behavior_viewer.panels.selector import render_selector
 
 
 def render():
-    # Build catalog once per session
-    if "behavior_catalog" not in st.session_state:
-        st.session_state["behavior_catalog"] = build_behavior_catalog()
-    catalog = st.session_state["behavior_catalog"]
+    # Cached process-wide and invalidated by behavior-file mtimes.
+    catalog = build_behavior_catalog()
     category, entry = render_selector(catalog=catalog)
     if not category or not entry:
         return

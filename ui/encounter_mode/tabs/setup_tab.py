@@ -1582,13 +1582,9 @@ def _invader_map_key(encounter: dict) -> str:
 
 def _get_all_invader_entries() -> list[BehaviorEntry]:
     """
-    Return all BehaviorEntry objects that are invaders (is_invader=True),
-    reusing the behavior catalog from the Behavior Decks tab if present.
+    Return all BehaviorEntry objects that are invaders (is_invader=True).
     """
-    catalog = st.session_state.get("behavior_catalog")
-    if catalog is None:
-        catalog = build_behavior_catalog()
-        st.session_state["behavior_catalog"] = catalog
+    catalog = build_behavior_catalog()
 
     entries: list[BehaviorEntry] = []
     for per_cat in catalog.values():

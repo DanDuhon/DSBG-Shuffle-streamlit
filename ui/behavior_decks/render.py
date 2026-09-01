@@ -50,10 +50,8 @@ def render():
     card_w = int(st.session_state.get("ui_card_width", settings.get("ui_card_width", 360)))
     card_w = max(240, min(560, card_w))
 
-    # Build or reuse catalog
-    if "behavior_catalog" not in st.session_state:
-        st.session_state["behavior_catalog"] = build_behavior_catalog()
-    catalog = st.session_state["behavior_catalog"]
+    # Cached process-wide and invalidated by behavior-file mtimes.
+    catalog = build_behavior_catalog()
 
     # Available categories (non-empty ones only is nice UX)
     available_cats = [c for c in CATEGORY_ORDER if catalog.get(c)] or CATEGORY_ORDER

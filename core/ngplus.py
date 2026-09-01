@@ -63,6 +63,12 @@ def dodge_for_level(base_dodge: Optional[int], level: int) -> Optional[int]:
     return int(base_dodge) + dodge_bonus_for_level(level)
 
 
+def _is_number(v: Any) -> bool:
+    """True for real numbers only — bool subclasses int, and boolean flags
+    must not be treated as amounts."""
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
 def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
     """
     Apply NG+ to a single behavior card.
@@ -92,7 +98,7 @@ def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
         # Also scale numeric push values on the region (some move-attacks
         # encode their push as a numeric `push` field). Preserve boolean
         # `push` flags (they indicate presence rather than amount).
-        if isinstance(region, dict) and "push" in region and isinstance(region["push"], (int, float)):
+        if _is_number(region["push"]):
             region = deepcopy(region)
             region["push"] = damage_for_level(int(region["push"]), level)
             card[side] = region
@@ -129,12 +135,14 @@ def apply_ngplus_to_raw(
         hp_bonus = health_bonus_for_level(base_hp, level)
         raw["health"] = base_hp + hp_bonus
 
-    if "heatup" in raw and isinstance(raw["heatup"], (int, float)):
-        if enemy_name == "Vordt of the Boreal Valley":
-            raw["heatup1"] = int(raw["heatup1"]) + hp_bonus
-            raw["heatup2"] = int(raw["heatup2"]) + hp_bonus
-        if not enemy_name in {"Old Dragonslayer", "The Four Kings", "Executioner's Chariot"}:
-            raw["heatup"] = int(raw["heatup"]) + hp_bonus
+    # Vordt uses two heat-up thresholds instead of a single "heatup" key.
+    if enemy_name == "Vordt of the Boreal Valley":
+        for key in ("heatup1", "heatup2"):
+            if isinstance(raw.get(key), (int, float)):
+                raw[key] = int(raw[key]) + hp_bonus
+
+    if isinstance(raw.get("heatup"), (int, float)):
+        raw["heatup"] = int(raw["heatup"]) + hp_bonus
 
     # ----- Paladin Leeroy special rule text -----
     # Only relevant for NG+ levels (>0); X = 2 + HP bonus from NG+.
@@ -199,17 +207,3 @@ def health_bonus_for_level(base_hp: Optional[int], level: int) -> int:
     if hp_ng is None:
         return 0
     return int(hp_ng) - base_hp
-
-
-def dodge_bonus_for_level(level: int) -> int:
-    """
-    NG+ dodge rules:
-      - NG+0-1: +0
-      - NG+2-3: +1
-      - NG+4-5: +2
-    """
-    if level <= 1:
-        return 0
-    if 2 <= level <= 3:
-        return 1
-    return 2

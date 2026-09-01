@@ -5,9 +5,9 @@ from core.behavior.generation import build_behavior_catalog
 
 
 def get_or_build_catalog() -> dict:
-    if "behavior_catalog" not in st.session_state:
-        st.session_state["behavior_catalog"] = build_behavior_catalog()
-    return st.session_state["behavior_catalog"]
+    # build_behavior_catalog() is cached process-wide and invalidated by
+    # behavior-file mtimes, so no session_state copy is needed.
+    return build_behavior_catalog()
 
 
 def apply_pending_boss_preselect(catalog: dict) -> None:

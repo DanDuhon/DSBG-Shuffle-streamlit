@@ -16,7 +16,8 @@ from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _dodge_i
 from ui.character_mode.filters import (
     _apply_armor_filters,
     _apply_hand_item_filters,
-    _filter_items
+    _filter_items,
+    _matches_query
 )
 from ui.character_mode.item_fields import (
     _armor_dodge_int,
@@ -487,17 +488,7 @@ def render(settings: Dict[str, Any]) -> None:
         hand_any_conditions = set(hf_any_conditions or [])
         hand_any_immunities = set(hf_any_immunities or [])
 
-        filtered_hand_base = _filter_items(
-            hand_items,
-            active_expansions=active,
-            class_name=class_name,
-            stats=stats,
-            query=query,
-            expansion_filter=expansion_filter,
-            source_type_filter=source_type_filter,
-            source_entity_filter=source_entity_filter,
-            legendary_mode=legendary_mode,
-        )
+        filtered_hand_base = _matches_query(hand_pool_for_options, query)
         filtered_hand = _apply_hand_item_filters(
             filtered_hand_base,
             categories=hand_filter_categories,
@@ -592,9 +583,9 @@ def render(settings: Dict[str, Any]) -> None:
             # Totals that include gear modifications are provided in Tot* columns; fallback to base columns
             disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
             disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
-            disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("TotMin")
-            disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("TotMax")
-            disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("TotAvg")
+            disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("Min")
+            disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("Max")
+            disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("Avg")
             # Avg per stamina
             def _avg_per_stam(row):
                 s = row.get("Stamina") or 0
@@ -761,17 +752,7 @@ def render(settings: Dict[str, Any]) -> None:
         armor_any_immunities = set(af_immunities or [])
         armor_special_mode = af_special
 
-        filtered_armor_base = _filter_items(
-            armor_items,
-            active_expansions=active,
-            class_name=class_name,
-            stats=stats,
-            query=query,
-            expansion_filter=expansion_filter,
-            source_type_filter=source_type_filter,
-            source_entity_filter=source_entity_filter,
-            legendary_mode=legendary_mode,
-        )
+        filtered_armor_base = _matches_query(armor_pool_for_options, query)
         filtered_armor = _apply_armor_filters(
             filtered_armor_base,
             dodge_dice=armor_filter_dodge,
@@ -1129,13 +1110,13 @@ def render(settings: Dict[str, Any]) -> None:
                             disp_combo.get("TotDice") if "TotDice" in disp_combo.columns else disp_combo.get("Dice")
                         )
                         disp_combo["Min"] = (
-                            disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("TotMin")
+                            disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("Min")
                         )
                         disp_combo["Max"] = (
-                            disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("TotMax")
+                            disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("Max")
                         )
                         disp_combo["Avg"] = (
-                            disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("TotAvg")
+                            disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("Avg")
                         )
                         if "Cond" in disp_combo.columns:
                             disp_combo["Conditions"] = disp_combo["Cond"]
@@ -1418,9 +1399,9 @@ def render(settings: Dict[str, Any]) -> None:
 
                 disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
                 disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
-                disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("TotMin")
-                disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("TotMax")
-                disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("TotAvg")
+                disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("Min")
+                disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("Max")
+                disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("Avg")
 
                 if "Cond" in disp.columns:
                     disp["Conditions"] = disp["Cond"]

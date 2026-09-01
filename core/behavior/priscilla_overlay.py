@@ -18,22 +18,17 @@ def _load_map() -> None:
         return
     with p.open("r", encoding="utf-8") as f:
         data = json.load(f)
-        if isinstance(data, dict):
-            for k, v in data.items():
-                # Accept either a list of directions (old format)
-                # or a mapping {direction: [x,y], ...}
-                if isinstance(v, list):
-                    PRISCILLA_ARC_MAP[k] = v
-                elif isinstance(v, dict):
-                    # validate coord lists
-                    coords = {}
-                    for dir_k, coord_v in v.items():
-                        if isinstance(coord_v, (list, tuple)) and len(coord_v) >= 2:
-                            x = int(coord_v[0])
-                            y = int(coord_v[1])
-                            coords[dir_k] = (x, y)
-                    if coords:
-                        PRISCILLA_ARC_MAP[k] = coords
+    if not isinstance(data, dict):
+        return
+    for k, v in data.items():
+        if not isinstance(v, dict):
+            continue
+        coords = {}
+        for dir_k, coord_v in v.items():
+            if isinstance(coord_v, (list, tuple)) and len(coord_v) >= 2:
+                coords[dir_k] = (int(coord_v[0]), int(coord_v[1]))
+        if coords:
+            PRISCILLA_ARC_MAP[k] = coords
 
 
 _load_map()
@@ -72,39 +67,21 @@ def overlay_priscilla_arcs(image_input, behavior_name: str, behavior_json: dict 
 
     base = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
 
-    # Two supported mapping shapes:
-    #  - list of directions (e.g. ["left"])
-    #  - dict of direction -> (x,y) coordinates (new format)
-    if isinstance(mapping, list):
-        directions = mapping
-        for d in directions:
-            if d not in {"up", "down", "left", "right"}:
-                continue
-            arc_name = f"arc_normal_{d}.png"
-            icon_path = ICONS_DIR / arc_name
-            icon = Image.open(icon_path).convert("RGBA")
+    for d, coord in mapping.items():
+        if d not in {"up", "down", "left", "right"}:
+            continue
+        if not coord or len(coord) < 2:
+            continue
+        x = int(coord[0])
+        y = int(coord[1])
 
-            x, y = coord
-            ix, iy = icon.size
-            paste_xy = (int(x - ix / 2), int(y - iy / 2))
-            base.alpha_composite(icon, paste_xy)
+        arc_name = f"arc_normal_{d}.png"
+        icon_path = ICONS_DIR / arc_name
+        icon = Image.open(icon_path).convert("RGBA")
 
-    elif isinstance(mapping, dict):
-        for d, coord in mapping.items():
-            if d not in {"up", "down", "left", "right"}:
-                continue
-            if not coord or len(coord) < 2:
-                continue
-            x = int(coord[0])
-            y = int(coord[1])
-
-            arc_name = f"arc_normal_{d}.png"
-            icon_path = ICONS_DIR / arc_name
-            icon = Image.open(icon_path).convert("RGBA")
-
-            ix, iy = icon.size
-            paste_xy = (int(x - ix / 2), int(y - iy / 2))
-            base.alpha_composite(icon, paste_xy)
+        ix, iy = icon.size
+        paste_xy = (int(x - ix / 2), int(y - iy / 2))
+        base.alpha_composite(icon, paste_xy)
 
     buf = io.BytesIO()
     base.save(buf, format="PNG")

@@ -54,8 +54,12 @@ from core.behavior.assets import (
 )
 from core.image_cache import load_pil_image_cached
 from core.behavior.models import BehaviorEntry
-from core.behavior.logic import load_behavior, list_behavior_files
-from core.ngplus import get_current_ngplus_level
+from core.behavior.logic import (
+    load_behavior,
+    list_behavior_files,
+    behavior_files_fingerprint,
+)
+from core.ngplus import get_current_ngplus_level, _is_number
 
 
 @cache_data(show_spinner=False)
@@ -134,11 +138,13 @@ def infer_category(cfg) -> str:
 
 
 @cache_data(show_spinner=False)
-def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
-    """Scan behavior JSON files and group them by category for the UI.
+def _build_behavior_catalog_cached(fingerprint: tuple) -> dict[str, list[BehaviorEntry]]:
+    """Build the catalog, keyed on the behavior files' (path, mtime) fingerprint.
 
-    Cached with Streamlit so repeated UI reruns don't re-scan disk.
+    `fingerprint` is not read: it exists so edits to the behavior JSON
+    invalidate this cache instead of serving a stale catalog until the TTL.
     """
+    _ = fingerprint
     files = (
         list_behavior_files()
     )  # returns Paths to *.json:contentReference[oaicite:2]{index=2}
@@ -167,6 +173,15 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
         groups.setdefault(cat, [])
 
     return groups
+
+
+def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
+    """Scan behavior JSON files and group them by category for the UI.
+
+    Cached process-wide (shared across sessions), keyed on the behavior files'
+    mtimes so content edits invalidate cleanly.
+    """
+    return _build_behavior_catalog_cached(behavior_files_fingerprint())
 
 
 def _hash_json(obj: Any) -> str:
@@ -214,7 +229,7 @@ def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
         # propagate so they are visible during development.
         icon_path = ICONS_DIR / "infinite_health.png"
         if icon_path.exists():
-            icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+            icon = load_pil_image_cached(str(icon_path), convert="RGBA")
             # Limit icon size so it fits inside the heart
             max_dim = 96
             iw, ih = icon.size
@@ -250,7 +265,7 @@ def _overlay_effect_icons(
         icon_path = ICONS_DIR / f"{effect}.png"
         if not icon_path.exists():
             return
-        icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+        icon = load_pil_image_cached(str(icon_path), convert="RGBA")
         if size_scale != 1.0:
             w, h = icon.size
             icon = icon.resize((int(w * size_scale), int(h * size_scale)))
@@ -265,7 +280,7 @@ def _overlay_effect_icons(
             icon_path = ICONS_DIR / f"{effect}.png"
             if not icon_path.exists():
                 continue
-            icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+            icon = load_pil_image_cached(str(icon_path), convert="RGBA")
             w, h = icon.size
             icon = icon.resize((int(w * size_scale), int(h * size_scale)))
             base.alpha_composite(icon, (x, y))
@@ -303,7 +318,7 @@ def _overlay_push_node_icon(
     if not icon_path.exists():
         return
 
-    icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+    icon = load_pil_image_cached(str(icon_path), convert="RGBA")
     base.alpha_composite(icon, (x, y))
 
 
@@ -314,7 +329,7 @@ def render_data_card(
     """
     Paint stats (health, armor, resist, maybe heatup) on the base data card.
     """
-    base = load_pil_image_cached(base_path, convert="RGBA").copy()
+    base = load_pil_image_cached(base_path, convert="RGBA")
     if no_edits:
         buf = io.BytesIO()
         base.save(buf, format="PNG")
@@ -388,7 +403,7 @@ def render_data_card_uncached(
     caching, so callers can still display images while avoiding cache retention.
     """
 
-    base = load_pil_image_cached(base_path, convert="RGBA").copy()
+    base = load_pil_image_cached(base_path, convert="RGBA")
     if no_edits:
         buf = io.BytesIO()
         base.save(buf, format="PNG")
@@ -472,12 +487,8 @@ def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
         return img
 
     # Load Ornstein and Smough base data cards
-    ornstein_img = load_pil_image_cached(
-        "assets/behavior cards/Ornstein - data.jpg", convert="RGBA"
-    ).copy()
-    smough_img = load_pil_image_cached(
-        "assets/behavior cards/Smough - data.jpg", convert="RGBA"
-    ).copy()
+    ornstein_img = load_pil_image_cached("assets/behavior cards/Ornstein - data.jpg", convert="RGBA")
+    smough_img = load_pil_image_cached("assets/behavior cards/Smough - data.jpg", convert="RGBA")
 
     # Draw their respective stats if available
     if "Ornstein" in raw_json:
@@ -504,7 +515,7 @@ def render_behavior_card(
     if base_card:
         base = base_card
     else:
-        base = load_pil_image_cached(base_path, convert="RGBA").copy()
+        base = load_pil_image_cached(base_path, convert="RGBA")
 
     # where to place repeat if behavior_json has a repeat
     repeat_icon_slot = "boss_repeat" if is_boss else "enemy_repeat"
@@ -512,7 +523,7 @@ def render_behavior_card(
     if is_boss:
         if "repeat" in behavior_json:
             icon_path = ICONS_DIR / f"repeat_{behavior_json['repeat']}.png"
-            icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+            icon = load_pil_image_cached(str(icon_path), convert="RGBA")
             x, y = coords_map[repeat_icon_slot]
             base.alpha_composite(icon, (x, y))
         if "dodge" in behavior_json:
@@ -534,7 +545,7 @@ def render_behavior_card(
         if not icon_path.exists():
             continue
 
-        icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+        icon = load_pil_image_cached(str(icon_path), convert="RGBA")
 
         if not is_boss and icon_name.startswith("repeat_"):
             x, y = coords_map["enemy_repeat"][slot]
@@ -561,13 +572,13 @@ def render_behavior_card(
         # If this is a movement that also deals push damage (e.g. "push": 4),
         # try to overlay the attack_push_{damage}.png icon as well so the damage
         # value is visible. Place it using the attack_push coords.
-        if spec.get("type") == "move" and isinstance(spec.get("push"), int):
+        if spec.get("type") == "move" and _is_number(spec.get("push")):
             push_dmg = spec["push"]
             push_icon_path = ICONS_DIR / f"attack_push_{push_dmg}.png"
             push_coords_map = coords_map.get("attack_push", {})
             if push_icon_path.exists() and slot in push_coords_map:
                 px, py = push_coords_map[slot]
-                push_icon = load_pil_image_cached(str(push_icon_path), convert="RGBA").copy()
+                push_icon = load_pil_image_cached(str(push_icon_path), convert="RGBA")
                 base.alpha_composite(push_icon, (px, py))
 
         x, y = slot_coords[slot]
@@ -577,7 +588,7 @@ def render_behavior_card(
     if not is_boss and behavior_json.get("_fountainhead_icon"):
         icon_path = ICONS_DIR / "move_away_closest_1.png"
         if icon_path.exists():
-            fh_icon = load_pil_image_cached(str(icon_path), convert="RGBA").copy()
+            fh_icon = load_pil_image_cached(str(icon_path), convert="RGBA")
             x, y = 565, 755
             base.alpha_composite(fh_icon, (x, y))
 
@@ -594,7 +605,7 @@ def render_dual_boss_behavior_card(
     Each half (Ornstein / Smough) can have independent attacks and effects.
     """
     img_path = f"assets/behavior cards/{boss_name} - {card_name}.jpg"
-    base = load_pil_image_cached(img_path, convert="RGBA").copy()
+    base = load_pil_image_cached(img_path, convert="RGBA")
 
     div_idx = card_name.index("&")
     ornstein_beh = card_name[: div_idx - 1]
@@ -635,9 +646,7 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
             if atk_icon_path.exists():
                 coords = zone_map.get(f"attack_{attack_type}", {}).get(slot)
                 if coords:
-                    icon = load_pil_image_cached(
-                        str(atk_icon_path), convert="RGBA"
-                    ).copy()
+                    icon = load_pil_image_cached(str(atk_icon_path), convert="RGBA")
                     base.alpha_composite(icon, coords)
 
         # --- Repeat icon ---
@@ -653,20 +662,18 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
             rpt_icon_path = ICONS_DIR / f"repeat_{repeat}.png"
 
             if rpt_coords and rpt_icon_path.exists():
-                icon = load_pil_image_cached(str(rpt_icon_path), convert="RGBA").copy()
+                icon = load_pil_image_cached(str(rpt_icon_path), convert="RGBA")
                 base.alpha_composite(icon, rpt_coords)
 
         # --- Effects ---
         if effects:
-            size_scale = 0.45 if count == 1 else 0.3
             count = len(effects)
+            size_scale = 0.45 if count == 1 else 0.3
             if count == 1:
                 eff_coords = zone_map.get("effect_one", {}).get(slot)
                 eff_icon_path = ICONS_DIR / f"{effects[0]}.png"
                 if eff_coords and eff_icon_path.exists():
-                    icon = load_pil_image_cached(
-                        str(eff_icon_path), convert="RGBA"
-                    ).copy()
+                    icon = load_pil_image_cached(str(eff_icon_path), convert="RGBA")
                     if size_scale != 1.0:
                         w, h = icon.size
                         icon = icon.resize((int(w * size_scale), int(h * size_scale)))
@@ -679,9 +686,7 @@ def _draw_dual_attack(base: Image.Image, data: dict, zone: str):
                     x, y = eff_coords_list[i]
                     eff_icon_path = ICONS_DIR / f"{eff}.png"
                     if eff_icon_path.exists():
-                        icon = load_pil_image_cached(
-                            str(eff_icon_path), convert="RGBA"
-                        ).copy()
+                        icon = load_pil_image_cached(str(eff_icon_path), convert="RGBA")
                         if size_scale != 1.0:
                             w, h = icon.size
                             icon = icon.resize(

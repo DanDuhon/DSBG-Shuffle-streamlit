@@ -251,7 +251,7 @@ def render_sidebar(settings: dict):
                         f"- Base HP 8-10: +{lvl*2}",
                         f"- Base HP 11+: +{lvl*10}% (rounded up)",
                         f"- +{lvl} damage to all attacks.",
-                        f"- +{nodes_added} node{'s' if nodes_added != 1 else ''}", " to Mega Boss AoE patterns.",
+                        f"- +{nodes_added} node{'s' if nodes_added != 1 else ''} to Mega Boss AoE patterns.",
                     ]
                     + ([f"- {dodge_text}"] if dodge_b > 0 else [])
                 )

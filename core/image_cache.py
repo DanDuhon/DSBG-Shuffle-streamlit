@@ -386,20 +386,18 @@ def _load_pil_image_cached_raw(
 
 
 def load_pil_image_cached(path: str, convert: str | None = "RGBA") -> Image.Image:
-    """Public helper: return a PIL Image for `path` (cached).
+    """Public helper: return a private PIL Image for `path`.
 
-    The returned Image should be copied by callers before mutating it.
+    The underlying decode is cached process-wide; each caller gets its own
+    copy, so mutating the result is safe.
     """
     p = Path(path)
     if _should_bypass_image_cache_for_path(p):
         if not p.exists():
             raise FileNotFoundError(f"Missing image: {p}")
-        data = p.read_bytes()
-        img = Image.open(io.BytesIO(data))
-        if convert:
-            img = img.convert(convert)
-        return img
-    return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert)
+        img = Image.open(io.BytesIO(p.read_bytes()))
+        return img.convert(convert) if convert else img
+    return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert).copy()
 
 
 def _bytes_to_data_uri_uncached(data: bytes, mime: str = "image/png") -> str:

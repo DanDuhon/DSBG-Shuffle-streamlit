@@ -60,11 +60,8 @@ def _extract_invader_names(raw_invaders: Any) -> list[str]:
 
 
 def _get_all_invader_names() -> list[str]:
-    """Return all invader names from the behavior catalog (cached in session_state)."""
-    catalog = st.session_state.get("behavior_catalog")
-    if catalog is None:
-        catalog = build_behavior_catalog()
-        st.session_state["behavior_catalog"] = catalog
+    """Return all invader names from the behavior catalog."""
+    catalog = build_behavior_catalog()
 
     result: list[str] = []
     for per_cat in catalog.values():

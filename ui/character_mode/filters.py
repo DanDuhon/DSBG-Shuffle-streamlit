@@ -188,6 +188,15 @@ def _apply_armor_filters(
     return out
 
 
+def _matches_query(items: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    """Apply only the name-search predicate from `_filter_items`."""
+    q = (query or "").strip().lower()
+    if not q:
+        return items
+    return [it for it in items
+            if q in str(it.get("name") or it.get("id") or "").lower()]
+
+
 def _filter_items(
     items: List[Dict[str, Any]],
     *,

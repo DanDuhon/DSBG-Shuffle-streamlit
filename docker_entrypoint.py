@@ -1,43 +1,78 @@
+import hashlib
+import json
 import os
 import shutil
 import sys
 from pathlib import Path
 
 
-def _copy_tree_missing_only(source_dir: Path, target_dir: Path) -> None:
-    target_dir.mkdir(parents=True, exist_ok=True)
+MANIFEST_NAME = ".dsbg_seed_manifest.json"
 
-    for item in source_dir.iterdir():
-        dest = target_dir / item.name
-        if dest.exists():
+
+def _digest(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _sync_tree(seed_dir: Path, data_dir: Path, prior: dict[str, str]) -> dict[str, str]:
+    """Copy seed content into the data volume, preserving user edits.
+
+    A file is written when it is new, or when it still matches the digest we
+    recorded the last time we seeded it (i.e. the user has not modified it).
+    Returns the manifest for this seed pass.
+    """
+    manifest: dict[str, str] = {}
+
+    for src in sorted(seed_dir.rglob("*")):
+        if src.is_dir():
+            continue
+        rel = src.relative_to(seed_dir).as_posix()
+        dest = data_dir / rel
+        new_digest = _digest(src)
+        manifest[rel] = new_digest
+
+        if not dest.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest)
             continue
 
-        if item.is_dir():
-            shutil.copytree(item, dest)
+        if _digest(dest) == new_digest:
+            continue  # already current
+
+        if prior.get(rel) is not None and _digest(dest) == prior[rel]:
+            shutil.copy2(src, dest)  # untouched by the user; safe to update
         else:
-            shutil.copy2(item, dest)
+            print(f"[dsbg] Keeping user-modified {rel}; seed version not applied.",
+                  file=sys.stderr)
+
+    return manifest
 
 
 def seed_persistent_data_if_needed() -> None:
     seed_dir = Path(os.getenv("DSBG_SEED_DATA_DIR", "/opt/seed/data"))
     data_dir = Path(os.getenv("DSBG_DATA_DIR", "/app/data"))
 
-    # Marker file: if present, assume the data volume has already been initialized.
-    marker_file = data_dir / os.getenv("DSBG_DATA_MARKER", "bosses.json")
-
-    if marker_file.exists():
-        return
-
     if not seed_dir.exists():
-        print(
-            f"[dsbg] Seed directory missing: {seed_dir}. "
-            "Container image may be incomplete.",
-            file=sys.stderr,
-        )
+        print(f"[dsbg] Seed directory missing: {seed_dir}. "
+              "Container image may be incomplete.", file=sys.stderr)
         return
 
-    print(f"[dsbg] Initializing persistent data volume at {data_dir}...")
-    _copy_tree_missing_only(seed_dir, data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = data_dir / MANIFEST_NAME
+
+    prior: dict[str, str] = {}
+    if manifest_path.exists():
+        try:
+            prior = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            print("[dsbg] Unreadable seed manifest; treating all files as user-modified.",
+                  file=sys.stderr)
+
+    manifest = _sync_tree(seed_dir, data_dir, prior)
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def main() -> None:

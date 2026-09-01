@@ -488,6 +488,22 @@ def list_behavior_files() -> List[Path]:
     return sorted(DATA_DIR.glob("*.json"))
 
 
+def behavior_files_fingerprint() -> tuple:
+    """(path, mtime_ns) for every behavior file.
+
+    Used as a cache key so edits to the behavior JSON invalidate derived
+    caches (e.g. the behavior catalog) without needing a process restart.
+    """
+    out = []
+    for p in list_behavior_files():
+        try:
+            out.append((str(p), p.stat().st_mtime_ns))
+        except OSError:
+            # File vanished between listing and stat; treat as absent.
+            continue
+    return tuple(out)
+
+
 def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
     """
     Return all behavior keys that start with the given prefix (case-insensitive).

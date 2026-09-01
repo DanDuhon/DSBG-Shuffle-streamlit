@@ -499,7 +499,7 @@ ENCOUNTER_OBJECTIVES = {
     "Depths of the Cathedral|The Sunless City": {
         "default": {
             "objectives": [
-                "Kill all enemies on a number of tiles equal to {players} (if there are four players, kill all enemies).",
+                "Kill all enemies on {players} tiles.",
             ],
             "trials": [
             ],
@@ -542,9 +542,7 @@ ENCOUNTER_OBJECTIVES = {
                 "Kill all enemies."
             ],
         },
-    },
-    "The Grand Hall|The Sunless City": {
-        "default": {
+        "edited": {
             "objectives": [
                 "Activate the lever.",
             ],

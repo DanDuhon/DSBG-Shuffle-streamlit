@@ -35,6 +35,38 @@ def _parse_dt(val: Any) -> Optional[datetime]:
         return None
 
 
+def _epoch(val: Any) -> float:
+    """Timestamp as a float, or -inf when absent/unparseable.
+
+    Coercing to a number keeps rows with missing or mixed (naive vs
+    timezone-aware) timestamps comparable.
+    """
+    dt = _parse_dt(val)
+    if dt is None:
+        return float("-inf")
+    try:
+        return dt.timestamp()
+    except (OverflowError, OSError, ValueError):
+        return float("-inf")
+
+
+def _row_sort_key(indexed_row: Tuple[int, Dict[str, Any]]) -> Tuple[float, float, int, int]:
+    """Total-ordering key for picking the newest duplicate row.
+
+    The trailing index makes ties resolve to the last row returned.
+    """
+    idx, row = indexed_row
+    updated = _epoch(row.get("updated_at"))
+    created = _epoch(row.get("created_at"))
+    rid = row.get("id")
+    return (
+        updated if updated != float("-inf") else created,
+        created,
+        rid if isinstance(rid, int) else -1,
+        idx,
+    )
+
+
 def _pick_latest_row(rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Choose the most recent row from a list.
 
@@ -49,23 +81,7 @@ def _pick_latest_row(rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         return None
     if len(rows) == 1:
         return rows[0]
-
-    best = None
-    best_key = None
-    for r in rows:
-        updated = _parse_dt(r.get("updated_at"))
-        created = _parse_dt(r.get("created_at"))
-        rid = r.get("id")
-        rid_int = rid if isinstance(rid, int) else None
-        key = (
-            updated or created,
-            created,
-            rid_int,
-        )
-        if best is None or (best_key is not None and key > best_key) or best_key is None:
-            best = r
-            best_key = key
-    return best or rows[-1]
+    return max(enumerate(rows), key=_row_sort_key)[1]
 
 
 def _maybe_streamlit():
@@ -313,18 +329,27 @@ def get_document(
 
 
 def _list_documents_remote(doc_type: str, user_id: str, access_token: Optional[str] = None) -> List[str]:
-    """Remote list implementation (no cache)."""
-    """Return a list of `key_name` values for a given doc_type."""
+    """Remote list implementation (no cache).
+
+    Returns a list of `key_name` values for a given doc_type. Fails soft on
+    network/API errors (returning []) to match `_get_document_remote`, so a
+    transient outage degrades the page rather than crashing it.
+    """
     if not user_id:
         return []
-    url = _table_url()
-    headers = _headers(access_token=access_token)
-    params: Dict[str, str] = {"select": "key_name", "doc_type": f"eq.{doc_type}"}
-    params["user_id"] = f"eq.{user_id}"
 
-    resp = requests.get(url, headers=headers, params=params, timeout=10)
-    resp.raise_for_status()
-    rows = resp.json()
+    try:
+        url = _table_url()
+        headers = _headers(access_token=access_token)
+        params: Dict[str, str] = {"select": "key_name", "doc_type": f"eq.{doc_type}"}
+        params["user_id"] = f"eq.{user_id}"
+
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        resp.raise_for_status()
+        rows = resp.json()
+    except Exception:
+        return []
+
     if not isinstance(rows, list):
         return []
     # De-dupe defensively in case duplicates exist in the table.
@@ -369,17 +394,25 @@ def delete_document(
     user_id: Optional[str] = None,
     access_token: Optional[str] = None,
 ) -> bool:
-    """Delete a document; returns True if deleted."""
+    """Delete a document; returns True if deleted.
+
+    Returns False (rather than raising) on network/API errors, so callers must
+    surface a failed delete to the user instead of assuming success.
+    """
     # Schema expects user_id NOT NULL
     if user_id is None:
         return False
 
-    url = _table_url()
-    headers = _headers(access_token=access_token)
-    params: Dict[str, str] = {"doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}"}
-    params["user_id"] = f"eq.{user_id}"
+    try:
+        url = _table_url()
+        headers = _headers(access_token=access_token)
+        params: Dict[str, str] = {"doc_type": f"eq.{doc_type}", "key_name": f"eq.{key_name}"}
+        params["user_id"] = f"eq.{user_id}"
 
-    resp = requests.delete(url, headers=headers, params=params, timeout=10)
+        resp = requests.delete(url, headers=headers, params=params, timeout=10)
+    except Exception:
+        return False
+
     # 204 No Content or 200 with representation
     ok = resp.status_code in (200, 204)
     if ok and _cache_enabled() and user_id is not None:

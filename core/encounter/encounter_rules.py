@@ -545,7 +545,7 @@ ENCOUNTER_RULES: EncounterRulesMap = {
             ),
         ],
     },
-    "Parish Church|The Sunless City": {
+    "Depths of the Cathedral|The Sunless City": {
         "default": [
             EncounterRule(
                 template="Mimic ({enemy11}): If a character opens a chest in this encounter, shuffle the chest deck and draw a card. If a blank card is drawn, resolve the chest rules as normal. If the teeth card is drawn, replace the chest with a {enemy11} model instead. The chest deck contains three blank cards and two teeth cards. You can simulate this with trap tokens also - shuffle three blank trap tokens and two trap tokens with a value.",

@@ -7,9 +7,59 @@ from streamlit_cookies_controller import CookieController
 
 _AUTH_SESSION_KEY = "_dsbg_auth_state_v2"
 _COOKIE_KEY = "dsbg_session_tokens"
+_COOKIE_MAX_AGE = 2592000  # 30 days
+_REFRESH_MARGIN_S = 300  # refresh the JWT 5 minutes before it expires
 
 # Initialize the cookie manager
 cookies = CookieController()
+
+
+def _is_auth_rejection(exc: Exception) -> bool:
+    """True when Supabase actively rejected the credentials.
+
+    Only a rejection should cost the user their persistent cookie; network
+    errors and other transient failures must leave it in place so the next
+    run can retry instead of silently logging the user out.
+    """
+    status = getattr(exc, "status", None)
+    if isinstance(status, int):
+        return status in (400, 401, 403, 422)
+    return type(exc).__name__ in {"AuthApiError", "AuthInvalidCredentialsError"}
+
+
+def _store_session(res) -> None:
+    """Hydrate session_state and the browser cookie from a Supabase auth result."""
+    st.session_state[_AUTH_SESSION_KEY] = {
+        "user_id": res.user.id,
+        "email": res.user.email,
+        "access_token": res.session.access_token,
+        "refresh_token": res.session.refresh_token,
+        "expires_at": getattr(res.session, "expires_at", None),
+    }
+    cookies.set(
+        _COOKIE_KEY,
+        json.dumps({
+            "access_token": res.session.access_token,
+            "refresh_token": res.session.refresh_token,
+        }),
+        max_age=_COOKIE_MAX_AGE,
+    )
+
+
+def _session_is_fresh(state: dict) -> bool:
+    """True when the cached access token is still comfortably valid."""
+    expires_at = state.get("expires_at")
+    if isinstance(expires_at, (int, float)):
+        return time.time() < (float(expires_at) - _REFRESH_MARGIN_S)
+    # Unknown expiry (older gotrue versions may hand back a datetime, or
+    # nothing at all): re-validate rather than risk using a stale JWT.
+    ts = getattr(expires_at, "timestamp", None)
+    if callable(ts):
+        try:
+            return time.time() < (float(ts()) - _REFRESH_MARGIN_S)
+        except Exception:
+            return False
+    return False
 
 @st.cache_resource
 def _get_supabase_client() -> Client | None:
@@ -23,37 +73,48 @@ def is_auth_ui_enabled() -> bool:
     return bool(is_streamlit_cloud() and _get_supabase_client() is not None)
 
 def restore_session():
-    """Intercepts app load to rebuild the session from browser cookies if needed."""
-    if _AUTH_SESSION_KEY in st.session_state:
-        return # Already hydrated in server memory
-    
-    cookie_str = cookies.get(_COOKIE_KEY)
-    if not cookie_str:
+    """Rebuild the session from browser cookies, refreshing the JWT when stale.
+
+    Runs on every access to the session so an expired access token is renewed
+    mid-session rather than only at first hydration.
+    """
+    state = st.session_state.get(_AUTH_SESSION_KEY)
+    if state and _session_is_fresh(state):
+        return  # Hydrated and still valid
+
+    if state and state.get("refresh_token"):
+        tokens = {
+            "access_token": state.get("access_token"),
+            "refresh_token": state.get("refresh_token"),
+        }
+    else:
+        cookie_str = cookies.get(_COOKIE_KEY)
+        if not cookie_str:
+            return
+        try:
+            tokens = json.loads(cookie_str)
+        except ValueError:
+            # Corrupt cookie; nothing recoverable in it.
+            cookies.remove(_COOKIE_KEY)
+            return
+
+    if not tokens.get("access_token") or not tokens.get("refresh_token"):
         return
-        
+
     client = _get_supabase_client()
+    if client is None:
+        return
+
     try:
-        tokens = json.loads(cookie_str)
         # set_session automatically refreshes the JWT if it has expired
         res = client.auth.set_session(tokens["access_token"], tokens["refresh_token"])
-        
-        # Hydrate server memory
-        st.session_state[_AUTH_SESSION_KEY] = {
-            "user_id": res.user.id,
-            "email": res.user.email,
-            "access_token": res.session.access_token
-        }
-        
-        # Update the cookie with fresh tokens to prevent expiration lockouts
-        new_cookie_data = json.dumps({
-            "access_token": res.session.access_token,
-            "refresh_token": res.session.refresh_token
-        })
-        cookies.set(_COOKIE_KEY, new_cookie_data, max_age=2592000) # 30 days
-        
-    except Exception:
-        # If the refresh token is dead or revoked, purge the dead cookie
-        cookies.remove(_COOKIE_KEY)
+        _store_session(res)
+    except Exception as exc:
+        if _is_auth_rejection(exc):
+            # The refresh token is dead or revoked; purge so the user can log in again.
+            st.session_state.pop(_AUTH_SESSION_KEY, None)
+            cookies.remove(_COOKIE_KEY)
+        # Otherwise keep the cookie and any existing session: likely transient.
 
 def get_user_id() -> str | None:
     restore_session()
@@ -70,43 +131,32 @@ def get_access_token() -> str | None:
 def is_authenticated() -> bool:
     return bool(get_user_id() and get_access_token())
 
+_NO_CLIENT_ERROR = "Account features are not configured on this deployment."
+
 def login(email: str, password: str) -> dict:
     client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
     try:
         res = client.auth.sign_in_with_password({"email": email, "password": password})
-        
-        # Save to memory
-        st.session_state[_AUTH_SESSION_KEY] = {
-            "user_id": res.user.id,
-            "email": res.user.email,
-            "access_token": res.session.access_token
-        }
-        
-        # Save to browser cookie
-        cookie_data = json.dumps({
-            "access_token": res.session.access_token,
-            "refresh_token": res.session.refresh_token
-        })
-        cookies.set(_COOKIE_KEY, cookie_data, max_age=2592000)
-        
+        _store_session(res)
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
 def sign_up(email: str, password: str) -> dict:
     client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
     try:
         res = client.auth.sign_up({"email": email, "password": password})
-        st.session_state[_AUTH_SESSION_KEY] = {
-            "user_id": res.user.id,
-            "email": res.user.email,
-            "access_token": res.session.access_token
-        }
-        cookie_data = json.dumps({
-            "access_token": res.session.access_token,
-            "refresh_token": res.session.refresh_token
-        })
-        cookies.set(_COOKIE_KEY, cookie_data, max_age=2592000)
+        if getattr(res, "session", None) is None:
+            # Project requires email confirmation: no session is issued yet.
+            return {
+                "ok": False,
+                "error": "Account created. Check your email to confirm it, then log in.",
+            }
+        _store_session(res)
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -123,6 +173,8 @@ def logout() -> None:
 
 def send_recovery_code(email: str) -> dict:
     client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
     try:
         # Triggers the Reset Password email template
         client.auth.reset_password_for_email(email)
@@ -132,25 +184,18 @@ def send_recovery_code(email: str) -> dict:
 
 def verify_and_set_password(email: str, code: str, new_password: str) -> dict:
     client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
     try:
         # 1. Verify the 8-digit recovery code
         res = client.auth.verify_otp({"email": email, "token": code, "type": "recovery"})
-        
+
         # 2. Bind the new password to the existing OAuth/Magic Link account
         client.auth.update_user({"password": new_password})
-        
+
         # 3. Hydrate session memory and cookies
-        st.session_state[_AUTH_SESSION_KEY] = {
-            "user_id": res.user.id,
-            "email": res.user.email,
-            "access_token": res.session.access_token
-        }
-        cookie_data = json.dumps({
-            "access_token": res.session.access_token,
-            "refresh_token": res.session.refresh_token
-        })
-        cookies.set(_COOKIE_KEY, cookie_data, max_age=2592000)
-        
+        _store_session(res)
+
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}

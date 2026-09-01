@@ -43,7 +43,7 @@ from ui.encounter_mode.data.keywords import (
 from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.state.play_state import get_player_count, log_entry
-from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, EVENT_REWARDS
+from ui.event_mode.logic import get_behavior_modifiers, get_rewards
 from ui.encounter_mode.helpers import _detect_edited_flag, _get_enemy_display_names
 from core.expansions import is_v2_expansion
 
@@ -383,7 +383,7 @@ def compute_reward_totals(encounter: dict, settings: dict, play_state: dict) -> 
             ev_name = ev.get("name") or ev.get("title") or ev.get("id")
             if not ev_name:
                 continue
-            ev_rewards = EVENT_REWARDS.get(ev_name)  # type: ignore[index]
+            ev_rewards = get_rewards().get(ev_name)  # type: ignore[index]
             if not ev_rewards:
                 continue
 
@@ -429,7 +429,7 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     Render a Rewards section for the encounter, combining:
     - Encounter-level rewards from ENCOUNTER_REWARDS
     - Trial rewards gated by their checkbox triggers
-    - Event-level rewards from EVENT_REWARDS for any attached events
+    - Event-level rewards from get_rewards() for any attached events
     """
     st.markdown("#### Rewards")
 
@@ -1403,13 +1403,12 @@ def _render_attached_events(encounter: dict) -> None:
             + (f" ({rendezvous_count} rendezvous)." if rendezvous_count else ".")
         )
 
+        behavior_mods = get_behavior_modifiers()
         for ev in events:
             name = ev.get("name") or ev.get("id")
             st.markdown(f"- **{name}**")
 
-            mods = EVENT_BEHAVIOR_MODIFIERS.get(name) or EVENT_BEHAVIOR_MODIFIERS.get(
-                ev.get("id")
-            )
+            mods = behavior_mods.get(name) or behavior_mods.get(ev.get("id"))
             if mods:
                 for m in mods:
                     desc = (
@@ -1579,11 +1578,12 @@ def _gather_behavior_mods_for_enemy(
         ev_name = ev.get("name")
         label = ev_name or ev_id or ""
 
-        # Try both ID and name keys; EVENT_BEHAVIOR_MODIFIERS may use either
+        # Try both ID and name keys;
+        behavior_mods = get_behavior_modifiers()
         for key in (ev_id, ev_name):
             if not key:
                 continue
-            for mod in EVENT_BEHAVIOR_MODIFIERS.get(key, []):
+            for mod in behavior_mods.get(key, []):
                 if not _mod_applies_to_enemy(mod, enemy_name, encounter):
                     continue
 

@@ -67,13 +67,6 @@
   },
   "event_deck": {
     "draw_pile": [
-      "assets\\events\\Forgotten Supplies.jpg",
-      "assets\\events\\Rite of Rekindling.jpg",
-      "assets\\events\\Pine Resin.jpg",
-      "assets\\events\\Firekeeper's Boon.jpg",
-      "assets\\events\\Big Pilgrim's Key.jpg",
-      "assets\\events\\Rare Vagrant.jpg",
-      "assets\\events\\Scrying Stone.jpg",
       "assets\\events\\Bleak Bonfire Ascetic.jpg",
       "assets\\events\\Lifegem.jpg",
       "assets\\events\\Virulent Bonfire Ascetic.jpg",
@@ -106,8 +99,15 @@
       "assets\\events\\Cracked Bonfire Ascetic.jpg",
       "assets\\events\\Green Blossom.jpg"
     ],
-    "discard_pile": [],
-    "current_card": null,
+    "discard_pile": [
+      "assets\\events\\Forgotten Supplies.jpg",
+      "assets\\events\\Rite of Rekindling.jpg",
+      "assets\\events\\Pine Resin.jpg",
+      "assets\\events\\Firekeeper's Boon.jpg",
+      "assets\\events\\Big Pilgrim's Key.jpg",
+      "assets\\events\\Rare Vagrant.jpg"
+    ],
+    "current_card": "assets\\events\\Scrying Stone.jpg",
     "preset": "Mixed V2"
   },
   "event_preset": "Mixed V2",
