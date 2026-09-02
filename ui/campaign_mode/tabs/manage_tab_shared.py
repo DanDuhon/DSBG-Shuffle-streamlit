@@ -174,8 +174,12 @@ def _apply_boss_defeated(
 
     st.session_state[state_key] = state
 
-    st.success(
-        "Boss defeated; rewards applied and the party has returned to the bonfire."
+    # One-shot: `st.rerun()` raises before an `st.success` delta is committed,
+    # so the message has to survive the rerun. Same pattern as
+    # `campaign_manage_save_notice` below.
+    st.session_state["campaign_boss_outcome_notice"] = (
+        "success",
+        "Boss defeated; rewards applied and the party has returned to the bonfire.",
     )
     st.rerun()
 
@@ -239,10 +243,28 @@ def _apply_boss_failure(
     st.session_state.pop("last_encounter_rewards_for_slug", None)
 
     if sparks_cur > 0:
-        st.warning("Boss failed; party returned to the bonfire and lost 1 Spark.")
+        message = "Boss failed; party returned to the bonfire and lost 1 Spark."
     else:
-        st.warning("Boss failed; party returned to the bonfire but has no Sparks left.")
+        message = "Boss failed; party returned to the bonfire but has no Sparks left."
+    st.session_state["campaign_boss_outcome_notice"] = ("warning", message)
     st.rerun()
+
+
+def render_boss_outcome_notice() -> None:
+    """Show the boss defeated/failed message set before the outcome rerun.
+
+    Rendered at the top of the Manage tab, because that is where the party
+    lands after either outcome -- the Boss Fight view stops rendering once the
+    node is resolved, so a notice drained there would never be seen.
+    """
+    notice = st.session_state.pop("campaign_boss_outcome_notice", None)
+    if not notice:
+        return
+    level, text = notice
+    if level == "success":
+        st.success(str(text))
+    else:
+        st.warning(str(text))
 
 
 def _render_boss_outcome_controls(

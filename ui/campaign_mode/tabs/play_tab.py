@@ -384,6 +384,20 @@ def _render_campaign_play_tab(
     # ---- Campaign outcome from the LAST encounter you played in Encounter Mode ----
     st.markdown("#### Campaign Outcome")
 
+    # One-shot notice carried across the rerun the outcome handlers trigger.
+    # The handlers below mutate campaign state that this function already read
+    # (`encounter_is_complete`, node status, souls), so they must rerun rather
+    # than render a message into a page built from the pre-click state -- which
+    # left both outcome buttons on screen, one stray click away from zeroing
+    # the souls just awarded.
+    play_notice = st.session_state.pop("campaign_play_notice", None)
+    if play_notice:
+        level, text = play_notice
+        if level == "success":
+            st.success(str(text))
+        else:
+            st.warning(str(text))
+
     reward_totals = st.session_state.get("last_encounter_reward_totals") or {}
 
     # Only use rewards if they were produced by the encounter currently
@@ -544,7 +558,11 @@ def _render_campaign_play_tab(
                 st.session_state["last_encounter_reward_totals"] = {}
                 st.session_state.pop("last_encounter_rewards_for_slug", None)
 
-                st.success("Encounter completed; campaign updated.")
+                st.session_state["campaign_play_notice"] = (
+                    "success",
+                    "Encounter completed; campaign updated.",
+                )
+                st.rerun()
         elif not encounter_is_complete:
             st.caption(
                 'Play the encounter above, then click '
@@ -624,10 +642,10 @@ def _render_campaign_play_tab(
             st.session_state.pop("last_encounter_rewards_for_slug", None)
 
             if sparks_cur > 0:
-                st.warning(
-                    "Encounter failed; party returned to the bonfire and lost 1 Spark."
-                )
+                message = "Encounter failed; party returned to the bonfire and lost 1 Spark."
             else:
-                st.warning(
+                message = (
                     "Encounter failed; party returned to the bonfire but has no Sparks left."
                 )
+            st.session_state["campaign_play_notice"] = ("warning", message)
+            st.rerun()

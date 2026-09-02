@@ -560,6 +560,19 @@ if pending:
                 exc_info=True,
             )
 
+    # The Setup and Manage name boxes need seeding, not clearing. `st.text_input`
+    # with a `key` ignores `value=` once the widget exists, and in Streamlit 1.63
+    # deleting the key does *not* drop the stored value either -- verified live:
+    # after popping `campaign_name_V1` the box still rendered the previous
+    # campaign's name. Assigning before the widget is created does take effect,
+    # and app.py runs ahead of every campaign widget. Without this the boxes keep
+    # showing the previous campaign, so a later save either errors with "Campaign
+    # name is required" or silently overwrites the wrong entry.
+    loaded_name = str(loaded_state.get("name") or "")
+    version_suffix = "V1" if snap_version == "V1" else "V2"
+    st.session_state[f"campaign_name_{version_suffix}"] = loaded_name
+    st.session_state[f"campaign_manage_save_name_{version_suffix.lower()}"] = loaded_name
+
     # Mark this loaded campaign as clean (no unsaved changes yet).
     set_campaign_baseline(version=snap_version, state=loaded_state)
 

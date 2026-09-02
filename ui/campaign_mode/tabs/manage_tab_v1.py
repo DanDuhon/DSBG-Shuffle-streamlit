@@ -20,6 +20,7 @@ from ui.campaign_mode.core import (
 from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_campaign_encounter_card,
     _render_campaign_save_controls,
+    render_boss_outcome_notice,
 )
 from ui.campaign_mode.state import (
     _get_settings,
@@ -228,6 +229,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     settings = _get_settings()
     # Apply any cross-tab widget sync requests before instantiating widgets.
     apply_pending_widget_sets()
+    render_boss_outcome_notice()
     cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     campaign = state.get("campaign")

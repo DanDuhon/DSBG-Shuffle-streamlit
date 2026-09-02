@@ -571,68 +571,70 @@ def _render_save_load_section(
             disabled=not can_persist,
         ):
             name = name_input.strip()
+            # Flat chain, not early `return`s: returning here exits
+            # `_render_save_load_section` from inside `with col_save:`, which
+            # takes the entire Load/Delete column -- plus the load notice and
+            # the debug expander -- off the page for that run. Reachable by
+            # saving over an existing name without ticking overwrite.
             if not name:
                 st.error("Campaign name is required to save.")
+            elif not can_persist:
+                st.error("Not logged in; cannot persist on Streamlit Cloud.")
+            elif name in campaigns and not save_overwrite_ok:
+                st.warning("That name already exists — confirm overwrite to replace it.")
+            # For campaign rules versions that rely on an explicit node track
+            # (V1 and V2), require a generated campaign so Campaign can resume.
+            elif version in ("V1", "V2") and not isinstance(
+                current_state.get("campaign"), dict
+            ):
+                st.error(
+                    "Generate the campaign before saving; "
+                    "this save currently has no encounters."
+                )
             else:
-                if not can_persist:
-                    st.error("Not logged in; cannot persist on Streamlit Cloud.")
-                    return
-                if name in campaigns and not save_overwrite_ok:
-                    st.warning("That name already exists — confirm overwrite to replace it.")
-                    return
-                # For campaign rules versions that rely on an explicit node track
-                # (V1 and V2), require a generated campaign so Campaign can resume.
-                if version in ("V1", "V2") and not isinstance(
-                    current_state.get("campaign"), dict
-                ):
+                current_state["name"] = name
+                # Snapshot round-trip:
+                # - `state` captures the campaign version-specific runtime state dict.
+                # - `sidebar_settings` captures only the settings that must be applied
+                #   *before* sidebar widgets are created on the next run
+                #   (expansions/party/NG+).
+                # The load path hands this snapshot back to `app.py` via a one-shot
+                # session key.
+                snapshot = {
+                    "rules_version": version,
+                    # Deep-copy: `current_state` is the live session_state
+                    # dict. Storing it by reference makes the saved snapshot
+                    # keep mutating as the user keeps playing, so the next
+                    # save of ANY campaign rewrites this one's file entry.
+                    "state": copy.deepcopy(current_state),
+                    "sidebar_settings": {
+                        "active_expansions": settings.get("active_expansions"),
+                        "selected_characters": settings.get("selected_characters"),
+                        "ngplus_level": int(
+                            st.session_state.get("ngplus_level", 0)
+                        ),
+                    },
+                }
+                campaigns[name] = snapshot
+                if not _save_campaigns(campaigns):
+                    # Leave the campaign dirty so the user keeps their
+                    # overwrite warnings and knows it is still unsaved.
+                    campaigns.pop(name, None)
                     st.error(
-                        "Generate the campaign before saving; "
-                        "this save currently has no encounters."
+                        f"Could not save campaign '{name}'. Your progress is "
+                        "still unsaved — check your connection and try again."
                     )
                 else:
-                    current_state["name"] = name
-                    # Snapshot round-trip:
-                    # - `state` captures the campaign version-specific runtime state dict.
-                    # - `sidebar_settings` captures only the settings that must be applied
-                    #   *before* sidebar widgets are created on the next run
-                    #   (expansions/party/NG+).
-                    # The load path hands this snapshot back to `app.py` via a one-shot
-                    # session key.
-                    snapshot = {
-                        "rules_version": version,
-                        # Deep-copy: `current_state` is the live session_state
-                        # dict. Storing it by reference makes the saved snapshot
-                        # keep mutating as the user keeps playing, so the next
-                        # save of ANY campaign rewrites this one's file entry.
-                        "state": copy.deepcopy(current_state),
-                        "sidebar_settings": {
-                            "active_expansions": settings.get("active_expansions"),
-                            "selected_characters": settings.get("selected_characters"),
-                            "ngplus_level": int(
-                                st.session_state.get("ngplus_level", 0)
-                            ),
-                        },
-                    }
-                    campaigns[name] = snapshot
-                    if not _save_campaigns(campaigns):
-                        # Leave the campaign dirty so the user keeps their
-                        # overwrite warnings and knows it is still unsaved.
-                        campaigns.pop(name, None)
-                        st.error(
-                            f"Could not save campaign '{name}'. Your progress is "
-                            "still unsaved — check your connection and try again."
-                        )
-                    else:
-                        set_campaign_baseline(version=version, state=current_state)
-                        # Rerun so the Load/Delete controls appear immediately.
-                        # They are rendered from `campaigns`, which is read at
-                        # the top of this function; without a rerun the newly
-                        # saved campaign can be missed for that run. Delete and
-                        # Generate already rerun for the same reason.
-                        st.session_state["campaign_save_notice"] = (
-                            f"Saved campaign '{name}'."
-                        )
-                        st.rerun()
+                    set_campaign_baseline(version=version, state=current_state)
+                    # Rerun so the Load/Delete controls appear immediately.
+                    # They are rendered from `campaigns`, which is read at
+                    # the top of this function; without a rerun the newly
+                    # saved campaign can be missed for that run. Delete and
+                    # Generate already rerun for the same reason.
+                    st.session_state["campaign_save_notice"] = (
+                        f"Saved campaign '{name}'."
+                    )
+                    st.rerun()
 
     # ----- LOAD / DELETE -----
     with col_load:
