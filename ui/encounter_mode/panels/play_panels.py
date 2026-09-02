@@ -2048,7 +2048,9 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
         with target_col:
             # Load base behavior JSON (cached) without building a full BehaviorConfig;
             # we only need raw JSON + the entry metadata for rendering.
-            base_raw = deepcopy(_read_behavior_json(str(entry.path)))
+            # `_read_behavior_json` is `cache_data`-backed and unpickles a fresh
+            # object per read, so this is already a private copy to mutate.
+            base_raw = _read_behavior_json(str(entry.path))
             enemy_name = entry.name
             all_enemy_names.append(enemy_name)
 

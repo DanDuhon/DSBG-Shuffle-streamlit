@@ -69,6 +69,11 @@ def cache_data(*args, **kwargs):
     """Streamlit cache decorator when available; no-op otherwise."""
 
     try:
+        # Same conservative defaults as the card renderers, unless the caller
+        # overrides: an unbounded cache here grows for the life of the process.
+        limits = cache_limits()
+        kwargs.setdefault("max_entries", limits["max_entries"])
+        kwargs.setdefault("ttl", limits["ttl"])
         return st.cache_data(*args, **kwargs)  # type: ignore[attr-defined]
     except Exception:
         def _decorator(fn):
@@ -92,6 +97,7 @@ def rerun() -> None:
         return
     raise RuntimeError("rerun() called without Streamlit; pass rerun callback via set_behavior_runtime()")
 
+from core.behavior.cache_limits import cache_limits
 from core.behavior.models import BehaviorConfig, Entity, Heatup
 from core.behavior.assets import _path, _strip_behavior_suffix
 from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
@@ -524,14 +530,29 @@ def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
 # JSON Importer
 # ------------------------
 @cache_data(show_spinner=False)
-def _read_behavior_json(path_str: str) -> dict:
+def _read_behavior_json_cached(path_str: str, mtime_ns: int) -> dict:
     with open(path_str, "r", encoding="utf-8") as f:
         return json.load(f)
-    
+
+
+def _read_behavior_json(path_str: str) -> dict:
+    """Behavior JSON for `path_str`, cached against the file's mtime.
+
+    The mtime is part of the cache key so an edit to a behavior JSON
+    invalidates the card data, the same way `behavior_files_fingerprint()`
+    invalidates the catalog. Keyed on the path alone, the catalog would pick up
+    a rename or recategorisation while every card kept rendering pre-edit
+    values until the process restarted.
+    """
+    return _read_behavior_json_cached(path_str, Path(path_str).stat().st_mtime_ns)
+
+
 def load_behavior(fname: Path, raw_override: dict | None = None, apply_ngplus: bool = True) -> BehaviorConfig:
     # 1) Load base raw config from JSON or use an explicit override
     if raw_override is None:
-        base_raw = deepcopy(_read_behavior_json(str(fname)))  # copy so we can mutate safely
+        # `_read_behavior_json` is `cache_data`-backed, which unpickles a fresh
+        # object on every read, so this is already a private copy to mutate.
+        base_raw = _read_behavior_json(str(fname))
     else:
         base_raw = deepcopy(raw_override)
     name = fname.stem

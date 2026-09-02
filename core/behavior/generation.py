@@ -1,12 +1,12 @@
 # ui/behavior_decks_tab/generation.py
-import json
-import hashlib
 import io
 import logging
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from collections import defaultdict
+
+from core.behavior.cache_limits import cache_limits
 
 logger = logging.getLogger(__name__)
 
@@ -16,26 +16,12 @@ except Exception:  # pragma: no cover
     st = None  # type: ignore
 
 
-def _cache_limits() -> dict:
-    # Keep Cloud caching conservative to avoid OOM; local can cache more.
-    try:
-        from core.settings_manager import is_streamlit_cloud
-
-        cloud = bool(is_streamlit_cloud())
-    except Exception:
-        cloud = False
-
-    if cloud:
-        return {"max_entries": 64, "ttl": 30 * 60}
-    return {"max_entries": 512, "ttl": 6 * 60 * 60}
-
-
 def cache_data(*args, **kwargs):
     """Streamlit cache decorator when available; no-op otherwise."""
 
     if st is not None:
         # Apply conservative defaults unless caller overrides.
-        limits = _cache_limits()
+        limits = cache_limits()
         kwargs.setdefault("max_entries", limits["max_entries"])
         kwargs.setdefault("ttl", limits["ttl"])
         return st.cache_data(*args, **kwargs)
@@ -65,49 +51,36 @@ from core.behavior.logic import (
 from core.ngplus import get_current_ngplus_level, _is_number
 
 
-@cache_data(show_spinner=False)
+# The `*_cached` / `*_uncached` pairs below are the app-facing API: call sites
+# pick between them based on `cloud_low_memory`. Keep them as thin wrappers --
+# the caching lives on `render_data_card` / `render_behavior_card`, and the
+# `*_uncached` variants must reach the undecorated `_impl` functions, otherwise
+# the low-memory escape hatch caches anyway.
+
+
 def render_data_card_cached(
     base_path: str,
     raw_json: Dict[str, Any],
     is_boss: bool,
     no_edits: bool = False,
-    variant_id: Optional[str] = None,
 ) -> bytes:
-    """
-    Cached wrapper for render_data_card(...). Returns PNG bytes.
-    Cache key includes a stable hash of raw_json and variant.
-    """
-    _ = _hash_json(raw_json)  # incorporated into Streamlit cache key by argument value
-    _ = variant_id
+    """Cached render of a data card. Returns PNG bytes."""
     return render_data_card(base_path, raw_json, is_boss, no_edits)
 
 
-@cache_data(show_spinner=False)
 def render_behavior_card_cached(
     base_path: str,
     behavior_json: Dict[str, Any],
     is_boss: bool,
-    base_card: Optional[bytes] = None,
-    variant_id: Optional[str] = None,
 ) -> bytes:
-    """
-    Cached wrapper for render_behavior_card(...). Returns PNG bytes.
-    Cache key includes a stable hash of behavior_json and variant.
-    """
-    _ = _hash_json(
-        behavior_json
-    )  # incorporated into Streamlit cache key by argument value
-    _ = variant_id
-    return render_behavior_card(
-        base_path, behavior_json, is_boss=is_boss, base_card=base_card
-    )
+    """Cached render of a behavior card. Returns PNG bytes."""
+    return render_behavior_card(base_path, behavior_json, is_boss=is_boss)
 
 
 def render_behavior_card_uncached(
     base_path: str,
     behavior_json: Dict[str, Any],
     is_boss: bool,
-    base_card: Optional[bytes] = None,
 ) -> bytes:
     """Uncached variant of `render_behavior_card_cached`.
 
@@ -115,9 +88,7 @@ def render_behavior_card_uncached(
     large rendered PNG byte arrays.
     """
 
-    return render_behavior_card(
-        base_path, behavior_json, is_boss=is_boss, base_card=base_card
-    )
+    return _render_behavior_card_impl(base_path, behavior_json, is_boss=is_boss)
 
 
 def infer_category(cfg) -> str:
@@ -185,11 +156,6 @@ def build_behavior_catalog() -> dict[str, list[BehaviorEntry]]:
     mtimes so content edits invalidate cleanly.
     """
     return _build_behavior_catalog_cached(behavior_files_fingerprint())
-
-
-def _hash_json(obj: Any) -> str:
-    s = json.dumps(obj, sort_keys=True, separators=(",", ":"))
-    return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
 def _draw_text(img: Image.Image, key: str, value: str, is_boss: bool):
@@ -325,12 +291,13 @@ def _overlay_push_node_icon(
     base.alpha_composite(icon, (x, y))
 
 
-@cache_data(show_spinner=False)
-def render_data_card(
+def _render_data_card_impl(
     base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
 ) -> bytes:
-    """
-    Paint stats (health, armor, resist, maybe heatup) on the base data card.
+    """Paint stats (health, armor, resist, maybe heatup) on the base data card.
+
+    Uncached. `render_data_card` is the cached entry point; this is what the
+    low-memory path calls so it genuinely skips the cache.
     """
     base = load_pil_image_cached(base_path, convert="RGBA")
     if no_edits:
@@ -387,13 +354,25 @@ def render_data_card(
         beh = raw_json.get("behavior") or {}
         if "dodge" in beh:
             _draw_text(base, "dodge", str(beh["dodge"]), is_boss)
-            return render_behavior_card(
+            # `_impl`, not the cached `render_behavior_card`: `base` is a PIL
+            # Image, and Streamlit would hash it via `__reduce__` -- ~3.6 MB of
+            # raw RGBA per lookup. The composed result is already cached by
+            # `render_data_card` one level up.
+            return _render_behavior_card_impl(
                 base_path, raw_json["behavior"], is_boss=False, base_card=base
             )
 
     buf = io.BytesIO()
     base.save(buf, format="PNG")
     return buf.getvalue()
+
+
+@cache_data(show_spinner=False)
+def render_data_card(
+    base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
+) -> bytes:
+    """Cached data card render. Returns PNG bytes."""
+    return _render_data_card_impl(base_path, raw_json, is_boss, no_edits)
 
 
 def render_data_card_uncached(
@@ -406,60 +385,7 @@ def render_data_card_uncached(
     caching, so callers can still display images while avoiding cache retention.
     """
 
-    base = load_pil_image_cached(base_path, convert="RGBA")
-    if no_edits:
-        buf = io.BytesIO()
-        base.save(buf, format="PNG")
-        return buf.getvalue()
-
-    try:
-        bp_stem = Path(base_path).stem
-    except Exception:
-        bp_stem = str(base_path)
-    if "Paladin Leeroy" in bp_stem:
-        level = get_current_ngplus_level()
-        text = f"The first time Leeroy's health would be\nreduced to 0, set his health to {2 + level} instead."
-        draw = ImageDraw.Draw(base)
-        font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
-        font = ImageFont.truetype(str(font_path), 33)
-        draw.text((97, 855), text, font=font, fill="black")
-    elif "Maneater Mildred" in bp_stem:
-        level = get_current_ngplus_level()
-        heal = 1 if level <= 2 else 2 if level <= 4 else 3
-        text = f"If Mildred's attack damages one or more\ncharacters, she gains {heal} health."
-        draw = ImageDraw.Draw(base)
-        font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
-        font = ImageFont.truetype(str(font_path), 33)
-        draw.text((97, 855), text, font=font, fill="black")
-
-    if "armor" in raw_json:
-        _draw_text(base, "armor", str(raw_json["armor"]), is_boss)
-    if "health" in raw_json:
-        _draw_text(base, "health", str(raw_json["health"]), is_boss)
-    if "resist" in raw_json:
-        _draw_text(base, "resist", str(raw_json["resist"]), is_boss)
-    if "text" in raw_json:
-        _draw_text(base, "text", str(raw_json["text"]), is_boss)
-    if "range" in raw_json:
-        _draw_text(base, "range", str(raw_json["range"]), is_boss)
-
-    if is_boss and isinstance(raw_json.get("heatup"), int):
-        _draw_text(base, "heatup", str(raw_json["heatup"]), is_boss)
-    if is_boss and isinstance(raw_json.get("heatup1"), int):
-        _draw_text(base, "heatup1", str(raw_json["heatup1"]), is_boss)
-        _draw_text(base, "heatup2", str(raw_json["heatup2"]), is_boss)
-
-    if not is_boss:
-        beh = raw_json.get("behavior") or {}
-        if "dodge" in beh:
-            _draw_text(base, "dodge", str(beh["dodge"]), is_boss)
-            return render_behavior_card(
-                base_path, raw_json["behavior"], is_boss=False, base_card=base
-            )
-
-    buf = io.BytesIO()
-    base.save(buf, format="PNG")
-    return buf.getvalue()
+    return _render_data_card_impl(base_path, raw_json, is_boss, no_edits)
 
 
 def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
@@ -507,13 +433,15 @@ def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:
     return buf_o.getvalue(), buf_s.getvalue()
 
 
-@cache_data(show_spinner=False)
-def render_behavior_card(
+def _render_behavior_card_impl(
     base_path: str, behavior_json: dict, *, is_boss: bool, base_card: Image = None
 ) -> bytes:
-    """
-    Take a behavior card image (e.g. 'Artorias - Heavy Thrust.jpg')
+    """Take a behavior card image (e.g. 'Artorias - Heavy Thrust.jpg')
     and paint icons (left/middle/right) + repeat in the right place.
+
+    Uncached, and the only variant that accepts `base_card`. Composition is
+    deliberately kept out of the cached wrapper: a PIL Image in a cache key
+    costs a ~3.6 MB hash on every lookup, hit or miss.
     """
     if base_card:
         base = base_card
@@ -603,6 +531,15 @@ def render_behavior_card(
     buf = io.BytesIO()
     base.save(buf, format="PNG")
     return buf.getvalue()
+
+
+@cache_data(show_spinner=False)
+def render_behavior_card(base_path: str, behavior_json: dict, *, is_boss: bool) -> bytes:
+    """Cached behavior card render. Returns PNG bytes.
+
+    No `base_card` parameter by design -- see `_render_behavior_card_impl`.
+    """
+    return _render_behavior_card_impl(base_path, behavior_json, is_boss=is_boss)
 
 
 def render_dual_boss_behavior_card(
