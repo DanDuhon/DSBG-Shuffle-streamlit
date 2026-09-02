@@ -528,7 +528,17 @@ def _render_behavior_card_impl(
         # --- Push / Node overlays ---
         # Allow push/node markers for moves as well as physical/magic attacks.
         # Movement specs may include `push` as either a boolean or an int damage value.
-        if spec.get("push") and spec.get("type") in {"physical", "magic", "move"}:
+        #
+        # Only the boolean form gets the plain marker. A numeric push is drawn
+        # below as a numbered shield (`attack_push_N.png`), and rendering both
+        # stacked two shields 4 px apart -- `coords_map["push"]` is (40, 735) and
+        # `coords_map["attack_push"]` is (40, 739) -- so the blank crown showed
+        # through above the numbered one. 21 cards carry a numeric push.
+        if (
+            spec.get("push")
+            and not _is_number(spec.get("push"))
+            and spec.get("type") in {"physical", "magic", "move"}
+        ):
             _overlay_push_node_icon(base, slot, is_boss=is_boss, kind="push")
 
         if spec.get("node") and spec.get("type") in {"physical", "magic", "move"}:
