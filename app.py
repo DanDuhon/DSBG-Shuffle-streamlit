@@ -405,10 +405,19 @@ _DS_GLOBAL_STYLE = """
     </style>
 """
 
-st.markdown(
-    _DS_GLOBAL_STYLE.replace("__EMBEDDED_FONTS__", _embedded_fonts_css),
-    unsafe_allow_html=True,
-)
+@st.cache_resource(show_spinner=False)
+def _get_global_style_html() -> str:
+    """The stylesheet with the base64 fonts spliced in, built once per process.
+
+    app.py re-executes top to bottom on every rerun, so this `.replace()` was
+    rebuilding a ~430 KB string each time. Streamlit still hashes the result to
+    diff the element (~0.7 ms), which only serving the fonts from `static/`
+    would remove -- see STREAMLIT_AUDIT.md.
+    """
+    return _DS_GLOBAL_STYLE.replace("__EMBEDDED_FONTS__", _embedded_fonts_css)
+
+
+st.markdown(_get_global_style_html(), unsafe_allow_html=True)
 
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
