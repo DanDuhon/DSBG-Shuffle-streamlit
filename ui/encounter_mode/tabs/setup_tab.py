@@ -292,6 +292,28 @@ def _ensure_card_bytes_inplace(encounter: dict) -> bytes | None:
         return None
 
 
+def _edited_toggle_prev_state(widget_key: str, fallback: bool) -> bool:
+    """Value the "use edits" checkbox held on the *previous* run.
+
+    Deliberately not read back out of `settings["edited_toggles"]`. The
+    checkbox's `on_change` callback writes that dict, and Streamlit runs
+    callbacks *before* the rerun, so by the time the render path reads it the
+    stored value already equals the new one -- making `toggle_changed`
+    permanently False, `apply_edited_toggle` unreachable, and the auto-shuffle
+    branch fire instead (re-rolling the enemy list and clearing
+    `encounter_events`).
+
+    This mirror is written only by the render path, in
+    `_remember_edited_toggle`, one line after the comparison.
+    """
+    return bool(st.session_state.get(f"_last_edited_for_{widget_key}", fallback))
+
+
+def _remember_edited_toggle(widget_key: str, value: bool) -> None:
+    """Record the rendered checkbox value for the next run's comparison."""
+    st.session_state[f"_last_edited_for_{widget_key}"] = bool(value)
+
+
 def render_original_encounter(
     encounter_data,
     selected_expansion,
@@ -694,6 +716,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 prev_state = False
 
             widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
+            prev_state = _edited_toggle_prev_state(widget_key, prev_state)
 
             def _on_edited_changed():
                 new_val = bool(st.session_state.get(widget_key, False))
@@ -718,6 +741,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 save_settings(settings)
 
             toggle_changed = prev_state != use_edited
+            _remember_edited_toggle(widget_key, use_edited)
             st.session_state["last_toggle"] = use_edited
 
             # Determine availability for shuffle/original buttons
@@ -1298,6 +1322,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             prev_state = False
 
         widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
+        prev_state = _edited_toggle_prev_state(widget_key, prev_state)
 
         def _on_edited_changed_compact():
             new_val = bool(st.session_state.get(widget_key, False))
@@ -1322,6 +1347,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             save_settings(settings)
 
         toggle_changed = prev_state != use_edited
+        _remember_edited_toggle(widget_key, use_edited)
         st.session_state["last_toggle"] = use_edited
 
         # --- Shuffle / Original buttons ---
@@ -1490,12 +1516,17 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     }
                     _apply_added_invaders_to_current_encounter()
 
-        # Auto-shuffle when encounter selection changes (and no explicit button pressed)
+        # Auto-shuffle when encounter selection changes (and no explicit button pressed).
+        # A just-loaded saved encounter is exempt, same as the standard layout:
+        # its label/expansion need not match the dropdown, so auto-shuffle would
+        # replace what the user just loaded and wipe its attached events.
+        just_loaded = bool(st.session_state.pop("_encounter_just_loaded", False))
         if (
             selected_label
             and not shuffle_clicked
             and not original_clicked
             and not toggle_changed
+            and not just_loaded
         ):
             last = st.session_state.get("last_encounter", {})
             encounter_changed = (
