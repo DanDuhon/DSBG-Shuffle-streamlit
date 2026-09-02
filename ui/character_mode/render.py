@@ -52,6 +52,35 @@ from ui.character_mode.widgets import _render_selection_table
 from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
 
 
+# Item-filter widget keys, cleared together when the class or stats change so
+# every filter returns to its permissive default. For the option-list filters
+# that means "all options selected"; for the AND/OR feature filters an empty
+# selection already means "no restriction".
+_CM_FILTER_KEYS = (
+    # Global filters
+    "cm_gf_expansion",
+    "cm_gf_legendary",
+    "cm_gf_source_entity",
+    "cm_gf_source_type",
+    # Hand item filters
+    "cm_hf_any_conditions",
+    "cm_hf_any_immunities",
+    "cm_hf_attack_lines_mode",
+    "cm_hf_categories",
+    "cm_hf_dodge",
+    "cm_hf_hands",
+    "cm_hf_only_twohand_shields",
+    "cm_hf_ranges",
+    "cm_hf_required_features",
+    "cm_hf_upgrade_slots",
+    # Armor filters
+    "cm_af_dodge",
+    "cm_af_immunities",
+    "cm_af_slots",
+    "cm_af_special",
+)
+
+
 def render(settings: Dict[str, Any]) -> None:
     active = set(x for x in (settings.get("active_expansions") or []))
 
@@ -174,6 +203,42 @@ def render(settings: Dict[str, Any]) -> None:
             f"Stats — STR {stats.get('str')}, DEX {stats.get('dex')}, INT {stats.get('itl')}, FAI {stats.get('fth')}"
         )
 
+    # Reset the item filters whenever the class or stat tiers change.
+    #
+    # The filter option lists are derived from what this character can currently
+    # equip, and Streamlit keeps a keyed widget's stored selection in preference
+    # to its `default=`. So raising a stat made newly-equippable categories,
+    # dodge values, ranges, etc. appear in the option list *unselected*, silently
+    # hiding the items the change had just unlocked. Clearing the keys re-seeds
+    # every widget from its default, which is "all options".
+    #
+    # Must run before any filter widget is created this run: Streamlit forbids
+    # mutating a widget's state after instantiation.
+    _filter_fingerprint = (class_name, tuple(sorted(stats.items())))
+    _filters_need_reset = ss.get("_cm_filter_fingerprint") != _filter_fingerprint
+    if _filters_need_reset:
+        ss["_cm_filter_fingerprint"] = _filter_fingerprint
+        # Clearing the keys handles the filters whose permissive state is
+        # "empty" (match-any immunities/conditions, required features) and the
+        # mode selectors, which fall back to "Any"/False. The option-list
+        # filters are re-seeded to their full option list by
+        # `_reset_filter_selections` below, once those lists are known.
+        for _key in _CM_FILTER_KEYS:
+            ss.pop(_key, None)
+
+    def _reset_filter_selections(**key_to_options) -> None:
+        """Select every option for the named filters, if a reset is pending.
+
+        Assigning the key before the widget is created is what actually makes
+        the change stick: popping alone is not enough, because Streamlit
+        restores a keyed widget's previous value from its own widget state
+        rather than falling back to `default=`.
+        """
+        if not _filters_need_reset:
+            return
+        for key, options in key_to_options.items():
+            ss[key] = list(options)
+
     # Load item data (best-effort path resolution)
     paths = {
         "hand_items.json": _find_data_file("hand_items.json"),
@@ -278,15 +343,19 @@ def render(settings: Dict[str, Any]) -> None:
         source_entity_filter = set(gf_source_entity)
         legendary_mode = gf_legendary if gf_legendary in {"Any", "Legendary only", "Non-legendary only"} else "Any"
 
+        _reset_filter_selections(
+            cm_gf_expansion=expansion_options,
+            cm_gf_source_type=type_options,
+            cm_gf_source_entity=entity_options,
+        )
+
         with st.expander("Global filters", expanded=False):
             c1, c2 = st.columns(2)
             with c1:
-                prev = st.session_state.get("cm_gf_expansion") or expansion_options
-                default = [x for x in prev if x in expansion_options] or expansion_options
                 _ = st.multiselect(
                     "Expansion",
                     options=expansion_options,
-                    default=default,
+                    default=expansion_options,
                     key="cm_gf_expansion",
                 )
             with c2:
@@ -299,21 +368,17 @@ def render(settings: Dict[str, Any]) -> None:
 
             c3, c4 = st.columns(2)
             with c3:
-                prev = st.session_state.get("cm_gf_source_type") or type_options
-                default = [x for x in prev if x in type_options] or type_options
                 _ = st.multiselect(
                     "Source Type",
                     options=type_options,
-                    default=default,
+                    default=type_options,
                     key="cm_gf_source_type",
                 )
             with c4:
-                prev = st.session_state.get("cm_gf_source_entity") or entity_options
-                default = [x for x in prev if x in entity_options] or entity_options
                 _ = st.multiselect(
                     "Source Entity",
                     options=entity_options,
-                    default=default,
+                    default=entity_options,
                     key="cm_gf_source_entity",
                 )
 
@@ -386,12 +451,18 @@ def render(settings: Dict[str, Any]) -> None:
         slot_opts = sorted({_hand_upgrade_slots_int(x) for x in hand_pool_for_options})
         hand_immunity_opts = sorted({x for it in hand_pool_for_options for x in _immunities_set(it)})
 
+        _reset_filter_selections(
+            cm_hf_categories=cat_opts,
+            cm_hf_dodge=dodge_opts,
+            cm_hf_hands=hands_opts,
+            cm_hf_ranges=range_opts,
+            cm_hf_upgrade_slots=slot_opts,
+        )
+
         with st.expander("Hand item filters", expanded=False):
             st.caption("Filter options are limited to items you can currently equip.")
             c1, c2 = st.columns(2)
             with c1:
-                prev = ss.get("cm_hf_categories") or cat_opts
-                default = [x for x in prev if x in cat_opts] or cat_opts
                 hf_categories = st.multiselect(
                     "Category",
                     options=cat_opts,
@@ -399,8 +470,6 @@ def render(settings: Dict[str, Any]) -> None:
                     key="cm_hf_categories",
                 )
 
-                prev = ss.get("cm_hf_dodge") or dodge_opts
-                default = [x for x in prev if x in dodge_opts] or dodge_opts
                 hf_dodge = st.multiselect(
                     "Dodge dice",
                     options=dodge_opts,
@@ -408,8 +477,6 @@ def render(settings: Dict[str, Any]) -> None:
                     key="cm_hf_dodge",
                 )
 
-                prev = ss.get("cm_hf_hands") or hands_opts
-                default = [x for x in prev if x in hands_opts] or hands_opts
                 hf_hands = st.multiselect(
                     "Hands required",
                     options=hands_opts,
@@ -424,8 +491,6 @@ def render(settings: Dict[str, Any]) -> None:
                 )
 
             with c2:
-                prev = ss.get("cm_hf_ranges") or range_opts
-                default = [x for x in prev if x in range_opts] or range_opts
                 hf_ranges = st.multiselect(
                     "Range",
                     options=range_opts,
@@ -433,8 +498,6 @@ def render(settings: Dict[str, Any]) -> None:
                     key="cm_hf_ranges",
                 )
 
-                prev = ss.get("cm_hf_upgrade_slots") or slot_opts
-                default = [x for x in prev if x in slot_opts] or slot_opts
                 hf_upgrade_slots = st.multiselect(
                     "Upgrade slots",
                     options=slot_opts,
@@ -470,12 +533,10 @@ def render(settings: Dict[str, Any]) -> None:
                     key="cm_hf_any_conditions",
                 )
             with c5:
-                prev = ss.get("cm_hf_any_immunities") or []
-                default = [x for x in prev if x in hand_immunity_opts]  # empty = show everything
                 hf_any_immunities = st.multiselect(
                     "Immunities (match any)",
                     options=hand_immunity_opts,
-                    default=default,
+                    default=[],  # empty = no immunity restriction
                     key="cm_hf_any_immunities",
                 )
 
@@ -713,25 +774,24 @@ def render(settings: Dict[str, Any]) -> None:
         armor_slot_opts = sorted({_armor_upgrade_slots_int(x) for x in armor_pool_for_options})
         armor_immunity_opts = sorted({x for it in armor_pool_for_options for x in _immunities_set(it)})
 
+        _reset_filter_selections(
+            cm_af_dodge=armor_dodge_opts,
+            cm_af_slots=armor_slot_opts,
+        )
+
         with st.expander("Armor filters", expanded=False):
             st.caption("Filter options are limited to items you can currently equip.")
             c1, c2 = st.columns(2)
             with c1:
-                prev = ss.get("cm_af_dodge") or armor_dodge_opts
-                default = [x for x in prev if x in armor_dodge_opts] or armor_dodge_opts
                 af_dodge = st.multiselect("Dodge dice", options=armor_dodge_opts, default=armor_dodge_opts, key="cm_af_dodge")
 
-                prev = ss.get("cm_af_slots") or armor_slot_opts
-                default = [x for x in prev if x in armor_slot_opts] or armor_slot_opts
                 af_slots = st.multiselect("Upgrade slots", options=armor_slot_opts, default=armor_slot_opts, key="cm_af_slots")
 
             with c2:
-                prev = ss.get("cm_af_immunities") or []
-                default = [x for x in prev if x in armor_immunity_opts]  # empty = show everything
                 af_immunities = st.multiselect(
                     "Immunities (match any)",
                     options=armor_immunity_opts,
-                    default=default,
+                    default=[],  # empty = no immunity restriction
                     key="cm_af_immunities",
                 )
 

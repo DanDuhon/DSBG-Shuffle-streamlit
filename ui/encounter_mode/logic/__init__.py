@@ -1240,6 +1240,12 @@ def shuffle_encounter(
         "buf": buf,
         "card_img": card_img,
         "encounter_data": encounter_data,
+        # Mirrored at the top level so it survives `encounter_data` being
+        # stripped (Cloud low-memory mode, saved payloads). The Play tab reads
+        # it to name the item reward the party actually earned.
+        "reward_replacements": dict(
+            (encounter_data or {}).get("_shuffled_reward_replacements") or {}
+        ),
         "encounter_name": name,
         "encounter_level": level,
         "expansion": selected_expansion,

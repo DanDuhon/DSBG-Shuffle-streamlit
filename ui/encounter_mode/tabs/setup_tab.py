@@ -218,6 +218,26 @@ def _render_encounter_setup_text_summary(current_encounter: dict) -> None:
         st.caption("—")
 
 
+
+def _with_reward_replacements(enc_data: dict, encounter: dict) -> dict:
+    """Re-attach the item-reward swap so a re-rendered card shows it.
+
+    `encounter_data` is dropped in Cloud low-memory mode and when an encounter
+    is saved, so the card would otherwise revert to the printed reward. The map
+    is mirrored on the encounter itself, which survives both.
+
+    Copies before mutating: `load_encounter_data` returns the process-wide
+    cached dict.
+    """
+    replacements = encounter.get("reward_replacements") or {}
+    if not enc_data or not replacements:
+        return enc_data
+    if (enc_data.get("_shuffled_reward_replacements") or {}) == replacements:
+        return enc_data
+    enc_data = dict(enc_data)
+    enc_data["_shuffled_reward_replacements"] = dict(replacements)
+    return enc_data
+
 def _strip_encounter_heavy_fields_inplace(encounter: object) -> None:
     if not isinstance(encounter, dict):
         return
@@ -355,10 +375,20 @@ def _render_saved_encounters_section(
                 if k in raw:
                     raw.pop(k, None)
 
+            # The item-reward swap (Similar Soul Cost / Same Item Tier) lives
+            # inside `encounter_data`, which is not persisted. Keep just the
+            # tiny name->name map so a reloaded encounter still shows the item
+            # the party actually earned instead of reverting to the printed one.
+            reward_replacements = (
+                (raw.get("encounter_data") or {}).get("_shuffled_reward_replacements")
+                or {}
+            )
+
             # Ensure we do not persist full encounter JSON in saved payloads
             raw.pop("encounter_data", None)
             payload = {
                 **raw,
+                "reward_replacements": reward_replacements,
                 "events": st.session_state.get("encounter_events", []),
                 "meta_label": st.session_state.get("last_encounter", {}).get("label"),
                 "character_count": character_count,
@@ -396,6 +426,17 @@ def _render_saved_encounters_section(
                         enc_data = payload.get("encounter_data") or payload.get("data") or {}
                         if not enc_data and exp and nm:
                             enc_data = load_encounter_data(exp, nm, character_count=pc, level=lvl)
+
+                        # Restore the persisted item-reward swap. Copy first:
+                        # `load_encounter_data` returns the process-wide cached
+                        # dict, so mutating it in place would leak this save's
+                        # swap into every other encounter and session.
+                        saved_replacements = payload.get("reward_replacements") or {}
+                        if enc_data and saved_replacements:
+                            enc_data = dict(enc_data)
+                            enc_data["_shuffled_reward_replacements"] = dict(
+                                saved_replacements
+                            )
 
                         # Put it back on the payload: saving strips
                         # `encounter_data`, and the edited-encounter toggle
@@ -925,6 +966,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         enc_data = encounter.get("encounter_data") or {}
                         if not enc_data and exp and nm:
                             enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
+                        enc_data = _with_reward_replacements(enc_data, encounter)
                         if exp and nm and lvl:
                             if memlog_checkpoint is not None:
                                 try:
@@ -1502,6 +1544,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     enc_data = encounter.get("encounter_data") or {}
                     if not enc_data and exp and nm:
                         enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
+                    enc_data = _with_reward_replacements(enc_data, encounter)
                     if exp and nm and lvl:
                         img = generate_encounter_image(
                             exp,

@@ -36,6 +36,7 @@ from ui.encounter_mode.generation import _get_enemy_health_from_behavior
 from core.behavior.models import BehaviorEntry
 from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level, _is_number
 from ui.encounter_mode.data.enemies import enemyNames
+from ui.encounter_mode.data.rewards import ENCOUNTER_ORIGINAL_REWARDS
 from ui.encounter_mode.data.keywords import (
     encounterKeywords,
     keywordText
@@ -446,6 +447,38 @@ def store_reward_totals_for_campaign(encounter: dict, totals: dict) -> None:
         st.session_state["last_encounter_rewards_for_slug"] = slug
 
 
+def _item_reward_names(encounter: dict) -> list[str]:
+    """Item reward(s) printed on this encounter's card, as currently shuffled.
+
+    Mirrors how the card itself is rendered: start from the original reward
+    table, then apply any swap the shuffler recorded under
+    `_shuffled_reward_replacements` (Similar Soul Cost / Same Item Tier).
+
+    The swap map is read from the top-level `reward_replacements` first, since
+    that survives `encounter_data` being stripped (Cloud low-memory mode, or a
+    saved encounter), falling back to the copy inside `encounter_data`.
+
+    Returns [] when the encounter has no printed item reward at all, in which
+    case the caller keeps the generic "check the encounter card" wording.
+    """
+    name = encounter.get("encounter_name") or encounter.get("name")
+    expansion = encounter.get("expansion")
+    if not name or not expansion:
+        return []
+
+    entries = ENCOUNTER_ORIGINAL_REWARDS.get((name, expansion)) or []
+    replacements = encounter.get("reward_replacements") or (
+        encounter.get("encounter_data") or {}
+    ).get("_shuffled_reward_replacements") or {}
+
+    out: list[str] = []
+    for entry in entries:
+        text = entry.get("text") if isinstance(entry, dict) else None
+        if isinstance(text, str) and text.strip():
+            out.append(str(replacements.get(text, text)).strip())
+    return out
+
+
 def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     """
     Render a Rewards section for the encounter, combining:
@@ -477,7 +510,11 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     if totals["refresh_estus"]:
         st.markdown(f"- Refresh Estus Flask")
     if totals["search"]:
-        st.markdown(f"- Search reward (check the encounter card)")
+        item_names = _item_reward_names(encounter)
+        if item_names:
+            st.markdown(f"- Search reward: **{'**, **'.join(item_names)}**")
+        else:
+            st.markdown("- Search reward (check the encounter card)")
     if totals["shortcut"]:
         st.markdown(f"- Shortcut")
 

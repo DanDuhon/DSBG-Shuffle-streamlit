@@ -9,7 +9,6 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from core.behavior.logic import load_behavior
-from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 from core.settings_manager import get_config_bool, is_streamlit_cloud
 from ui.encounter_mode.assets import (
     get_enemy_image_by_id,
@@ -273,113 +272,6 @@ def load_valid_sets():
         with open(VALID_SETS_PATH, "r", encoding="utf-8") as f:
             return load(f)
     return {}
-
-
-def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: str = "") -> str:
-    if not path.exists():
-        return ""
-    data = get_image_bytes_cached(str(path))
-    suffix = path.suffix.lower()
-    mime = "image/png" if suffix == ".png" else "image/jpeg"
-    data_uri = bytes_to_data_uri(data, mime=mime)
-
-    style = (
-        f"height:{height_px}px; "
-        f"max-height:none; "
-        f"width:auto; "
-        f"max-width:none; "
-        f"{extra_css}"
-    )
-
-    return (
-        f"<img src='{data_uri}' "
-        f"title='{title}' alt='{title}' "
-        f"style='{style}'/>")
-
-
-def render_encounter_icons(current_encounter, assets_dir="assets"):
-    chars_dir = Path(assets_dir) / "characters"
-    exps_dir = Path(assets_dir) / "expansions"
-
-    html = """
-    <style>
-      .icons-section h4 { margin: 0.75rem 0 0.25rem 0; }
-      .icons-row { display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; }
-      .icons-row::-webkit-scrollbar { height: 6px; }
-      .icons-row::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
-      .icons-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; }
-      .icon-fallback {
-        height:48px; background:#ccc; border-radius:6px;
-        display:flex; align-items:center; justify-content:center;
-        font-size:10px; text-align:center; padding:2px;
-      }
-    </style>
-    <div class="icons-section">
-    """
-
-    # PARTY
-    characters = st.session_state.user_settings.get("selected_characters", [])
-    if characters:
-        html += "<h5>Party</h5><div class='icons-row'>"
-        for char in characters:
-            fname = f"{char}.png"
-            tag = _img_tag_from_path(chars_dir / fname, title=char, extra_css="border-radius:6px;")
-            if tag:
-                html += tag
-            else:
-                initial = (char or "?")[0:1]
-                html += f"<div class='icon-fallback' title='{char}'>{initial}</div>"
-        html += "</div>"
-
-    # EXPANSIONS USED
-    enemies = current_encounter["enemies"]
-    expansions_used = list(current_encounter.get("expansions_used", []))
-    icons = []
-    html += "<h5>Expansions Needed</h5><div class='icons-grid'>"
-
-    enemy_ids = set([e["name"] if isinstance(e, dict) else e for e in enemies])
-
-    if any(exp in expansions_used for exp in ["Dark Souls The Board Game", "The Sunless City"]):
-        if 16 not in enemy_ids and 34 not in enemy_ids:
-            icons.append({"file": "Dark Souls The Board Game The Sunless City.png",
-                          "label": "Dark Souls The Board Game / The Sunless City"})
-            expansions_used = [exp for exp in expansions_used if exp not in ["Dark Souls The Board Game", "The Sunless City"]]
-        else:
-            if 16 in enemy_ids:
-                icons.append({"file": "Dark Souls The Board Game.png", "label": "Dark Souls The Board Game"})
-            if 34 in enemy_ids:
-                icons.append({"file": "The Sunless City.png", "label": "The Sunless City"})
-        for exp in [exp for exp in expansions_used if exp not in {"Dark Souls The Board Game", "The Sunless City"}]:
-            icons.append({"file": f"{exp}.png", "label": exp})
-    else:
-        for exp in expansions_used:
-            icons.append({"file": f"{exp}.png", "label": exp})
-
-    seen = set()
-    for icon in icons:
-        fname, label = icon["file"], icon["label"]
-        if fname in seen:
-            continue
-        seen.add(fname)
-
-        if fname == "Executioner's Chariot.png":
-            height_px = 36
-        else:
-            height_px = 30
-
-        tag = _img_tag_from_path(
-            exps_dir / fname,
-            title=label,
-            height_px=height_px,
-            extra_css="object-fit:contain; border-radius:6px;",
-        )
-        if tag:
-            html += tag
-        else:
-            html += f"<div class='icon-fallback' title='{label}'>{label}</div>"
-
-    html += "</div>"
-    return html
 
 
 def build_encounter_keywords(encounter_name, expansion, use_edited=False):
@@ -857,20 +749,12 @@ def generate_encounter_image(
             gy = int(round(float(gy) * scale))
             gsize = max(1, int(round(float(gsize) * scale)))
 
-        # Candidate filenames to support different naming conventions
-        candidates = []
-        if gang_name:
-            lname = gang_name.lower().replace(" ", "_")
-            candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
-            candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
-            candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
-
+        # Gang art is named gang<Name>.png, e.g. gangHollow.png / gangSilverKnight.png
         gang_img_path = None
-        for fname in candidates:
-            p = Path("assets") / "keywords" / fname
+        if gang_name:
+            p = Path("assets") / "keywords" / f"gang{gang_name.replace(' ', '')}.png"
             if p.exists():
                 gang_img_path = p
-                break
 
         if gang_img_path:
             if bypass_image_caches:
