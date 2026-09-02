@@ -1845,7 +1845,16 @@ def _render_invader_setup_controls(encounter: dict) -> None:
     """
     key = _invader_map_key(encounter)
 
-    with st.expander("Invaders for this encounter", expanded=False):
+    # `on_change="rerun"` + `.open`: collapsed, this body still ran on every
+    # rerun, calling `build_behavior_catalog()` (~3.9 ms warm) twice to list
+    # invaders nobody is looking at. Opening it costs one round-trip instead.
+    invader_exp = st.expander(
+        "Invaders for this encounter", expanded=False, on_change="rerun"
+    )
+    if not invader_exp.open:
+        return
+
+    with invader_exp:
         st.caption(
             "Add extra invaders to this encounter. "
             "Invaders that are part of the encounter setup itself "

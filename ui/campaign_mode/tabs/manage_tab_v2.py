@@ -100,7 +100,16 @@ def _render_v2_invader_setup_controls_for_option(
     node_id = str(current_node.get("id") or "?")
     key_prefix = f"campaign_v2_invaders_{node_id}_{int(option_idx)}"
 
-    with st.expander("Invaders for this encounter", expanded=False):
+    # `on_change="rerun"` + `.open`: collapsed, this body still ran on every
+    # rerun, calling `build_behavior_catalog()` (~3.9 ms warm) twice to list
+    # invaders nobody is looking at. Opening it costs one round-trip instead.
+    invader_exp = st.expander(
+        "Invaders for this encounter", expanded=False, on_change="rerun"
+    )
+    if not invader_exp.open:
+        return
+
+    with invader_exp:
         st.caption(
             "Add extra invaders to this encounter. "
             "Invaders that are part of the encounter setup itself "
@@ -736,6 +745,8 @@ def _render_v2_campaign_compact(
             options=candidates,
             format_func=lambda x: labels.get(x, str(x)),
             key="campaign_v2_compact_destination",
+            # Keep the chosen destination across a tab switch.
+            persist_state="session",
         )
         dest_node = None
         for n in nodes:
@@ -1162,6 +1173,9 @@ def _render_v2_current_panel(
                         index=default_index,
                         horizontal=True,
                         key=radio_key,
+                        # Keep the pick across a tab switch; it is only
+                        # committed by the Apply button below.
+                        persist_state="session",
                     )
 
                     if st.button(

@@ -105,7 +105,16 @@ def _render_v1_invader_setup_controls(*, campaign: Dict[str, Any], current_node:
     node_id = str(current_node.get("id") or "?")
     key_prefix = f"campaign_v1_invaders_{node_id}"
 
-    with st.expander("Invaders for this encounter", expanded=False):
+    # `on_change="rerun"` + `.open`: collapsed, this body still ran on every
+    # rerun, calling `build_behavior_catalog()` (~3.9 ms warm) twice to list
+    # invaders nobody is looking at. Opening it costs one round-trip instead.
+    invader_exp = st.expander(
+        "Invaders for this encounter", expanded=False, on_change="rerun"
+    )
+    if not invader_exp.open:
+        return
+
+    with invader_exp:
         st.caption(
             "Add extra invaders to this encounter. "
             "Invaders that are part of the encounter setup itself "

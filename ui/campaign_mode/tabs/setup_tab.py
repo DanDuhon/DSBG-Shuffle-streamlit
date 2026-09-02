@@ -551,6 +551,9 @@ def _render_save_load_section(
             "Campaign name",
             value=default_name,
             key=f"campaign_name_{version}",
+            # This tab stops rendering when the user switches tabs; without
+            # session persistence a half-typed name would be lost.
+            persist_state="session",
         )
 
         # Overwrite confirmation when saving to an existing name
@@ -645,6 +648,8 @@ def _render_save_load_section(
                 options=["<none>"] + names,
                 index=0,
                 key=f"campaign_load_select_{version}",
+                # Keep the picked campaign across a tab switch.
+                persist_state="session",
             )
 
             if bool(st.session_state.get("ui_compact")):

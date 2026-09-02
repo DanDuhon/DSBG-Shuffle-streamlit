@@ -453,6 +453,9 @@ def _render_campaign_save_controls(
         "Name to save as",
         key=name_key,
         placeholder="e.g. Friday night run",
+        # This tab stops rendering when the user switches tabs; without
+        # session persistence a half-typed name would be lost.
+        persist_state="session",
     )
 
     name_now = str(st.session_state.get(name_key) or "").strip()
