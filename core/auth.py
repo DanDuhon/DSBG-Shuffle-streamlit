@@ -2,10 +2,13 @@ import json
 import time
 import streamlit as st
 from supabase import create_client, Client
+from supabase.lib.client_options import SyncClientOptions
+from supabase_auth._sync.storage import SyncMemoryStorage
 from core.settings_manager import get_config_str, is_streamlit_cloud
 from streamlit_cookies_controller import CookieController
 
 _AUTH_SESSION_KEY = "_dsbg_auth_state_v2"
+_CLIENT_SESSION_KEY = "_dsbg_supabase_client"
 _COOKIE_KEY = "dsbg_session_tokens"
 _COOKIE_MAX_AGE = 2592000  # 30 days
 _REFRESH_MARGIN_S = 300  # refresh the JWT 5 minutes before it expires
@@ -62,15 +65,61 @@ def _session_is_fresh(state: dict) -> bool:
     return False
 
 @st.cache_resource
-def _get_supabase_client() -> Client | None:
+def _get_supabase_config() -> tuple[str, str] | None:
+    """Project URL + anon key. Safe to share process-wide: immutable config."""
     url = get_config_str("SUPABASE_URL")
     key = get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
     if not url or not key:
         return None
-    return create_client(url, key)
+    return url, key
+
+
+def _get_supabase_client() -> Client | None:
+    """One Supabase client per Streamlit session.
+
+    This must NOT be `@st.cache_resource`. A cached client is shared by every
+    concurrent user, and supabase_auth's session storage is a plain in-process
+    dict on the client. Every `set_session` (reached from `restore_session` on
+    each rerun) and `sign_in_with_password` writes the caller's tokens into it,
+    so whichever user touched the client last owns that storage. `sign_out`
+    then reads its access token back out and revokes *that* user's refresh
+    tokens -- globally, on all their devices -- no matter who clicked Log Out.
+
+    A client per session gives each user their own storage, so a logout can
+    only ever affect the user who asked for it.
+
+    `auto_refresh_token=False`: the default spawns a background refresh Timer
+    thread per client, which would now mean one thread per logged-in session.
+    Its refreshed tokens would also go nowhere -- they land in the client's
+    storage, while this module reads tokens from `st.session_state` and the
+    cookie. Refresh is already handled synchronously by `restore_session`,
+    which calls `set_session` and writes the result back through
+    `_store_session`.
+    """
+    client = st.session_state.get(_CLIENT_SESSION_KEY)
+    if client is not None:
+        return client
+
+    config = _get_supabase_config()
+    if config is None:
+        return None
+
+    url, key = config
+    client = create_client(
+        url,
+        key,
+        options=SyncClientOptions(
+            storage=SyncMemoryStorage(),
+            auto_refresh_token=False,
+        ),
+    )
+    st.session_state[_CLIENT_SESSION_KEY] = client
+    return client
 
 def is_auth_ui_enabled() -> bool:
-    return bool(is_streamlit_cloud() and _get_supabase_client() is not None)
+    # Checks config, not the client: this runs on every rerun and building a
+    # client for a user who never logs in would be pure overhead.
+    return bool(is_streamlit_cloud() and _get_supabase_config() is not None)
 
 def restore_session():
     """Rebuild the session from browser cookies, refreshing the JWT when stale.
@@ -165,9 +214,14 @@ def logout() -> None:
     client = _get_supabase_client()
     if client:
         try:
-            client.auth.sign_out()
+            # scope="local" revokes only this session's refresh token.
+            # supabase_auth defaults to "global", which kills every session
+            # the user has on every device.
+            client.auth.sign_out({"scope": "local"})
         except Exception:
             pass
+    # Drop the client too, so the next login starts from empty token storage.
+    st.session_state.pop(_CLIENT_SESSION_KEY, None)
     st.session_state.pop(_AUTH_SESSION_KEY, None)
     cookies.remove(_COOKIE_KEY)
 
