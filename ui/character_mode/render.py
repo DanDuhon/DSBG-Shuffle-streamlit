@@ -1279,11 +1279,34 @@ def render(settings: Dict[str, Any]) -> None:
                 st.caption("No effects found on selected items.")
 
             st.markdown("#### Defense Simulator")
-            _ = st.slider(
+            # `def_tot` / `dodge_effective` are the current build's totals,
+            # computed once above for the whole tab.
+            sim_incoming = st.slider(
                 "Incoming damage", min_value=2, max_value=15, value=6, step=1, key="cm_sim_incoming"
             )
-            _ = st.slider(
+            sim_dodge_diff = st.slider(
                 "Dodge difficulty", min_value=1, max_value=5, value=2, step=1, key="cm_sim_dodge_diff"
+            )
+
+            sim_block = expected_damage_taken(
+                incoming_damage=sim_incoming,
+                dodge_dice=dodge_effective,
+                dodge_difficulty=sim_dodge_diff,
+                defense_dice=def_tot.block,
+            )
+            sim_resist = expected_damage_taken(
+                incoming_damage=sim_incoming,
+                dodge_dice=dodge_effective,
+                dodge_difficulty=sim_dodge_diff,
+                defense_dice=def_tot.resist,
+            )
+            st.markdown(
+                f"- Dodge chance: {sim_block['p_dodge'] * 100:.0f}% "
+                f"(dodge dice: {dodge_effective})"
+            )
+            st.markdown(
+                f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, "
+                f"(magic/resist): {sim_resist['exp_taken']:.2f}"
             )
 
     with tab_compare:

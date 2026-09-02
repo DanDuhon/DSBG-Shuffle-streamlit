@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import random
-from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -12,10 +11,12 @@ from core.encounter import timer as timer_mod
 from core.encounter.encounter_rules import get_rules_for_encounter, make_encounter_key
 from core.image_cache import get_image_bytes_cached
 from ui.campaign_mode.core import ENCOUNTER_GRAVESTONES
+from ui.campaign_mode.helpers import get_player_count_from_settings
 from ui.campaign_mode.generation import _v2_pick_scout_ahead_alt_frozen
 from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode.panels import play_panels
 from ui.encounter_mode.state import play_state
+from ui.encounter_mode.generation import load_encounter_data
 from ui.encounter_mode.tabs.setup_tab import render_original_encounter
 from ui.event_mode.logic import DECK_STATE_KEY as _EVENT_DECK_STATE_KEY
 
@@ -90,11 +91,21 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
             return None
         return (exp, lvl, nm)
 
-    def _render_frozen_encounter_card(frozen: Any) -> str:
-        """Render and return a label for a frozen campaign encounter."""
+    def _frozen_encounter_label(frozen: Any) -> str:
+        """Display name for a frozen campaign encounter."""
+        if not isinstance(frozen, dict):
+            return "Encounter"
+        return str(frozen.get("encounter_name") or "Encounter")
+
+    def _render_frozen_encounter_card(frozen: Any) -> None:
+        """Show the card for a frozen campaign encounter.
+
+        The player is being asked to put this encounter on the top or bottom of
+        the deck, so they need to see which one it is.
+        """
         if not isinstance(frozen, dict):
             st.caption("Encounter card unavailable.")
-            return "Encounter"
+            return
 
         exp = frozen.get("expansion")
         lvl = frozen.get("encounter_level")
@@ -105,9 +116,19 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
         label = str(nm or "Encounter")
 
-        if not (exp and lvl is not None and nm and encounter_data):
+        if not (exp and lvl is not None and nm):
             st.caption(label)
-            return label
+            return
+
+        # Campaign options are frozen without `encounter_data` (see
+        # `_pick_random_campaign_encounter`: expansion / level / name / enemies
+        # only), so it always has to be loaded here. Same as
+        # `_render_campaign_encounter_card` does for the Manage tab.
+        if not encounter_data:
+            player_count = int(get_player_count_from_settings(settings))
+            encounter_data = load_encounter_data(
+                exp, nm, character_count=player_count, level=int(lvl)
+            )
 
         res = render_original_encounter(
             encounter_data,
@@ -116,26 +137,14 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
             lvl,
             use_edited,
             enemies=enemies,
+            # Only `card_img` is displayed. `card_bytes` would add a ~5.2 MB
+            # RGBA copy and a ~30 ms JPEG encode for a value nothing reads.
+            include_bytes=False,
         )
         if res and res.get("ok"):
-            img_obj = res.get("card_img")
-            # BytesIO or file-like
-            if hasattr(img_obj, "read") and callable(img_obj.read):
-                pos = None
-                pos = img_obj.tell()
-                img_obj.seek(0)
-                if pos is not None:
-                    img_obj.seek(pos)
-            # PIL Image (duck-typed by having a save method)
-            elif hasattr(img_obj, "save") and callable(img_obj.save):
-                buf = BytesIO()
-                img_obj.save(buf, format="PNG")
-            else:
-                st.caption(label)
+            st.image(res["card_img"], width="stretch")
         else:
             st.caption(label)
-
-        return label
 
     def _ensure_draw_pile(deck: Dict[str, Any]) -> list:
         draw = deck.get("draw_pile")
@@ -342,9 +351,12 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
                 target_node_id = str(pending.get("target_node_id") or "")
                 peek_frozen = pending.get("peek_frozen")
 
-                # Column 2: show the encounter card we are peeking at
+                # Column 2: name of the encounter we are peeking at. The card
+                # itself goes below the row -- these columns are far too narrow
+                # to show it at a readable size.
+                label = _frozen_encounter_label(peek_frozen)
                 with c1:
-                    label = _render_frozen_encounter_card(peek_frozen)
+                    st.caption(label)
 
                 # Column 3: Put On Top (no-op)
                 with c2:
@@ -421,6 +433,9 @@ def _render_gravestones_for_encounter(encounter: Dict[str, Any], settings: dict)
 
                         row["pending_enc"] = None
                         st.rerun()
+
+                # Below the row so the card gets the panel's full width.
+                _render_frozen_encounter_card(peek_frozen)
 
             else:
                 # done
