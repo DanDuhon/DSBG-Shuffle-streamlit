@@ -606,7 +606,10 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
                 st.session_state.pop(pending_prev_key, None)
                 st.session_state.pop(pending_new_key, None)
 
-                st.rerun()
+                # scope="fragment": everything this touches is rendered inside
+                # `_enemy_cards_fragment`. A bare `st.rerun()` is scope="app" in
+                # 1.63, so it re-executed the whole Play tab to redraw one card.
+                st.rerun(scope="fragment")
 
         with col_cancel:
             if st.button("Cancel ❌", key=f"{slider_key}_cancel_heatup", width="stretch"):
@@ -617,7 +620,7 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
 
                 # If you *also* want to roll HP back to pre-threshold,
                 # you could optionally do that here. For now we just keep the slider.
-                st.rerun()
+                st.rerun(scope="fragment")
 
 
 
@@ -635,13 +638,13 @@ def _render_invader_deck_controls(cfg: BehaviorConfig, state: dict) -> None:
     with col_draw:
         if st.button("Draw next card 🃏", key=f"invader_draw_{cfg.name}", width="stretch"):
             _draw_card(state)
-            st.rerun()
+            st.rerun(scope="fragment")
 
     with col_heatup:
         # Optional: only show if cfg has heat-up behavior
         if st.button("Manual heat-up 🔥", key=f"invader_heatup_{cfg.name}", width="stretch"):
             _manual_heatup(state)
-            st.rerun()
+            st.rerun(scope="fragment")
 
     draw_count = len(state.get("draw_pile", []))
     discard_count = len(state.get("discard_pile", []))

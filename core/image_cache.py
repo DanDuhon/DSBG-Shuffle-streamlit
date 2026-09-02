@@ -72,18 +72,29 @@ except Exception:
     _IS_CLOUD = False
 
 
+@lru_cache(maxsize=None)
+def _cloud_flag(name: str, default: bool) -> bool:
+    """Read a deployment flag once.
+
+    These come from Streamlit Secrets or the environment, neither of which
+    changes for the life of the process. Reading them is not cheap: with no
+    `.streamlit/secrets.toml` present, Streamlit's secrets lookup only memoizes
+    on success, so every miss re-probes every candidate path and raises --
+    measured at ~80 us per call. The image helpers below run per file path, on
+    grids of 30-100 thumbnails.
+    """
+    return bool(get_config_bool(name, default=default))
+
+
 def _disable_all_image_caches() -> bool:
     """Cloud-only: bypass all image-related caches.
 
     Defaults to enabled on Streamlit Cloud.
     """
 
-    try:
-        if not _IS_CLOUD:
-            return False
-        return bool(get_config_bool("DSBG_DISABLE_IMAGE_CACHES", default=True))
-    except Exception:
+    if not _IS_CLOUD:
         return False
+    return _cloud_flag("DSBG_DISABLE_IMAGE_CACHES", True)
 
 if _IS_CLOUD:
     IMAGE_BYTES_CACHE_MAX_ENTRIES = 128
@@ -418,16 +429,16 @@ def _is_encounter_card_asset_path(p: Path) -> bool:
 
 
 def _should_bypass_image_cache_for_path(p: Path) -> bool:
-    try:
-        if not is_streamlit_cloud():
-            return False
-        # Cloud-only low-memory: disable all image caches by default.
-        if get_config_bool("DSBG_DISABLE_IMAGE_CACHES", default=True):
-            return True
-
-        # Legacy/targeted switch: disable only encounter-card image caches.
-        if not get_config_bool("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False):
-            return False
-        return _is_encounter_card_asset_path(p)
-    except Exception:
+    # `_IS_CLOUD` and `_cloud_flag` instead of `is_streamlit_cloud()` /
+    # `get_config_bool()`: this runs once per image path, and those cost ~80 us
+    # each on a deployment without a secrets file.
+    if not _IS_CLOUD:
         return False
+    # Cloud-only low-memory: disable all image caches by default.
+    if _cloud_flag("DSBG_DISABLE_IMAGE_CACHES", True):
+        return True
+
+    # Legacy/targeted switch: disable only encounter-card image caches.
+    if not _cloud_flag("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", False):
+        return False
+    return _is_encounter_card_asset_path(p)

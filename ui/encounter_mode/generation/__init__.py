@@ -767,10 +767,20 @@ def generate_encounter_image(
     return card_img
 
 
-@st.cache_data(show_spinner=False)
 def load_encounter_data(expansion: str, name: str | None = None, character_count: int | None = None, level: int | None = None) -> dict:
     """
     Wrapper around load_encounter that can later handle list or dataclass conversion.
+
+    Deliberately not `@st.cache_data`. `load_encounter` already caches against a
+    byte budget; a second unbounded cache on top of it pinned every encounter
+    this process had ever touched, in full, forever -- measured at 547 MB
+    retained while the inner cache was correctly holding 21 entries / 187.8 MB.
+
+    The outer cache was also providing something callers rely on: `cache_data`
+    unpickles a fresh object per read, so each caller got a private dict to add
+    `_shuffled_reward_replacements` to. A shallow copy keeps that property at a
+    fraction of the cost -- and matches what `logic.__init__` already does when
+    it calls `load_encounter` directly.
     """
     if name:
         # Prefer filenames that include expansion, level, and name
@@ -778,7 +788,7 @@ def load_encounter_data(expansion: str, name: str | None = None, character_count
             slug = f"{expansion}_{int(level)}_{name}"
         else:
             slug = f"{expansion}_{name}"
-        return load_encounter(slug, character_count)
+        return dict(load_encounter(slug, character_count) or {})
     else:
         # Future support for all encounters in expansion
         return {}

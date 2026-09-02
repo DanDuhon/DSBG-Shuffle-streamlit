@@ -738,7 +738,11 @@ def _to_json(obj: Any) -> str:
     return json.dumps(obj, sort_keys=True, default=str)
 
 
-@st.cache_data(show_spinner=False)
+# Bounded caches. Each entry is keyed on a ~100 KB JSON blob and holds a 361-row
+# list (~90 KB), and the key varies with every filter, selection, armor and
+# upgrade combination. `st.cache_data` is process-wide, so without a cap every
+# user's permutations accumulate for the life of the process.
+@st.cache_data(show_spinner=False, max_entries=64, ttl=30 * 60)
 def _build_attack_totals_rows_cached_key(hand_items_json: str, selected_hand_ids_tuple: Tuple[str, ...], armor_json: str, armor_upgrade_json: str, weapon_upgrades_by_hand_json: str, apply_other_hand_attack_mods: bool = False) -> List[Dict[str, Any]]:
     hand_items = json.loads(hand_items_json)
     selected_hand_ids = set(list(selected_hand_ids_tuple))
@@ -774,7 +778,7 @@ def build_attack_totals_rows_cached(
     )
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, max_entries=64, ttl=30 * 60)
 def _build_defense_totals_cached_key(armor_json: str, armor_upgrade_json: str, hand_objs_json: str, weapon_upgrades_json: str) -> Dict[str, Any]:
     armor_obj = json.loads(armor_json) if armor_json else None
     armor_upgrade_objs = json.loads(armor_upgrade_json) if armor_upgrade_json else []
