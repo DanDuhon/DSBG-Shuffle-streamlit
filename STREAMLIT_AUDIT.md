@@ -1,11 +1,13 @@
 # Streamlit 1.63 audit — open findings
 
 Working notes from the pre-release review. Everything listed here is **open** —
-items already fixed are not repeated. The original P0-P2 findings (shared
-Supabase client, the render caches, and the six that discarded user work) plus
-the Gravestones card have been fixed and removed; what is left is the P3 tab
-restructure, the remaining P4 performance work, and P5 hygiene. Verified against
-the Streamlit 1.63 reference docs bundled in the installed package at:
+items already fixed are not repeated. P0-P3 are done and removed: the shared
+Supabase client, the render caches, the six findings that discarded user work,
+the Gravestones card, and the whole tab/expander restructure (every `st.tabs`
+call site now passes `on_change="rerun"` and guards its bodies on `.open`, and
+the sidebar's eleven expanders do the same). What is left is P4 performance work
+and P5 hygiene. Verified against the Streamlit 1.63 reference docs bundled in
+the installed package at:
 
 ```
 <python>/Lib/site-packages/streamlit/.agents/skills/developing-with-streamlit/references/
@@ -15,111 +17,9 @@ Delete this file once the list is worked off.
 
 ---
 
-## P3 — everything renders all the time
-
-None of the six `st.tabs` call sites pass `on_change="rerun"`, so every tab body
-executes on every rerun. Per `performance.md`: *"`st.tabs` renders ALL tab
-content on every rerun, even hidden tabs… With the default `on_change="ignore"`,
-all tab content runs on every rerun and `.open` is `None` for every tab."*
-Same for `st.expander`.
-
-**This is a real UX change** — `on_change="rerun"` makes each tab switch a server
-round-trip. Do it deliberately, not as a batch.
-
-### 1. Character Mode — the worst offender
-`ui/character_mode/render.py:114-116` (5 tabs) and `:423-425` (5 nested sub-tabs)
-
-Nearly the whole 1,576-line `render()` body is inside those tabs. Measured
-per-rerun cost paid even while sitting on Class/Stats:
-
-| Work | Where | Cost |
-|---|---|---|
-| `_filter_items` over 206 hand items + 6 option comprehensions | `:432-452` | ~1 ms |
-| hand `st.data_editor` 206x18 | `:589-598` | 45.6 KB Arrow |
-| `_to_json(filtered_hand)` for the cache key | `aggregates.py:768` | 1.2 ms, 100 KB |
-| `build_attack_totals_rows` (cache miss) | `aggregates.py:748` | **415 ms**, 361 rows |
-| attacks `st.data_editor` 361x20 | `:708-718` | 26 ms, 70.8 KB |
-| armor `st.data_editor` 80x15 | `:761-853` | 19.2 KB |
-
-~**136 KB of Arrow payload per rerun** from three editors, at most one visible.
-
-Two traps for a naive fix:
-- `filtered_hand` / `hand_order` are assigned inside `with tab_hand:` (`:553`,
-  `:566`) but consumed outside it (`:620`, `:624`, `:727`, `:756`, `:933`,
-  `:1010`). `:419-421` pre-seeds them to `[]`, so a guard **silently degrades
-  ordering rather than raising**. Hoist the filter + `hand_order` computation
-  above the sub-tabs; keep only the table render inside.
-- Guarding drops keyed widget values on tab switch. Needs
-  `persist_state="session"` — supported on multiselect/radio/text_input/slider in
-  1.63, **not** on `st.data_editor`. Fine here: selections are mirrored into
-  `cm_selected_*`.
-
-### 2. Attacks sub-tab recomputes for all filtered items, not selected ones
-`ui/character_mode/render.py:610-629`
-
-`build_attack_totals_rows_cached(hand_items=filtered_hand, ...)` takes the whole
-filtered pool — 415 ms on a miss, and it misses on any change to the name query,
-any hand filter, the armor selection, any upgrade, or the hand selection, because
-all of those are in the key. `:618-621` also builds `weapon_upgrades_by_hand`
-over all 206 filtered ids (mostly empty lists) and JSON-serializes it every
-rerun.
-
-### 3. Campaign Mode renders the entire Encounter Mode play UI from a hidden tab
-`ui/campaign_mode/render.py:68`
-
-With the party on an encounter node, the hidden Play tab runs
-`encounter_play_tab.render(settings, True)` (`play_tab.py:380`) — encounter card
-image, enemy panels, invader panels with their own card renders. On a boss node
-the split inverts: Manage renders the boss data card (`manage_tab_v1.py:769`)
-**and** Boss Fight renders the same card
-(`panels/data_card_cases/default.py:14`) — the same multi-MB PNG pushed twice per
-rerun.
-
-`.open` guarding was checked and **is safe** here: Play never sets the souls key
-directly, it calls `queue_widget_set`, drained by `apply_pending_widget_sets()`
-(`manage_tab_v1.py:230` / `manage_tab_v2.py:466`) before the `number_input`s.
-The seed path re-seeds from `state` anyway. Boss HP sliders are safe too —
-`initial_val` comes from `st.session_state["hp_tracker"]`, a plain key that
-survives. With `on_change="rerun"`, `setup_tab.open` is `True` on first load
-(`elements/layouts.py:998-1041`), so no blank first paint.
-
-Caveats: typed-but-unsaved text and selections are lost when a tab closes —
-`campaign_manage_save_name_{v}`, `campaign_name_{version}`,
-`campaign_load_select_{version}`, `campaign_v2_compact_destination`,
-`campaign_v2_scout_ahead_pick_*`. Add `persist_state="session"`.
-
-### 4. Sidebar — 11 collapsed expanders, every rerun, in every mode
-`ui/sidebar.py:141, 166, 211, 272, 315, 338, 379, 391, 401, 446, 466`
-
-~120 widget deltas + ~30 container deltas per rerun: 19 expansion checkboxes, up
-to 10 party checkboxes, 48 enemy checkboxes, 4 sliders, 33 `st.write` lines in
-Edited Encounters (`:429-444`), plus the `exp_map` rebuild/sort at `:285-312`.
-Runs before any mode renderer (`app.py:737`).
-
-Not a plain `.open` fix: `settings["active_expansions"]` (`:149`),
-`selected_characters` (`:185`), `enemy_included` (`:334`) are derived *from* the
-widgets, so guarding would drop the keys and wipe settings. Those widgets need
-`persist_state="session"` first.
-
-### 5. Other unguarded hot spots
-- `ui/encounter_mode/render.py:40` — Setup/Events/Play all render every rerun.
-  Note the `cloud_low_memory` branch (`:12-38`) uses `st.radio` and is fine.
-- `ui/encounter_mode/tabs/events_tab.py:67` — nested tabs, compounding the above.
-- `ui/event_mode/render.py:39` — Deck Builder loops 30 cards (~240 element
-  deltas) while the user is on Card Viewer.
-- `ui/campaign_mode/tabs/manage_tab_v1.py:107`, `manage_tab_v2.py:102` —
-  collapsed invader expanders calling `build_behavior_catalog()` every rerun.
-- `ui/encounter_mode/tabs/setup_tab.py:1101`, `:1589` — `build_encounter_keywords`
-  is called *outside* the "Special Rules Reference" expander, so guarding the
-  expander alone won't help; move the call inside.
-- `ui/encounter_mode/tabs/setup_tab.py:1817` — collapsed invader expander runs
-  two `build_behavior_catalog()` passes.
-
----
-
 ## P4 — performance, non-structural
 
-### 6. Campaign encounter card re-encodes a discarded JPEG every rerun
+### 1. Campaign encounter card re-encodes a discarded JPEG every rerun
 `ui/campaign_mode/tabs/manage_tab_shared.py:341-353`
 
 Calls `render_original_encounter(..., include_bytes=not cloud_low_memory)` but
@@ -129,7 +29,7 @@ unpicked-encounter view this multiplies by the number of options
 memoize on `(expansion, level, name, tuple(enemies), use_edited)` with
 `max_entries`.
 
-### 7. `st.rerun()` inside a fragment defaults to full-app scope
+### 2. `st.rerun()` inside a fragment defaults to full-app scope
 `ui/encounter_mode/panels/invader_panel.py:609`, `:620`, `:638`, `:644`
 
 `_render_enemy_behaviors` is wrapped in `@st.fragment`
@@ -139,7 +39,7 @@ rendering off the interaction path, but these call bare `st.rerun()`, which is
 `st.rerun(scope="fragment")`, or drop the call — a button click inside a fragment
 already triggers a fragment rerun.
 
-### 8. Campaign dirty-check serializes the whole campaign ~2x per rerun
+### 3. Campaign dirty-check serializes the whole campaign ~2x per rerun
 `ui/campaign_mode/persistence/dirty.py:26-36`
 
 `campaign_signature()` deep-walks the state and `json.dumps` it. Called from
@@ -148,7 +48,7 @@ both in the always-rendering Setup tab. For a V2 campaign whose nodes carry full
 `encounter_data`, that's hundreds of KB serialized twice per rerun. Cache against
 a mutation counter, or compute only inside the handlers that need it.
 
-### 9. Unbounded `@st.cache_data` keyed on 100 KB JSON strings
+### 4. Unbounded `@st.cache_data` keyed on 100 KB JSON strings
 `ui/character_mode/aggregates.py:741`, `:777`
 
 No `ttl`, no `max_entries`. Each distinct (filters x selection x armor x
@@ -156,7 +56,7 @@ upgrades) combination permanently retains a 361-row list (~90 KB). Process-wide,
 so every user's permutations accumulate. `max_entries=64` on both would cap it.
 Correctness is fine — neither reads `session_state`.
 
-### 10. `load_encounter_data` is an unbounded cache over the byte-bounded one
+### 5. `load_encounter_data` is an unbounded cache over the byte-bounded one
 `ui/encounter_mode/generation/__init__.py:770`
 
 `@st.cache_data` with no `ttl`/`max_entries`, wrapping `load_encounter`, which
@@ -168,7 +68,7 @@ copy keeps the "callers get their own dict" property (which matters, since
 `_shuffled_reward_replacements` is added as a top-level key) without a second
 full copy.
 
-### 11. `is_streamlit_cloud()` costs ~75 µs per call, called per image
+### 6. `is_streamlit_cloud()` costs ~75 µs per call, called per image
 `core/settings_manager.py:161-165`, `core/image_cache.py:420-431`
 
 There is no `.streamlit/secrets.toml`, and `runtime/secrets.py:387-421` only
@@ -180,15 +80,19 @@ Local/Docker only (on Cloud the secrets file exists and memoizes).
 `image_cache.py:70` already caches `_IS_CLOUD` at import; `:422` just doesn't use
 it.
 
-### 12. Every data table stores a duplicate DataFrame in session state
+### 7. Every data table stores a duplicate DataFrame in session state
 `ui/character_mode/widgets.py:15-22`
 
 `st.session_state[initial_key] = data`. Measured: hand table 41.7 KB, attacks
 89.6 KB, plus armor, armor-upgrades and one per selected hand item. ~150 KB+ per
-session of pure duplication, rebuilt every rerun even for hidden tabs. Mostly
-fixed by guarding tabs; the rest could store a hash.
+session of pure duplication.
 
-### 13. Fonts re-serialized every rerun
+**Largely addressed by the P3 tab guarding** — the tables no longer rebuild for
+hidden tabs, so at most one is built per rerun instead of three. What remains is
+that the visible table still stores a full duplicate of its DataFrame; storing a
+hash instead would close the rest.
+
+### 8. Fonts re-serialized every rerun
 `app.py:389`
 
 `_DS_GLOBAL_STYLE` inlines two base64 TTFs — ~437 KB of markdown. The client
@@ -275,6 +179,19 @@ caches after the first send, but the server re-serializes and re-hashes 437 KB o
   `cm_gf_expansion` was created with a default value but also had its value set
   via the Session State API"* on every Character Mode render. Observed live, not
   just read. Pick one: seed the key before the widget, or pass `default=`.
+- **Guarding a tab or expander prunes the keyed widgets inside it** — the flip
+  side of the note below, learned while doing P3. Any widget behind a `.open`
+  guard needs `persist_state="session"` or Streamlit drops its key while it is
+  hidden. Two live symptoms during the work: a Character Mode stat tier snapping
+  back to Base while the stats caption still showed the old value, and the
+  sidebar deriving `active_expansions` as empty. The rule that came out of it:
+  seed and derive *outside* the guard, keep only the widgets inside, and give
+  every keyed widget in there `persist_state="session"`.
+- **Streamlit's module watcher can serve stale bytecode** — during P3, edits to
+  `ui/character_mode/render.py` produced tracebacks pointing at comment lines and
+  a tab body that rendered nothing, both from the previous version of the module.
+  Restart the dev server after editing an imported module rather than trusting
+  the auto-reload; `app.py` itself does reload correctly.
 - **Deleting a keyed widget's session key does not reset it** — established while
   fixing the campaign-name bug: in 1.63, `st.session_state.pop("<widget key>")`
   leaves a `text_input` still rendering its old value on the next run, even
