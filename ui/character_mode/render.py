@@ -680,10 +680,16 @@ def render(settings: Dict[str, Any]) -> None:
             armor_upgrade_objs = [au_by_id[uid] for uid in (ss.get("cm_selected_armor_upgrade_ids") or []) if uid in au_by_id]
 
             wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
-            weapon_upgrades_by_hand = {
-                hid: [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
-                for hid in set([_id(x) for x in filtered_hand])
-            }
+            # Only hands that actually carry upgrades. This used to emit an entry
+            # for all ~206 filtered ids, almost all of them empty lists, and the
+            # whole dict is JSON-serialized into the cache key on every rerun.
+            # `build_attack_totals_rows` reads it as `.get(iid) or []`, so a
+            # missing key and an empty list are the same thing to it.
+            weapon_upgrades_by_hand = {}
+            for hid in set(_id(x) for x in filtered_hand):
+                ups = [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
+                if ups:
+                    weapon_upgrades_by_hand[hid] = ups
 
             attack_rows = build_attack_totals_rows_cached(
                 hand_items=filtered_hand,
