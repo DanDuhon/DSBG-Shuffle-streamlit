@@ -41,7 +41,7 @@ encounterKeywords = {
     ("Altar of Bones", "Tomb of Giants"): ["timer"],
     ("Archive Entrance", "The Sunless City"): ["trial"],
     ("Broken Passageway", "The Sunless City"): ["timer", "timer"],
-    ("Castle Break In", "The Sunless City"): ["timer", "", "timer"],
+    ("Castle Break In", "The Sunless City"): ["timer"],
     ("Central Plaza", "Painted World of Ariamis"): ["barrage"],
     ("Cold Snap", "Painted World of Ariamis"): ["snowstorm", "bitterCold", "trial"],
     ("Corrupted Hovel", "Painted World of Ariamis"): ["poisonMist", "trial"],

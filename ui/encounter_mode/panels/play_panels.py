@@ -38,9 +38,14 @@ from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level, _is_numbe
 from ui.encounter_mode.data.enemies import enemyNames
 from ui.encounter_mode.data.keywords import (
     encounterKeywords,
-    EDITED_ENCOUNTER_KEYWORDS_STATIC as editedEncounterKeywords,
     keywordText
 )
+# Single source of truth for edited-encounter keywords, shared with Setup and
+# the card renderer. Importing EDITED_ENCOUNTER_KEYWORDS_STATIC directly here
+# used a *different* dict: it carried 8 entries with no edited card on disk
+# (unreachable, since Setup gates on the disk-discovered mapping) and so the two
+# halves of the app disagreed about which encounters have edited rules.
+from ui.encounter_mode.assets import editedEncounterKeywords
 from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.state.play_state import get_player_count, log_entry

@@ -383,9 +383,26 @@ def render_encounter_icons(current_encounter, assets_dir="assets"):
 
 
 def build_encounter_keywords(encounter_name, expansion, use_edited=False):
-    """Return list of (keyword, description)"""
+    """Return list of (keyword, description), in order, without repeats.
+
+    Blank tokens are dropped and duplicates collapsed: several data rows list
+    the same keyword two or three times, which rendered the identical paragraph
+    once per occurrence, and a stray empty token rendered as the
+    "No description available." fallback.
+    """
     keywords = editedEncounterKeywords.get((encounter_name, expansion), []) if use_edited else encounterKeywords.get((encounter_name, expansion), [])
-    return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
+
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for kw in keywords or []:
+        if not isinstance(kw, str):
+            continue
+        kw = kw.strip()
+        if not kw or kw in seen:
+            continue
+        seen.add(kw)
+        out.append((kw, keywordText.get(kw, "No description available.")))
+    return out
 
 
 def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:

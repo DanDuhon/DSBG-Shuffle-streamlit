@@ -4,11 +4,28 @@ import streamlit as st
 
 
 def get_encounter_id(encounter: dict):
-    """Best-effort way to identify the current encounter for resetting state."""
-    for key in ("id", "slug", "encounter_slug", "encounter_name"):
-        if key in encounter:
-            return encounter[key]
-    return None
+    """Best-effort way to identify the current encounter for resetting state.
+
+    Falls back to a name qualified by expansion and level, because the bare name
+    is not unique: "Broken Passageway" exists in both Dark Souls The Board Game
+    and The Sunless City, and "Central Plaza" in both Painted World of Ariamis
+    and The Sunless City. Sharing an id meant switching between such a pair did
+    not reset the timer/phase/log, and made them share widget and invader-deck
+    keys. Campaign Mode supplies an explicit slug and is unaffected.
+    """
+    for key in ("id", "slug", "encounter_slug"):
+        value = encounter.get(key)
+        if value:
+            return value
+
+    name = encounter.get("encounter_name") or encounter.get("name")
+    if not name:
+        return None
+
+    expansion = encounter.get("expansion")
+    level = encounter.get("encounter_level", encounter.get("level"))
+    parts = [str(p) for p in (expansion, level, name) if p not in (None, "")]
+    return "|".join(parts)
 
 
 def get_player_count() -> int:
