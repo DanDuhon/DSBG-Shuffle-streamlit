@@ -37,15 +37,18 @@ def get_available_categories(*, catalog: dict, boss_mode_categories: list[str]) 
 def render_boss_selector(*, catalog: dict, available_categories: list[str]):
     """Render the boss selector expander and return the selected entry (or None)."""
 
-    default_cat = st.session_state.get("boss_mode_category", available_categories[0])
-    if default_cat not in available_categories:
-        default_cat = available_categories[0]
+    # Session state drives both widgets below: apply_pending_boss_preselect and
+    # Campaign Mode's boss fight tab steer them by writing the keys. Seed the key
+    # here rather than also passing `index=`, which Streamlit ignores once the
+    # key exists (so the two sources disagree and it warns). Only reseed when the
+    # stored value is no longer valid, or a fresh user selection gets clobbered.
+    if st.session_state.get("boss_mode_category") not in available_categories:
+        st.session_state["boss_mode_category"] = available_categories[0]
 
     with st.expander("Boss Selector", expanded=True):
         category = st.radio(
             "Type",
             available_categories,
-            index=available_categories.index(default_cat),
             key="boss_mode_category",
             horizontal=True,
             format_func=lambda c: f"{CATEGORY_EMOJI.get(c, '')} {c}",
@@ -56,13 +59,17 @@ def render_boss_selector(*, catalog: dict, available_categories: list[str]):
             return None
 
         names = [e.name for e in entries]
-        last_choice = st.session_state.get("boss_mode_choice_name")
-        idx = names.index(last_choice) if last_choice in names else 0
+        # BehaviorEntry is a dataclass, so this compares by value and stays
+        # correct even though the catalog is a fresh cache copy each run.
+        if st.session_state.get("boss_mode_choice") not in entries:
+            last_choice = st.session_state.get("boss_mode_choice_name")
+            st.session_state["boss_mode_choice"] = (
+                entries[names.index(last_choice)] if last_choice in names else entries[0]
+            )
 
         entry = st.selectbox(
             "Who are you fighting?",
             entries,
-            index=idx,
             key="boss_mode_choice",
             format_func=lambda e: e.name,
         )

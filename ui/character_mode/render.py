@@ -233,6 +233,13 @@ def render(settings: Dict[str, Any]) -> None:
         the change stick: popping alone is not enough, because Streamlit
         restores a keyed widget's previous value from its own widget state
         rather than falling back to `default=`.
+
+        This seeding is therefore the single source of truth for the widgets
+        named here, and they deliberately pass no `default=`. Supplying both
+        makes Streamlit ignore one of the two and log "was created with a
+        default value but also had its value set via the Session State API".
+        Every one of these keys is seeded before its widget is first created,
+        because a fresh session always has a pending reset.
         """
         if not _filters_need_reset:
             return
@@ -355,7 +362,6 @@ def render(settings: Dict[str, Any]) -> None:
                 _ = st.multiselect(
                     "Expansion",
                     options=expansion_options,
-                    default=expansion_options,
                     key="cm_gf_expansion",
                 )
             with c2:
@@ -371,14 +377,12 @@ def render(settings: Dict[str, Any]) -> None:
                 _ = st.multiselect(
                     "Source Type",
                     options=type_options,
-                    default=type_options,
                     key="cm_gf_source_type",
                 )
             with c4:
                 _ = st.multiselect(
                     "Source Entity",
                     options=entity_options,
-                    default=entity_options,
                     key="cm_gf_source_entity",
                 )
 
@@ -466,21 +470,18 @@ def render(settings: Dict[str, Any]) -> None:
                 hf_categories = st.multiselect(
                     "Category",
                     options=cat_opts,
-                    default=cat_opts,
                     key="cm_hf_categories",
                 )
 
                 hf_dodge = st.multiselect(
                     "Dodge dice",
                     options=dodge_opts,
-                    default=dodge_opts,
                     key="cm_hf_dodge",
                 )
 
                 hf_hands = st.multiselect(
                     "Hands required",
                     options=hands_opts,
-                    default=hands_opts,
                     key="cm_hf_hands",
                 )
 
@@ -494,14 +495,12 @@ def render(settings: Dict[str, Any]) -> None:
                 hf_ranges = st.multiselect(
                     "Range",
                     options=range_opts,
-                    default=range_opts,
                     key="cm_hf_ranges",
                 )
 
                 hf_upgrade_slots = st.multiselect(
                     "Upgrade slots",
                     options=slot_opts,
-                    default=slot_opts,
                     key="cm_hf_upgrade_slots",
                 )
 
@@ -783,9 +782,9 @@ def render(settings: Dict[str, Any]) -> None:
             st.caption("Filter options are limited to items you can currently equip.")
             c1, c2 = st.columns(2)
             with c1:
-                af_dodge = st.multiselect("Dodge dice", options=armor_dodge_opts, default=armor_dodge_opts, key="cm_af_dodge")
+                af_dodge = st.multiselect("Dodge dice", options=armor_dodge_opts, key="cm_af_dodge")
 
-                af_slots = st.multiselect("Upgrade slots", options=armor_slot_opts, default=armor_slot_opts, key="cm_af_slots")
+                af_slots = st.multiselect("Upgrade slots", options=armor_slot_opts, key="cm_af_slots")
 
             with c2:
                 af_immunities = st.multiselect(
