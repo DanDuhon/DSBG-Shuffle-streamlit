@@ -1,13 +1,11 @@
 # Streamlit 1.63 audit — open findings
 
 Working notes from the pre-release review. Everything listed here is **open** —
-items already fixed are not repeated. P0-P3 are done and removed: the shared
-Supabase client, the render caches, the six findings that discarded user work,
-the Gravestones card, and the whole tab/expander restructure (every `st.tabs`
-call site now passes `on_change="rerun"` and guards its bodies on `.open`, and
-the sidebar's eleven expanders do the same). What is left is P4 performance work
-and P5 hygiene. Verified against the Streamlit 1.63 reference docs bundled in
-the installed package at:
+items already fixed are not repeated. P0-P3 are done and removed, along with six
+of the eight P4 findings. What is left is the two P4 items below — both kept
+because the proposed fix was wrong or the cost was overstated, with the
+measurements that say so — plus P5 hygiene. Verified against the Streamlit 1.63
+reference docs bundled in the installed package at:
 
 ```
 <python>/Lib/site-packages/streamlit/.agents/skills/developing-with-streamlit/references/
@@ -19,93 +17,73 @@ Delete this file once the list is worked off.
 
 ## P4 — performance, non-structural
 
-### 1. Campaign encounter card re-encodes a discarded JPEG every rerun
-`ui/campaign_mode/tabs/manage_tab_shared.py:341-353`
+Six of the eight original findings are fixed and removed. Two are left, both
+because the audit's proposed fix was wrong or the cost was overstated.
 
-Calls `render_original_encounter(..., include_bytes=not cloud_low_memory)` but
-only reads `res["card_img"]` — `card_bytes` is discarded. In V2's
-unpicked-encounter view this multiplies by the number of options
-(`manage_tab_v2.py:1062-1065`). Cheap fix: `include_bytes=False`. Real fix:
-memoize on `(expansion, level, name, tuple(enemies), use_edited)` with
-`max_entries`.
+### 1. Campaign dirty-check walks the whole campaign per rerun
+`ui/campaign_mode/persistence/dirty.py`
 
-### 2. `st.rerun()` inside a fragment defaults to full-app scope
-`ui/encounter_mode/panels/invader_panel.py:609`, `:620`, `:638`, `:644`
+`campaign_signature()` deep-walks the state and serializes it. On a V2 campaign
+whose nodes carry full `encounter_data` (~374 KB of JSON) that is **25.9 ms**,
+split **19.5 ms** in `_strip_ephemeral` and **8.2 ms** in `json.dumps` — the
+Python-level copy, not the serialization, is the cost.
 
-`_render_enemy_behaviors` is wrapped in `@st.fragment`
-(`play_tab_v2.py:27` / `play_tab_v1.py:20`) specifically to keep heavy card
-rendering off the interaction path, but these call bare `st.rerun()`, which is
-`scope="app"` in 1.63. One "Draw next card" click re-executes every tab. Use
-`st.rerun(scope="fragment")`, or drop the call — a button click inside a fragment
-already triggers a fragment rerun.
+Partly addressed: the signature now returns a 32-char digest instead of the
+374 KB string, so the per-version baseline in `session_state` is no longer
+hundreds of KB. And the original "~2x per rerun" no longer holds — the two
+`any_campaign_has_unsaved_changes()` call sites (`_render_v1_setup` and
+`_render_v2_setup`) are mutually exclusive, and P3 confined all of them to the
+Setup tab.
 
-### 3. Campaign dirty-check serializes the whole campaign ~2x per rerun
-`ui/campaign_mode/persistence/dirty.py:26-36`
+Two rewrites were tried and **both rejected**, so don't repeat them:
+- Streaming the walk straight into a hash, skipping the copy and the string:
+  **151.7 ms**, 7.6x *slower*. Per-scalar `json.dumps` calls lose the C-level
+  batching that makes one big `dumps` fast.
+- A no-copy fast path (`_has_ephemeral` scan, then `dumps` the original when
+  clean): 18.5 ms vs 25.9 ms, only 1.4x, and it adds a 10.6 ms penalty whenever
+  ephemeral keys *are* present.
 
-`campaign_signature()` deep-walks the state and `json.dumps` it. Called from
-`setup_tab.py:264` (`any_campaign_has_unsaved_changes()` -> V1 + V2) and `:663-666`,
-both in the always-rendering Setup tab. For a V2 campaign whose nodes carry full
-`encounter_data`, that's hundreds of KB serialized twice per rerun. Cache against
-a mutation counter, or compute only inside the handlers that need it.
+The remaining idea is the audit's other one: cache against a mutation counter.
+That needs a counter the codebase does not have, which means touching every
+campaign mutation site and risking stale-dirty bugs — a bigger change than the
+~20 ms justifies.
 
-### 4. Unbounded `@st.cache_data` keyed on 100 KB JSON strings
-`ui/character_mode/aggregates.py:741`, `:777`
+### 2. Fonts are still hashed every rerun
+`app.py`
 
-No `ttl`, no `max_entries`. Each distinct (filters x selection x armor x
-upgrades) combination permanently retains a 361-row list (~90 KB). Process-wide,
-so every user's permutations accumulate. `max_entries=64` on both would cap it.
-Correctness is fine — neither reads `session_state`.
+`_DS_GLOBAL_STYLE` inlines two base64 TTFs (~427 KB of CSS; the TTFs are 158 KB
+and 162 KB).
 
-### 5. `load_encounter_data` is an unbounded cache over the byte-bounded one
-`ui/encounter_mode/generation/__init__.py:770`
+Partly addressed: the spliced stylesheet is now built once per process rather
+than rebuilt on every rerun, removing a **0.168 ms** `.replace()` and its
+430 KB transient allocation.
 
-`@st.cache_data` with no `ttl`/`max_entries`, wrapping `load_encounter`, which
-already has a byte budget. Measured: touching all 864 encounters left the inner
-cache correctly at 21 entries / 187.8 MB, while the process retained **547 MB**.
+What is left is Streamlit hashing the 430 KB element to diff it: **0.726 ms per
+rerun**. Only serving the fonts from `static/` removes that, and it is a
+deployment change rather than a code change — it needs
+`server.enableStaticServing = true` in `.streamlit/config.toml`, a `static/`
+directory carrying a second copy of the two TTFs (the originals must stay in
+`assets/`, where PIL reads them for card rendering), and `@font-face` rewritten
+to `url("app/static/...")`. That path could not be verified against Streamlit
+Cloud from here, so it is left as the owner's call.
 
-**Fix:** drop the decorator and return `dict(load_encounter(...))` — a shallow
-copy keeps the "callers get their own dict" property (which matters, since
-`_shuffled_reward_replacements` is added as a top-level key) without a second
-full copy.
-
-### 6. `is_streamlit_cloud()` costs ~75 µs per call, called per image
-`core/settings_manager.py:161-165`, `core/image_cache.py:420-431`
-
-There is no `.streamlit/secrets.toml`, and `runtime/secrets.py:387-421` only
-memoizes on success — so every call re-probes every path and raises. Benchmarked:
-**74.8 µs** for `is_streamlit_cloud()`, **77.8 µs** for `get_config_bool()`.
-`_should_bypass_image_cache_for_path` calls both, and is invoked per path from
-four call sites — ~150-230 µs per image on grids of 30-100 thumbnails.
-Local/Docker only (on Cloud the secrets file exists and memoizes).
-`image_cache.py:70` already caches `_IS_CLOUD` at import; `:422` just doesn't use
-it.
-
-### 7. Every data table stores a duplicate DataFrame in session state
-`ui/character_mode/widgets.py:15-22`
-
-`st.session_state[initial_key] = data`. Measured: hand table 41.7 KB, attacks
-89.6 KB, plus armor, armor-upgrades and one per selected hand item. ~150 KB+ per
-session of pure duplication.
-
-**Largely addressed by the P3 tab guarding** — the tables no longer rebuild for
-hidden tabs, so at most one is built per rerun instead of three. What remains is
-that the visible table still stores a full duplicate of its DataFrame; storing a
-hash instead would close the rest.
-
-### 8. Fonts re-serialized every rerun
-`app.py:389`
-
-`_DS_GLOBAL_STYLE` inlines two base64 TTFs — ~437 KB of markdown. The client
-caches after the first send, but the server re-serializes and re-hashes 437 KB on
-**every** rerun to compute the hash. Serving from `static/` would remove it.
-
----
+Note the original audit called this "~437 KB re-serialized and re-hashed on
+every rerun" without a timing. It is under a millisecond.
 
 ## P5 — latent / hygiene
 
+- **`_dynamic_data_editor` stores the previous DataFrame, and has to** —
+  `ui/character_mode/widgets.py`. An earlier audit entry proposed storing a hash
+  instead of `st.session_state[f"{key}__initial_data"]`. That would break the
+  widget: on the run after a cell edit the stored frame is passed back to
+  `st.data_editor` *as its data*, so that freshly recomputed rows do not fight
+  the edit. It is also a reference, not a copy — it retains one previous
+  generation of the frame (~40-90 KB per table), not a duplicate of the current
+  one. P3 already stopped hidden tabs from building theirs. Left alone
+  deliberately.
 - **NG+ read inside a cached function** — `generation.py:371` `render_data_card`
   is `@cache_data` and delegates to `_render_data_card_impl` (`:294`), which
-  calls `get_current_ngplus_level()` (`:315`, `:322`) -- not in the key. **Not currently exploitable**: the only affected enemies
+  calls `get_current_ngplus_level()` (`:315`, `:322`) — not in the key. **Not currently exploitable**: the only affected enemies
   (Paladin Leeroy, Maneater Mildred) both have base health > 10, so
   `apply_ngplus_to_raw` scales health at every level and `raw_json` — which *is*
   in the key — differs. Verified 6 distinct keys across NG+0-5, zero collisions.
