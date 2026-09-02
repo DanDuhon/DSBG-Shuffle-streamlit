@@ -69,6 +69,29 @@ def _is_number(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
+_CARD_SLOTS = ("left", "middle", "right")
+
+
+def _looks_like_card(value: Any) -> bool:
+    """True for dicts that are behavior cards rather than stat blocks.
+
+    A card carries at least one attack slot, or a dodge difficulty (The
+    Pursuer's Forward/Back Dash are dodge-only cards).
+
+    This deliberately does NOT test for "middle" alone, which is what it used to
+    do: 47 cards in the shipped data have only `left` and/or `right` slots --
+    Kalameet's Flame Feint, Vordt's Shove Right and Retreating Sweep, six of The
+    Last Giant's -- and every one of them was silently skipped by NG+ while its
+    neighbours on the same deck were scaled.
+
+    Stat blocks stay excluded: Ornstein & Smough's per-boss entries carry
+    health/armor/resist/heatup and no slot or dodge key.
+    """
+    if not isinstance(value, dict):
+        return False
+    return any(slot in value for slot in _CARD_SLOTS) or "dodge" in value
+
+
 def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
     """
     Apply NG+ to a single behavior card.
@@ -157,11 +180,19 @@ def apply_ngplus_to_raw(
         raw["behavior"] = _apply_to_card_dict(raw["behavior"], level)
         return raw
 
-    # Multi-card bosses/invaders (e.g. Armorer Dennis):
-    # top-level keys that look like behavior cards have a "middle" dict.
+    # Multi-card bosses/invaders (e.g. Armorer Dennis).
     for key, value in list(raw.items()):
-        if isinstance(value, dict) and "middle" in value:
+        if not isinstance(value, dict):
+            continue
+        if _looks_like_card(value):
             raw[key] = _apply_to_card_dict(value, level)
+        elif value and all(_looks_like_card(v) for v in value.values()):
+            # Ornstein & Smough keep two half-cards under one card name, e.g.
+            # "Gliding Stab & Hammer Smash" -> {"Gliding Stab": {...}, ...}.
+            raw[key] = {
+                half_name: _apply_to_card_dict(half, level)
+                for half_name, half in value.items()
+            }
 
     return raw
 
