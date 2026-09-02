@@ -37,10 +37,6 @@ CARD_WIDTH_MIN = 240
 CARD_WIDTH_MAX = 560
 CARD_WIDTH_DEFAULT = 380
 
-if "sidebar_ngplus_expanded" not in st.session_state:
-    st.session_state["sidebar_ngplus_expanded"] = False
-
-
 def _ngplus_level_changed():
     st.session_state["sidebar_ngplus_expanded"] = True
 
@@ -134,6 +130,10 @@ def render_sidebar(settings: dict):
     ui_base_changed = old_ui_base_fp != base_fp
     if ui_base_changed:
         st.session_state["_settings_ui_base_fp"] = base_fp
+
+    # Seeded here, not at module scope: module bodies run once per process, so
+    # only the first session to import this file got the key.
+    st.session_state.setdefault("sidebar_ngplus_expanded", False)
 
     caps = settings.get("max_invaders_per_level") or {}
 
@@ -229,7 +229,7 @@ def render_sidebar(settings: dict):
     current_ng = max(0, min(current_ng, MAX_NGPLUS_LEVEL))
     st.session_state["ngplus_level"] = current_ng
 
-    if "ngplus_increase_nodes" not in st.session_state:
+    if ui_base_changed or "ngplus_increase_nodes" not in st.session_state:
         st.session_state["ngplus_increase_nodes"] = bool(settings.get("ngplus_increase_nodes", False))
 
     lvl = current_ng
@@ -354,11 +354,14 @@ def render_sidebar(settings: dict):
 
                             seen.add(eid)
                             key = f"enemy_incl_{eid}"
-                            # Persist keys as strings for JSON safety
-                            default_val = bool(included.get(str(eid), True))
-                            val = st.checkbox(
-                                name, value=default_val, key=key, persist_state="session"
-                            )
+                            # Persist keys as strings for JSON safety.
+                            # Seed rather than pass `value=`: `value=` is ignored
+                            # once the key exists, so on an account switch these
+                            # kept the previous account's picks and wrote them
+                            # back into the freshly loaded settings.
+                            if ui_base_changed or key not in st.session_state:
+                                st.session_state[key] = bool(included.get(str(eid), True))
+                            val = st.checkbox(name, key=key, persist_state="session")
                             included[str(eid)] = bool(val)
 
                 # Mirror changes back into settings/session
@@ -367,18 +370,21 @@ def render_sidebar(settings: dict):
 
     # Invaders
     # Guarded: collapsed, this body still ran on every rerun, in every mode.
+    # Seeded, not passed as `value=`: `value=` is ignored once the key exists, so
+    # these kept the previous account's caps across a switch.
+    for _lvl, _mx in INVADER_CAP_CLAMP.items():
+        _cap_key = f"cap_invaders_lvl_{_lvl}"
+        if ui_base_changed or _cap_key not in st.session_state:
+            st.session_state[_cap_key] = max(0, min(int(caps.get(str(_lvl), _mx)), _mx))
+
     _caps_expander = st.sidebar.expander("⚔️ Encounter Invader Cap", expanded=False, on_change="rerun")
     if _caps_expander.open:
         with _caps_expander:
             for lvl, mx in INVADER_CAP_CLAMP.items():
-                cur = caps.get(str(lvl), mx)
-                cur = int(cur)
-                cur = max(0, min(cur, mx))
                 st.slider(
                     f"Level {lvl}",
                     min_value=0,
                     max_value=mx,
-                    value=cur,
                     key=f"cap_invaders_lvl_{lvl}",
                     on_change=_sync_invader_caps,
                     persist_state="session",
@@ -387,7 +393,7 @@ def render_sidebar(settings: dict):
     # One-time init for widget-backed session keys that must exist before widget
     # creation. This pattern prevents Streamlit from constantly resetting widget
     # values on rerun when `settings` baseline changes.
-    if "ui_card_width" not in st.session_state:
+    if ui_base_changed or "ui_card_width" not in st.session_state:
         st.session_state["ui_card_width"] = int(settings.get("ui_card_width", 360))
     # The slider reads its value from this key, so keep it inside the widget's
     # min/max and on its step grid; a stale or hand-edited value would be
@@ -411,7 +417,7 @@ def render_sidebar(settings: dict):
         "Original",
     ]
     prev_mode = settings.get("encounter_item_reward_mode", "Original")
-    if "encounter_item_reward_mode" not in st.session_state:
+    if ui_base_changed or "encounter_item_reward_mode" not in st.session_state:
         st.session_state["encounter_item_reward_mode"] = (
             prev_mode if prev_mode in modes else "Original"
         )
@@ -434,7 +440,7 @@ def render_sidebar(settings: dict):
     st.session_state["_settings_draft"] = settings
 
     # Rules display preference: show phase-only rules/triggers only in their phase
-    if "rules_show_only_in_phase" not in st.session_state:
+    if ui_base_changed or "rules_show_only_in_phase" not in st.session_state:
         st.session_state["rules_show_only_in_phase"] = bool(
             settings.get("rules_show_only_in_phase", True)
         )
@@ -454,6 +460,11 @@ def render_sidebar(settings: dict):
         st.session_state.get("rules_show_only_in_phase", True)
     )
     st.session_state["_settings_draft"] = settings
+
+    if ui_base_changed or "edited_encounters_global" not in st.session_state:
+        st.session_state["edited_encounters_global"] = bool(
+            settings.get("edited_encounters_global", False)
+        )
 
     # Edited encounters: global toggle + per-encounter status
     # Guarded: 33 st.write lines plus a checkbox, all behind a collapsed panel.
@@ -477,11 +488,9 @@ def render_sidebar(settings: dict):
                 settings["edited_encounters_global"] = curr
                 st.session_state["_settings_draft"] = settings
 
-            prev_global = bool(settings.get("edited_encounters_global", False))
-            # Checkbox is persisted in session state so it remains across reruns
+            # No `value=`: the key is seeded above and is the source of truth.
             st.checkbox(
                 "Enable edited encounters (global)",
-                value=prev_global,
                 key="edited_encounters_global",
                 on_change=_edited_global_changed,
                 persist_state="session",
@@ -526,7 +535,7 @@ def render_sidebar(settings: dict):
 
     # Session + persisted UI controls
     # Initialize from settings if present so the choice persists across runs
-    if "ui_compact" not in st.session_state:
+    if ui_base_changed or "ui_compact" not in st.session_state:
         st.session_state["ui_compact"] = bool(settings.get("ui_compact", False))
 
     # Guarded: collapsed, this body still ran on every rerun, in every mode.

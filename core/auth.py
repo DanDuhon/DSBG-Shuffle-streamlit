@@ -267,12 +267,22 @@ def render_auth_ui():
             st.rerun()
         return
 
+    # The action selector lives OUTSIDE the form on purpose. Inside a form,
+    # widget changes do not rerun the script until submit, so the body below
+    # stayed on whichever branch was current when the form was built: picking
+    # "Reset/Migrate" left the Log In fields on screen, and the first Submit ran
+    # the wrong branch.
+    st.sidebar.write("Account Access")
+    action = st.sidebar.radio(
+        "Action",
+        ["Log In", "Sign Up", "Reset/Migrate"],
+        horizontal=True,
+        key="auth_action",
+    )
+
     with st.sidebar.form("auth_form"):
-        st.write("Account Access")
         email = st.text_input("Email")
-        
-        action = st.radio("Action", ["Log In", "Sign Up", "Reset/Migrate"], horizontal=True)
-        
+
         if action in ["Log In", "Sign Up"]:
             password = st.text_input("Password", type="password")
             submit = st.form_submit_button("Submit")

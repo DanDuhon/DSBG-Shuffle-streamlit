@@ -20,7 +20,11 @@ def render_boss_info_and_options(*, cfg, state) -> None:
     if cfg.name == GUARDIAN_DRAGON_NAME:
         st.checkbox(
             "Use randomized Fiery Breath patterns",
+            # persist_state: this checkbox stops rendering whenever the user
+            # switches to another boss, which drops the key -- so an unchecked
+            # preference silently flipped back to True on every boss switch.
             key="guardian_fiery_generate",
+            persist_state="session",
             help=(
                 "If checked, Fiery Breath uses a randomized 4-pattern deck. "
                 "If unchecked, he uses the printed patterns."
@@ -32,6 +36,7 @@ def render_boss_info_and_options(*, cfg, state) -> None:
         st.checkbox(
             "Use randomized Fiery Ruin patterns",
             key="kalameet_aoe_generate",
+            persist_state="session",
             help=(
                 "If checked, Fiery Ruin uses a randomized 8-pattern deck. "
                 "If unchecked, he uses the printed patterns."
@@ -43,6 +48,7 @@ def render_boss_info_and_options(*, cfg, state) -> None:
         st.checkbox(
             "Use randomized Blasted Nodes patterns",
             key="oik_blasted_generate",
+            persist_state="session",
             help=(
                 "If checked, Blasted Nodes uses a randomized 6-pattern deck. "
                 "If unchecked, it uses the printed patterns."
@@ -54,6 +60,7 @@ def render_boss_info_and_options(*, cfg, state) -> None:
         st.checkbox(
             "Use randomized Death Race patterns",
             key="ec_death_race_generate",
+            persist_state="session",
             help=(
                 "If checked, Death Race uses randomized AoE patterns. "
                 "If unchecked, it uses the printed Death Race patterns."

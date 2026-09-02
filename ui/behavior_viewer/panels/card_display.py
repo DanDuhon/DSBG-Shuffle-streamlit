@@ -161,8 +161,12 @@ def render_card_display(
         )
         # Apply Priscilla overlay when requested
         priscilla_invis_key = "behavior_viewer_priscilla_invisible"
+        # Default False, matching the checkbox in `card_picker` -- the key is
+        # absent whenever that checkbox has not been rendered (another enemy
+        # selected), and defaulting True drew the invisibility overlay on a card
+        # the user never asked for it on.
         if entry.name == "Crossbreed Priscilla" and st.session_state.get(
-            priscilla_invis_key, True
+            priscilla_invis_key, False
         ):
             img_bytes = overlay_priscilla_arcs(img_bytes, sel, beh)
 

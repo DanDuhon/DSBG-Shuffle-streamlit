@@ -348,6 +348,9 @@ def _reset_deck(state, cfg):
     for ent in cfg.entities:
         ent.hp = ent.hp_max
         ent.crossed = []
+        # Belt and braces. Popping a widget key does not by itself reset the
+        # widget in 1.63; what actually moves the HP slider is clearing
+        # `hp_tracker` below, which `render_health_tracker` seeds the slider from.
         _ss().pop(f"hp_{ent.id}", None)
 
     # --- Clear UI caches / flags

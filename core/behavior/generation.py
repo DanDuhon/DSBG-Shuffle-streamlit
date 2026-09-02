@@ -64,8 +64,14 @@ def render_data_card_cached(
     is_boss: bool,
     no_edits: bool = False,
 ) -> bytes:
-    """Cached render of a data card. Returns PNG bytes."""
-    return render_data_card(base_path, raw_json, is_boss, no_edits)
+    """Cached render of a data card. Returns PNG bytes.
+
+    Resolves the NG+ level here, outside the cached function, so it lands in the
+    cache key.
+    """
+    return render_data_card(
+        base_path, raw_json, is_boss, no_edits, get_current_ngplus_level()
+    )
 
 
 def render_behavior_card_cached(
@@ -292,12 +298,19 @@ def _overlay_push_node_icon(
 
 
 def _render_data_card_impl(
-    base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
+    base_path: str,
+    raw_json: dict,
+    is_boss: bool,
+    no_edits: bool = False,
+    ngplus_level: int = 0,
 ) -> bytes:
     """Paint stats (health, armor, resist, maybe heatup) on the base data card.
 
     Uncached. `render_data_card` is the cached entry point; this is what the
     low-memory path calls so it genuinely skips the cache.
+
+    `ngplus_level` is a parameter rather than a `get_current_ngplus_level()`
+    call so that it reaches the cache key -- see `render_data_card`.
     """
     base = load_pil_image_cached(base_path, convert="RGBA")
     if no_edits:
@@ -312,14 +325,14 @@ def _render_data_card_impl(
     except Exception:
         bp_stem = str(base_path)
     if "Paladin Leeroy" in bp_stem:
-        level = get_current_ngplus_level()
+        level = int(ngplus_level)
         text = f"The first time Leeroy's health would be\nreduced to 0, set his health to {2 + level} instead."
         draw = ImageDraw.Draw(base)
         font_path = Path("assets/Adobe Caslon Pro Regular.ttf")
         font = ImageFont.truetype(str(font_path), 33)
         draw.text((97, 855), text, font=font, fill="black")
     elif "Maneater Mildred" in bp_stem:
-        level = get_current_ngplus_level()
+        level = int(ngplus_level)
         heal = 1 if level <= 2 else 2 if level <= 4 else 3
         text = f"If Mildred's attack damages one or more\ncharacters, she gains {heal} health."
         draw = ImageDraw.Draw(base)
@@ -369,10 +382,24 @@ def _render_data_card_impl(
 
 @cache_data(show_spinner=False)
 def render_data_card(
-    base_path: str, raw_json: dict, is_boss: bool, no_edits: bool = False
+    base_path: str,
+    raw_json: dict,
+    is_boss: bool,
+    no_edits: bool = False,
+    ngplus_level: int = 0,
 ) -> bytes:
-    """Cached data card render. Returns PNG bytes."""
-    return _render_data_card_impl(base_path, raw_json, is_boss, no_edits)
+    """Cached data card render. Returns PNG bytes.
+
+    `ngplus_level` is passed in, not read from session state inside here. Two
+    enemies (Paladin Leeroy, Maneater Mildred) print NG+-dependent rules text,
+    and a `get_current_ngplus_level()` call inside a `@cache_data` function is
+    invisible to the cache key -- one user's NG+ card would be served to
+    everyone. It happens not to collide today only because `apply_ngplus_to_raw`
+    also scales those enemies' health, so `raw_json` (which *is* in the key)
+    differs per level. That is a coincidence: an enemy with `health: "inf"` or
+    no health key would break it.
+    """
+    return _render_data_card_impl(base_path, raw_json, is_boss, no_edits, ngplus_level)
 
 
 def render_data_card_uncached(
@@ -385,7 +412,9 @@ def render_data_card_uncached(
     caching, so callers can still display images while avoiding cache retention.
     """
 
-    return _render_data_card_impl(base_path, raw_json, is_boss, no_edits)
+    return _render_data_card_impl(
+        base_path, raw_json, is_boss, no_edits, get_current_ngplus_level()
+    )
 
 
 def render_dual_boss_data_cards(raw_json: dict) -> tuple[bytes, bytes]:

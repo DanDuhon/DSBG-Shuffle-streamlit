@@ -934,7 +934,7 @@ if _memory_debug_enabled():
                 data=memlog_export_json(st.session_state),
                 file_name="dsbg_memlog.json",
                 mime="application/json",
-                use_container_width=True,
+                width="stretch",
                 key="memdbg_export_log",
             )
 

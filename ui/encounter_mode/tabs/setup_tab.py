@@ -382,7 +382,14 @@ def _render_saved_encounters_section(
     save_name_default = (
         st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
     )
-    save_name = st.text_input("Save as:", value=save_name_default)
+    # Keyed: without a `key` the widget's identity includes `value=`, so any
+    # rerun that changed the selected encounter recreated the box and discarded
+    # what the user had typed.
+    if "encounter_save_as_name" not in st.session_state:
+        st.session_state["encounter_save_as_name"] = save_name_default
+    save_name = st.text_input(
+        "Save as:", key="encounter_save_as_name", persist_state="session"
+    )
 
     if st.button("Save Current 💾", width="stretch", disabled=not can_persist):
         if "current_encounter" not in st.session_state:

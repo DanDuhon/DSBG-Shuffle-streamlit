@@ -118,10 +118,17 @@ def _render_campaign_boss_fight_tab(*_args, **_kwargs) -> None:
         return
 
     # Combat controls rely on boss_mode_choice callbacks; set it behind the scenes.
+    # `boss_mode_choice` is genuinely needed -- `ui/boss_mode/state.py` reads it,
+    # and this tab reuses Boss Mode's combat controls wholesale.
     st.session_state["boss_mode_choice"] = entry
     st.session_state["boss_mode_choice_name"] = getattr(entry, "name", boss_name)
-    if getattr(entry, "category", None):
-        st.session_state["boss_mode_category"] = entry.category
+    # `boss_mode_category` is deliberately NOT written. Nothing here reads it,
+    # and it is the key behind Boss Mode's own "Type" radio -- writing it made
+    # visiting a campaign boss silently re-point that radio at the campaign's
+    # category. `render_boss_selector` already re-picks `boss_mode_choice` when
+    # the stored entry is not in the selected category, so Boss Mode recovers on
+    # its own. A deliberate hand-off has its own one-shot mechanism
+    # (`boss_mode_pending_name` -> `apply_pending_boss_preselect`).
 
     boss_state, cfg = ensure_boss_state(entry)
 

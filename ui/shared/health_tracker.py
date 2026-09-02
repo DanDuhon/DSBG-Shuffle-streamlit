@@ -5,7 +5,6 @@ from core.behavior.logic import _apply_sif_limping_mode, _revert_sif_limping_mod
 
 def render_health_tracker(cfg, state):
     tracker = st.session_state.setdefault("hp_tracker", {})
-    reset_id = st.session_state.get("deck_reset_id", 0)
 
     for e in cfg.entities:
         ent_id = e.id                 # must be unique: "ornstein", "smough", "king_1"
@@ -13,9 +12,25 @@ def render_health_tracker(cfg, state):
         hp = e.hp
         hpmax = e.hp_max
         heat_thresh = (e.heatup_thresholds or [None])[0]
-        slider_key = f"hp_{ent_id}_{reset_id}"   # e.g., hp_ornstein_0 / hp_king_1_0
+        slider_key = f"hp_{ent_id}"   # e.g., hp_ornstein / hp_king_1
 
         initial_val = int(tracker.get(ent_id, {}).get("hp", hp))
+
+        # Push tracker changes that did NOT come from this slider into the
+        # widget. `st.slider` passes key_as_main_identity={"min_value",
+        # "max_value","step"}, so `value=` is ignored once the widget exists --
+        # assigning the key before creation is the only thing that moves it.
+        # Live writers that depend on this: `_apply_maldron_heatup` and the
+        # heat-up path in `core.behavior.logic`, whose comment reads "so slider
+        # shows it".
+        #
+        # The mirror is what stops this fighting the user: after they drag the
+        # slider, `on_hp_change` has already written the same value into the
+        # tracker, so the two agree and nothing is assigned.
+        mirror_key = f"_hp_shown_{ent_id}"
+        if st.session_state.get(mirror_key) != initial_val:
+            st.session_state[slider_key] = initial_val
+        st.session_state[mirror_key] = initial_val
 
         # IMPORTANT: bind everything used inside as default args to avoid late binding
         def on_hp_change(
@@ -100,7 +115,15 @@ def render_health_tracker(cfg, state):
 
             # --- Crossbreed Priscilla: any damage cancels invisibility
             elif _boss_name == "Crossbreed Priscilla" and val < prev:
-                st.session_state.setdefault("behavior_deck", {})["priscilla_invisible"] = False
+                # Not `setdefault("behavior_deck", {})`: the key already
+                # exists and is initialized to None by
+                # `ensure_behavior_session_state`, so setdefault returns None
+                # and the subscript raises TypeError.
+                deck = st.session_state.get("behavior_deck")
+                if not isinstance(deck, dict):
+                    deck = {}
+                    st.session_state["behavior_deck"] = deck
+                deck["priscilla_invisible"] = False
 
         # --- Ornstein & Smough special handling
         if cfg.name == "Ornstein & Smough":
@@ -151,11 +174,11 @@ def render_health_tracker(cfg, state):
             if king_num > enabled_count:
                 continue
 
+        # No `value=`: seeded above, and it would be ignored here anyway.
         st.slider(
             label,
             0,
             hpmax,
-            value=initial_val,
             key=slider_key,
             on_change=on_hp_change,
             disabled=disabled_flag,
