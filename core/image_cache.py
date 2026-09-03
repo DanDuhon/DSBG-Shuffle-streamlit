@@ -3,11 +3,11 @@ core.image_cache
 -----------------
 Centralized image loading and caching utilities for Dark Souls: The Board Game Streamlit app.
 
-Provides disk-persistent caching for:
-- Encounter cards (original & edited)
-- Enemy icons
-- Character icons
-- Expansion icons
+Caching is entirely in memory -- `st.cache_data` / `st.cache_resource` where
+Streamlit is available, `functools.lru_cache` otherwise -- and is keyed on
+(path, mtime) so edits to an asset invalidate it. Nothing here is written back
+to disk. Covers encounter cards (original & edited), enemy icons, character
+icons and expansion icons.
 """
 
 from pathlib import Path
@@ -44,19 +44,14 @@ except Exception:  # pragma: no cover
         return _decorator
 
 # -------------------------------------------------------------
-# Paths and cache directories
+# Paths
 # -------------------------------------------------------------
 ASSETS = Path("assets")
-CACHE_ROOT = Path("data/.cache")
-CACHE_DIRS = {
-    "base_cards": CACHE_ROOT / "base_cards",
-    "edited_cards": CACHE_ROOT / "edited_cards",
-    "icons": CACHE_ROOT / "icons",
-    "characters": CACHE_ROOT / "characters",
-    "expansions": CACHE_ROOT / "expansions",
-}
-for d in CACHE_DIRS.values():
-    d.mkdir(parents=True, exist_ok=True)
+
+# There was a `CACHE_ROOT = Path("data/.cache")` here with five subdirectories,
+# created at import. Nothing ever read or wrote them -- the caches in this
+# module are all in memory -- so all it did was leave five empty directories
+# behind on every process start. Delete `data/.cache` if it still exists.
 
 
 # -------------------------------------------------------------

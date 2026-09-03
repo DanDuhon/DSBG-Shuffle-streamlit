@@ -11,6 +11,7 @@ from random import choice
 from ui.encounter_mode.generation import (
     generate_encounter_image,
     load_encounter,
+    load_encounter_transient,
     load_valid_sets,
 )
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
@@ -482,7 +483,11 @@ def _encounter_has_viable_alternative_cached(
     - `original_only` and the original enemy list is viable, or
     - at least one alternative enemy set is viable.
     """
-    data = load_encounter(encounter_slug, int(character_count)) or {}
+    # Transient: this function's whole output is the bool below, which the
+    # `lru_cache` above already memoises, so retaining the parsed JSON buys
+    # nothing. Retaining it cost 115 MB across the 44 encounters the Setup
+    # tab's first render walks -- see `load_encounter_transient`.
+    data = load_encounter_transient(encounter_slug, int(character_count)) or {}
     invader_ids = _load_invader_enemy_ids()
     disabled_set = set(disabled_enemy_ids)
 

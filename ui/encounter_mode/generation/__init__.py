@@ -145,6 +145,14 @@ class _ByteBoundedCache:
         self.hits += 1
         return value
 
+    def peek(self, key):
+        """Read an entry without counting a hit/miss or changing LRU order.
+
+        For callers that can proceed without the cache and so should not be
+        credited in its hit rate, nor promote an entry they only borrowed.
+        """
+        return self._data.get(key, _MISSING)
+
     def put(self, key, value, weight: int) -> None:
         weight = max(1, int(weight))
         # An entry bigger than the whole budget is returned but never retained.
@@ -405,6 +413,40 @@ def load_encounter(encounter_slug: str, character_count: int):
         return data
 
     return _load_encounter_lru(key[0], key[1])
+
+
+def load_encounter_transient(encounter_slug: str, character_count: int) -> dict:
+    """Parse an encounter without admitting it to the retaining caches.
+
+    For callers that reduce the JSON to a small answer and then drop it. The
+    only one today is the viability check, whose bool is already memoised by
+    `logic._encounter_has_viable_alternative_cached` -- so the parsed dict is
+    dead the moment that call returns.
+
+    Routing it through `load_encounter` instead pinned every encounter the
+    filter walked: the first Encounter Mode render sweeps 44 of them
+    (`filter_expansions` takes one per expansion, `filter_encounters` all of
+    the selected one) and retained **115 MB**, measured. That is over the
+    64 MB Cloud budget on its own, so on Cloud the entries evicted each other
+    and the next sweep re-read all 44 from disk (~1.06 s cold, measured).
+
+    Reads through an existing cache entry when there is one, so the selected
+    encounter -- which shuffling does want resident -- is never parsed twice.
+    This is what the cache-strategy note above already claims: filtering does
+    not depend on the encounter cache; the cache exists for re-shuffles.
+    """
+
+    key = (str(encounter_slug), int(character_count))
+
+    if _TIGHTEN_LRU:
+        if _SINGLE_ENCOUNTER_CACHE_KEY == key and isinstance(_SINGLE_ENCOUNTER_CACHE_VALUE, dict):
+            return _SINGLE_ENCOUNTER_CACHE_VALUE
+    else:
+        cached = _encounter_cache.peek(key)
+        if cached is not _MISSING:
+            return cached
+
+    return _load_encounter_from_disk(key[0], key[1])
 
 
 def _load_encounter_cache_info():

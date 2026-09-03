@@ -203,6 +203,13 @@ def _draw_card(state):
                 state[deck_key] = state[discard_key][:]
                 random.shuffle(state[deck_key])
                 state[discard_key].clear()
+            # Recycling the discard is the only refill; if that was empty too
+            # the deck was never built, and popping would raise a bare
+            # IndexError several frames from the cause.
+            assert state[deck_key], (
+                f"Vordt deck {deck_key!r} and its discard {discard_key!r} are "
+                "both empty; the deck was not set up."
+            )
             card = state[deck_key].pop(0)
             state[discard_key].append(card)
             return card
@@ -955,6 +962,13 @@ def _apply_sif_limping_mode(state, cfg):
         if "Limping Strike" in name:
             limp_card = name
             break
+
+    # Without this the deck became `[None]` and the next draw served a card
+    # that does not exist, rather than failing where the data is wrong.
+    assert limp_card is not None, (
+        "Sif limping mode needs a 'Limping Strike' behavior card; "
+        f"{cfg.name!r} has none."
+    )
 
     state["draw_pile"] = [limp_card]
     state["discard_pile"] = []

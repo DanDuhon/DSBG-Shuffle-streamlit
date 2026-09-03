@@ -39,8 +39,6 @@ def compute_behavior_order(entry_name: str, cfg: Any) -> List[str]:
         smough_heatup = [n for n in all_names if cfg.behaviors.get(n, {}).get("heatup") == "Smough"]
         orn_heatup.sort(key=_sort_key)
         smough_heatup.sort(key=_sort_key)
-        # remaining for compact display convenience
-        remaining = nonheat[:]
         dual_non_heatup.sort(key=_sort_key)
         beh_order = dual_non_heatup + nonheat + orn_heatup + smough_heatup
 

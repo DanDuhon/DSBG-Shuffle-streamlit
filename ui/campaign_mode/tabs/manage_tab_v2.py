@@ -493,7 +493,6 @@ def _render_v2_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     current_node = node_by_id.get(current_id) or nodes[0]
     campaign["current_node_id"] = current_node.get("id", "bonfire")
     state["campaign"] = campaign
-    souls_token_node_id = state.get("souls_token_node_id")
 
     if bool(st.session_state.get("ui_compact")):
         _render_v2_campaign_compact(

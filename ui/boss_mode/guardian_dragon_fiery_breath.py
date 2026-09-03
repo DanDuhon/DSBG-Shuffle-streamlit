@@ -3,7 +3,6 @@ import io
 import random
 from typing import Sequence, Tuple
 
-from PIL import Image
 from PIL import Image, ImageDraw
 from pathlib import Path
 

@@ -904,8 +904,6 @@ def render(settings: Dict[str, Any]) -> None:
                 any_immunities=armor_any_immunities,
                 special_rules_mode=armor_special_mode,
             )
-            armor_order = [_id(x) for x in filtered_armor]
-
             prev_armor_id = ss.get("cm_selected_armor_id") or ""
 
             armor_cfg = {
@@ -1129,17 +1127,12 @@ def render(settings: Dict[str, Any]) -> None:
     )
     dodge_effective = max(int(def_tot.dodge_armor), 0) + max(int(def_tot.dodge_hand_max), 0)
 
+    # Consumed further down by the Build and Compare tabs; the attack rows for
+    # this selection are built there, per tab, from their own inputs.
     weapon_upgrades_by_hand = {
         hid: [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
         for hid in selected_hand_ids
     }
-    atk_rows = build_attack_totals_rows_cached(
-        hand_items=selected_hand_objs,
-        selected_hand_ids=set(selected_hand_ids),
-        armor_obj=armor_obj,
-        armor_upgrade_objs=armor_upgrade_objs,
-        weapon_upgrades_by_hand=weapon_upgrades_by_hand,
-    )
 
     validation_errors = _validate_build(
         stats=stats,

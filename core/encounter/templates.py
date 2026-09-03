@@ -246,7 +246,11 @@ def _fix_indefinite_articles(text: str) -> str:
     pattern = re.compile(r"\b(a|an)\s+([A-Za-z])")
 
     def repl(match: re.Match) -> str:
-        article, first_char = match.group(1), match.group(2)
+        # The article that was written is deliberately ignored: the following
+        # letter alone decides, so this corrects "a Alonne" and "an Hollow"
+        # alike. Only "a"/"an" plus that letter are matched, so the rest of the
+        # word is outside the span and survives the substitution.
+        first_char = match.group(2)
         if first_char in _VOWELS:
             return f"an {first_char}"
         else:

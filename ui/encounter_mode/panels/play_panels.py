@@ -504,11 +504,11 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     if totals["event"]:
         st.markdown(f"- Draw {totals['event']+1} events")
     if totals["refresh_heroic"]:
-        st.markdown(f"- Refresh Heroic Action")
+        st.markdown("- Refresh Heroic Action")
     if totals["refresh_luck"]:
-        st.markdown(f"- Refresh Luck")
+        st.markdown("- Refresh Luck")
     if totals["refresh_estus"]:
-        st.markdown(f"- Refresh Estus Flask")
+        st.markdown("- Refresh Estus Flask")
     if totals["search"]:
         item_names = _item_reward_names(encounter)
         if item_names:
@@ -516,7 +516,7 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
         else:
             st.markdown("- Search reward (check the encounter card)")
     if totals["shortcut"]:
-        st.markdown(f"- Shortcut")
+        st.markdown("- Shortcut")
 
 
 def _apply_rewards_from_config(

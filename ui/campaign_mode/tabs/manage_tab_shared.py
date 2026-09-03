@@ -289,7 +289,6 @@ def _render_boss_outcome_controls(
     player_count = int(campaign.get("player_count") or 0)
     sparks_cur = int(state.get("sparks") or 0)
     sparks_max = int(state.get("sparks_max") or sparks_cur)
-    souls_cur = int(state.get("souls") or 0)
 
     token_node_id = state.get("souls_token_node_id")
     token_amount = int(state.get("souls_token_amount") or 0)
