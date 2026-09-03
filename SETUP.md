@@ -29,7 +29,7 @@ This method involves installing Python on your computer and running the app dire
 ### Prerequisites
 
 Before you begin, you'll need:
-- **Python 3.11 or newer** installed on your computer
+- **Python 3.14** installed on your computer (the pinned dependency set in `requirements.txt` is built for CPython 3.14; older versions will fail to install)
 - **pip** (Python's package installer - this comes with Python)
 - **A terminal/command prompt** to enter commands
 
@@ -39,34 +39,34 @@ If you don't have Python installed:
 
 #### Windows:
 1. Go to [python.org/downloads](https://www.python.org/downloads/)
-2. Click the "Download Python 3.11" (or newer) button
+2. Click the "Download Python 3.14" button
 3. Run the installer
 4. **IMPORTANT**: Check the box that says "Add Python to PATH" during installation
 5. Click "Install Now"
 6. Once complete, open Command Prompt and type: `python --version`
-   - You should see something like "Python 3.11.x"
+   - You should see something like "Python 3.14.x"
 
 #### macOS:
 1. Go to [python.org/downloads](https://www.python.org/downloads/)
-2. Download the macOS installer for Python 3.11 or newer
+2. Download the macOS installer for Python 3.14
 3. Run the installer and follow the prompts
 4. Open Terminal (found in Applications > Utilities)
 5. Type: `python3 --version`
-   - You should see something like "Python 3.11.x"
+   - You should see something like "Python 3.14.x"
 
 #### Linux:
 Most Linux distributions come with Python. Open a terminal and check:
 ```bash
 python3 --version
 ```
-If you need to install Python 3.11 or newer, use your distribution's package manager:
+If you need to install Python 3.14, use your distribution's package manager:
 ```bash
 # Ubuntu/Debian
 sudo apt update
-sudo apt install python3.11 python3-pip
+sudo apt install python3.14 python3-pip
 
 # Fedora
-sudo dnf install python3.11
+sudo dnf install python3.14
 
 # Arch
 sudo pacman -S python
@@ -156,6 +156,9 @@ When running locally:
 - Your settings, saved encounters, and campaigns are stored in the `data/` folder
 - These files are saved automatically and will persist between sessions
 - The main settings file is: `data/user_settings.json`
+- There is **no login** in a self-hosted run: the account sign-in used by the
+  Streamlit Cloud site only appears when `DSBG_DEPLOYMENT` is set to `cloud` and
+  Supabase credentials are configured. Everything here saves to disk instead.
 
 ---
 

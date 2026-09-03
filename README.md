@@ -10,11 +10,7 @@ The app has a variety of modules that can enhance your DSBG experience either in
 You can access this app here: https://dsbg-shuffle.streamlit.app/
 If you'd rather self-host it, see below.
 
-> **Login notes:**
-> - The cloud site uses Supabase for per-account saving; you can sign in with Google or an email magic link.
-> - **Magic links must be opened in the same browser** where you requested them; opening the email in a different device or an in‑app webview will fail with a PKCE error. If you get this error, copy/paste the link from the email into your browser - that should work.
-> - Google sign‑in requires pop‑ups—allow them or try a different browser if no new tab appears.
-
+Saving on the cloud site requires an account. See [Accounts & Sign-In](#accounts--sign-in-streamlit-cloud) below.
 
 ## Self-Hosting
 **For detailed, beginner-friendly setup instructions, see [SETUP.md](SETUP.md)**
@@ -30,7 +26,11 @@ The SETUP.md guide includes:
 ## Quickstart (Local)
 
 Prereqs:
-- Python 3.11+ recommended
+- **Python 3.14** (see `.python-version`)
+
+`requirements.txt` is a fully pinned dependency set resolved for CPython 3.14, so
+older interpreters will fail to find wheels for several pins. Direct dependencies
+live in `requirements.in`; see the header of that file for how to change one.
 
 From the repo root:
 
@@ -71,9 +71,59 @@ In the sidebar you’ll choose a **Mode**:
 - **Encounter Mode**: Setup / Events / Play tabs for encounters.
 - **Event Mode**: Event deck builder plus an event card viewer.
 - **Boss Mode**: Boss selector + behavior deck controls, heat-up, and trackers.
-- **Campaign Mode**: Campaign setup and play encounters from the campaign.
+- **Campaign Mode**: Setup / Manage Campaign / Play Encounter / Boss Fight tabs.
 - **Character Mode**: Character build tool.
 - **Behavior Card Viewer**: Quick viewer for behavior cards.
+
+## Accounts & Sign-In (Streamlit Cloud)
+
+The cloud site uses **Supabase email + password** accounts. Google sign-in and email
+magic links have been removed; if you used either one before, see
+[Migrating from Google / magic-link](#migrating-from-google--magic-link) below.
+
+The account controls live at the top of the sidebar, with three actions:
+
+### Sign Up
+
+Enter an email and a password, then Submit. If the Supabase project requires email
+confirmation you’ll be told to confirm via email before logging in; otherwise you’re
+logged in immediately.
+
+### Log In
+
+Enter your email and password. Your session is stored in a browser cookie that lasts
+**30 days**, so you normally stay logged in across visits and reruns. The access token
+is refreshed automatically while you use the app.
+
+**Log Out** signs out only the device you clicked it on — your other devices stay
+logged in.
+
+### Reset/Migrate
+
+This one form handles both a forgotten password and migrating a legacy account:
+
+1. Enter your email, leave the code box blank, and Submit. Supabase emails you an
+   **8-digit recovery code**.
+2. Enter that code plus a new password, then Submit. The password is bound to your
+   existing account and you’re logged in.
+
+#### Migrating from Google / magic-link
+
+If you previously signed in with Google or an email magic link, use **Reset/Migrate**
+with the *same email address* you used before. Setting a password attaches it to that
+existing account, so all your saved settings, encounters, campaigns, and character
+builds come with you. Do **not** use Sign Up — that creates a new, empty account.
+
+### Notes for self-hosters
+
+The account UI only appears when the deployment is configured as cloud **and**
+Supabase credentials are present. In Streamlit secrets (or environment variables):
+
+- `DSBG_DEPLOYMENT = "cloud"`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+Without those, local and Docker runs skip auth entirely and persist to JSON on disk.
 
 ## Data & Persistence
 
@@ -87,7 +137,8 @@ Settings:
 - Docker runs persist `data/` in a volume (so updates/rebuilds keep your data).
 
 Streamlit Cloud:
-- Saving requires an account (Google OAuth or email magic-link).
+- Saving requires an account (email + password — see [Accounts & Sign-In](#accounts--sign-in-streamlit-cloud)).
+- Saved data is tied to the account, not the device, so logging in elsewhere brings it with you.
 - When logged out, settings changes still affect the current session, but nothing is saved.
 
 ## AI Disclaimer
