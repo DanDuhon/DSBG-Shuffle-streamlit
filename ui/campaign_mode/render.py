@@ -65,27 +65,41 @@ def render() -> None:
         _render_campaign_tab(bosses, invaders)
         return
 
+    # `on_change="rerun"` + `.open` so only the visible tab's body executes.
+    # Without it every tab runs on every rerun: with the party on an encounter
+    # node the hidden Play tab rendered the whole Encounter Mode play UI
+    # (encounter card, enemy panels, invader panels and their card renders),
+    # and on a boss node Manage and Boss Fight each pushed the same multi-MB
+    # boss data card. The cost is a server round-trip per tab switch.
+    #
+    # Safe here because no tab depends on another having run: Play never sets
+    # the souls widget key directly, it calls `queue_widget_set`, and the queue
+    # survives in session_state until `apply_pending_widget_sets()` drains it
+    # when Manage next renders. (That also retires the old constraint that Play
+    # had to render before Manage -- exactly one tab body runs now.)
     setup_tab, campaign_tab, play_tab, boss_fight_tab = st.tabs(
-        ["Setup", "Manage Campaign", "Play Encounter", "Boss Fight"]
+        ["Setup", "Manage Campaign", "Play Encounter", "Boss Fight"],
+        on_change="rerun",
     )
 
-    with setup_tab:
-        settings = settings_check
-        version, player_count = _render_setup_header(settings)
-        if version == "V1":
-            state = _render_v1_setup(bosses, settings, player_count)
-        else:
-            state = _render_v2_setup(bosses, settings, player_count)
-        _render_save_load_section(version, state, settings)
+    if setup_tab.open:
+        with setup_tab:
+            settings = settings_check
+            version, player_count = _render_setup_header(settings)
+            if version == "V1":
+                state = _render_v1_setup(bosses, settings, player_count)
+            else:
+                state = _render_v2_setup(bosses, settings, player_count)
+            _render_save_load_section(version, state, settings)
 
-    # IMPORTANT: Play tab before Manage Campaign tab so we can safely
-    # update st.session_state[souls_key] before the Soul cache widget
-    # is created in this run.
-    with play_tab:
-        _render_campaign_play_tab(bosses, invaders)
+    if play_tab.open:
+        with play_tab:
+            _render_campaign_play_tab(bosses, invaders)
 
-    with campaign_tab:
-        _render_campaign_tab(bosses, invaders)
+    if campaign_tab.open:
+        with campaign_tab:
+            _render_campaign_tab(bosses, invaders)
 
-    with boss_fight_tab:
-        _render_campaign_boss_fight_tab(bosses, invaders)
+    if boss_fight_tab.open:
+        with boss_fight_tab:
+            _render_campaign_boss_fight_tab(bosses, invaders)

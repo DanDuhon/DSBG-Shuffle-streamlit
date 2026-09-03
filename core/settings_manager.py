@@ -3,6 +3,7 @@ import hashlib
 import os
 from copy import deepcopy
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 from core import supabase_store
@@ -49,7 +50,7 @@ DEFAULT_SETTINGS = {
 EDITED_ENCOUNTER_CARDS_DIR = Path("assets/edited encounter cards")
 
 
-def _discover_edited_encounter_toggle_keys() -> set[str]:
+def _discover_edited_encounter_toggle_keys() -> frozenset[str]:
     """Return the set of valid `edited_toggles` keys based on assets on disk.
 
     Keys are stored in settings as: "<Encounter Name>|<Expansion>".
@@ -58,8 +59,17 @@ def _discover_edited_encounter_toggle_keys() -> set[str]:
         <Expansion>_<level>_<Encounter Name>.<ext>
     """
 
+    # Cached: this runs on every `save_settings`, *before* the fingerprint
+    # fast-path, and the event deck simulator calls `save_settings` on every
+    # card draw. The directory is shipped with the app and does not change at
+    # runtime.
+    return _discover_edited_encounter_toggle_keys_cached()
+
+
+@lru_cache(maxsize=1)
+def _discover_edited_encounter_toggle_keys_cached() -> frozenset[str]:
     if not EDITED_ENCOUNTER_CARDS_DIR.exists():
-        return set()
+        return frozenset()
 
     valid: set[str] = set()
     try:
@@ -76,9 +86,9 @@ def _discover_edited_encounter_toggle_keys() -> set[str]:
                 valid.add(f"{encounter_name}|{expansion}")
     except Exception:
         # If discovery fails for any reason, fail open (do not prune).
-        return set()
+        return frozenset()
 
-    return valid
+    return frozenset(valid)
 
 
 def _prune_edited_toggles(settings: dict) -> None:
@@ -149,11 +159,24 @@ def _parse_bool(value: object) -> bool | None:
     return None
 
 
-def get_config_value(key: str, default: object = None) -> object:
-    """Return a config value from Streamlit secrets (preferred) or env vars.
+# Distinguishes "no such config key" from a key whose value really is None.
+_CONFIG_MISSING = object()
 
-    This keeps Streamlit Cloud configuration in Secrets, while still allowing
-    scripts/Docker to override via environment variables.
+
+@lru_cache(maxsize=256)
+def _get_config_value_cached(key: str) -> object:
+    """Resolve `key` from Streamlit secrets, then the environment.
+
+    Memoised for the life of the process: neither Secrets nor the environment
+    changes after startup, and the lookup is not cheap. With no
+    `secrets.toml` present, Streamlit only memoises `st.secrets` hits, so every
+    miss re-probes every candidate path and raises. Measured on a light rerun,
+    the uncached version cost ~10 ms across ~12 calls -- about a tenth of the
+    run -- because `is_streamlit_cloud()` and the `DSBG_*` flags are read from
+    per-image and per-path helpers many times per render.
+
+    Returns `_CONFIG_MISSING` rather than None so that a key genuinely set to
+    None is not re-probed on every call.
     """
 
     st = _maybe_streamlit()
@@ -167,7 +190,20 @@ def get_config_value(key: str, default: object = None) -> object:
     if key in os.environ:
         return os.environ.get(key)
 
-    return default
+    return _CONFIG_MISSING
+
+
+def get_config_value(key: str, default: object = None) -> object:
+    """Return a config value from Streamlit secrets (preferred) or env vars.
+
+    This keeps Streamlit Cloud configuration in Secrets, while still allowing
+    scripts/Docker to override via environment variables.
+    """
+
+    value = _get_config_value_cached(key)
+    if value is _CONFIG_MISSING:
+        return default
+    return value
 
 
 def get_config_bool(key: str, default: bool = False) -> bool:

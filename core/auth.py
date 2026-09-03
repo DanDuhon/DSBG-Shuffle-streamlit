@@ -1,750 +1,334 @@
 import json
-from dataclasses import dataclass
-from typing import Any, Optional
-
+import time
+import streamlit as st
+from supabase import create_client, Client
+from supabase.lib.client_options import SyncClientOptions
+from supabase_auth._sync.storage import SyncMemoryStorage
 from core.settings_manager import get_config_str, is_streamlit_cloud
+from streamlit_cookies_controller import CookieController
 
-try:
-    import streamlit as st  # type: ignore
-except Exception:  # pragma: no cover
-    st = None
+_AUTH_SESSION_KEY = "_dsbg_auth_state_v2"
+_CLIENT_SESSION_KEY = "_dsbg_supabase_client"
+_COOKIE_KEY = "dsbg_session_tokens"
+_COOKIE_MAX_AGE = 2592000  # 30 days
+_REFRESH_MARGIN_S = 300  # refresh the JWT 5 minutes before it expires
 
-try:
-    from streamlit_javascript import st_javascript
-except Exception:  # pragma: no cover
-    st_javascript = None
-
-
-_AUTH_SESSION_KEY = "_dsbg_auth_session_v1"
-_AUTH_JS_KEY = "dsbg_auth_js_v1"
-_LOGOUT_IN_PROGRESS_KEY = "_dsbg_logout_in_progress_v1"
-_LOGOUT_WAITED_KEY = "_dsbg_logout_waited_for_js_v1"
+# Initialize the cookie manager
+cookies = CookieController()
 
 
-def _coerce_js_dict(val: Any) -> dict | None:
-    """Coerce a streamlit-javascript return into a dict.
+def _is_auth_rejection(exc: Exception) -> bool:
+    """True when Supabase actively rejected the credentials.
 
-    Depending on the streamlit-javascript version/browser, results can come back
-    as a Python dict, a JSON string, or None.
+    Only a rejection should cost the user their persistent cookie; network
+    errors and other transient failures must leave it in place so the next
+    run can retry instead of silently logging the user out.
     """
+    status = getattr(exc, "status", None)
+    if isinstance(status, int):
+        return status in (400, 401, 403, 422)
+    return type(exc).__name__ in {"AuthApiError", "AuthInvalidCredentialsError"}
 
-    if isinstance(val, dict):
-        return val
-    if isinstance(val, str):
+
+def _store_session(res) -> None:
+    """Hydrate session_state and the browser cookie from a Supabase auth result."""
+    st.session_state[_AUTH_SESSION_KEY] = {
+        "user_id": res.user.id,
+        "email": res.user.email,
+        "access_token": res.session.access_token,
+        "refresh_token": res.session.refresh_token,
+        "expires_at": getattr(res.session, "expires_at", None),
+    }
+    cookies.set(
+        _COOKIE_KEY,
+        json.dumps({
+            "access_token": res.session.access_token,
+            "refresh_token": res.session.refresh_token,
+        }),
+        max_age=_COOKIE_MAX_AGE,
+    )
+
+
+def _session_is_fresh(state: dict) -> bool:
+    """True when the cached access token is still comfortably valid."""
+    expires_at = state.get("expires_at")
+    if isinstance(expires_at, (int, float)):
+        return time.time() < (float(expires_at) - _REFRESH_MARGIN_S)
+    # Unknown expiry (older gotrue versions may hand back a datetime, or
+    # nothing at all): re-validate rather than risk using a stale JWT.
+    ts = getattr(expires_at, "timestamp", None)
+    if callable(ts):
         try:
-            parsed = json.loads(val)
+            return time.time() < (float(ts()) - _REFRESH_MARGIN_S)
         except Exception:
-            return None
-        return parsed if isinstance(parsed, dict) else None
-    return None
+            return False
+    return False
+
+@st.cache_resource
+def _get_supabase_config() -> tuple[str, str] | None:
+    """Project URL + anon key. Safe to share process-wide: immutable config."""
+    url = get_config_str("SUPABASE_URL")
+    key = get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
+    if not url or not key:
+        return None
+    return url, key
 
 
-def _run_js(code: str, *, key: str) -> Any:
-    """Run JavaScript via streamlit-javascript, compatible across versions.
+def _get_supabase_client() -> Client | None:
+    """One Supabase client per Streamlit session.
 
-    Some versions of `streamlit-javascript` do not support the `default=` kwarg.
-    This wrapper tries the newer signature first, then falls back.
+    This must NOT be `@st.cache_resource`. A cached client is shared by every
+    concurrent user, and supabase_auth's session storage is a plain in-process
+    dict on the client. Every `set_session` (reached from `restore_session` on
+    each rerun) and `sign_in_with_password` writes the caller's tokens into it,
+    so whichever user touched the client last owns that storage. `sign_out`
+    then reads its access token back out and revokes *that* user's refresh
+    tokens -- globally, on all their devices -- no matter who clicked Log Out.
+
+    A client per session gives each user their own storage, so a logout can
+    only ever affect the user who asked for it.
+
+    `auto_refresh_token=False`: the default spawns a background refresh Timer
+    thread per client, which would now mean one thread per logged-in session.
+    Its refreshed tokens would also go nowhere -- they land in the client's
+    storage, while this module reads tokens from `st.session_state` and the
+    cookie. Refresh is already handled synchronously by `restore_session`,
+    which calls `set_session` and writes the result back through
+    `_store_session`.
     """
+    client = st.session_state.get(_CLIENT_SESSION_KEY)
+    if client is not None:
+        return client
 
-    if st_javascript is None:
+    config = _get_supabase_config()
+    if config is None:
         return None
 
-    # Streamlit forbids creating multiple elements with the same key in a
-    # single rerun. Track used keys and no-op on repeats.
-    if st is not None:
-        try:
-            used = st.session_state.get("_dsbg_js_keys_used_this_run")
-        except Exception:
-            used = None
-        if not isinstance(used, list):
-            used = []
-        if key in used:
-            return None
-        try:
-            used.append(key)
-            st.session_state["_dsbg_js_keys_used_this_run"] = used
-        except Exception:
-            pass
-
-    # Compatibility: different streamlit-javascript versions have different
-    # signatures. Prefer keyword-based signatures first (newer versions), then
-    # fall back to older positional variants.
-    try:
-        try:
-            # Common modern signature: st_javascript(js_code, key=...)
-            return st_javascript(code, key=key)
-        except TypeError:
-            try:
-                return st_javascript(js_code=code, key=key)
-            except TypeError:
-                # Older signature: st_javascript(code, waiting_text)
-                try:
-                    return st_javascript(code, "Waiting for response")
-                except TypeError:
-                    return st_javascript(code)
-    except Exception as e:
-        # Defensive: if the app accidentally creates the same JS component twice
-        # in a single rerun, don't crash the whole app.
-        if e.__class__.__name__ == "StreamlitDuplicateElementKey":
-            return None
-        raise
-
-
-def _is_no_js_response(val: Any) -> bool:
-    # streamlit-javascript 0.1.5 can return 0 as a placeholder before the
-    # browser posts a real value back.
-    return val is None or val == 0
-
-
-@dataclass(frozen=True)
-class AuthSession:
-    user_id: str
-    email: str | None
-    access_token: str
-
-
-def _get_supabase_url() -> str | None:
-    return get_config_str("SUPABASE_URL")
-
-
-def _get_supabase_anon_key() -> str | None:
-    # Prefer explicit anon key going forward.
-    # Back-compat: allow SUPABASE_KEY if that's what the deployment provides.
-    return get_config_str("SUPABASE_ANON_KEY") or get_config_str("SUPABASE_KEY")
-
+    url, key = config
+    client = create_client(
+        url,
+        key,
+        options=SyncClientOptions(
+            storage=SyncMemoryStorage(),
+            auto_refresh_token=False,
+        ),
+    )
+    st.session_state[_CLIENT_SESSION_KEY] = client
+    return client
 
 def is_auth_ui_enabled() -> bool:
-    """Return True when we should show account UI.
+    # Checks config, not the client: this runs on every rerun and building a
+    # client for a user who never logs in would be pure overhead.
+    return bool(is_streamlit_cloud() and _get_supabase_config() is not None)
 
-    Requirements:
-    - Only show in Streamlit Cloud deployments.
-    - Only show when Supabase config is present.
+def restore_session():
+    """Rebuild the session from browser cookies, refreshing the JWT when stale.
+
+    Runs on every access to the session so an expired access token is renewed
+    mid-session rather than only at first hydration.
     """
+    state = st.session_state.get(_AUTH_SESSION_KEY)
+    if state and _session_is_fresh(state):
+        return  # Hydrated and still valid
 
-    if not is_streamlit_cloud():
-        return False
-    return bool(_get_supabase_url() and _get_supabase_anon_key() and st is not None and st_javascript is not None)
-
-
-def _js_get_session(supabase_url: str, supabase_anon_key: str) -> str:
-        return f"""(async () => {{
-    const SUPABASE_URL = {json.dumps(supabase_url)};
-    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
-
-    const getTopHref = () => {{
-        try {{
-            return window.parent.location.href;
-        }} catch (e) {{
-            return window.location.href;
-        }}
-    }};
-
-    const replaceTopHref = (href) => {{
-        try {{
-            window.parent.history.replaceState({{}}, '', href);
-        }} catch (e) {{
-            try {{
-                window.history.replaceState({{}}, '', href);
-            }} catch (e2) {{}}
-        }}
-    }};
-
-    const ensureLib = () => new Promise((resolve, reject) => {{
-        try {{
-            if (window.supabase && window.supabase.createClient) return resolve(true);
-            const id = 'dsbg_supabase_js_umd_v2';
-            const existing = document.getElementById(id);
-            if (existing) {{
-                const tick = () => {{
-                    if (window.supabase && window.supabase.createClient) return resolve(true);
-                    setTimeout(tick, 50);
-                }};
-                tick();
-                return;
-            }}
-            const s = document.createElement('script');
-            s.id = id;
-            s.async = true;
-            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-            s.onload = () => resolve(true);
-            s.onerror = (e) => reject(e);
-            document.head.appendChild(s);
-        }} catch (e) {{
-            reject(e);
-        }}
-    }});
-
-    await ensureLib();
-    window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY,
-        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
-    );
-
-    const client = window.__dsbg_supabase_client;
-
-    try {{
-        const href = getTopHref();
-        const u = new URL(href);
-
-        const maybeClearTopUrl = () => {{
-            try {{
-                u.searchParams.delete('code');
-                u.searchParams.delete('state');
-                u.searchParams.delete('error');
-                u.searchParams.delete('error_code');
-                u.searchParams.delete('error_description');
-                u.hash = '';
-                replaceTopHref(u.toString());
-            }} catch (e) {{}}
-        }};
-
-        // PKCE flow: ?code=...
-        const code = u.searchParams.get('code');
-        if (code) {{
-            const ex = await client.auth.exchangeCodeForSession(code);
-            if (ex && ex.error) {{
-                // Supabase sometimes returns a long message about PKCE verifier missing.
-                // Expose a flag so Python can provide a friendlier message.
-                const msg = String(ex.error.message || ex.error);
-                const out = {{ ok: false, error: 'exchangeCodeForSession: ' + msg }};
-                if (msg && msg.toLowerCase().includes('pkce')) {{
-                    out.pkce_error = true;
-                }}
-                return JSON.stringify(out);
-            }}
-            maybeClearTopUrl();
-        }}
-
-        // Implicit flow fallback: #access_token=...&refresh_token=...
-        if (!code && u.hash) {{
-            const parts = String(u.hash || '').split('#').filter(Boolean);
-            const last = parts.length ? parts[parts.length - 1] : '';
-            const qp = new URLSearchParams(last);
-            const at = qp.get('access_token');
-            const rt = qp.get('refresh_token');
-            if (at && rt) {{
-                const ss = await client.auth.setSession({{ access_token: at, refresh_token: rt }});
-                if (ss && ss.error) {{
-                    return JSON.stringify({{ ok: false, error: 'setSession: ' + String(ss.error.message || ss.error) }});
-                }}
-                maybeClearTopUrl();
-            }}
-        }}
-    }} catch (e) {{
-        return JSON.stringify({{ ok: false, error: String(e && e.message ? e.message : e) }});
-    }}
-
-    const res = await client.auth.getSession();
-    if (res && res.error) {{
-        return JSON.stringify({{ ok: false, error: String(res.error.message || res.error), session: null }});
-    }}
-    const s = res && res.data ? res.data.session : null;
-    if (!s) return JSON.stringify({{ ok: true, session: null }});
-    return JSON.stringify({{ ok: true, session: {{
-        access_token: s.access_token,
-        refresh_token: s.refresh_token,
-        expires_at: s.expires_at,
-        user: {{
-            id: s.user && s.user.id ? s.user.id : null,
-            email: s.user && s.user.email ? s.user.email : null,
-        }}
-    }} }});
-}})()"""
-
-
-def _js_login_google(supabase_url: str, supabase_anon_key: str) -> str:
-        return f"""(async () => {{
-    const SUPABASE_URL = {json.dumps(supabase_url)};
-    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
-
-    const ensureLib = () => new Promise((resolve, reject) => {{
-        try {{
-            if (window.supabase && window.supabase.createClient) return resolve(true);
-            const id = 'dsbg_supabase_js_umd_v2';
-            const existing = document.getElementById(id);
-            if (existing) {{
-                const tick = () => {{
-                    if (window.supabase && window.supabase.createClient) return resolve(true);
-                    setTimeout(tick, 50);
-                }};
-                tick();
-                return;
-            }}
-            const s = document.createElement('script');
-            s.id = id;
-            s.async = true;
-            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-            s.onload = () => resolve(true);
-            s.onerror = (e) => reject(e);
-            document.head.appendChild(s);
-        }} catch (e) {{
-            reject(e);
-        }}
-    }});
-
-    try {{
-        await ensureLib();
-    }} catch (e) {{
-        return JSON.stringify({{ ok: false, error: 'Failed to load supabase-js: ' + String(e && e.message ? e.message : e) }});
-    }}
-
-    window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY,
-        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
-    );
-    const client = window.__dsbg_supabase_client;
-    if (!client) return JSON.stringify({{ ok: false, error: 'supabase client not initialized' }});
-
-    let topHref = null;
-    try {{ topHref = window.parent.location.href; }} catch (e) {{ topHref = window.location.href; }}
-    const u = new URL(String(topHref));
-    // Use origin root to avoid Streamlit internal /~/+/ paths getting into Supabase allowlists.
-    const redirectTo = u.origin + '/';
-
-    const res = await client.auth.signInWithOAuth({{ provider: 'google', options: {{ redirectTo }} }});
-    if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
-
-    const url = res && res.data ? res.data.url : null;
-    if (url) {{
-        const win = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!win) return JSON.stringify({{ ok: false, error: 'Popup blocked. Allow popups for this site and try again.' }});
-        return JSON.stringify({{ ok: true, opened: true }});
-    }}
-    return JSON.stringify({{ ok: false, error: 'No OAuth URL returned by Supabase' }});
-}})()"""
-
-
-def _js_login_magic_link(email: str, supabase_url: str, supabase_anon_key: str) -> str:
-        return f"""(async () => {{
-    const email = {json.dumps(email)};
-    const SUPABASE_URL = {json.dumps(supabase_url)};
-    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
-
-    const ensureLib = () => new Promise((resolve, reject) => {{
-        try {{
-            if (window.supabase && window.supabase.createClient) return resolve(true);
-            const id = 'dsbg_supabase_js_umd_v2';
-            const existing = document.getElementById(id);
-            if (existing) {{
-                const tick = () => {{
-                    if (window.supabase && window.supabase.createClient) return resolve(true);
-                    setTimeout(tick, 50);
-                }};
-                tick();
-                return;
-            }}
-            const s = document.createElement('script');
-            s.id = id;
-            s.async = true;
-            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-            s.onload = () => resolve(true);
-            s.onerror = (e) => reject(e);
-            document.head.appendChild(s);
-        }} catch (e) {{
-            reject(e);
-        }}
-    }});
-
-    try {{
-        await ensureLib();
-    }} catch (e) {{
-        return JSON.stringify({{ ok: false, error: 'Failed to load supabase-js: ' + String(e && e.message ? e.message : e) }});
-    }}
-
-    window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY,
-        {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
-    );
-    const client = window.__dsbg_supabase_client;
-    if (!client) return JSON.stringify({{ ok: false, error: 'supabase client not initialized' }});
-
-    let topHref = null;
-    try {{ topHref = window.parent.location.href; }} catch (e) {{ topHref = window.location.href; }}
-    const u = new URL(String(topHref));
-    const emailRedirectTo = u.origin + '/';
-
-    const res = await client.auth.signInWithOtp({{ email, options: {{ emailRedirectTo }} }});
-    if (res && res.error) return JSON.stringify({{ ok: false, error: String(res.error.message || res.error) }});
-    return JSON.stringify({{ ok: true }});
-}})()"""
-
-
-def _js_logout(supabase_url: str, supabase_anon_key: str) -> str:
-        # NOTE: must be robust across reruns and must not rely on prior client init.
-        # We explicitly clear the well-known Supabase auth storage key too.
-        return f"""(async () => {{
-    const SUPABASE_URL = {json.dumps(supabase_url)};
-    const SUPABASE_ANON_KEY = {json.dumps(supabase_anon_key)};
-
-    const ensureLib = () => new Promise((resolve, reject) => {{
-        try {{
-            if (window.supabase && window.supabase.createClient) return resolve(true);
-            const id = 'dsbg_supabase_js_umd_v2';
-            const existing = document.getElementById(id);
-            if (existing) {{
-                const tick = () => {{
-                    if (window.supabase && window.supabase.createClient) return resolve(true);
-                    setTimeout(tick, 50);
-                }};
-                tick();
-                return;
-            }}
-            const s = document.createElement('script');
-            s.id = id;
-            s.async = true;
-            s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-            s.onload = () => resolve(true);
-            s.onerror = (e) => reject(e);
-            document.head.appendChild(s);
-        }} catch (e) {{
-            reject(e);
-        }}
-    }});
-
-    try {{
-        await ensureLib();
-    }} catch (e) {{
-        return JSON.stringify({{ ok: false, error: 'Failed to load supabase-js: ' + String(e && e.message ? e.message : e) }});
-    }}
-
-    try {{
-        window.__dsbg_supabase_client = window.__dsbg_supabase_client || window.supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_ANON_KEY,
-            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
-        );
-        const client = window.__dsbg_supabase_client;
-
-        // Attempt a normal sign-out (clears storage in most cases).
-        // Some environments behave oddly with scope; try local first, then global.
-        let out = null;
-        try {{ out = await client.auth.signOut({{ scope: 'local' }}); }} catch (e) {{ out = null; }}
-
-        // Extra hardening: clear known auth storage keys.
-
-        // Extra hardening: clear known auth storage keys.
-        try {{
-            const ref = new URL(SUPABASE_URL).host.split('.')[0];
-            const key = `sb-${{ref}}-auth-token`;
-            try {{ window.localStorage && window.localStorage.removeItem(key); }} catch (e) {{}}
-            try {{ window.sessionStorage && window.sessionStorage.removeItem(key); }} catch (e) {{}}
-        }} catch (e) {{}}
-
-        // Back-compat cleanup (older libs sometimes used this key).
-        try {{ window.localStorage && window.localStorage.removeItem('supabase.auth.token'); }} catch (e) {{}}
-        try {{ window.sessionStorage && window.sessionStorage.removeItem('supabase.auth.token'); }} catch (e) {{}}
-
-        // Clear in-memory client session too.
-        try {{ window.__dsbg_supabase_client = null; }} catch (e) {{}}
-        try {{ delete window.__dsbg_supabase_client; }} catch (e) {{}}
-
-        // Verify session is gone.
-        // (Recreate the client to avoid reading a stale in-memory session.)
-        const verifyClient = window.supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_ANON_KEY,
-            {{ auth: {{ persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }} }}
-        );
-        let s = await verifyClient.auth.getSession();
-        let sess = s && s.data ? s.data.session : null;
-        if (sess) {{
-            // Final attempt: global sign-out, then re-check.
-            try {{ await verifyClient.auth.signOut({{ scope: 'global' }}); }} catch (e) {{}}
-            try {{
-                const ref = new URL(SUPABASE_URL).host.split('.')[0];
-                const key = `sb-${{ref}}-auth-token`;
-                try {{ window.localStorage && window.localStorage.removeItem(key); }} catch (e) {{}}
-                try {{ window.sessionStorage && window.sessionStorage.removeItem(key); }} catch (e) {{}}
-            }} catch (e) {{}}
-            s = await verifyClient.auth.getSession();
-            sess = s && s.data ? s.data.session : null;
-        }}
-        if (sess) {{
-            return JSON.stringify({{ ok: false, error: 'Sign-out did not clear the session (still present).', sessionStillPresent: true }});
-        }}
-        return JSON.stringify({{ ok: true }});
-    }} catch (e) {{
-        return JSON.stringify({{ ok: false, error: String(e && e.message ? e.message : e) }});
-    }}
-}})()"""
-
-
-def _coerce_session(payload: Any) -> Optional[AuthSession]:
-    if not isinstance(payload, dict):
-        return None
-    if not payload.get("ok"):
-        return None
-    session = payload.get("session")
-    if session is None:
-        return None
-    if not isinstance(session, dict):
-        return None
-    user = session.get("user")
-    if not isinstance(user, dict):
-        return None
-    user_id = user.get("id")
-    if not isinstance(user_id, str) or not user_id:
-        return None
-    email = user.get("email")
-    if email is not None and not isinstance(email, str):
-        email = None
-    access_token = session.get("access_token")
-    if not isinstance(access_token, str) or not access_token:
-        return None
-    return AuthSession(user_id=user_id, email=email, access_token=access_token)
-
-
-def ensure_session_loaded() -> Optional[AuthSession]:
-    """Best-effort: load current Supabase session from the browser.
-
-    In Streamlit Cloud, this uses `streamlit-javascript` to call into supabase-js
-    (UMD via CDN) and returns the current user session if present.
-
-    In non-cloud contexts, this is a no-op and returns None.
-    """
-
-    if not is_auth_ui_enabled():
-        return None
-
-    assert st is not None
-    assert st_javascript is not None
-
-    # If a logout is in progress, prioritize completing it and do not hydrate a
-    # new session from browser storage.
-    try:
-        if bool(st.session_state.get(_LOGOUT_IN_PROGRESS_KEY, False)):
-            url = _get_supabase_url()
-            anon = _get_supabase_anon_key()
-            if url and anon:
-                val = _run_js(_js_logout(url, anon), key="dsbg_auth_logout_v1")
-            else:
-                val = {"ok": True}
-
-            if _is_no_js_response(val):
-                if not bool(st.session_state.get(_LOGOUT_WAITED_KEY, False)):
-                    st.session_state[_LOGOUT_WAITED_KEY] = True
-                    st.stop()
-                return None
-
-            payload = _coerce_js_dict(val)
-            try:
-                st.session_state["_auth_last_logout_raw"] = val
-                st.session_state["_auth_last_logout_payload"] = payload
-            except Exception:
-                pass
-
-            if isinstance(payload, dict) and payload.get("ok") is True:
-                st.session_state[_LOGOUT_IN_PROGRESS_KEY] = False
-                st.session_state[_LOGOUT_WAITED_KEY] = False
-                clear_cached_session()
-                return None
-
-            if isinstance(payload, dict) and isinstance(payload.get("error"), str):
-                st.session_state["_auth_last_error"] = str(payload.get("error"))
-            # Leave logout in progress false so user can try again.
-            st.session_state[_LOGOUT_IN_PROGRESS_KEY] = False
-            st.session_state[_LOGOUT_WAITED_KEY] = False
-            clear_cached_session()
-            return None
-    except Exception:
-        # Never let logout state break the app.
-        pass
-
-    # Avoid creating duplicate JS components in a single rerun.
-    # `app.py` resets this flag to False once per rerun.
-    try:
-        if bool(st.session_state.get("_dsbg_auth_js_used_this_run", False)):
-            cached_any = st.session_state.get(_AUTH_SESSION_KEY)
-            return cached_any if isinstance(cached_any, AuthSession) else None
-    except Exception:
-        pass
-
-    # If we already have a session in Streamlit state, return it.
-    try:
-        cached = st.session_state.get(_AUTH_SESSION_KEY)
-    except Exception:
-        cached = None
-    if isinstance(cached, AuthSession):
-        return cached
-
-    url = _get_supabase_url()
-    anon = _get_supabase_anon_key()
-    if not url or not anon:
-        return None
-
-    try:
-        st.session_state["_dsbg_auth_js_used_this_run"] = True
-    except Exception:
-        pass
-
-    val = _run_js(_js_get_session(url, anon), key=_AUTH_JS_KEY)
-    if _is_no_js_response(val):
-        # streamlit-javascript can return None/0 on initial renders.
-        # Previously this code called st.stop() to force an immediate rerun, but
-        # that can leave the sidebar half-rendered if JS never responds.
-        #
-        # Instead, record that we attempted hydration and continue rendering.
+    if state and state.get("refresh_token"):
+        tokens = {
+            "access_token": state.get("access_token"),
+            "refresh_token": state.get("refresh_token"),
+        }
+    else:
+        cookie_str = cookies.get(_COOKIE_KEY)
+        if not cookie_str:
+            return
         try:
-            if not bool(st.session_state.get("_dsbg_auth_waited_for_js", False)):
-                st.session_state["_dsbg_auth_waited_for_js"] = True
-        except Exception:
-            pass
-        return None
+            tokens = json.loads(cookie_str)
+        except ValueError:
+            # Corrupt cookie; nothing recoverable in it.
+            cookies.remove(_COOKIE_KEY)
+            return
 
-    # Reset one-shot wait flag once we have any response.
-    try:
-        st.session_state["_dsbg_auth_waited_for_js"] = False
-    except Exception:
-        pass
-
-    # Persist the raw value for debugging; some versions may return a non-JSON
-    # string (or another type) even when JS returns an object.
-    try:
-        st.session_state["_auth_last_session_raw"] = val
-    except Exception:
-        pass
-
-    payload = _coerce_js_dict(val)
-    try:
-        st.session_state["_auth_last_session_payload"] = payload
-    except Exception:
-        pass
-
-    if isinstance(payload, dict) and payload.get("ok") is False:
-        try:
-            err = payload.get("error")
-            if isinstance(payload.get("pkce_error"), bool) and payload.get("pkce_error"):
-                # override with friendly explanation (don't expose full supabase text)
-                err = (
-                    "Magic link login failed because the link was opened in a different "
-                    "browser or device (PKCE verifier missing). "
-                    "Open the link in the same browser where you requested it."
-                )
-            if isinstance(err, str) and err.strip():
-                st.session_state["_auth_last_error"] = err
-        except Exception:
-            pass
-
-    session = _coerce_session(payload)
-
-    try:
-        st.session_state[_AUTH_SESSION_KEY] = session
-    except Exception:
-        pass
-    return session
-
-
-def clear_cached_session() -> None:
-    if st is None:
-        return
-    try:
-        st.session_state.pop(_AUTH_SESSION_KEY, None)
-        st.session_state.pop("_auth_js_attempts", None)
-        st.session_state.pop("_dsbg_auth_js_used_this_run", None)
-        st.session_state.pop("_dsbg_auth_waited_for_js", None)
-        st.session_state.pop("_auth_last_session_raw", None)
-        st.session_state.pop("_auth_last_session_payload", None)
-        st.session_state.pop("_auth_last_logout_raw", None)
-        st.session_state.pop("_auth_last_logout_payload", None)
-        st.session_state.pop("_auth_last_magic_raw", None)
-        st.session_state.pop("_auth_last_magic_payload", None)
-    except Exception:
+    if not tokens.get("access_token") or not tokens.get("refresh_token"):
         return
 
+    client = _get_supabase_client()
+    if client is None:
+        return
+
+    try:
+        # set_session automatically refreshes the JWT if it has expired
+        res = client.auth.set_session(tokens["access_token"], tokens["refresh_token"])
+        _store_session(res)
+    except Exception as exc:
+        if _is_auth_rejection(exc):
+            # The refresh token is dead or revoked; purge so the user can log in again.
+            st.session_state.pop(_AUTH_SESSION_KEY, None)
+            cookies.remove(_COOKIE_KEY)
+        # Otherwise keep the cookie and any existing session: likely transient.
 
 def get_user_id() -> str | None:
-    sess = ensure_session_loaded()
-    return sess.user_id if sess else None
-
+    restore_session()
+    return st.session_state.get(_AUTH_SESSION_KEY, {}).get("user_id")
 
 def get_user_email() -> str | None:
-    sess = ensure_session_loaded()
-    return sess.email if sess else None
-
+    restore_session()
+    return st.session_state.get(_AUTH_SESSION_KEY, {}).get("email")
 
 def get_access_token() -> str | None:
-    sess = ensure_session_loaded()
-    return sess.access_token if sess else None
-
+    restore_session()
+    return st.session_state.get(_AUTH_SESSION_KEY, {}).get("access_token")
 
 def is_authenticated() -> bool:
     return bool(get_user_id() and get_access_token())
 
+_NO_CLIENT_ERROR = "Account features are not configured on this deployment."
 
-def login_google() -> dict | None:
-    if not is_auth_ui_enabled():
-        return None
-    assert st_javascript is not None
-    # Trigger OAuth redirect. The sidebar already calls `ensure_session_loaded()`
-    # before rendering buttons, which initializes the Supabase client.
-    url = _get_supabase_url()
-    anon = _get_supabase_anon_key()
-    if not url or not anon:
-        return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
-    res = _run_js(_js_login_google(url, anon), key="dsbg_auth_google")
-    if _is_no_js_response(res):
-        return {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
-    coerced = _coerce_js_dict(res)
-    return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again (and allow popups)."}
-
-
-def send_magic_link(email: str) -> dict | None:
-    if not is_auth_ui_enabled():
-        return {"ok": False, "error": "Auth UI is disabled."}
-    email = (email or "").strip()
-    if not email or "@" not in email:
-        return {"ok": False, "error": "Enter a valid email address."}
-    assert st_javascript is not None
-    url = _get_supabase_url()
-    anon = _get_supabase_anon_key()
-    if not url or not anon:
-        return {"ok": False, "error": "Supabase is not configured (missing SUPABASE_URL or SUPABASE_ANON_KEY)."}
-    res = _run_js(_js_login_magic_link(email, url, anon), key="dsbg_auth_magic")
-
-    # Debug capture
+def login(email: str, password: str) -> dict:
+    client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
     try:
-        if st is not None:
-            st.session_state["_auth_last_magic_raw"] = res
-    except Exception:
-        pass
-    # With streamlit-javascript 0.1.5, a placeholder 0/None can occur even when
-    # Supabase successfully sends the email. Prefer a 'maybe sent' result.
-    if _is_no_js_response(res):
-        return {
-            "ok": True,
-            "maybe_sent": True,
-            "warning": "No response from browser, but the email may still have been sent. Check your inbox.",
-        }
-    coerced = _coerce_js_dict(res)
-    try:
-        if st is not None:
-            st.session_state["_auth_last_magic_payload"] = coerced
-    except Exception:
-        pass
-    return coerced if coerced is not None else {"ok": False, "error": "No response from browser. Try again."}
+        res = client.auth.sign_in_with_password({"email": email, "password": password})
+        _store_session(res)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
+def sign_up(email: str, password: str) -> dict:
+    client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
+    try:
+        res = client.auth.sign_up({"email": email, "password": password})
+        if getattr(res, "session", None) is None:
+            # Project requires email confirmation: no session is issued yet.
+            return {
+                "ok": False,
+                "error": "Account created. Check your email to confirm it, then log in.",
+            }
+        _store_session(res)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 def logout() -> None:
+    client = _get_supabase_client()
+    if client:
+        try:
+            # scope="local" revokes only this session's refresh token.
+            # supabase_auth defaults to "global", which kills every session
+            # the user has on every device.
+            client.auth.sign_out({"scope": "local"})
+        except Exception:
+            pass
+    # Drop the client too, so the next login starts from empty token storage.
+    st.session_state.pop(_CLIENT_SESSION_KEY, None)
+    st.session_state.pop(_AUTH_SESSION_KEY, None)
+    cookies.remove(_COOKIE_KEY)
+
+def send_recovery_code(email: str) -> dict:
+    client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
+    try:
+        # Triggers the Reset Password email template
+        client.auth.reset_password_for_email(email)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def verify_and_set_password(email: str, code: str, new_password: str) -> dict:
+    client = _get_supabase_client()
+    if client is None:
+        return {"ok": False, "error": _NO_CLIENT_ERROR}
+    try:
+        # 1. Verify the 8-digit recovery code
+        res = client.auth.verify_otp({"email": email, "token": code, "type": "recovery"})
+
+        # 2. Bind the new password to the existing OAuth/Magic Link account
+        client.auth.update_user({"password": new_password})
+
+        # 3. Hydrate session memory and cookies
+        _store_session(res)
+
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def render_auth_ui():
+    """Drop-in UI component to render the login/signup/migrate form."""
     if not is_auth_ui_enabled():
         return
-    assert st is not None
-    assert st_javascript is not None
 
-    # Mark logout in progress so hydration doesn't immediately re-log us in.
-    try:
-        st.session_state[_LOGOUT_IN_PROGRESS_KEY] = True
-        st.session_state[_LOGOUT_WAITED_KEY] = False
-    except Exception:
-        pass
+    if is_authenticated():
+        st.sidebar.caption(f"Logged in as: {get_user_email()}")
+        if st.sidebar.button("Log Out"):
+            logout()
+            time.sleep(0.5) 
+            st.rerun()
+        return
 
-    clear_cached_session()
+    # The action selector lives OUTSIDE the form on purpose. Inside a form,
+    # widget changes do not rerun the script until submit, so the body below
+    # stayed on whichever branch was current when the form was built: picking
+    # "Reset/Migrate" left the Log In fields on screen, and the first Submit ran
+    # the wrong branch.
+    st.sidebar.write("Account Access")
+    action = st.sidebar.radio(
+        "Action",
+        ["Log In", "Sign Up", "Reset/Migrate"],
+        horizontal=True,
+        key="auth_action",
+    )
 
-    url = _get_supabase_url()
-    anon = _get_supabase_anon_key()
-    if url and anon:
-        _run_js(_js_logout(url, anon), key="dsbg_auth_logout_v1")
+    with st.sidebar.form("auth_form"):
+        email = st.text_input("Email")
 
-    # Caller decides whether to rerun/stop.
+        if action in ["Log In", "Sign Up"]:
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Submit")
+
+            if submit:
+                if not email or not password:
+                    st.error("Email and password required.")
+                elif action == "Log In":
+                    res = login(email, password)
+                    if res["ok"]: 
+                        time.sleep(0.5) 
+                        st.rerun()
+                    else: 
+                        st.error(res["error"])
+                else:
+                    res = sign_up(email, password)
+                    if res["ok"]:
+                        st.success("Account created. You are now logged in.")
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error(res["error"])
+        else:
+            # OTP Migration and Recovery Flow
+            st.caption("Previously used Google/Magic Link? Use this to set a password and recover your data.")
+            code = st.text_input("8-Digit Code (Leave blank to request)")
+            new_password = st.text_input("New Password", type="password")
+            submit = st.form_submit_button("Submit")
+
+            if submit:
+                if not email:
+                    st.error("Email required.")
+                elif not code:
+                    res = send_recovery_code(email)
+                    if res["ok"]:
+                        st.success("Code sent! Check your email, enter it below, and set your new password.")
+                    else:
+                        st.error(res["error"])
+                else:
+                    if not new_password:
+                        st.error("Please enter a new password.")
+                    else:
+                        res = verify_and_set_password(email, code, new_password)
+                        if res["ok"]:
+                            st.success("Password set! You are now logged in.")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error(res["error"])

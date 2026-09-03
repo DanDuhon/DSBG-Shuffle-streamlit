@@ -8,7 +8,6 @@ from ui.encounter_mode.data.keywords import EDITED_ENCOUNTER_KEYWORDS_STATIC
 ENCOUNTER_CARDS_DIR = Path("assets/encounter cards")
 EDITED_ENCOUNTER_CARDS_DIR = Path("assets/edited encounter cards")
 ENEMY_ICONS_DIR = Path("assets/enemy icons")
-KEYWORDS_DIR = Path("assets/keywords")
 
 def _discover_edited_encounters(dir_path: Path) -> dict:
     """

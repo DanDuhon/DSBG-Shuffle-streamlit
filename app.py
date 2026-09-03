@@ -3,9 +3,12 @@ import streamlit as st
 
 from pathlib import Path
 import base64
+import copy
 import os
 import time
+import json
 
+from streamlit_local_storage import LocalStorage
 from ui.sidebar import render_sidebar
 from ui.encounter_mode.render import render as encounter_mode_render
 from ui.boss_mode.render import render as boss_mode_render
@@ -41,6 +44,9 @@ def _cloud_low_memory_enabled() -> bool:
             return False
         return bool(get_config_bool("DSBG_CLOUD_LOW_MEMORY", default=True))
     except Exception:
+        logger.warning(
+            "Could not resolve DSBG_CLOUD_LOW_MEMORY; assuming disabled.", exc_info=True
+        )
         return False
 
 
@@ -50,11 +56,9 @@ def _strip_image_fields_inplace(obj: object) -> None:
     if not isinstance(obj, dict):
         return
 
+    # `obj` is a plain dict here, so `pop(k, None)` cannot raise.
     for k in ("card_img", "card_bytes", "buf", "image", "img", "image_bytes"):
-        try:
-            obj.pop(k, None)
-        except Exception:
-            pass
+        obj.pop(k, None)
 
 
 def _cloud_low_memory_sanitize_session_state() -> None:
@@ -64,7 +68,7 @@ def _cloud_low_memory_sanitize_session_state() -> None:
     try:
         _strip_image_fields_inplace(st.session_state.get("current_encounter"))
     except Exception:
-        pass
+        logger.warning("Failed to strip images from current_encounter.", exc_info=True)
 
     # Saved encounters (session cache only; persistence already strips images).
     try:
@@ -73,7 +77,7 @@ def _cloud_low_memory_sanitize_session_state() -> None:
             for v in saved.values():
                 _strip_image_fields_inplace(v)
     except Exception:
-        pass
+        logger.warning("Failed to strip images from saved_encounters.", exc_info=True)
 
     # Any other known encounter/campaign frozen dicts.
     for key in (
@@ -84,7 +88,7 @@ def _cloud_low_memory_sanitize_session_state() -> None:
         try:
             _strip_image_fields_inplace(st.session_state.get(key))
         except Exception:
-            pass
+            logger.warning("Failed to strip images from %s.", key, exc_info=True)
 
 
 def _cloud_low_memory_cleanup_on_mode_switch(prev_mode: str | None, new_mode: str | None) -> None:
@@ -98,9 +102,15 @@ def _cloud_low_memory_cleanup_on_mode_switch(prev_mode: str | None, new_mode: st
     try:
         _strip_image_fields_inplace(st.session_state.get("current_encounter"))
     except Exception:
-        pass
+        logger.warning(
+            "Failed to strip images on mode switch %s -> %s.",
+            prev_mode,
+            new_mode,
+            exc_info=True,
+        )
 
-    # Clear per-mode transient render caches.
+    # Clear per-mode transient render caches. `pop` can raise if a key is bound to
+    # a widget instantiated earlier in this run, so keep the guard but record it.
     for k in (
         "_memdbg_last",
         "_dsbg_auth_js_used_this_run",
@@ -109,9 +119,7 @@ def _cloud_low_memory_cleanup_on_mode_switch(prev_mode: str | None, new_mode: st
         try:
             st.session_state.pop(k, None)
         except Exception:
-            pass
-
-
+            logger.debug("Could not clear session_state key %s.", k, exc_info=True)
 
 
 def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
@@ -123,6 +131,12 @@ def _font_face_css(font_family: str, font_path: Path, weight: int = 400) -> str:
     try:
         data = base64.b64encode(font_path.read_bytes()).decode("ascii")
     except Exception:
+        logger.warning(
+            "Could not embed font %s (%s); falling back to system fonts.",
+            font_family,
+            font_path,
+            exc_info=True,
+        )
         return ""
 
     return (
@@ -391,19 +405,19 @@ _DS_GLOBAL_STYLE = """
     </style>
 """
 
-st.markdown(
-    _DS_GLOBAL_STYLE.replace("__EMBEDDED_FONTS__", _embedded_fonts_css),
-    unsafe_allow_html=True,
-)
+@st.cache_resource(show_spinner=False)
+def _get_global_style_html() -> str:
+    """The stylesheet with the base64 fonts spliced in, built once per process.
 
-# Auth session hydration should run at most once per rerun.
-# `core.auth.ensure_session_loaded()` uses this flag to avoid creating
-# duplicate streamlit-javascript components in the same run.
-try:
-    st.session_state["_dsbg_auth_js_used_this_run"] = False
-    st.session_state["_dsbg_js_keys_used_this_run"] = []
-except Exception:
-    pass
+    app.py re-executes top to bottom on every rerun, so this `.replace()` was
+    rebuilding a ~430 KB string each time. Streamlit still hashes the result to
+    diff the element (~0.7 ms), which only serving the fonts from `static/`
+    would remove -- see STREAMLIT_AUDIT.md.
+    """
+    return _DS_GLOBAL_STYLE.replace("__EMBEDDED_FONTS__", _embedded_fonts_css)
+
+
+st.markdown(_get_global_style_html(), unsafe_allow_html=True)
 
 # --- Initialize Settings ---
 if "user_settings" not in st.session_state:
@@ -415,6 +429,9 @@ if auth.is_auth_ui_enabled():
     try:
         current_uid = auth.get_user_id()
     except Exception:
+        logger.warning(
+            "auth.get_user_id() failed; treating this run as logged out.", exc_info=True
+        )
         current_uid = None
     previous_uid = st.session_state.get("_auth_user_id")
     if current_uid != previous_uid:
@@ -425,7 +442,7 @@ if auth.is_auth_ui_enabled():
             try:
                 st.session_state.pop(k, None)
             except Exception:
-                pass
+                logger.debug("Could not reset settings draft key %s.", k, exc_info=True)
         st.rerun()
 
 settings = st.session_state.user_settings
@@ -442,6 +459,11 @@ if "ngplus_level" not in st.session_state:
     try:
         st.session_state["ngplus_level"] = int(settings.get("ngplus_level", 0) or 0)
     except Exception:
+        logger.warning(
+            "Invalid persisted ngplus_level %r; defaulting to 0.",
+            settings.get("ngplus_level"),
+            exc_info=True,
+        )
         st.session_state["ngplus_level"] = 0
 
 # If settings were just saved (manual Save button), clean up state that may now
@@ -452,6 +474,10 @@ if st.session_state.pop("_settings_just_saved", False):
         old_exp = set(st.session_state.pop("_settings_old_active_expansions", []) or [])
         new_exp = set(st.session_state.pop("_settings_new_active_expansions", []) or [])
     except Exception:
+        logger.warning(
+            "Could not compare expansion sets after save; skipping stale-state cleanup.",
+            exc_info=True,
+        )
         old_exp, new_exp = set(), set()
 
     if old_exp != new_exp:
@@ -465,9 +491,9 @@ if st.session_state.pop("_settings_just_saved", False):
             try:
                 st.session_state.pop(key, None)
             except Exception:
-                pass
-
-
+                logger.debug(
+                    "Could not clear stale encounter key %s.", key, exc_info=True
+                )
 
 # --- One-shot cross-tab handoff: Campaign Mode -> app bootstrap ---
 # Campaign Setup tab cannot safely overwrite sidebar widget keys after widgets
@@ -517,7 +543,10 @@ if pending:
 
     # Restore campaign state dict for correct version
     state_key = "campaign_v1_state" if snap_version == "V1" else "campaign_v2_state"
-    loaded_state = snapshot.get("state", {}) or {}
+    # Deep-copy: the snapshot's state belongs to the persistence layer's cached
+    # campaigns dict. Assigning it directly would make live play mutate the
+    # saved copy in place (and make a same-session load a no-op).
+    loaded_state = copy.deepcopy(snapshot.get("state", {}) or {})
     st.session_state[state_key] = loaded_state
 
     # IMPORTANT: Clear widget-backed keys so numeric inputs re-seed from the
@@ -533,7 +562,25 @@ if pending:
         try:
             st.session_state.pop(k, None)
         except Exception:
-            pass
+            logger.warning(
+                "Could not clear widget-backed key %s while loading snapshot; "
+                "it may retain a stale value.",
+                k,
+                exc_info=True,
+            )
+
+    # The Setup and Manage name boxes need seeding, not clearing. `st.text_input`
+    # with a `key` ignores `value=` once the widget exists, and in Streamlit 1.63
+    # deleting the key does *not* drop the stored value either -- verified live:
+    # after popping `campaign_name_V1` the box still rendered the previous
+    # campaign's name. Assigning before the widget is created does take effect,
+    # and app.py runs ahead of every campaign widget. Without this the boxes keep
+    # showing the previous campaign, so a later save either errors with "Campaign
+    # name is required" or silently overwrites the wrong entry.
+    loaded_name = str(loaded_state.get("name") or "")
+    version_suffix = "V1" if snap_version == "V1" else "V2"
+    st.session_state[f"campaign_name_{version_suffix}"] = loaded_name
+    st.session_state[f"campaign_manage_save_name_{version_suffix.lower()}"] = loaded_name
 
     # Mark this loaded campaign as clean (no unsaved changes yet).
     set_campaign_baseline(version=snap_version, state=loaded_state)
@@ -584,6 +631,99 @@ if pending:
 
     # Clear the pending snapshot flag
     del st.session_state["pending_campaign_snapshot"]
+
+local_storage = LocalStorage()
+
+
+def _ensure_local_storage_ready(store) -> bool:
+    """Make `store.storedItems` a usable dict, returning False if it wasn't.
+
+    `streamlit_local_storage` assigns `storedItems` straight from session_state,
+    which is None until the component's frontend answers — and stays None if it
+    never does (iframe blocked or failing to load, browser denying localStorage;
+    seen in the Docker build). Its own getItem/setItem then raise
+    `TypeError: argument of type 'NoneType' is not a container or iterable`.
+    Substituting an empty dict degrades to "no cached data" instead of taking
+    the whole app down on import.
+    """
+    if isinstance(getattr(store, "storedItems", None), dict):
+        return True
+    store.storedItems = {}
+    return False
+
+
+def _local_storage_get(store, key: str):
+    """Read one key from browser local storage; None when unavailable."""
+    if not _ensure_local_storage_ready(store):
+        logger.warning(
+            "Local storage bridge unavailable; skipping cache read for %s.", key
+        )
+        return None
+    try:
+        return store.getItem(key)
+    except Exception:
+        logger.warning("Local storage read failed for %s.", key, exc_info=True)
+        return None
+
+
+def _local_storage_set(store, key: str, value) -> None:
+    """Write one key to browser local storage; no-op when unavailable."""
+    if not _ensure_local_storage_ready(store):
+        logger.warning(
+            "Local storage bridge unavailable; skipping cache write for %s.", key
+        )
+        return
+    try:
+        store.setItem(key, value)
+    except Exception:
+        logger.warning("Local storage write failed for %s.", key, exc_info=True)
+
+
+# Isolate saves between accounts on shared devices, or default to 'guest'
+current_user = auth.get_user_id() or "guest"
+cache_key = f"dsbg_campaign_cache_{current_user}"
+
+# 1. READ CACHE ON APP LOAD
+# We skip reading the cache if a user just loaded a cloud save (`pending`) 
+# or if we have already hydrated the cache in this session.
+if not pending and not st.session_state.get("campaign_loaded_from_cache"):
+    cached_data = _local_storage_get(local_storage, cache_key)
+    
+    # Wait for the JS bridge to return a definitive answer (ignores the initial None)
+    if cached_data is not None:
+        st.session_state["campaign_loaded_from_cache"] = True
+        
+        # If valid state exists, inject it into session_state
+        if isinstance(cached_data, dict) and "state" in cached_data:
+            loaded_version = cached_data.get("rules_version", "V2")
+            st.session_state["campaign_rules_version"] = loaded_version
+            st.session_state["campaign_rules_version_widget"] = loaded_version
+            
+            state_key = "campaign_v1_state" if loaded_version == "V1" else "campaign_v2_state"
+            st.session_state[state_key] = cached_data["state"]
+            
+            st.toast("Recovered unsaved campaign progress from device.", icon="💾")
+
+# --- Character Mode Cache Read ---
+char_cache_key = f"dsbg_character_cache_{current_user}"
+
+if not st.session_state.get("cm_pending_build") and not st.session_state.get("character_loaded_from_cache"):
+    char_cached_data = _local_storage_get(local_storage, char_cache_key)
+    
+    if char_cached_data is not None:
+        st.session_state["character_loaded_from_cache"] = True
+        
+        if isinstance(char_cached_data, dict) and "class_name" in char_cached_data:
+            # Clean up tier indices to prevent legacy string crashes
+            tiers = char_cached_data.get("tier_indices", {})
+            for k in ["str", "dex", "itl", "fth"]:
+                val = tiers.get(k)
+                if isinstance(val, str) and not val.isdigit():
+                    tiers[k] = 0
+            
+            # Inject the sanitized cached dictionary
+            st.session_state["cm_pending_build"] = char_cached_data
+            st.toast("Recovered character build from device.", icon="🛡️")
 
 # Sidebar: expansions + party + NG+
 
@@ -636,9 +776,50 @@ elif mode == "Boss Mode":
 elif mode == "Campaign Mode":
     campaign_mode_render()
 elif mode == "Character Mode":
+    # Purge legacy string values from Streamlit's widget cache
+    for k in ["cm_tier_str_i", "cm_tier_dex_i", "cm_tier_itl_i", "cm_tier_fth_i"]:
+        val = st.session_state.get(k)
+        if isinstance(val, str) and not val.isdigit():
+            st.session_state.pop(k, None)
+            
     character_mode_render(settings)
 elif mode == "Behavior Card Viewer":
     behavior_viewer_render()
+
+# 2. WRITE CACHE ON STATE CHANGE
+# Captures changes made by the UI modules before the script finishes execution.
+if mode == "Campaign Mode":
+    active_version = st.session_state.get("campaign_rules_version", "V2")
+    state_key = "campaign_v1_state" if active_version == "V1" else "campaign_v2_state"
+    live_state = st.session_state.get(state_key)
+    
+    if live_state:
+        # Fingerprint the dictionary to avoid spamming the JS bridge with identical data
+        state_str = json.dumps(live_state, sort_keys=True)
+        if st.session_state.get("_last_cached_campaign_fp") != state_str:
+            _local_storage_set(
+                local_storage, cache_key,
+                {"rules_version": active_version, "state": live_state},
+            )
+            st.session_state["_last_cached_campaign_fp"] = state_str
+# --- Character Mode Cache Write ---
+elif mode == "Character Mode":
+    # 1. Reconstruct the live build state from fragmented session keys
+    live_char_state = {
+        "class_name": st.session_state.get("cm_persist_class"),
+        "tier_indices": st.session_state.get("cm_persist_tiers", {}),
+        "selected_armor_id": st.session_state.get("cm_selected_armor_id", ""),
+        "selected_armor_upgrade_ids": list(st.session_state.get("cm_selected_armor_upgrade_ids") or []),
+        "selected_hand_ids": list(st.session_state.get("cm_selected_hand_ids") or []),
+        "selected_weapon_upgrade_ids_by_hand": dict(st.session_state.get("cm_selected_weapon_upgrade_ids_by_hand") or {}),
+    }
+    
+    # 2. Only write to cache if the class is defined (meaning the UI has initialized)
+    if live_char_state["class_name"]:
+        char_state_str = json.dumps(live_char_state, sort_keys=True)
+        if st.session_state.get("_last_cached_character_fp") != char_state_str:
+            _local_storage_set(local_storage, char_cache_key, live_char_state)
+            st.session_state["_last_cached_character_fp"] = char_state_str
 
 
 def _rss_mb() -> float | None:
@@ -654,6 +835,7 @@ def _rss_mb() -> float | None:
                     kb = float(parts[1])
                     return kb / 1024.0
     except Exception:
+        logger.debug("Could not read RSS from /proc/self/status.", exc_info=True)
         return None
     return None
 
@@ -665,10 +847,7 @@ if is_streamlit_cloud() and get_config_bool("DSBG_DEBUG_PERF", default=False):
         rss = _rss_mb()
         if rss is not None:
             st.caption(f"RSS: {rss:.1f} MB")
-        try:
-            st.caption(f"Python PID: {os.getpid()}")
-        except Exception:
-            pass
+        st.caption(f"Python PID: {os.getpid()}")
 
 
 def _memory_debug_enabled() -> bool:
@@ -676,6 +855,7 @@ def _memory_debug_enabled() -> bool:
     try:
         return bool(get_config_bool("DSBG_DEBUG_MEMORY", default=False))
     except Exception:
+        logger.debug("Could not resolve DSBG_DEBUG_MEMORY; leaving off.", exc_info=True)
         return False
 
 
@@ -754,7 +934,7 @@ if _memory_debug_enabled():
                 data=memlog_export_json(st.session_state),
                 file_name="dsbg_memlog.json",
                 mime="application/json",
-                use_container_width=True,
+                width="stretch",
                 key="memdbg_export_log",
             )
 
@@ -829,6 +1009,9 @@ if _memory_debug_enabled():
                         else:
                             extra_str = str(list(extra.keys())[:6])
                     except Exception:
+                        logger.debug(
+                            "Could not format memlog extra payload.", exc_info=True
+                        )
                         extra_str = "(extra)"
 
                 trace = e.get("trace_top")
@@ -886,15 +1069,20 @@ if _memory_debug_enabled():
         c1, c2 = st.columns(2)
         with c1:
             if st.button("Clear Streamlit caches", width="stretch", key="memdbg_clear_caches"):
-                try:
-                    st.cache_data.clear()
-                except Exception:
-                    pass
-                try:
-                    st.cache_resource.clear()
-                except Exception:
-                    pass
-                st.success("Cleared Streamlit caches.")
+                failed = []
+                for label, clear in (
+                    ("cache_data", st.cache_data.clear),
+                    ("cache_resource", st.cache_resource.clear),
+                ):
+                    try:
+                        clear()
+                    except Exception:
+                        logger.warning("Failed to clear st.%s.", label, exc_info=True)
+                        failed.append(label)
+                if failed:
+                    st.error(f"Could not clear: {', '.join(failed)}. See logs.")
+                else:
+                    st.success("Cleared Streamlit caches.")
                 st.rerun()
         with c2:
             if st.button("Clear mem debug output", width="stretch", key="memdbg_clear_output"):

@@ -1,4 +1,5 @@
 #ui/campaign_mode/setup_tab.py
+import copy
 import streamlit as st
 from typing import Any, Dict
 import logging
@@ -11,6 +12,7 @@ from ui.campaign_mode.generation import (
     _generate_v2_campaign,
 )
 from ui.campaign_mode.persistence import(
+    CampaignsUnavailable,
     get_campaigns,
     _save_campaigns,
 )
@@ -112,13 +114,42 @@ def _render_setup_header(settings: Dict[str, Any]) -> tuple[str, int]:
     version = st.radio("Rules version", **radio_kwargs)
 
     # Option B: switching versions clears the other version's state so
-    # completion/status cannot leak across.
+    # completion/status cannot leak across. Discarding UNSAVED progress that way
+    # is irreversible, so defer it behind an explicit confirmation (Generate and
+    # Load already gate the same kind of destruction).
     if version != prev_version:
-        clear_other_campaign_state(keep_version=version)
+        if campaign_has_unsaved_changes(version=prev_version):
+            st.session_state["_campaign_pending_discard"] = prev_version
+        else:
+            clear_other_campaign_state(keep_version=version)
+            st.session_state.pop("_campaign_pending_discard", None)
 
     # This is now safe; no widget with this key exists
     st.session_state["campaign_rules_version"] = version
     st.session_state["_campaign_rules_version_last"] = version
+
+    pending = st.session_state.get("_campaign_pending_discard")
+    if pending == version:
+        # Switched back to it; nothing to discard.
+        st.session_state.pop("_campaign_pending_discard", None)
+    elif pending:
+        if campaign_has_unsaved_changes(version=pending):
+            st.warning(
+                f"Your {pending} campaign has unsaved changes. It is being kept "
+                f"for now — save it below, or switch back to {pending} to keep "
+                "playing it. Discarding it cannot be undone."
+            )
+            if st.button(
+                f"Discard unsaved {pending} campaign",
+                key=f"campaign_discard_{pending}",
+            ):
+                clear_other_campaign_state(keep_version=version)
+                st.session_state.pop("_campaign_pending_discard", None)
+                st.rerun()
+        else:
+            # It got saved in the meantime; clearing is safe now.
+            clear_other_campaign_state(keep_version=version)
+            st.session_state.pop("_campaign_pending_discard", None)
 
     st.markdown("---")
     return version, player_count
@@ -481,6 +512,11 @@ def _render_save_load_section(
     st.markdown("---")
     st.subheader("Save / Load campaign")
 
+    # One-shot notice carried across the post-save rerun (see the save handler).
+    save_notice = st.session_state.pop("campaign_save_notice", None)
+    if save_notice:
+        st.success(str(save_notice))
+
     cloud_mode = bool(is_streamlit_cloud())
     supabase_ready = bool(_has_supabase_config())
     can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
@@ -489,7 +525,17 @@ def _render_save_load_section(
     elif cloud_mode and not auth.is_authenticated():
         st.caption("Log in to save.")
 
-    campaigns = get_campaigns()
+    try:
+        campaigns = get_campaigns()
+        campaigns_available = True
+    except CampaignsUnavailable:
+        campaigns = {}
+        campaigns_available = False
+        st.error(
+            "Could not reach the campaign store, so your saved campaigns can't "
+            "be listed right now. They have not been deleted — check your "
+            "connection and reload."
+        )
 
     if bool(st.session_state.get("ui_compact")):
         col_save = st.container()
@@ -505,6 +551,9 @@ def _render_save_load_section(
             "Campaign name",
             value=default_name,
             key=f"campaign_name_{version}",
+            # This tab stops rendering when the user switches tabs; without
+            # session persistence a half-typed name would be lost.
+            persist_state="session",
         )
 
         # Overwrite confirmation when saving to an existing name
@@ -525,48 +574,70 @@ def _render_save_load_section(
             disabled=not can_persist,
         ):
             name = name_input.strip()
+            # Flat chain, not early `return`s: returning here exits
+            # `_render_save_load_section` from inside `with col_save:`, which
+            # takes the entire Load/Delete column -- plus the load notice and
+            # the debug expander -- off the page for that run. Reachable by
+            # saving over an existing name without ticking overwrite.
             if not name:
                 st.error("Campaign name is required to save.")
+            elif not can_persist:
+                st.error("Not logged in; cannot persist on Streamlit Cloud.")
+            elif name in campaigns and not save_overwrite_ok:
+                st.warning("That name already exists — confirm overwrite to replace it.")
+            # For campaign rules versions that rely on an explicit node track
+            # (V1 and V2), require a generated campaign so Campaign can resume.
+            elif version in ("V1", "V2") and not isinstance(
+                current_state.get("campaign"), dict
+            ):
+                st.error(
+                    "Generate the campaign before saving; "
+                    "this save currently has no encounters."
+                )
             else:
-                if not can_persist:
-                    st.error("Not logged in; cannot persist on Streamlit Cloud.")
-                    return
-                if name in campaigns and not save_overwrite_ok:
-                    st.warning("That name already exists — confirm overwrite to replace it.")
-                    return
-                # For campaign rules versions that rely on an explicit node track
-                # (V1 and V2), require a generated campaign so Campaign can resume.
-                if version in ("V1", "V2") and not isinstance(
-                    current_state.get("campaign"), dict
-                ):
+                current_state["name"] = name
+                # Snapshot round-trip:
+                # - `state` captures the campaign version-specific runtime state dict.
+                # - `sidebar_settings` captures only the settings that must be applied
+                #   *before* sidebar widgets are created on the next run
+                #   (expansions/party/NG+).
+                # The load path hands this snapshot back to `app.py` via a one-shot
+                # session key.
+                snapshot = {
+                    "rules_version": version,
+                    # Deep-copy: `current_state` is the live session_state
+                    # dict. Storing it by reference makes the saved snapshot
+                    # keep mutating as the user keeps playing, so the next
+                    # save of ANY campaign rewrites this one's file entry.
+                    "state": copy.deepcopy(current_state),
+                    "sidebar_settings": {
+                        "active_expansions": settings.get("active_expansions"),
+                        "selected_characters": settings.get("selected_characters"),
+                        "ngplus_level": int(
+                            st.session_state.get("ngplus_level", 0)
+                        ),
+                    },
+                }
+                campaigns[name] = snapshot
+                if not _save_campaigns(campaigns):
+                    # Leave the campaign dirty so the user keeps their
+                    # overwrite warnings and knows it is still unsaved.
+                    campaigns.pop(name, None)
                     st.error(
-                        "Generate the campaign before saving; "
-                        "this save currently has no encounters."
+                        f"Could not save campaign '{name}'. Your progress is "
+                        "still unsaved — check your connection and try again."
                     )
                 else:
-                    current_state["name"] = name
-                    # Snapshot round-trip:
-                    # - `state` captures the campaign version-specific runtime state dict.
-                    # - `sidebar_settings` captures only the settings that must be applied
-                    #   *before* sidebar widgets are created on the next run
-                    #   (expansions/party/NG+).
-                    # The load path hands this snapshot back to `app.py` via a one-shot
-                    # session key.
-                    snapshot = {
-                        "rules_version": version,
-                        "state": current_state,
-                        "sidebar_settings": {
-                            "active_expansions": settings.get("active_expansions"),
-                            "selected_characters": settings.get("selected_characters"),
-                            "ngplus_level": int(
-                                st.session_state.get("ngplus_level", 0)
-                            ),
-                        },
-                    }
-                    campaigns[name] = snapshot
-                    _save_campaigns(campaigns)
                     set_campaign_baseline(version=version, state=current_state)
-                    st.success(f"Saved campaign '{name}'.")
+                    # Rerun so the Load/Delete controls appear immediately.
+                    # They are rendered from `campaigns`, which is read at
+                    # the top of this function; without a rerun the newly
+                    # saved campaign can be missed for that run. Delete and
+                    # Generate already rerun for the same reason.
+                    st.session_state["campaign_save_notice"] = (
+                        f"Saved campaign '{name}'."
+                    )
+                    st.rerun()
 
     # ----- LOAD / DELETE -----
     with col_load:
@@ -577,6 +648,8 @@ def _render_save_load_section(
                 options=["<none>"] + names,
                 index=0,
                 key=f"campaign_load_select_{version}",
+                # Keep the picked campaign across a tab switch.
+                persist_state="session",
             )
 
             if bool(st.session_state.get("ui_compact")):
@@ -639,11 +712,20 @@ def _render_save_load_section(
                     if selected_name == "<none>":
                         st.error("Select a campaign to delete.")
                     else:
-                        campaigns.pop(selected_name, None)
-                        _save_campaigns(campaigns)
-                        st.success(f"Deleted campaign '{selected_name}'.")
-                        st.rerun()
-        else:
+                        removed = campaigns.pop(selected_name, None)
+                        if _save_campaigns(campaigns):
+                            st.success(f"Deleted campaign '{selected_name}'.")
+                            st.rerun()
+                        else:
+                            # Put it back so the list still matches what is stored.
+                            if removed is not None:
+                                campaigns[selected_name] = removed
+                            st.error(
+                                f"Could not delete campaign '{selected_name}'. "
+                                "Check your connection and try again."
+                            )
+        elif campaigns_available:
+            # Only claim there are none when we actually got a reliable answer.
             st.caption("No saved campaigns yet.")
 
         # One-shot notice: appears directly under the load controls

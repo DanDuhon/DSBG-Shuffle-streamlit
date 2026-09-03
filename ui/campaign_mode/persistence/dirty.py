@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any, Dict, Optional
 
@@ -27,13 +28,20 @@ def campaign_signature(state: Dict[str, Any]) -> str:
     """Stable signature for a campaign state dict.
 
     Used to detect unsaved changes. Removes ephemeral/UI-only keys.
+
+    Returns a digest rather than the serialized state itself: for a V2 campaign
+    whose nodes carry full `encounter_data` the JSON is ~374 KB, and the caller
+    parks it in `st.session_state` as a per-version baseline for the life of the
+    session. Hashing costs well under a millisecond and makes the baseline 32
+    bytes. Nothing persisted depends on the format -- baselines are session-only.
     """
     cleaned = _strip_ephemeral(state)
     try:
-        return json.dumps(cleaned, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        payload = json.dumps(cleaned, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     except Exception:
         # Fallback: non-JSON-serializable values shouldn't happen, but don't crash UX.
-        return repr(cleaned)
+        payload = repr(cleaned)
+    return hashlib.blake2b(payload.encode("utf-8", "replace"), digest_size=16).hexdigest()
 
 
 def _baseline_key(version: str) -> str:

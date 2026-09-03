@@ -16,7 +16,8 @@ from ui.character_mode.dice_math import _dice_icons, _dice_min_max_avg, _dodge_i
 from ui.character_mode.filters import (
     _apply_armor_filters,
     _apply_hand_item_filters,
-    _filter_items
+    _filter_items,
+    _matches_query
 )
 from ui.character_mode.item_fields import (
     _armor_dodge_int,
@@ -51,6 +52,35 @@ from ui.character_mode.widgets import _render_selection_table
 from core.settings_manager import _has_supabase_config, is_streamlit_cloud, save_settings
 
 
+# Item-filter widget keys, cleared together when the class or stats change so
+# every filter returns to its permissive default. For the option-list filters
+# that means "all options selected"; for the AND/OR feature filters an empty
+# selection already means "no restriction".
+_CM_FILTER_KEYS = (
+    # Global filters
+    "cm_gf_expansion",
+    "cm_gf_legendary",
+    "cm_gf_source_entity",
+    "cm_gf_source_type",
+    # Hand item filters
+    "cm_hf_any_conditions",
+    "cm_hf_any_immunities",
+    "cm_hf_attack_lines_mode",
+    "cm_hf_categories",
+    "cm_hf_dodge",
+    "cm_hf_hands",
+    "cm_hf_only_twohand_shields",
+    "cm_hf_ranges",
+    "cm_hf_required_features",
+    "cm_hf_upgrade_slots",
+    # Armor filters
+    "cm_af_dodge",
+    "cm_af_immunities",
+    "cm_af_slots",
+    "cm_af_special",
+)
+
+
 def render(settings: Dict[str, Any]) -> None:
     active = set(x for x in (settings.get("active_expansions") or []))
 
@@ -81,97 +111,157 @@ def render(settings: Dict[str, Any]) -> None:
         ss["cm_selected_hand_ids"] = list(pending.get("selected_hand_ids") or [])
         ss["cm_selected_weapon_upgrade_ids_by_hand"] = dict(pending.get("selected_weapon_upgrade_ids_by_hand") or {})
 
+    # `on_change="rerun"` + `.open`: nearly the whole body of this function sits
+    # inside these tabs, and all of it ran on every rerun. Without on_change,
+    # `.open` is None for every tab and the guards below would render nothing.
     tab_class_stats, tab_items, tab_build, tab_compare, tab_save_load = st.tabs(
-        ["Class/Stats", "Items", "Build", "Compare", "Save/Load"]
+        ["Class/Stats", "Items", "Build", "Compare", "Save/Load"],
+        on_change="rerun",
     )
 
-    with tab_class_stats:
-        eligible_classes = sorted(
-            [c for c, cfg in CLASS_TIERS.items() if set(cfg.get("expansions") or set()) & active]
-        )
-        if not eligible_classes:
-            st.error("No classes are available for the enabled expansions.")
+    # `class_name` and `stats` drive every other tab, so they are resolved here,
+    # outside the guard. Only the widgets that edit them live inside it: their
+    # keys are the source of truth, and are re-seeded below when Streamlit prunes
+    # them (which it now does whenever the user is on another tab).
+    eligible_classes = sorted(
+        [c for c, cfg in CLASS_TIERS.items() if set(cfg.get("expansions") or set()) & active]
+    )
+    if not eligible_classes:
+        st.error("No classes are available for the enabled expansions.")
+        return
+
+    # Persist class across mode switches (widget state can be pruned when not rendered)
+    ss.setdefault("cm_persist_class", eligible_classes[0])
+    if ss["cm_persist_class"] not in eligible_classes:
+        ss["cm_persist_class"] = eligible_classes[0]
+
+    # Re-seed widget key if it was pruned or became invalid
+    if ("character_mode_class" not in ss) or (ss.get("character_mode_class") not in eligible_classes):
+        ss["character_mode_class"] = ss["cm_persist_class"]
+
+    # Persist tier indices across mode switches
+    ss.setdefault("cm_persist_tiers", {"str": 0, "dex": 0, "itl": 0, "fth": 0})
+
+    # Re-seed the tier keys if they were pruned. Load-bearing rather than
+    # defensive now that the tab is guarded. The radios below therefore pass no
+    # `index=`: supplying both a default and a Session State value makes
+    # Streamlit ignore one of them and log "was created with a default value but
+    # also had its value set via the Session State API".
+    _TIER_KEYS = [
+        ("str", "cm_tier_str_i"),
+        ("dex", "cm_tier_dex_i"),
+        ("itl", "cm_tier_itl_i"),
+        ("fth", "cm_tier_fth_i"),
+    ]
+    for stat, wkey in _TIER_KEYS:
+        if wkey not in ss:
+            ss[wkey] = int(ss["cm_persist_tiers"].get(stat, 0))
+
+    class_name = str(ss["character_mode_class"])
+    ss["cm_persist_class"] = class_name
+
+    cfg = CLASS_TIERS[class_name]
+    tier_opts = [0, 1, 2, 3]
+    tier_indices = {stat: int(ss.get(wkey, 0)) for stat, wkey in _TIER_KEYS}
+    ss["cm_persist_tiers"] = dict(tier_indices)
+    stats = _build_stats(class_name, tier_indices)
+
+    if tab_class_stats.open:
+        with tab_class_stats:
+
+            def _fmt(stat_key: str):
+                arr = cfg[stat_key]
+                return lambda i: f"{TIERS[i]} ({arr[i]})"
+
+            st.selectbox(
+                "Class",
+                options=eligible_classes,
+                key="character_mode_class",
+                # These widgets stop rendering when the user leaves this tab.
+                # `class_name` and `stats` are read from their keys above, on
+                # every rerun, so the keys must not be pruned.
+                persist_state="session",
+            )
+
+            st.radio(
+                "Strength tier",
+                options=tier_opts,
+                format_func=_fmt("str"),
+                horizontal=True,
+                key="cm_tier_str_i",
+                persist_state="session",
+            )
+            st.radio(
+                "Dexterity tier",
+                options=tier_opts,
+                format_func=_fmt("dex"),
+                horizontal=True,
+                key="cm_tier_dex_i",
+                persist_state="session",
+            )
+            st.radio(
+                "Intelligence tier",
+                options=tier_opts,
+                format_func=_fmt("itl"),
+                horizontal=True,
+                key="cm_tier_itl_i",
+                persist_state="session",
+            )
+            st.radio(
+                "Faith tier",
+                options=tier_opts,
+                format_func=_fmt("fth"),
+                horizontal=True,
+                key="cm_tier_fth_i",
+                persist_state="session",
+            )
+
+            st.caption(
+                f"Stats — STR {stats.get('str')}, DEX {stats.get('dex')}, INT {stats.get('itl')}, FAI {stats.get('fth')}"
+            )
+
+    # Reset the item filters whenever the class or stat tiers change.
+    #
+    # The filter option lists are derived from what this character can currently
+    # equip, and Streamlit keeps a keyed widget's stored selection in preference
+    # to its `default=`. So raising a stat made newly-equippable categories,
+    # dodge values, ranges, etc. appear in the option list *unselected*, silently
+    # hiding the items the change had just unlocked. Clearing the keys re-seeds
+    # every widget from its default, which is "all options".
+    #
+    # Must run before any filter widget is created this run: Streamlit forbids
+    # mutating a widget's state after instantiation.
+    _filter_fingerprint = (class_name, tuple(sorted(stats.items())))
+    _filters_need_reset = ss.get("_cm_filter_fingerprint") != _filter_fingerprint
+    if _filters_need_reset:
+        ss["_cm_filter_fingerprint"] = _filter_fingerprint
+        # Clearing the keys handles the filters whose permissive state is
+        # "empty" (match-any immunities/conditions, required features) and the
+        # mode selectors, which fall back to "Any"/False. The option-list
+        # filters are re-seeded to their full option list by
+        # `_reset_filter_selections` below, once those lists are known.
+        for _key in _CM_FILTER_KEYS:
+            ss.pop(_key, None)
+
+    def _reset_filter_selections(**key_to_options) -> None:
+        """Select every option for the named filters, if a reset is pending.
+
+        Assigning the key before the widget is created is what actually makes
+        the change stick: popping alone is not enough, because Streamlit
+        restores a keyed widget's previous value from its own widget state
+        rather than falling back to `default=`.
+
+        This seeding is therefore the single source of truth for the widgets
+        named here, and they deliberately pass no `default=`. Supplying both
+        makes Streamlit ignore one of the two and log "was created with a
+        default value but also had its value set via the Session State API".
+        Every one of these keys is seeded before its widget is first created,
+        because a fresh session always has a pending reset.
+        """
+        if not _filters_need_reset:
             return
-
-        # Persist class across mode switches (widget state can be pruned when not rendered)
-        ss.setdefault("cm_persist_class", eligible_classes[0])
-        if ss["cm_persist_class"] not in eligible_classes:
-            ss["cm_persist_class"] = eligible_classes[0]
-
-        # Re-seed widget key if it was pruned or became invalid
-        if ("character_mode_class" not in ss) or (ss.get("character_mode_class") not in eligible_classes):
-            ss["character_mode_class"] = ss["cm_persist_class"]
-
-        class_name = st.selectbox(
-            "Class",
-            options=eligible_classes,
-            key="character_mode_class",
-        )
-
-        # Copy widget value into persistent storage
-        ss["cm_persist_class"] = class_name
-
-        cfg = CLASS_TIERS[class_name]
-
-        tier_opts = [0, 1, 2, 3]
-
-        def _fmt(stat_key: str):
-            arr = cfg[stat_key]
-            return lambda i: f"{TIERS[i]} ({arr[i]})"
-
-        # Persist tier indices across mode switches
-        ss.setdefault("cm_persist_tiers", {"str": 0, "dex": 0, "itl": 0, "fth": 0})
-
-        # Re-seed widget keys if they were pruned
-        for stat, wkey in [
-            ("str", "cm_tier_str_i"),
-            ("dex", "cm_tier_dex_i"),
-            ("itl", "cm_tier_itl_i"),
-            ("fth", "cm_tier_fth_i"),
-        ]:
-            if wkey not in ss:
-                ss[wkey] = int(ss["cm_persist_tiers"].get(stat, 0))
-
-        _str_i = st.radio(
-            "Strength tier",
-            options=tier_opts,
-            index=int(ss.get("cm_tier_str_i", 0)),
-            format_func=_fmt("str"),
-            horizontal=True,
-            key="cm_tier_str_i",
-        )
-        _dex_i = st.radio(
-            "Dexterity tier",
-            options=tier_opts,
-            index=int(ss.get("cm_tier_dex_i", 0)),
-            format_func=_fmt("dex"),
-            horizontal=True,
-            key="cm_tier_dex_i",
-        )
-        _itl_i = st.radio(
-            "Intelligence tier",
-            options=tier_opts,
-            index=int(ss.get("cm_tier_itl_i", 0)),
-            format_func=_fmt("itl"),
-            horizontal=True,
-            key="cm_tier_itl_i",
-        )
-        _fth_i = st.radio(
-            "Faith tier",
-            options=tier_opts,
-            index=int(ss.get("cm_tier_fth_i", 0)),
-            format_func=_fmt("fth"),
-            horizontal=True,
-            key="cm_tier_fth_i",
-        )
-
-        tier_indices = {"str": _str_i, "dex": _dex_i, "itl": _itl_i, "fth": _fth_i}
-        ss["cm_persist_tiers"] = dict(tier_indices)
-
-        stats = _build_stats(class_name, tier_indices)
-        st.caption(
-            f"Stats — STR {stats.get('str')}, DEX {stats.get('dex')}, INT {stats.get('itl')}, FAI {stats.get('fth')}"
-        )
+        for key, options in key_to_options.items():
+            ss[key] = list(options)
 
     # Load item data (best-effort path resolution)
     paths = {
@@ -242,7 +332,17 @@ def render(settings: Dict[str, Any]) -> None:
     au_by_id = {_id(x): x for x in armor_upgrades}
 
     with tab_items:
-        query = st.text_input("Filter items by name", value="", key="character_mode_item_query")
+        # Render the box only when Items is showing, but always read its value:
+        # everything below filters on it, including the reconcile pass that has
+        # to run whichever tab the user is on.
+        if tab_items.open:
+            st.text_input(
+                "Filter items by name",
+                value="",
+                key="character_mode_item_query",
+                persist_state="session",
+            )
+        query = str(st.session_state.get("character_mode_item_query") or "")
 
         enabled_items = []
         present_exps: Set[str] = set()
@@ -277,44 +377,46 @@ def render(settings: Dict[str, Any]) -> None:
         source_entity_filter = set(gf_source_entity)
         legendary_mode = gf_legendary if gf_legendary in {"Any", "Legendary only", "Non-legendary only"} else "Any"
 
-        with st.expander("Global filters", expanded=False):
-            c1, c2 = st.columns(2)
-            with c1:
-                prev = st.session_state.get("cm_gf_expansion") or expansion_options
-                default = [x for x in prev if x in expansion_options] or expansion_options
-                _ = st.multiselect(
-                    "Expansion",
-                    options=expansion_options,
-                    default=default,
-                    key="cm_gf_expansion",
-                )
-            with c2:
-                _ = st.selectbox(
-                    "Legendary",
-                    options=["Any", "Legendary only", "Non-legendary only"],
-                    index=0,
-                    key="cm_gf_legendary",
-                )
+        _reset_filter_selections(
+            cm_gf_expansion=expansion_options,
+            cm_gf_source_type=type_options,
+            cm_gf_source_entity=entity_options,
+        )
 
-            c3, c4 = st.columns(2)
-            with c3:
-                prev = st.session_state.get("cm_gf_source_type") or type_options
-                default = [x for x in prev if x in type_options] or type_options
-                _ = st.multiselect(
-                    "Source Type",
-                    options=type_options,
-                    default=default,
-                    key="cm_gf_source_type",
-                )
-            with c4:
-                prev = st.session_state.get("cm_gf_source_entity") or entity_options
-                default = [x for x in prev if x in entity_options] or entity_options
-                _ = st.multiselect(
-                    "Source Entity",
-                    options=entity_options,
-                    default=default,
-                    key="cm_gf_source_entity",
-                )
+        if tab_items.open:
+            with st.expander("Global filters", expanded=False):
+                c1, c2 = st.columns(2)
+                with c1:
+                    _ = st.multiselect(
+                        "Expansion",
+                        options=expansion_options,
+                        key="cm_gf_expansion",
+                        persist_state="session",
+                    )
+                with c2:
+                    _ = st.selectbox(
+                        "Legendary",
+                        options=["Any", "Legendary only", "Non-legendary only"],
+                        index=0,
+                        key="cm_gf_legendary",
+                        persist_state="session",
+                    )
+
+                c3, c4 = st.columns(2)
+                with c3:
+                    _ = st.multiselect(
+                        "Source Type",
+                        options=type_options,
+                        key="cm_gf_source_type",
+                        persist_state="session",
+                    )
+                with c4:
+                    _ = st.multiselect(
+                        "Source Entity",
+                        options=entity_options,
+                        key="cm_gf_source_entity",
+                        persist_state="session",
+                    )
 
         # Use possibly-updated widget values
         expansion_filter = set(st.session_state.get("cm_gf_expansion") or expansion_options)
@@ -349,20 +451,14 @@ def render(settings: Dict[str, Any]) -> None:
         wu_order = [_id(x) for x in filtered_wu]
         au_order = [_id(x) for x in filtered_au]
 
-        # Filled inside sub-tabs, but needed later (attacks tab + final reconcile)
-        filtered_hand: List[Dict[str, Any]] = []
-        filtered_armor: List[Dict[str, Any]] = []
-        hand_order: List[str] = []
-
-        sub_hand, sub_attacks, sub_armor, sub_wu, sub_au = st.tabs(
-            ["Hand Items", "Attacks", "Armor", "Weapon Upgrades", "Armor Upgrades"]
-        )
-
-    with tab_items:
-        tab_hand, tab_attacks, tab_armor, tab_wu, tab_au = sub_hand, sub_attacks, sub_armor, sub_wu, sub_au
-
-    with tab_hand:
-        # --- Hand item filters live here now ---
+        # --- Hand item filtering ---
+        # Computed here, above the sub-tabs, rather than inside the Hand Items
+        # tab: `filtered_hand` and `hand_order` are consumed by the Attacks tab
+        # and by the reconcile pass at the bottom, and the sub-tabs are guarded
+        # on `.open` now, so only one of them runs per rerun. The filter
+        # *widgets* still live inside the Hand Items tab; their values are read
+        # back out of session_state here, which is why they carry
+        # persist_state="session".
         hand_pool_for_options = _filter_items(
             hand_items,
             active_expansions=active,
@@ -385,504 +481,533 @@ def render(settings: Dict[str, Any]) -> None:
         slot_opts = sorted({_hand_upgrade_slots_int(x) for x in hand_pool_for_options})
         hand_immunity_opts = sorted({x for it in hand_pool_for_options for x in _immunities_set(it)})
 
-        with st.expander("Hand item filters", expanded=False):
-            st.caption("Filter options are limited to items you can currently equip.")
-            c1, c2 = st.columns(2)
-            with c1:
-                prev = ss.get("cm_hf_categories") or cat_opts
-                default = [x for x in prev if x in cat_opts] or cat_opts
-                hf_categories = st.multiselect(
-                    "Category",
-                    options=cat_opts,
-                    default=cat_opts,
-                    key="cm_hf_categories",
-                )
-
-                prev = ss.get("cm_hf_dodge") or dodge_opts
-                default = [x for x in prev if x in dodge_opts] or dodge_opts
-                hf_dodge = st.multiselect(
-                    "Dodge dice",
-                    options=dodge_opts,
-                    default=dodge_opts,
-                    key="cm_hf_dodge",
-                )
-
-                prev = ss.get("cm_hf_hands") or hands_opts
-                default = [x for x in prev if x in hands_opts] or hands_opts
-                hf_hands = st.multiselect(
-                    "Hands required",
-                    options=hands_opts,
-                    default=hands_opts,
-                    key="cm_hf_hands",
-                )
-
-                hf_only_twohand_shields = st.checkbox(
-                    "Only shields usable with a 2-hander",
-                    value=bool(ss.get("cm_hf_only_twohand_shields") or False),
-                    key="cm_hf_only_twohand_shields",
-                )
-
-            with c2:
-                prev = ss.get("cm_hf_ranges") or range_opts
-                default = [x for x in prev if x in range_opts] or range_opts
-                hf_ranges = st.multiselect(
-                    "Range",
-                    options=range_opts,
-                    default=range_opts,
-                    key="cm_hf_ranges",
-                )
-
-                prev = ss.get("cm_hf_upgrade_slots") or slot_opts
-                default = [x for x in prev if x in slot_opts] or slot_opts
-                hf_upgrade_slots = st.multiselect(
-                    "Upgrade slots",
-                    options=slot_opts,
-                    default=slot_opts,
-                    key="cm_hf_upgrade_slots",
-                )
-
-                _attack_mode_opts = ["Any", "Attacks with dice", "No attacks with dice"]
-                cur = ss.get("cm_hf_attack_lines_mode") or "Any"
-                if cur not in _attack_mode_opts:
-                    cur = "Any"
-                hf_attack_lines_mode = st.radio(
-                    "Attacks with dice",
-                    options=_attack_mode_opts,
-                    index=_attack_mode_opts.index(cur),
-                    horizontal=True,
-                    key="cm_hf_attack_lines_mode",
-                )
-
-            c3, c4, c5 = st.columns(3)
-            with c3:
-                hf_required_features = st.multiselect(
-                    "Required properties (must match all)",
-                    options=HAND_FEATURE_OPTIONS,
-                    default=ss.get("cm_hf_required_features") or [],
-                    key="cm_hf_required_features",
-                )
-            with c4:
-                hf_any_conditions = st.multiselect(
-                    "Conditions (match any)",
-                    options=HAND_CONDITION_OPTIONS,
-                    default=ss.get("cm_hf_any_conditions") or [],
-                    key="cm_hf_any_conditions",
-                )
-            with c5:
-                prev = ss.get("cm_hf_any_immunities") or []
-                default = [x for x in prev if x in hand_immunity_opts]  # empty = show everything
-                hf_any_immunities = st.multiselect(
-                    "Immunities (match any)",
-                    options=hand_immunity_opts,
-                    default=default,
-                    key="cm_hf_any_immunities",
-                )
-
-        hand_filter_categories = set(hf_categories) if hf_categories else None
-        hand_filter_hands = set(int(x) for x in hf_hands) if hf_hands else None
-        hand_filter_ranges = set(str(x) for x in hf_ranges) if hf_ranges else None
-        hand_filter_slots = set(int(x) for x in hf_upgrade_slots) if hf_upgrade_slots else None
-        hand_filter_dodge = set(int(x) for x in hf_dodge) if hf_dodge else None
-        hand_required_features = set(hf_required_features or [])
-        hand_any_conditions = set(hf_any_conditions or [])
-        hand_any_immunities = set(hf_any_immunities or [])
-
-        filtered_hand_base = _filter_items(
-            hand_items,
-            active_expansions=active,
-            class_name=class_name,
-            stats=stats,
-            query=query,
-            expansion_filter=expansion_filter,
-            source_type_filter=source_type_filter,
-            source_entity_filter=source_entity_filter,
-            legendary_mode=legendary_mode,
+        # Must still run before the filter widgets are created.
+        _reset_filter_selections(
+            cm_hf_categories=cat_opts,
+            cm_hf_dodge=dodge_opts,
+            cm_hf_hands=hands_opts,
+            cm_hf_ranges=range_opts,
+            cm_hf_upgrade_slots=slot_opts,
         )
+
+        hf_categories = ss.get("cm_hf_categories") or []
+        hf_dodge = ss.get("cm_hf_dodge") or []
+        hf_hands = ss.get("cm_hf_hands") or []
+        hf_ranges = ss.get("cm_hf_ranges") or []
+        hf_upgrade_slots = ss.get("cm_hf_upgrade_slots") or []
+        hf_only_twohand_shields = bool(ss.get("cm_hf_only_twohand_shields") or False)
+        hf_attack_lines_mode = ss.get("cm_hf_attack_lines_mode") or "Any"
+        hf_required_features = ss.get("cm_hf_required_features") or []
+        hf_any_conditions = ss.get("cm_hf_any_conditions") or []
+        hf_any_immunities = ss.get("cm_hf_any_immunities") or []
+
+        filtered_hand_base = _matches_query(hand_pool_for_options, query)
         filtered_hand = _apply_hand_item_filters(
             filtered_hand_base,
-            categories=hand_filter_categories,
-            hands_required=hand_filter_hands,
-            only_twohand_compatible_shields=bool(hf_only_twohand_shields),
-            dodge=hand_filter_dodge,
-            ranges=hand_filter_ranges,
-            upgrade_slots=hand_filter_slots,
+            categories=set(hf_categories) if hf_categories else None,
+            hands_required=set(int(x) for x in hf_hands) if hf_hands else None,
+            only_twohand_compatible_shields=hf_only_twohand_shields,
+            dodge=set(int(x) for x in hf_dodge) if hf_dodge else None,
+            ranges=set(str(x) for x in hf_ranges) if hf_ranges else None,
+            upgrade_slots=set(int(x) for x in hf_upgrade_slots) if hf_upgrade_slots else None,
             attack_lines_mode=hf_attack_lines_mode,
-            required_features=hand_required_features,
-            any_conditions=hand_any_conditions,
-            any_immunities=hand_any_immunities,
+            required_features=set(hf_required_features),
+            any_conditions=set(hf_any_conditions),
+            any_immunities=set(hf_any_immunities),
         )
         hand_order = [_id(x) for x in filtered_hand]
 
-        prev = list(ss.get("cm_selected_hand_ids", []))
+        # Set inside the Armor tab and consumed only there.
+        filtered_armor: List[Dict[str, Any]] = []
 
-        hand_cfg = {
-            "Name": st.column_config.TextColumn("Name", width="medium"),
-            "Category": st.column_config.TextColumn("Category", width=110),
-            "Hands": st.column_config.NumberColumn("Hands", width=60),
-            "Range": st.column_config.TextColumn("Range", width=70),
-            "Upg Slots": st.column_config.NumberColumn("Slots", width=60),
-            "Block": st.column_config.TextColumn("Block", width=95),
-            "Resist": st.column_config.TextColumn("Resist", width=95),
-            "Dodge": st.column_config.TextColumn("Dodge", width=75),
-            "Text": st.column_config.TextColumn("Text", width="large"),
-        }
-
-        hand_col_order = [
-            "Select", "Name",
-            "Category", "Hands", "Range", "Upg Slots", "Block", "Resist", "Dodge", "Text",
-            "STR", "DEX", "INT", "FAI",
-            "Legendary", "Expansions", "SourceType", "SourceEntity",
-        ]
-
-        chosen = _render_selection_table(
-            items=filtered_hand,
-            selected_ids=prev,
-            single_select=False,
-            key="cm_table_hand",
-            height=520,
-            rows_fn=_rows_for_hand_table,
-            column_config_override=hand_cfg,
-            column_order=hand_col_order,
-        )
-        merged = _merge_visible_selection(
-            prev_ids=prev,
-            chosen_visible_ids=chosen,
-            visible_order=hand_order,
-        )
-        ss["cm_selected_hand_ids"] = _normalize_hand_selection(
-            merged,
-            items_by_id=hand_by_id,
-            stable_order=hand_order,
+        # `on_change="rerun"` + `.open`: unguarded, all five sub-tabs rendered on
+        # every rerun -- three `st.data_editor`s totalling ~136 KB of Arrow per
+        # rerun, with at most one of them visible.
+        sub_hand, sub_attacks, sub_armor, sub_wu, sub_au = st.tabs(
+            ["Hand Items", "Attacks", "Armor", "Weapon Upgrades", "Armor Upgrades"],
+            on_change="rerun",
         )
 
-    with tab_attacks:
-        prev_ids = list(ss.get("cm_selected_hand_ids") or [])
-        prev_set = set(prev_ids)
-        # Build totals using current selection (armor + upgrades + weapon upgrades)
-        armor_obj = armor_by_id.get(ss.get("cm_selected_armor_id") or "") if ss.get("cm_selected_armor_id") else None
-        armor_upgrade_objs = [au_by_id[uid] for uid in (ss.get("cm_selected_armor_upgrade_ids") or []) if uid in au_by_id]
+        # A sub-tab can report `.open` while Items itself is hidden, which would
+        # render its table into a container nobody can see.
+        items_open = bool(tab_items.open)
 
-        wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
-        weapon_upgrades_by_hand = {
-            hid: [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
-            for hid in set([_id(x) for x in filtered_hand])
-        }
+    with tab_items:
+        tab_hand, tab_attacks, tab_armor, tab_wu, tab_au = sub_hand, sub_attacks, sub_armor, sub_wu, sub_au
 
-        attack_rows = build_attack_totals_rows_cached(
-            hand_items=filtered_hand,
-            selected_hand_ids=prev_set,
-            armor_obj=armor_obj,
-            armor_upgrade_objs=armor_upgrade_objs,
-            weapon_upgrades_by_hand=weapon_upgrades_by_hand,
-        )
-        if not attack_rows:
-            st.caption("0 attack lines (current Hand Items filters hide all attack lines).")
-        else:
-            df = pd.DataFrame(attack_rows)
+    if items_open and tab_hand.open:
+        with tab_hand:
+            # The option lists, the reset and `filtered_hand` are all computed above
+            # the sub-tabs; only the widgets and the table live here.
+            with st.expander("Hand item filters", expanded=False):
+                st.caption("Filter options are limited to items you can currently equip.")
+                c1, c2 = st.columns(2)
+                with c1:
+                    hf_categories = st.multiselect(
+                        "Category",
+                        options=cat_opts,
+                        key="cm_hf_categories",
+                        # persist_state: these widgets stop rendering when the user
+                        # leaves this sub-tab, but `filtered_hand` is computed from
+                        # their session keys above the sub-tabs on every rerun.
+                        # Without it the filters would silently reset on tab switch.
+                        persist_state="session",
+                    )
 
-            # Require RowId for stable identity
-            if "RowId" not in df.columns:
-                st.error("Attacks table requires RowId.")
-                return
+                    hf_dodge = st.multiselect(
+                        "Dodge dice",
+                        options=dodge_opts,
+                        key="cm_hf_dodge",
+                        persist_state="session",
+                    )
 
-            df = df.set_index("RowId", drop=True)
+                    hf_hands = st.multiselect(
+                        "Hands required",
+                        options=hands_opts,
+                        key="cm_hf_hands",
+                        persist_state="session",
+                    )
 
-            # Prepare display columns (keep underlying df but present named columns)
-            disp = df.copy()
-            # Totals that include gear modifications are provided in Tot* columns; fallback to base columns
-            disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
-            disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
-            disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("TotMin")
-            disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("TotMax")
-            disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("TotAvg")
-            # Avg per stamina
-            def _avg_per_stam(row):
-                s = row.get("Stamina") or 0
-                a = row.get("Avg") or 0
-                return float(a) / float(s) if float(s) != 0 else 0.0
+                    hf_only_twohand_shields = st.checkbox(
+                        "Only shields usable with a 2-hander",
+                        value=bool(ss.get("cm_hf_only_twohand_shields") or False),
+                        key="cm_hf_only_twohand_shields",
+                        persist_state="session",
+                    )
 
-            disp["Avg/Stam"] = disp.apply(_avg_per_stam, axis=1)
-            disp["Range"] = disp.get("Range")
-            disp["Shaft"] = disp.get("Shaft")
-            disp["Magic"] = disp.get("Magic")
-            # Coerce Repeat to numeric so missing/invalid values render blank
-            disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
-            disp["Node"] = disp.get("Node")
-            # 'Ignore Block' column (may be 'Ign Blk')
-            if "Ign Blk" in disp.columns:
-                disp["Ignore Block"] = disp["Ign Blk"]
-            elif "IgnBlk" in disp.columns:
-                disp["Ignore Block"] = disp["IgnBlk"]
-            else:
-                disp["Ignore Block"] = False
-            # Condition/Cond
-            if "Cond" in disp.columns:
-                disp["Condition"] = disp["Cond"]
-            elif "TotCond" in disp.columns:
-                disp["Condition"] = disp["TotCond"]
-            else:
-                disp["Condition"] = ""
-            disp["Text"] = disp.get("Text")
+                with c2:
+                    hf_ranges = st.multiselect(
+                        "Range",
+                        options=range_opts,
+                        key="cm_hf_ranges",
+                        persist_state="session",
+                    )
 
-            att_cfg = {
-                "Select": st.column_config.CheckboxColumn("Select", width="small"),
-                "Item": st.column_config.TextColumn("Item", width="medium"),
-                "Stamina": st.column_config.NumberColumn("Stamina", width=80),
-                "Dice": st.column_config.TextColumn("Dice", width=150),
-                "Min": st.column_config.NumberColumn("Min", width=70),
-                "Max": st.column_config.NumberColumn("Max", width=70),
-                "Avg": st.column_config.NumberColumn("Avg", width=80, format="%.2f"),
-                "Avg/Stam": st.column_config.NumberColumn("Avg/Stam", width=80, format="%.3f"),
+                    hf_upgrade_slots = st.multiselect(
+                        "Upgrade slots",
+                        options=slot_opts,
+                        key="cm_hf_upgrade_slots",
+                        persist_state="session",
+                    )
+
+                    _attack_mode_opts = ["Any", "Attacks with dice", "No attacks with dice"]
+                    cur = ss.get("cm_hf_attack_lines_mode") or "Any"
+                    if cur not in _attack_mode_opts:
+                        cur = "Any"
+                    hf_attack_lines_mode = st.radio(
+                        "Attacks with dice",
+                        options=_attack_mode_opts,
+                        index=_attack_mode_opts.index(cur),
+                        horizontal=True,
+                        key="cm_hf_attack_lines_mode",
+                        persist_state="session",
+                    )
+
+                c3, c4, c5 = st.columns(3)
+                with c3:
+                    hf_required_features = st.multiselect(
+                        "Required properties (must match all)",
+                        options=HAND_FEATURE_OPTIONS,
+                        default=ss.get("cm_hf_required_features") or [],
+                        key="cm_hf_required_features",
+                        persist_state="session",
+                    )
+                with c4:
+                    hf_any_conditions = st.multiselect(
+                        "Conditions (match any)",
+                        options=HAND_CONDITION_OPTIONS,
+                        default=ss.get("cm_hf_any_conditions") or [],
+                        key="cm_hf_any_conditions",
+                        persist_state="session",
+                    )
+                with c5:
+                    hf_any_immunities = st.multiselect(
+                        "Immunities (match any)",
+                        options=hand_immunity_opts,
+                        default=[],  # empty = no immunity restriction
+                        key="cm_hf_any_immunities",
+                        persist_state="session",
+                    )
+
+            prev = list(ss.get("cm_selected_hand_ids", []))
+
+            hand_cfg = {
+                "Name": st.column_config.TextColumn("Name", width="medium"),
+                "Category": st.column_config.TextColumn("Category", width=110),
+                "Hands": st.column_config.NumberColumn("Hands", width=60),
                 "Range": st.column_config.TextColumn("Range", width=70),
-                "Shaft": st.column_config.CheckboxColumn("Shaft", disabled=True, width=70),
-                "Magic": st.column_config.CheckboxColumn("Magic", disabled=True, width=70),
-                "Repeat": st.column_config.NumberColumn("Repeat", disabled=True, width=70),
-                "Node": st.column_config.CheckboxColumn("Node", disabled=True, width=70),
-                "Ignore Block": st.column_config.CheckboxColumn("Ignore Block", disabled=True, width=80),
-                "Condition": st.column_config.TextColumn("Condition", width=140),
+                "Upg Slots": st.column_config.NumberColumn("Slots", width=60),
+                "Block": st.column_config.TextColumn("Block", width=95),
+                "Resist": st.column_config.TextColumn("Resist", width=95),
+                "Dodge": st.column_config.TextColumn("Dodge", width=75),
                 "Text": st.column_config.TextColumn("Text", width="large"),
             }
 
-            att_order = [
-                "Select", "Item", "Stamina", "Dice", "Min", "Max", "Avg", "Avg/Stam",
-                "Range", "Shaft", "Magic", "Repeat", "Node", "Ignore Block", "Condition", "Text",
+            hand_col_order = [
+                "Select", "Name",
+                "Category", "Hands", "Range", "Upg Slots", "Block", "Resist", "Dodge", "Text",
+                "STR", "DEX", "INT", "FAI",
+                "Legendary", "Expansions", "SourceType", "SourceEntity",
             ]
 
-            # Show data editor using the display frame; ensure Select column exists in disp
-            if "Select" not in disp.columns:
-                disp["Select"] = [False] * len(disp)
-
-            # Keep index (RowId) and pass display frame to editor
-            edited = st.data_editor(
-                disp[att_order],
-                key="cm_table_attacks",
-                hide_index=True,
-                width="stretch",
+            chosen = _render_selection_table(
+                items=filtered_hand,
+                selected_ids=prev,
+                single_select=False,
+                key="cm_table_hand",
                 height=520,
-                disabled=[c for c in att_order if c != "Select"],
-                column_config=att_cfg,
-                column_order=att_order,
-                num_rows="fixed",
+                rows_fn=_rows_for_hand_table,
+                column_config_override=hand_cfg,
+                column_order=hand_col_order,
             )
-
-            # Derive item_id from RowId: "<item_id>::atk::<n>"
-            item_id_series = edited.index.to_series().apply(lambda s: str(s).split("::atk::", 1)[0])
-
-            attack_item_ids = sorted(set(item_id_series.tolist()))
-            attack_item_set = set(attack_item_ids)
-
-            # Maintain stable ordering based on current hand table order
-            attack_visible_order = [iid for iid in hand_order if iid in attack_item_set]
-
-            prev_ids = list(ss.get("cm_selected_hand_ids") or [])
-            prev_set = set(prev_ids)
-
-            selected_after = set(prev_set)
-            for iid in attack_item_ids:
-                mask = item_id_series == iid
-                vals = list(edited.loc[mask, "Select"])
-                was = iid in prev_set
-                if was:
-                    # any unchecked row indicates user intent to deselect the item
-                    if any(v is False for v in vals):
-                        selected_after.discard(iid)
-                else:
-                    # any checked row indicates user intent to select the item
-                    if any(v is True for v in vals):
-                        selected_after.add(iid)
-
-            chosen_visible = [iid for iid in attack_visible_order if iid in selected_after]
-
-            ss["cm_selected_hand_ids"] = _merge_visible_selection(
-                prev_ids=prev_ids,
-                chosen_visible_ids=chosen_visible,
-                visible_order=attack_visible_order,
+            merged = _merge_visible_selection(
+                prev_ids=prev,
+                chosen_visible_ids=chosen,
+                visible_order=hand_order,
             )
             ss["cm_selected_hand_ids"] = _normalize_hand_selection(
-                ss["cm_selected_hand_ids"],
+                merged,
                 items_by_id=hand_by_id,
                 stable_order=hand_order,
             )
 
-    with tab_armor:
-        # --- Armor filters live here now ---
-        armor_pool_for_options = _filter_items(
-            armor_items,
-            active_expansions=active,
-            class_name=class_name,
-            stats=stats,
-            query="",
-            expansion_filter=expansion_filter,
-            source_type_filter=source_type_filter,
-            source_entity_filter=source_entity_filter,
-            legendary_mode=legendary_mode,
-        )
+    if items_open and tab_attacks.open:
+        with tab_attacks:
+            prev_ids = list(ss.get("cm_selected_hand_ids") or [])
+            prev_set = set(prev_ids)
+            # Build totals using current selection (armor + upgrades + weapon upgrades)
+            armor_obj = armor_by_id.get(ss.get("cm_selected_armor_id") or "") if ss.get("cm_selected_armor_id") else None
+            armor_upgrade_objs = [au_by_id[uid] for uid in (ss.get("cm_selected_armor_upgrade_ids") or []) if uid in au_by_id]
 
-        armor_dodge_opts = sorted({_armor_dodge_int(x) for x in armor_pool_for_options})
-        armor_slot_opts = sorted({_armor_upgrade_slots_int(x) for x in armor_pool_for_options})
-        armor_immunity_opts = sorted({x for it in armor_pool_for_options for x in _immunities_set(it)})
+            wu_map = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
+            # Only hands that actually carry upgrades. This used to emit an entry
+            # for all ~206 filtered ids, almost all of them empty lists, and the
+            # whole dict is JSON-serialized into the cache key on every rerun.
+            # `build_attack_totals_rows` reads it as `.get(iid) or []`, so a
+            # missing key and an empty list are the same thing to it.
+            weapon_upgrades_by_hand = {}
+            for hid in set(_id(x) for x in filtered_hand):
+                ups = [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
+                if ups:
+                    weapon_upgrades_by_hand[hid] = ups
 
-        with st.expander("Armor filters", expanded=False):
-            st.caption("Filter options are limited to items you can currently equip.")
-            c1, c2 = st.columns(2)
-            with c1:
-                prev = ss.get("cm_af_dodge") or armor_dodge_opts
-                default = [x for x in prev if x in armor_dodge_opts] or armor_dodge_opts
-                af_dodge = st.multiselect("Dodge dice", options=armor_dodge_opts, default=armor_dodge_opts, key="cm_af_dodge")
+            attack_rows = build_attack_totals_rows_cached(
+                hand_items=filtered_hand,
+                selected_hand_ids=prev_set,
+                armor_obj=armor_obj,
+                armor_upgrade_objs=armor_upgrade_objs,
+                weapon_upgrades_by_hand=weapon_upgrades_by_hand,
+            )
+            if not attack_rows:
+                st.caption("0 attack lines (current Hand Items filters hide all attack lines).")
+            else:
+                df = pd.DataFrame(attack_rows)
 
-                prev = ss.get("cm_af_slots") or armor_slot_opts
-                default = [x for x in prev if x in armor_slot_opts] or armor_slot_opts
-                af_slots = st.multiselect("Upgrade slots", options=armor_slot_opts, default=armor_slot_opts, key="cm_af_slots")
+                # Require RowId for stable identity
+                if "RowId" not in df.columns:
+                    st.error("Attacks table requires RowId.")
+                    return
 
-            with c2:
-                prev = ss.get("cm_af_immunities") or []
-                default = [x for x in prev if x in armor_immunity_opts]  # empty = show everything
-                af_immunities = st.multiselect(
-                    "Immunities (match any)",
-                    options=armor_immunity_opts,
-                    default=default,
-                    key="cm_af_immunities",
+                df = df.set_index("RowId", drop=True)
+
+                # Prepare display columns (keep underlying df but present named columns)
+                disp = df.copy()
+                # Totals that include gear modifications are provided in Tot* columns; fallback to base columns
+                disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
+                disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
+                disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("Min")
+                disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("Max")
+                disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("Avg")
+                # Avg per stamina
+                def _avg_per_stam(row):
+                    s = row.get("Stamina") or 0
+                    a = row.get("Avg") or 0
+                    return float(a) / float(s) if float(s) != 0 else 0.0
+
+                disp["Avg/Stam"] = disp.apply(_avg_per_stam, axis=1)
+                disp["Range"] = disp.get("Range")
+                disp["Shaft"] = disp.get("Shaft")
+                disp["Magic"] = disp.get("Magic")
+                # Coerce Repeat to numeric so missing/invalid values render blank
+                disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
+                disp["Node"] = disp.get("Node")
+                # 'Ignore Block' column (may be 'Ign Blk')
+                if "Ign Blk" in disp.columns:
+                    disp["Ignore Block"] = disp["Ign Blk"]
+                elif "IgnBlk" in disp.columns:
+                    disp["Ignore Block"] = disp["IgnBlk"]
+                else:
+                    disp["Ignore Block"] = False
+                # Condition/Cond
+                if "Cond" in disp.columns:
+                    disp["Condition"] = disp["Cond"]
+                elif "TotCond" in disp.columns:
+                    disp["Condition"] = disp["TotCond"]
+                else:
+                    disp["Condition"] = ""
+                disp["Text"] = disp.get("Text")
+
+                att_cfg = {
+                    "Select": st.column_config.CheckboxColumn("Select", width="small"),
+                    "Item": st.column_config.TextColumn("Item", width="medium"),
+                    "Stamina": st.column_config.NumberColumn("Stamina", width=80),
+                    "Dice": st.column_config.TextColumn("Dice", width=150),
+                    "Min": st.column_config.NumberColumn("Min", width=70),
+                    "Max": st.column_config.NumberColumn("Max", width=70),
+                    "Avg": st.column_config.NumberColumn("Avg", width=80, format="%.2f"),
+                    "Avg/Stam": st.column_config.NumberColumn("Avg/Stam", width=80, format="%.3f"),
+                    "Range": st.column_config.TextColumn("Range", width=70),
+                    "Shaft": st.column_config.CheckboxColumn("Shaft", disabled=True, width=70),
+                    "Magic": st.column_config.CheckboxColumn("Magic", disabled=True, width=70),
+                    "Repeat": st.column_config.NumberColumn("Repeat", disabled=True, width=70),
+                    "Node": st.column_config.CheckboxColumn("Node", disabled=True, width=70),
+                    "Ignore Block": st.column_config.CheckboxColumn("Ignore Block", disabled=True, width=80),
+                    "Condition": st.column_config.TextColumn("Condition", width=140),
+                    "Text": st.column_config.TextColumn("Text", width="large"),
+                }
+
+                att_order = [
+                    "Select", "Item", "Stamina", "Dice", "Min", "Max", "Avg", "Avg/Stam",
+                    "Range", "Shaft", "Magic", "Repeat", "Node", "Ignore Block", "Condition", "Text",
+                ]
+
+                # Show data editor using the display frame; ensure Select column exists in disp
+                if "Select" not in disp.columns:
+                    disp["Select"] = [False] * len(disp)
+
+                # Keep index (RowId) and pass display frame to editor
+                edited = st.data_editor(
+                    disp[att_order],
+                    key="cm_table_attacks",
+                    hide_index=True,
+                    width="stretch",
+                    height=520,
+                    disabled=[c for c in att_order if c != "Select"],
+                    column_config=att_cfg,
+                    column_order=att_order,
+                    num_rows="fixed",
                 )
 
-                _sr_opts = ["Any", "Has special rules", "No special rules"]
-                cur = ss.get("cm_af_special") or "Any"
-                if cur not in _sr_opts:
-                    cur = "Any"
-                af_special = st.radio(
-                    "Special rules",
-                    options=_sr_opts,
-                    index=_sr_opts.index(cur),
-                    horizontal=True,
-                    key="cm_af_special",
+                # Derive item_id from RowId: "<item_id>::atk::<n>"
+                item_id_series = edited.index.to_series().apply(lambda s: str(s).split("::atk::", 1)[0])
+
+                attack_item_ids = sorted(set(item_id_series.tolist()))
+                attack_item_set = set(attack_item_ids)
+
+                # Maintain stable ordering based on current hand table order
+                attack_visible_order = [iid for iid in hand_order if iid in attack_item_set]
+
+                prev_ids = list(ss.get("cm_selected_hand_ids") or [])
+                prev_set = set(prev_ids)
+
+                selected_after = set(prev_set)
+                for iid in attack_item_ids:
+                    mask = item_id_series == iid
+                    vals = list(edited.loc[mask, "Select"])
+                    was = iid in prev_set
+                    if was:
+                        # any unchecked row indicates user intent to deselect the item
+                        if any(v is False for v in vals):
+                            selected_after.discard(iid)
+                    else:
+                        # any checked row indicates user intent to select the item
+                        if any(v is True for v in vals):
+                            selected_after.add(iid)
+
+                chosen_visible = [iid for iid in attack_visible_order if iid in selected_after]
+
+                ss["cm_selected_hand_ids"] = _merge_visible_selection(
+                    prev_ids=prev_ids,
+                    chosen_visible_ids=chosen_visible,
+                    visible_order=attack_visible_order,
+                )
+                ss["cm_selected_hand_ids"] = _normalize_hand_selection(
+                    ss["cm_selected_hand_ids"],
+                    items_by_id=hand_by_id,
+                    stable_order=hand_order,
                 )
 
-        armor_filter_dodge = set(int(x) for x in af_dodge) if af_dodge else None
-        armor_filter_slots = set(int(x) for x in af_slots) if af_slots else None
-        armor_any_immunities = set(af_immunities or [])
-        armor_special_mode = af_special
+    if items_open and tab_armor.open:
+        with tab_armor:
+            # --- Armor filters live here now ---
+            armor_pool_for_options = _filter_items(
+                armor_items,
+                active_expansions=active,
+                class_name=class_name,
+                stats=stats,
+                query="",
+                expansion_filter=expansion_filter,
+                source_type_filter=source_type_filter,
+                source_entity_filter=source_entity_filter,
+                legendary_mode=legendary_mode,
+            )
 
-        filtered_armor_base = _filter_items(
-            armor_items,
-            active_expansions=active,
-            class_name=class_name,
-            stats=stats,
-            query=query,
-            expansion_filter=expansion_filter,
-            source_type_filter=source_type_filter,
-            source_entity_filter=source_entity_filter,
-            legendary_mode=legendary_mode,
-        )
-        filtered_armor = _apply_armor_filters(
-            filtered_armor_base,
-            dodge_dice=armor_filter_dodge,
-            upgrade_slots=armor_filter_slots,
-            any_immunities=armor_any_immunities,
-            special_rules_mode=armor_special_mode,
-        )
-        armor_order = [_id(x) for x in filtered_armor]
+            armor_dodge_opts = sorted({_armor_dodge_int(x) for x in armor_pool_for_options})
+            armor_slot_opts = sorted({_armor_upgrade_slots_int(x) for x in armor_pool_for_options})
+            armor_immunity_opts = sorted({x for it in armor_pool_for_options for x in _immunities_set(it)})
 
-        prev_armor_id = ss.get("cm_selected_armor_id") or ""
+            _reset_filter_selections(
+                cm_af_dodge=armor_dodge_opts,
+                cm_af_slots=armor_slot_opts,
+            )
 
-        armor_cfg = {
-            "Name": st.column_config.TextColumn("Name", width="medium"),
-            "Block": st.column_config.TextColumn("Block", width=95),
-            "Resist": st.column_config.TextColumn("Resist", width=95),
-            "Dodge": st.column_config.TextColumn("Dodge", width=70),
-            "Upg Slots": st.column_config.NumberColumn("Slots", width=60),
-            "Text": st.column_config.TextColumn("Text", width="large"),
-        }
-
-        armor_col_order = [
-            "Select", "Name",
-            "Block", "Resist", "Dodge",
-            "Upg Slots", "Text",
-            "STR", "DEX", "INT", "FAI",
-            "Legendary", "Expansions", "SourceType", "SourceEntity",
-        ]
-
-        chosen = _render_selection_table(
-            items=filtered_armor,
-            selected_ids=[prev_armor_id],
-            single_select=True,
-            key="cm_table_armor",
-            height=420,
-            rows_fn=_rows_for_armor_table,
-            column_config_override=armor_cfg,
-            column_order=armor_col_order,
-        )
-
-        # If the user clears the selection (chosen == []), treat as no armor selected
-        new_armor_id = chosen[0] if chosen else ""
-        if new_armor_id != prev_armor_id:
-            ss["cm_selected_armor_id"] = new_armor_id
-            ss["cm_selected_armor_upgrade_ids"] = []
-
-    with tab_wu:
-        if not ss["cm_selected_hand_ids"]:
-            st.info("Select hand items to attach weapon upgrades.")
-        else:
-            wu_map: Dict[str, List[str]] = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
-            selected_hand_set = set(ss["cm_selected_hand_ids"])
-
-            # prune removed hands + prune invalid upgrade ids (state hygiene)
-            for hid in list(wu_map.keys()):
-                if hid not in selected_hand_set:
-                    wu_map.pop(hid, None)
-            for hid in ss["cm_selected_hand_ids"]:
-                wu_map[hid] = [x for x in (wu_map.get(hid) or []) if x in wu_by_id]
-
-            ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
-
-            for hid in ss["cm_selected_hand_ids"]:
-                h = hand_by_id.get(hid) or {}
-                prev = list(wu_map.get(hid) or [])
-                extra = sum(_extra_upgrade_slots(wu_by_id.get(uid) or {}) for uid in prev)
-                cap = _upgrade_slots(h) + int(extra)
-                if cap <= 0:
-                    continue
-                # Keep expander identity stable by avoiding dynamic labels.
-                with st.expander(f"{_name(h)}", expanded=False):
-                    st.caption(f"Upgrade slots: {cap}")
-                    chosen = _render_selection_table(
-                        items=filtered_wu,
-                        selected_ids=prev,
-                        single_select=False,
-                        key=f"cm_weapon_up_{hid}",
-                        height=384,
+            with st.expander("Armor filters", expanded=False):
+                st.caption("Filter options are limited to items you can currently equip.")
+                c1, c2 = st.columns(2)
+                with c1:
+                    af_dodge = st.multiselect(
+                        "Dodge dice",
+                        options=armor_dodge_opts,
+                        key="cm_af_dodge",
+                        persist_state="session",
                     )
-                    wu_map[hid] = _merge_visible_selection(
-                        prev_ids=prev,
-                        chosen_visible_ids=chosen,
-                        visible_order=wu_order,
+
+                    af_slots = st.multiselect(
+                        "Upgrade slots",
+                        options=armor_slot_opts,
+                        key="cm_af_slots",
+                        persist_state="session",
                     )
-            ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
 
-    with tab_au:
-        if not ss.get("cm_selected_armor_id"):
-            st.info("Select an armor to attach armor upgrades.")
-            ss["cm_selected_armor_upgrade_ids"] = []
-        else:
-            armor_obj = armor_by_id.get(ss.get("cm_selected_armor_id") or "") or {}
-            armor_capacity = _upgrade_slots(armor_obj)
-            st.caption(f"Armor upgrade slots: {armor_capacity}")
+                with c2:
+                    af_immunities = st.multiselect(
+                        "Immunities (match any)",
+                        options=armor_immunity_opts,
+                        default=[],  # empty = no immunity restriction
+                        key="cm_af_immunities",
+                        persist_state="session",
+                    )
 
-            if armor_capacity <= 0:
-                st.info("Selected armor has no upgrade slots.")
+                    _sr_opts = ["Any", "Has special rules", "No special rules"]
+                    cur = ss.get("cm_af_special") or "Any"
+                    if cur not in _sr_opts:
+                        cur = "Any"
+                    af_special = st.radio(
+                        "Special rules",
+                        options=_sr_opts,
+                        index=_sr_opts.index(cur),
+                        horizontal=True,
+                        key="cm_af_special",
+                        persist_state="session",
+                    )
+
+            armor_filter_dodge = set(int(x) for x in af_dodge) if af_dodge else None
+            armor_filter_slots = set(int(x) for x in af_slots) if af_slots else None
+            armor_any_immunities = set(af_immunities or [])
+            armor_special_mode = af_special
+
+            filtered_armor_base = _matches_query(armor_pool_for_options, query)
+            filtered_armor = _apply_armor_filters(
+                filtered_armor_base,
+                dodge_dice=armor_filter_dodge,
+                upgrade_slots=armor_filter_slots,
+                any_immunities=armor_any_immunities,
+                special_rules_mode=armor_special_mode,
+            )
+            prev_armor_id = ss.get("cm_selected_armor_id") or ""
+
+            armor_cfg = {
+                "Name": st.column_config.TextColumn("Name", width="medium"),
+                "Block": st.column_config.TextColumn("Block", width=95),
+                "Resist": st.column_config.TextColumn("Resist", width=95),
+                "Dodge": st.column_config.TextColumn("Dodge", width=70),
+                "Upg Slots": st.column_config.NumberColumn("Slots", width=60),
+                "Text": st.column_config.TextColumn("Text", width="large"),
+            }
+
+            armor_col_order = [
+                "Select", "Name",
+                "Block", "Resist", "Dodge",
+                "Upg Slots", "Text",
+                "STR", "DEX", "INT", "FAI",
+                "Legendary", "Expansions", "SourceType", "SourceEntity",
+            ]
+
+            chosen = _render_selection_table(
+                items=filtered_armor,
+                selected_ids=[prev_armor_id],
+                single_select=True,
+                key="cm_table_armor",
+                height=420,
+                rows_fn=_rows_for_armor_table,
+                column_config_override=armor_cfg,
+                column_order=armor_col_order,
+            )
+
+            # If the user clears the selection (chosen == []), treat as no armor selected
+            new_armor_id = chosen[0] if chosen else ""
+            if new_armor_id != prev_armor_id:
+                ss["cm_selected_armor_id"] = new_armor_id
+                ss["cm_selected_armor_upgrade_ids"] = []
+
+    if items_open and tab_wu.open:
+        with tab_wu:
+            if not ss["cm_selected_hand_ids"]:
+                st.info("Select hand items to attach weapon upgrades.")
+            else:
+                wu_map: Dict[str, List[str]] = dict(ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {})
+                selected_hand_set = set(ss["cm_selected_hand_ids"])
+
+                # prune removed hands + prune invalid upgrade ids (state hygiene)
+                for hid in list(wu_map.keys()):
+                    if hid not in selected_hand_set:
+                        wu_map.pop(hid, None)
+                for hid in ss["cm_selected_hand_ids"]:
+                    wu_map[hid] = [x for x in (wu_map.get(hid) or []) if x in wu_by_id]
+
+                ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
+
+                for hid in ss["cm_selected_hand_ids"]:
+                    h = hand_by_id.get(hid) or {}
+                    prev = list(wu_map.get(hid) or [])
+                    extra = sum(_extra_upgrade_slots(wu_by_id.get(uid) or {}) for uid in prev)
+                    cap = _upgrade_slots(h) + int(extra)
+                    if cap <= 0:
+                        continue
+                    # Keep expander identity stable by avoiding dynamic labels.
+                    with st.expander(f"{_name(h)}", expanded=False):
+                        st.caption(f"Upgrade slots: {cap}")
+                        chosen = _render_selection_table(
+                            items=filtered_wu,
+                            selected_ids=prev,
+                            single_select=False,
+                            key=f"cm_weapon_up_{hid}",
+                            height=384,
+                        )
+                        wu_map[hid] = _merge_visible_selection(
+                            prev_ids=prev,
+                            chosen_visible_ids=chosen,
+                            visible_order=wu_order,
+                        )
+                ss["cm_selected_weapon_upgrade_ids_by_hand"] = wu_map
+
+    if items_open and tab_au.open:
+        with tab_au:
+            if not ss.get("cm_selected_armor_id"):
+                st.info("Select an armor to attach armor upgrades.")
                 ss["cm_selected_armor_upgrade_ids"] = []
             else:
-                prev = list(ss.get("cm_selected_armor_upgrade_ids") or [])
-                chosen = _render_selection_table(
-                    items=filtered_au,
-                    selected_ids=prev,
-                    single_select=False,
-                    key="cm_armor_upgrades_table",
-                    height=432,
-                )
-                ss["cm_selected_armor_upgrade_ids"] = _merge_visible_selection(
-                    prev_ids=prev,
-                    chosen_visible_ids=chosen,
-                    visible_order=au_order,
-                )
+                armor_obj = armor_by_id.get(ss.get("cm_selected_armor_id") or "") or {}
+                armor_capacity = _upgrade_slots(armor_obj)
+                st.caption(f"Armor upgrade slots: {armor_capacity}")
+
+                if armor_capacity <= 0:
+                    st.info("Selected armor has no upgrade slots.")
+                    ss["cm_selected_armor_upgrade_ids"] = []
+                else:
+                    prev = list(ss.get("cm_selected_armor_upgrade_ids") or [])
+                    chosen = _render_selection_table(
+                        items=filtered_au,
+                        selected_ids=prev,
+                        single_select=False,
+                        key="cm_armor_upgrades_table",
+                        height=432,
+                    )
+                    ss["cm_selected_armor_upgrade_ids"] = _merge_visible_selection(
+                        prev_ids=prev,
+                        chosen_visible_ids=chosen,
+                        visible_order=au_order,
+                    )
 
     with tab_items:
         # --- Final reconcile (no legality enforcement) ---
@@ -1002,17 +1127,12 @@ def render(settings: Dict[str, Any]) -> None:
     )
     dodge_effective = max(int(def_tot.dodge_armor), 0) + max(int(def_tot.dodge_hand_max), 0)
 
+    # Consumed further down by the Build and Compare tabs; the attack rows for
+    # this selection are built there, per tab, from their own inputs.
     weapon_upgrades_by_hand = {
         hid: [wu_by_id[uid] for uid in (wu_map.get(hid) or []) if uid in wu_by_id]
         for hid in selected_hand_ids
     }
-    atk_rows = build_attack_totals_rows_cached(
-        hand_items=selected_hand_objs,
-        selected_hand_ids=set(selected_hand_ids),
-        armor_obj=armor_obj,
-        armor_upgrade_objs=armor_upgrade_objs,
-        weapon_upgrades_by_hand=weapon_upgrades_by_hand,
-    )
 
     validation_errors = _validate_build(
         stats=stats,
@@ -1027,11 +1147,508 @@ def render(settings: Dict[str, Any]) -> None:
         au_by_id=au_by_id,
     )
 
-    with tab_build:
-        out_left, out_right = st.columns([1, 1])
+    if tab_build.open:
+        with tab_build:
+            out_left, out_right = st.columns([1, 1])
 
-        with out_left:
-            st.markdown("#### Selected Items")
+            with out_left:
+                st.markdown("#### Selected Items")
+                lines = []
+                armor_id = ss.get("cm_selected_armor_id") or ""
+                if armor_id and armor_id in armor_by_id:
+                    a = armor_by_id[armor_id]
+                    lines.append(a.get("name"))
+                    for uid in (ss.get("cm_selected_armor_upgrade_ids") or []):
+                        u = au_by_id.get(uid)
+                        if u:
+                            lines.append(f"  - {u.get('name')}")
+
+                for hid in list(ss.get("cm_selected_hand_ids") or []):
+                    h = hand_by_id.get(hid)
+                    if not h:
+                        continue
+                    lines.append(f"{h.get('name')}")
+                    for uid in (ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}).get(hid, []):
+                        wu = wu_by_id.get(uid)
+                        if wu:
+                            lines.append(f"  - {wu.get('name')}")
+
+                if lines:
+                    md_lines = []
+                    for l in lines:
+                        if isinstance(l, str) and l.startswith("  - "):
+                            md_lines.append("  - " + l[4:])
+                        else:
+                            md_lines.append("- " + str(l))
+                    st.markdown("\n".join(md_lines))
+                else:
+                    st.caption("No items selected.")
+
+                st.markdown("#### Validation")
+                if validation_errors:
+                    st.warning("Build validation issues:\n- " + "\n- ".join(validation_errors))
+                else:
+                    st.success("No validation issues.")
+
+                one_hands = [h for h in selected_hand_objs if _hands_required(h) == 1]
+                two_hands = [h for h in selected_hand_objs if _hands_required(h) == 2]
+                twohand_compatible_shields = [h for h in selected_hand_objs if _is_twohand_compatible_shield(h)]
+
+                # "Empty hand" combos (single 1-hand item) are only shown when there are no
+                # full-hands combos available (any 2-hand item, or any 2x 1-hand combo).
+                has_full_hands_combos = bool(two_hands) or (len(one_hands) >= 2)
+
+                st.markdown("#### Combos")
+                if not selected_hand_objs:
+                    st.caption("Select hand items to see combo defenses.")
+                else:
+                    def _render_def_combo(h_objs: List[dict], title: str):
+                        wus = []
+                        for h in h_objs:
+                            hid = _id(h)
+                            wus.extend(weapon_upgrades_by_hand.get(hid) or [])
+                        dt = build_defense_totals_cached(
+                            armor_obj=armor_obj,
+                            armor_upgrade_objs=armor_upgrade_objs,
+                            hand_objs=h_objs,
+                            weapon_upgrade_objs=wus,
+                        )
+                        sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
+                        eff_dodge = int(dt.dodge_armor) + int(sum_hand_dodge)
+                        b_stats = _dice_min_max_avg(dt.block)
+                        r_stats = _dice_min_max_avg(dt.resist)
+                        st.markdown(f"**{title}**")
+                        st.markdown(
+                            f"""
+                            <ul style=\"list-style:none; padding-left:0; margin:0;\">
+                            <li><span style=\"display:inline-block; width:3.5rem; font-weight:600\">Dodge:</span> {_dodge_icons(eff_dodge)} <span style=\"color:#bfb79f\">(armor {dt.dodge_armor} + hands {sum_hand_dodge})</span></li>
+                            <li><span style=\"display:inline-block; width:3.5rem; font-weight:600\">Block:</span> {_dice_icons(dt.block)} <span style=\"color:#bfb79f\">(avg {b_stats['avg']:.2f})</span></li>
+                            <li><span style=\"display:inline-block; width:3.5rem; font-weight:600\">Resist:</span> {_dice_icons(dt.resist)} <span style=\"color:#bfb79f\">(avg {r_stats['avg']:.2f})</span></li>
+                            </ul>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                        combo_wu_by_hand = {
+                            _id(h): (weapon_upgrades_by_hand.get(_id(h)) or []) for h in h_objs
+                        }
+                        combo_rows = build_attack_totals_rows_cached(
+                            hand_items=h_objs,
+                            selected_hand_ids=set([_id(h) for h in h_objs]),
+                            armor_obj=armor_obj,
+                            armor_upgrade_objs=armor_upgrade_objs,
+                            weapon_upgrades_by_hand=combo_wu_by_hand,
+                            apply_other_hand_attack_mods=True,
+                        )
+                        if combo_rows:
+                            df_combo = pd.DataFrame(combo_rows)
+                            disp_combo = df_combo.copy()
+                            disp_combo["Stamina"] = (
+                                disp_combo.get("TotStam") if "TotStam" in disp_combo.columns else disp_combo.get("Stam")
+                            )
+                            disp_combo["Dice"] = (
+                                disp_combo.get("TotDice") if "TotDice" in disp_combo.columns else disp_combo.get("Dice")
+                            )
+                            disp_combo["Min"] = (
+                                disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("Min")
+                            )
+                            disp_combo["Max"] = (
+                                disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("Max")
+                            )
+                            disp_combo["Avg"] = (
+                                disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("Avg")
+                            )
+                            if "Cond" in disp_combo.columns:
+                                disp_combo["Conditions"] = disp_combo["Cond"]
+                            elif "TotCond" in disp_combo.columns:
+                                disp_combo["Conditions"] = disp_combo["TotCond"]
+                            else:
+                                disp_combo["Conditions"] = ""
+                            if "Repeat" in disp_combo.columns:
+                                disp_combo["Repeat"] = pd.to_numeric(disp_combo.get("Repeat"), errors="coerce")
+
+                            pref = [
+                                "Item",
+                                "Atk#",
+                                "Stamina",
+                                "Dice",
+                                "Min",
+                                "Max",
+                                "Avg",
+                                "Conditions",
+                                "Range",
+                                "Magic",
+                                "Node",
+                                "Shaft",
+                                "Push",
+                                "Repeat",
+                                "Text",
+                            ]
+                            disp_cols = [c for c in pref if c in disp_combo.columns]
+                            st.dataframe(disp_combo[disp_cols], hide_index=True, width="stretch", height=200)
+
+                    if len(one_hands) >= 2:
+                        for a, b in itertools.combinations(one_hands, 2):
+                            _render_def_combo([a, b], f"{a.get('name')} + {b.get('name')}")
+                            st.markdown("---")
+
+                    if (not has_full_hands_combos) and len(one_hands) == 1:
+                        h = one_hands[0]
+                        _render_def_combo([h], f"{h.get('name')}")
+                        st.markdown("---")
+
+                    if two_hands or twohand_compatible_shields:
+                        for h in two_hands:
+                            if not twohand_compatible_shields:
+                                _render_def_combo([h], f"{h.get('name')}")
+                                st.markdown("---")
+                            for sh in twohand_compatible_shields:
+                                _render_def_combo([h, sh], f"{h.get('name')} + {sh.get('name')}")
+                                st.markdown("---")
+
+            with out_right:
+                st.markdown("#### Effects")
+                effects: List[str] = []
+
+                def _add_eff(x, source=None):
+                    s = str(x or "").strip()
+                    if not s:
+                        return
+                    if source:
+                        effects.append(f"{s} — {source}")
+                    else:
+                        effects.append(s)
+
+                hands_with_wu = [hid for hid in selected_hand_ids if (wu_map.get(hid) or [])]
+                multi_weapon_wu = len(hands_with_wu) > 1
+
+                if armor_obj:
+                    _add_eff(armor_obj.get("text"), source=armor_obj.get("name"))
+                    for imm in (armor_obj.get("immunities") or []):
+                        _add_eff(f"Immunity: {imm}", source=armor_obj.get("name"))
+
+                for u in armor_upgrade_objs:
+                    _add_eff(u.get("text"), source=u.get("name"))
+                    for imm in (u.get("immunities") or []):
+                        _add_eff(f"Immunity: {imm}", source=u.get("name"))
+
+                for h in selected_hand_objs:
+                    _add_eff(h.get("text"), source=h.get("name"))
+                    for imm in (h.get("immunities") or []):
+                        _add_eff(f"Immunity: {imm}", source=h.get("name"))
+
+                for hid in selected_hand_ids:
+                    hand = hand_by_id.get(hid)
+                    hand_name = hand.get("name") if hand else None
+                    for uid in (wu_map.get(hid) or []):
+                        u = wu_by_id.get(uid)
+                        if not u:
+                            continue
+                        if multi_weapon_wu and hand_name:
+                            src = f"{u.get('name')} on {hand_name}"
+                        else:
+                            src = u.get("name")
+                        _add_eff(u.get("text"), source=src)
+                        for imm in (u.get("immunities") or []):
+                            _add_eff(f"Immunity: {imm}", source=src)
+
+                effects = list(dict.fromkeys([e for e in effects if e]))
+                if effects:
+                    st.markdown("\n".join([f"- {e}" for e in effects]))
+                else:
+                    st.caption("No effects found on selected items.")
+
+                st.markdown("#### Defense Simulator")
+                # `def_tot` / `dodge_effective` are the current build's totals,
+                # computed once above for the whole tab.
+                sim_incoming = st.slider(
+                    "Incoming damage", min_value=2, max_value=15, value=6, step=1, key="cm_sim_incoming"
+                )
+                sim_dodge_diff = st.slider(
+                    "Dodge difficulty", min_value=1, max_value=5, value=2, step=1, key="cm_sim_dodge_diff"
+                )
+
+                sim_block = expected_damage_taken(
+                    incoming_damage=sim_incoming,
+                    dodge_dice=dodge_effective,
+                    dodge_difficulty=sim_dodge_diff,
+                    defense_dice=def_tot.block,
+                )
+                sim_resist = expected_damage_taken(
+                    incoming_damage=sim_incoming,
+                    dodge_dice=dodge_effective,
+                    dodge_difficulty=sim_dodge_diff,
+                    defense_dice=def_tot.resist,
+                )
+                st.markdown(
+                    f"- Dodge chance: {sim_block['p_dodge'] * 100:.0f}% "
+                    f"(dodge dice: {dodge_effective})"
+                )
+                st.markdown(
+                    f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, "
+                    f"(magic/resist): {sim_resist['exp_taken']:.2f}"
+                )
+
+    if tab_compare.open:
+        with tab_compare:
+            snap_names = ["<Current>"] + list(ss.get("cm_builds", {}).keys())
+            st.markdown("#### Compare Builds")
+            cl, cr = st.columns(2)
+            with cl:
+                left_choice = st.selectbox("Left build", options=snap_names, key="cm_compare_left")
+            with cr:
+                right_choice = st.selectbox("Right build", options=snap_names, key="cm_compare_right")
+
+            if left_choice == right_choice:
+                st.warning("Select two different builds to compare.")
+
+            def _build_preview_from_build(data: dict):
+                if not data:
+                    return None
+                bclass = data.get("class_name")
+                btiers = data.get("tier_indices") or {}
+                bstats = _build_stats(bclass, btiers)
+                b_armor = armor_by_id.get(data.get("selected_armor_id")) if data.get("selected_armor_id") else None
+                b_armor_upgrades = [
+                    au_by_id[uid] for uid in (data.get("selected_armor_upgrade_ids") or []) if uid in au_by_id
+                ]
+                b_hand_ids = list(data.get("selected_hand_ids") or [])
+                b_hand_objs = [hand_by_id[hid] for hid in b_hand_ids if hid in hand_by_id]
+                b_wu_by_hand = {
+                    hid: [
+                        wu_by_id[uid]
+                        for uid in (data.get("selected_weapon_upgrade_ids_by_hand") or {}).get(hid, [])
+                        if uid in wu_by_id
+                    ]
+                    for hid in b_hand_ids
+                }
+                b_wu_list = [wu for lst in b_wu_by_hand.values() for wu in lst]
+
+                b_def = build_defense_totals_cached(
+                    armor_obj=b_armor,
+                    armor_upgrade_objs=b_armor_upgrades,
+                    hand_objs=b_hand_objs,
+                    weapon_upgrade_objs=b_wu_list,
+                )
+                b_atk_rows = build_attack_totals_rows_cached(
+                    hand_items=b_hand_objs,
+                    selected_hand_ids=set(b_hand_ids),
+                    armor_obj=b_armor,
+                    armor_upgrade_objs=b_armor_upgrades,
+                    weapon_upgrades_by_hand=b_wu_by_hand,
+                )
+                return {
+                    "class": bclass,
+                    "tiers": btiers,
+                    "stats": bstats,
+                    "def": b_def,
+                    "atk_rows": b_atk_rows,
+                    "armor": b_armor,
+                    "hands": b_hand_objs,
+                    "wu_by_hand": b_wu_by_hand,
+                    "armor_upgrades": b_armor_upgrades,
+                }
+
+            left_snap = _current_build() if left_choice == "<Current>" else ss.get("cm_builds", {}).get(left_choice)
+            right_snap = _current_build() if right_choice == "<Current>" else ss.get("cm_builds", {}).get(right_choice)
+
+            st.markdown("#### Comparison Simulator")
+            comp_c1, comp_c2 = st.columns(2)
+            with comp_c1:
+                incoming_cmp = st.slider(
+                    "Incoming damage",
+                    min_value=2,
+                    max_value=15,
+                    value=6,
+                    step=1,
+                    key="cm_compare_incoming",
+                )
+            with comp_c2:
+                dodge_diff_cmp = st.slider(
+                    "Dodge difficulty",
+                    min_value=1,
+                    max_value=5,
+                    value=2,
+                    step=1,
+                    key="cm_compare_dodge_diff",
+                )
+
+            left_preview = _build_preview_from_build(left_snap)
+            right_preview = _build_preview_from_build(right_snap)
+
+            def _stats_str(sts: Dict[str, int]) -> str:
+                return (
+                    f"Strength: {sts.get('str')}, Dexterity: {sts.get('dex')}, "
+                    f"Intelligence: {sts.get('itl')}, Faith: {sts.get('fth')}"
+                )
+
+            def _render_preview_column(preview: dict, title: str):
+                if not preview:
+                    st.markdown(f"**{title}**")
+                    st.caption("No build selected")
+                    return
+                st.markdown(f"**{title}**")
+                st.markdown(f"{_stats_str(preview.get('stats') or {})}")
+                if preview.get("armor"):
+                    st.markdown(f"Armor: {preview['armor'].get('name')}")
+
+                hands = preview.get("hands") or []
+                wu_by_hand = preview.get("wu_by_hand") or {}
+                one_hands = [h for h in hands if _hands_required(h) == 1]
+                two_hands = [h for h in hands if _hands_required(h) == 2]
+
+                def _render_def_for(h_objs: List[dict], title_suffix: str):
+                    wus = [
+                        wu
+                        for hid in ([_id(h) for h in h_objs])
+                        for wu in (wu_by_hand.get(hid) or [])
+                    ]
+                    dtot = build_defense_totals_cached(
+                        armor_obj=preview.get("armor"),
+                        armor_upgrade_objs=preview.get("armor_upgrades") or [],
+                        hand_objs=h_objs,
+                        weapon_upgrade_objs=wus,
+                    )
+                    sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
+                    eff_dodge = int(dtot.dodge_armor) + int(sum_hand_dodge)
+                    b_stats = _dice_min_max_avg(dtot.block)
+                    r_stats = _dice_min_max_avg(dtot.resist)
+                    st.markdown(f"**{title_suffix}**")
+                    st.markdown(
+                        f"""
+                        <ul style="list-style:none; padding-left:0; margin:0;">
+                        <li><span style="display:inline-block; width:3.5rem; font-weight:600">Dodge:</span> {_dodge_icons(eff_dodge)} <span style="color:#bfb79f">(armor {dtot.dodge_armor} + hands {sum_hand_dodge})</span></li>
+                        <li><span style="display:inline-block; width:3.5rem; font-weight:600">Block:</span> {_dice_icons(dtot.block)} <span style="color:#bfb79f">(avg {b_stats['avg']:.2f})</span></li>
+                        <li><span style="display:inline-block; width:3.5rem; font-weight:600">Resist:</span> {_dice_icons(dtot.resist)} <span style="color:#bfb79f">(avg {r_stats['avg']:.2f})</span></li>
+                        </ul>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    sim_block = expected_damage_taken(
+                        incoming_damage=incoming_cmp,
+                        dodge_dice=eff_dodge,
+                        dodge_difficulty=dodge_diff_cmp,
+                        defense_dice=dtot.block,
+                    )
+                    sim_resist = expected_damage_taken(
+                        incoming_damage=incoming_cmp,
+                        dodge_dice=eff_dodge,
+                        dodge_difficulty=dodge_diff_cmp,
+                        defense_dice=dtot.resist,
+                    )
+                    st.markdown(
+                        f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}"
+                    )
+
+                if len(one_hands) >= 2:
+                    st.markdown("**Two 1-hand combos:**")
+                    for a, b in itertools.combinations(one_hands, 2):
+                        _render_def_for([a, b], f"{a.get('name')} + {b.get('name')}")
+
+                if len(one_hands) == 1:
+                    st.markdown("**1-hand item:**")
+                    h = one_hands[0]
+                    _render_def_for([h], f"{h.get('name')}")
+
+                if two_hands:
+                    st.markdown("**2-hand items:**")
+                    for h in two_hands:
+                        _render_def_for([h], f"{h.get('name')}")
+
+                atk_rows = preview.get("atk_rows") or []
+                st.markdown("**Attacks**")
+                if atk_rows:
+                    df = pd.DataFrame(atk_rows)
+                    disp = df.copy()
+
+                    disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
+                    disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
+                    disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("Min")
+                    disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("Max")
+                    disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("Avg")
+
+                    if "Cond" in disp.columns:
+                        disp["Conditions"] = disp["Cond"]
+                    elif "TotCond" in disp.columns:
+                        disp["Conditions"] = disp["TotCond"]
+                    else:
+                        disp["Conditions"] = ""
+
+                    if "Repeat" in disp.columns:
+                        disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
+
+                    pref = [
+                        "Item",
+                        "Atk#",
+                        "Stamina",
+                        "Dice",
+                        "Min",
+                        "Max",
+                        "Avg",
+                        "Conditions",
+                        "Range",
+                        "Magic",
+                        "Node",
+                        "Shaft",
+                        "Push",
+                        "Repeat",
+                        "Text",
+                    ]
+                    disp_cols = [c for c in pref if c in disp.columns]
+                    st.dataframe(disp[disp_cols], hide_index=True, width="stretch", height=220)
+                else:
+                    st.caption("No attack lines.")
+
+            cL, cR = st.columns(2)
+            with cL:
+                _render_preview_column(left_preview, "Left build")
+            with cR:
+                _render_preview_column(right_preview, "Right build")
+
+    if tab_save_load.open:
+        with tab_save_load:
+            st.markdown("#### Save / Load")
+            cloud_mode = bool(is_streamlit_cloud())
+            supabase_ready = bool(_has_supabase_config())
+            can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+            if cloud_mode and not supabase_ready:
+                st.caption("Saving is disabled until Supabase is configured.")
+            elif cloud_mode and not auth.is_authenticated():
+                st.caption("Log in to save.")
+            _ = st.text_input("Build name", key="cm_build_name")
+            if st.button("Save build 💾", key="cm_build_save", disabled=not can_persist):
+                if not can_persist:
+                    st.error("Not logged in; cannot persist on Streamlit Cloud.")
+                    st.stop()
+                name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
+                ss["cm_builds"][name] = _current_build()
+                save_builds(ss["cm_builds"])
+
+            snaps = list(ss.get("cm_builds", {}).keys())
+            _ = st.selectbox("Saved builds", options=[""] + snaps, key="cm_build_select")
+            c3, c4 = st.columns([1, 1])
+            with c3:
+                if st.button("Load 📥", key="cm_build_load"):
+                    name = ss.get("cm_build_select")
+                    if name:
+                        ss["cm_pending_build"] = ss["cm_builds"][name]
+                        st.rerun()
+            with c4:
+                if st.button("Delete 🗑️", key="cm_build_delete", disabled=not can_persist):
+                    name = ss.get("cm_build_select")
+                    if name and name in ss.get("cm_builds", {}):
+                        ss["cm_builds"].pop(name, None)
+                        save_builds(ss["cm_builds"])
+                        st.rerun()
+
+            st.markdown("---")
+            st.markdown("#### Current Build Summary")
+            st.markdown(f"**Class:** {ss.get('character_mode_class') or '—'}")
+            st.markdown(
+                f"**Stats —** STR {stats.get('str')}, DEX {stats.get('dex')}, INT {stats.get('itl')}, FAI {stats.get('fth')}"
+            )
+
+            st.markdown("**Selected Items**")
             lines = []
             armor_id = ss.get("cm_selected_armor_id") or ""
             if armor_id and armor_id in armor_by_id:
@@ -1062,474 +1679,3 @@ def render(settings: Dict[str, Any]) -> None:
                 st.markdown("\n".join(md_lines))
             else:
                 st.caption("No items selected.")
-
-            st.markdown("#### Validation")
-            if validation_errors:
-                st.warning("Build validation issues:\n- " + "\n- ".join(validation_errors))
-            else:
-                st.success("No validation issues.")
-
-            one_hands = [h for h in selected_hand_objs if _hands_required(h) == 1]
-            two_hands = [h for h in selected_hand_objs if _hands_required(h) == 2]
-            twohand_compatible_shields = [h for h in selected_hand_objs if _is_twohand_compatible_shield(h)]
-
-            # "Empty hand" combos (single 1-hand item) are only shown when there are no
-            # full-hands combos available (any 2-hand item, or any 2x 1-hand combo).
-            has_full_hands_combos = bool(two_hands) or (len(one_hands) >= 2)
-
-            st.markdown("#### Combos")
-            if not selected_hand_objs:
-                st.caption("Select hand items to see combo defenses.")
-            else:
-                def _render_def_combo(h_objs: List[dict], title: str):
-                    wus = []
-                    for h in h_objs:
-                        hid = _id(h)
-                        wus.extend(weapon_upgrades_by_hand.get(hid) or [])
-                    dt = build_defense_totals_cached(
-                        armor_obj=armor_obj,
-                        armor_upgrade_objs=armor_upgrade_objs,
-                        hand_objs=h_objs,
-                        weapon_upgrade_objs=wus,
-                    )
-                    sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
-                    eff_dodge = int(dt.dodge_armor) + int(sum_hand_dodge)
-                    b_stats = _dice_min_max_avg(dt.block)
-                    r_stats = _dice_min_max_avg(dt.resist)
-                    st.markdown(f"**{title}**")
-                    st.markdown(
-                        f"""
-                        <ul style=\"list-style:none; padding-left:0; margin:0;\">
-                        <li><span style=\"display:inline-block; width:3.5rem; font-weight:600\">Dodge:</span> {_dodge_icons(eff_dodge)} <span style=\"color:#bfb79f\">(armor {dt.dodge_armor} + hands {sum_hand_dodge})</span></li>
-                        <li><span style=\"display:inline-block; width:3.5rem; font-weight:600\">Block:</span> {_dice_icons(dt.block)} <span style=\"color:#bfb79f\">(avg {b_stats['avg']:.2f})</span></li>
-                        <li><span style=\"display:inline-block; width:3.5rem; font-weight:600\">Resist:</span> {_dice_icons(dt.resist)} <span style=\"color:#bfb79f\">(avg {r_stats['avg']:.2f})</span></li>
-                        </ul>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-                    combo_wu_by_hand = {
-                        _id(h): (weapon_upgrades_by_hand.get(_id(h)) or []) for h in h_objs
-                    }
-                    combo_rows = build_attack_totals_rows_cached(
-                        hand_items=h_objs,
-                        selected_hand_ids=set([_id(h) for h in h_objs]),
-                        armor_obj=armor_obj,
-                        armor_upgrade_objs=armor_upgrade_objs,
-                        weapon_upgrades_by_hand=combo_wu_by_hand,
-                        apply_other_hand_attack_mods=True,
-                    )
-                    if combo_rows:
-                        df_combo = pd.DataFrame(combo_rows)
-                        disp_combo = df_combo.copy()
-                        disp_combo["Stamina"] = (
-                            disp_combo.get("TotStam") if "TotStam" in disp_combo.columns else disp_combo.get("Stam")
-                        )
-                        disp_combo["Dice"] = (
-                            disp_combo.get("TotDice") if "TotDice" in disp_combo.columns else disp_combo.get("Dice")
-                        )
-                        disp_combo["Min"] = (
-                            disp_combo.get("TotMin") if "TotMin" in disp_combo.columns else disp_combo.get("TotMin")
-                        )
-                        disp_combo["Max"] = (
-                            disp_combo.get("TotMax") if "TotMax" in disp_combo.columns else disp_combo.get("TotMax")
-                        )
-                        disp_combo["Avg"] = (
-                            disp_combo.get("TotAvg") if "TotAvg" in disp_combo.columns else disp_combo.get("TotAvg")
-                        )
-                        if "Cond" in disp_combo.columns:
-                            disp_combo["Conditions"] = disp_combo["Cond"]
-                        elif "TotCond" in disp_combo.columns:
-                            disp_combo["Conditions"] = disp_combo["TotCond"]
-                        else:
-                            disp_combo["Conditions"] = ""
-                        if "Repeat" in disp_combo.columns:
-                            disp_combo["Repeat"] = pd.to_numeric(disp_combo.get("Repeat"), errors="coerce")
-
-                        pref = [
-                            "Item",
-                            "Atk#",
-                            "Stamina",
-                            "Dice",
-                            "Min",
-                            "Max",
-                            "Avg",
-                            "Conditions",
-                            "Range",
-                            "Magic",
-                            "Node",
-                            "Shaft",
-                            "Push",
-                            "Repeat",
-                            "Text",
-                        ]
-                        disp_cols = [c for c in pref if c in disp_combo.columns]
-                        st.dataframe(disp_combo[disp_cols], hide_index=True, width="stretch", height=200)
-
-                if len(one_hands) >= 2:
-                    for a, b in itertools.combinations(one_hands, 2):
-                        _render_def_combo([a, b], f"{a.get('name')} + {b.get('name')}")
-                        st.markdown("---")
-
-                if (not has_full_hands_combos) and len(one_hands) == 1:
-                    h = one_hands[0]
-                    _render_def_combo([h], f"{h.get('name')}")
-                    st.markdown("---")
-
-                if two_hands or twohand_compatible_shields:
-                    for h in two_hands:
-                        if not twohand_compatible_shields:
-                            _render_def_combo([h], f"{h.get('name')}")
-                            st.markdown("---")
-                        for sh in twohand_compatible_shields:
-                            _render_def_combo([h, sh], f"{h.get('name')} + {sh.get('name')}")
-                            st.markdown("---")
-
-        with out_right:
-            st.markdown("#### Effects")
-            effects: List[str] = []
-
-            def _add_eff(x, source=None):
-                s = str(x or "").strip()
-                if not s:
-                    return
-                if source:
-                    effects.append(f"{s} — {source}")
-                else:
-                    effects.append(s)
-
-            hands_with_wu = [hid for hid in selected_hand_ids if (wu_map.get(hid) or [])]
-            multi_weapon_wu = len(hands_with_wu) > 1
-
-            if armor_obj:
-                _add_eff(armor_obj.get("text"), source=armor_obj.get("name"))
-                for imm in (armor_obj.get("immunities") or []):
-                    _add_eff(f"Immunity: {imm}", source=armor_obj.get("name"))
-
-            for u in armor_upgrade_objs:
-                _add_eff(u.get("text"), source=u.get("name"))
-                for imm in (u.get("immunities") or []):
-                    _add_eff(f"Immunity: {imm}", source=u.get("name"))
-
-            for h in selected_hand_objs:
-                _add_eff(h.get("text"), source=h.get("name"))
-                for imm in (h.get("immunities") or []):
-                    _add_eff(f"Immunity: {imm}", source=h.get("name"))
-
-            for hid in selected_hand_ids:
-                hand = hand_by_id.get(hid)
-                hand_name = hand.get("name") if hand else None
-                for uid in (wu_map.get(hid) or []):
-                    u = wu_by_id.get(uid)
-                    if not u:
-                        continue
-                    if multi_weapon_wu and hand_name:
-                        src = f"{u.get('name')} on {hand_name}"
-                    else:
-                        src = u.get("name")
-                    _add_eff(u.get("text"), source=src)
-                    for imm in (u.get("immunities") or []):
-                        _add_eff(f"Immunity: {imm}", source=src)
-
-            effects = list(dict.fromkeys([e for e in effects if e]))
-            if effects:
-                st.markdown("\n".join([f"- {e}" for e in effects]))
-            else:
-                st.caption("No effects found on selected items.")
-
-            st.markdown("#### Defense Simulator")
-            _ = st.slider(
-                "Incoming damage", min_value=2, max_value=15, value=6, step=1, key="cm_sim_incoming"
-            )
-            _ = st.slider(
-                "Dodge difficulty", min_value=1, max_value=5, value=2, step=1, key="cm_sim_dodge_diff"
-            )
-
-    with tab_compare:
-        snap_names = ["<Current>"] + list(ss.get("cm_builds", {}).keys())
-        st.markdown("#### Compare Builds")
-        cl, cr = st.columns(2)
-        with cl:
-            left_choice = st.selectbox("Left build", options=snap_names, key="cm_compare_left")
-        with cr:
-            right_choice = st.selectbox("Right build", options=snap_names, key="cm_compare_right")
-
-        if left_choice == right_choice:
-            st.warning("Select two different builds to compare.")
-
-        def _build_preview_from_build(data: dict):
-            if not data:
-                return None
-            bclass = data.get("class_name")
-            btiers = data.get("tier_indices") or {}
-            bstats = _build_stats(bclass, btiers)
-            b_armor = armor_by_id.get(data.get("selected_armor_id")) if data.get("selected_armor_id") else None
-            b_armor_upgrades = [
-                au_by_id[uid] for uid in (data.get("selected_armor_upgrade_ids") or []) if uid in au_by_id
-            ]
-            b_hand_ids = list(data.get("selected_hand_ids") or [])
-            b_hand_objs = [hand_by_id[hid] for hid in b_hand_ids if hid in hand_by_id]
-            b_wu_by_hand = {
-                hid: [
-                    wu_by_id[uid]
-                    for uid in (data.get("selected_weapon_upgrade_ids_by_hand") or {}).get(hid, [])
-                    if uid in wu_by_id
-                ]
-                for hid in b_hand_ids
-            }
-            b_wu_list = [wu for lst in b_wu_by_hand.values() for wu in lst]
-
-            b_def = build_defense_totals_cached(
-                armor_obj=b_armor,
-                armor_upgrade_objs=b_armor_upgrades,
-                hand_objs=b_hand_objs,
-                weapon_upgrade_objs=b_wu_list,
-            )
-            b_atk_rows = build_attack_totals_rows_cached(
-                hand_items=b_hand_objs,
-                selected_hand_ids=set(b_hand_ids),
-                armor_obj=b_armor,
-                armor_upgrade_objs=b_armor_upgrades,
-                weapon_upgrades_by_hand=b_wu_by_hand,
-            )
-            return {
-                "class": bclass,
-                "tiers": btiers,
-                "stats": bstats,
-                "def": b_def,
-                "atk_rows": b_atk_rows,
-                "armor": b_armor,
-                "hands": b_hand_objs,
-                "wu_by_hand": b_wu_by_hand,
-                "armor_upgrades": b_armor_upgrades,
-            }
-
-        left_snap = _current_build() if left_choice == "<Current>" else ss.get("cm_builds", {}).get(left_choice)
-        right_snap = _current_build() if right_choice == "<Current>" else ss.get("cm_builds", {}).get(right_choice)
-
-        st.markdown("#### Comparison Simulator")
-        comp_c1, comp_c2 = st.columns(2)
-        with comp_c1:
-            incoming_cmp = st.slider(
-                "Incoming damage",
-                min_value=2,
-                max_value=15,
-                value=6,
-                step=1,
-                key="cm_compare_incoming",
-            )
-        with comp_c2:
-            dodge_diff_cmp = st.slider(
-                "Dodge difficulty",
-                min_value=1,
-                max_value=5,
-                value=2,
-                step=1,
-                key="cm_compare_dodge_diff",
-            )
-
-        left_preview = _build_preview_from_build(left_snap)
-        right_preview = _build_preview_from_build(right_snap)
-
-        def _stats_str(sts: Dict[str, int]) -> str:
-            return (
-                f"Strength: {sts.get('str')}, Dexterity: {sts.get('dex')}, "
-                f"Intelligence: {sts.get('itl')}, Faith: {sts.get('fth')}"
-            )
-
-        def _render_preview_column(preview: dict, title: str):
-            if not preview:
-                st.markdown(f"**{title}**")
-                st.caption("No build selected")
-                return
-            st.markdown(f"**{title}**")
-            st.markdown(f"{_stats_str(preview.get('stats') or {})}")
-            if preview.get("armor"):
-                st.markdown(f"Armor: {preview['armor'].get('name')}")
-
-            hands = preview.get("hands") or []
-            wu_by_hand = preview.get("wu_by_hand") or {}
-            one_hands = [h for h in hands if _hands_required(h) == 1]
-            two_hands = [h for h in hands if _hands_required(h) == 2]
-
-            def _render_def_for(h_objs: List[dict], title_suffix: str):
-                wus = [
-                    wu
-                    for hid in ([_id(h) for h in h_objs])
-                    for wu in (wu_by_hand.get(hid) or [])
-                ]
-                dtot = build_defense_totals_cached(
-                    armor_obj=preview.get("armor"),
-                    armor_upgrade_objs=preview.get("armor_upgrades") or [],
-                    hand_objs=h_objs,
-                    weapon_upgrade_objs=wus,
-                )
-                sum_hand_dodge = sum(_hand_dodge_int(h) for h in h_objs)
-                eff_dodge = int(dtot.dodge_armor) + int(sum_hand_dodge)
-                b_stats = _dice_min_max_avg(dtot.block)
-                r_stats = _dice_min_max_avg(dtot.resist)
-                st.markdown(f"**{title_suffix}**")
-                st.markdown(
-                    f"""
-                    <ul style="list-style:none; padding-left:0; margin:0;">
-                    <li><span style="display:inline-block; width:3.5rem; font-weight:600">Dodge:</span> {_dodge_icons(eff_dodge)} <span style="color:#bfb79f">(armor {dtot.dodge_armor} + hands {sum_hand_dodge})</span></li>
-                    <li><span style="display:inline-block; width:3.5rem; font-weight:600">Block:</span> {_dice_icons(dtot.block)} <span style="color:#bfb79f">(avg {b_stats['avg']:.2f})</span></li>
-                    <li><span style="display:inline-block; width:3.5rem; font-weight:600">Resist:</span> {_dice_icons(dtot.resist)} <span style="color:#bfb79f">(avg {r_stats['avg']:.2f})</span></li>
-                    </ul>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                sim_block = expected_damage_taken(
-                    incoming_damage=incoming_cmp,
-                    dodge_dice=eff_dodge,
-                    dodge_difficulty=dodge_diff_cmp,
-                    defense_dice=dtot.block,
-                )
-                sim_resist = expected_damage_taken(
-                    incoming_damage=incoming_cmp,
-                    dodge_dice=eff_dodge,
-                    dodge_difficulty=dodge_diff_cmp,
-                    defense_dice=dtot.resist,
-                )
-                st.markdown(
-                    f"- Expected damage (physical/block): {sim_block['exp_taken']:.2f}, (magic/resist): {sim_resist['exp_taken']:.2f}"
-                )
-
-            if len(one_hands) >= 2:
-                st.markdown("**Two 1-hand combos:**")
-                for a, b in itertools.combinations(one_hands, 2):
-                    _render_def_for([a, b], f"{a.get('name')} + {b.get('name')}")
-
-            if len(one_hands) == 1:
-                st.markdown("**1-hand item:**")
-                h = one_hands[0]
-                _render_def_for([h], f"{h.get('name')}")
-
-            if two_hands:
-                st.markdown("**2-hand items:**")
-                for h in two_hands:
-                    _render_def_for([h], f"{h.get('name')}")
-
-            atk_rows = preview.get("atk_rows") or []
-            st.markdown("**Attacks**")
-            if atk_rows:
-                df = pd.DataFrame(atk_rows)
-                disp = df.copy()
-
-                disp["Stamina"] = disp.get("TotStam") if "TotStam" in disp.columns else disp.get("Stam")
-                disp["Dice"] = disp.get("TotDice") if "TotDice" in disp.columns else disp.get("Dice")
-                disp["Min"] = disp.get("TotMin") if "TotMin" in disp.columns else disp.get("TotMin")
-                disp["Max"] = disp.get("TotMax") if "TotMax" in disp.columns else disp.get("TotMax")
-                disp["Avg"] = disp.get("TotAvg") if "TotAvg" in disp.columns else disp.get("TotAvg")
-
-                if "Cond" in disp.columns:
-                    disp["Conditions"] = disp["Cond"]
-                elif "TotCond" in disp.columns:
-                    disp["Conditions"] = disp["TotCond"]
-                else:
-                    disp["Conditions"] = ""
-
-                if "Repeat" in disp.columns:
-                    disp["Repeat"] = pd.to_numeric(disp.get("Repeat"), errors="coerce")
-
-                pref = [
-                    "Item",
-                    "Atk#",
-                    "Stamina",
-                    "Dice",
-                    "Min",
-                    "Max",
-                    "Avg",
-                    "Conditions",
-                    "Range",
-                    "Magic",
-                    "Node",
-                    "Shaft",
-                    "Push",
-                    "Repeat",
-                    "Text",
-                ]
-                disp_cols = [c for c in pref if c in disp.columns]
-                st.dataframe(disp[disp_cols], hide_index=True, width="stretch", height=220)
-            else:
-                st.caption("No attack lines.")
-
-        cL, cR = st.columns(2)
-        with cL:
-            _render_preview_column(left_preview, "Left build")
-        with cR:
-            _render_preview_column(right_preview, "Right build")
-
-    with tab_save_load:
-        st.markdown("#### Save / Load")
-        cloud_mode = bool(is_streamlit_cloud())
-        supabase_ready = bool(_has_supabase_config())
-        can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
-        if cloud_mode and not supabase_ready:
-            st.caption("Saving is disabled until Supabase is configured.")
-        elif cloud_mode and not auth.is_authenticated():
-            st.caption("Log in to save.")
-        _ = st.text_input("Build name", key="cm_build_name")
-        if st.button("Save build 💾", key="cm_build_save", disabled=not can_persist):
-            if not can_persist:
-                st.error("Not logged in; cannot persist on Streamlit Cloud.")
-                st.stop()
-            name = (ss.get("cm_build_name") or "").strip() or f"build_{len(ss.get('cm_builds', {}))+1}"
-            ss["cm_builds"][name] = _current_build()
-            save_builds(ss["cm_builds"])
-
-        snaps = list(ss.get("cm_builds", {}).keys())
-        _ = st.selectbox("Saved builds", options=[""] + snaps, key="cm_build_select")
-        c3, c4 = st.columns([1, 1])
-        with c3:
-            if st.button("Load 📥", key="cm_build_load"):
-                name = ss.get("cm_build_select")
-                if name:
-                    ss["cm_pending_build"] = ss["cm_builds"][name]
-                    st.rerun()
-        with c4:
-            if st.button("Delete 🗑️", key="cm_build_delete", disabled=not can_persist):
-                name = ss.get("cm_build_select")
-                if name and name in ss.get("cm_builds", {}):
-                    ss["cm_builds"].pop(name, None)
-                    save_builds(ss["cm_builds"])
-                    st.rerun()
-
-        st.markdown("---")
-        st.markdown("#### Current Build Summary")
-        st.markdown(f"**Class:** {ss.get('character_mode_class') or '—'}")
-        st.markdown(
-            f"**Stats —** STR {stats.get('str')}, DEX {stats.get('dex')}, INT {stats.get('itl')}, FAI {stats.get('fth')}"
-        )
-
-        st.markdown("**Selected Items**")
-        lines = []
-        armor_id = ss.get("cm_selected_armor_id") or ""
-        if armor_id and armor_id in armor_by_id:
-            a = armor_by_id[armor_id]
-            lines.append(a.get("name"))
-            for uid in (ss.get("cm_selected_armor_upgrade_ids") or []):
-                u = au_by_id.get(uid)
-                if u:
-                    lines.append(f"  - {u.get('name')}")
-
-        for hid in list(ss.get("cm_selected_hand_ids") or []):
-            h = hand_by_id.get(hid)
-            if not h:
-                continue
-            lines.append(f"{h.get('name')}")
-            for uid in (ss.get("cm_selected_weapon_upgrade_ids_by_hand") or {}).get(hid, []):
-                wu = wu_by_id.get(uid)
-                if wu:
-                    lines.append(f"  - {wu.get('name')}")
-
-        if lines:
-            md_lines = []
-            for l in lines:
-                if isinstance(l, str) and l.startswith("  - "):
-                    md_lines.append("  - " + l[4:])
-                else:
-                    md_lines.append("- " + str(l))
-            st.markdown("\n".join(md_lines))
-        else:
-            st.caption("No items selected.")

@@ -64,127 +64,141 @@ def render(settings: Dict[str, Any]) -> None:
 
     configs = load_event_configs()
 
-    tab_sim, tab_pick = st.tabs(["Deck Simulator", "Attach Specific Event"])
+    # `on_change="rerun"` + `.open`: these are nested inside Encounter Mode's own
+    # tabs, so unguarded they ran the deck simulator *and* the full event card
+    # list on every rerun, from behind two layers of hidden tab.
+    tab_sim, tab_pick = st.tabs(
+        ["Deck Simulator", "Attach Specific Event"], on_change="rerun"
+    )
 
     # ---------------- Deck Simulator ----------------
-    with tab_sim:
-        attached_n = len(st.session_state.get("encounter_events") or [])
+    if tab_sim.open:
+        with tab_sim:
+            attached_n = len(st.session_state.get("encounter_events") or [])
 
-        def _extra_controls(ctx: EventSimulatorContext) -> None:
-            a1, a2 = st.columns(2)
-            with a1:
-                if st.button(
-                    "Attach current 📎",
-                    width="stretch",
-                    disabled=(not can_attach) or (not ctx.has_current),
-                    key="enc_events_attach_current",
-                ):
-                    _attach_event_to_current_encounter(ctx.event_name, str(ctx.current_card))
-            with a2:
-                if st.button(
-                    "Clear attached 🧹",
-                    width="stretch",
-                    disabled=not bool(st.session_state.get("encounter_events")),
-                    key="enc_events_clear_attached",
-                ):
-                    _clear_attached_events()
+            def _extra_controls(ctx: EventSimulatorContext) -> None:
+                a1, a2 = st.columns(2)
+                with a1:
+                    if st.button(
+                        "Attach current 📎",
+                        width="stretch",
+                        disabled=(not can_attach) or (not ctx.has_current),
+                        key="enc_events_attach_current",
+                    ):
+                        _attach_event_to_current_encounter(ctx.event_name, str(ctx.current_card))
+                with a2:
+                    if st.button(
+                        "Clear attached 🧹",
+                        width="stretch",
+                        disabled=not bool(st.session_state.get("encounter_events")),
+                        key="enc_events_clear_attached",
+                    ):
+                        _clear_attached_events()
 
-        render_deck_simulator(
-            settings=settings,
-            configs=configs,
-            card_width=card_w,
-            key_prefix="enc_events_sim",
-            show_preset_selector=True,
-            preset_select_key="enc_events_preset",
-            extra_left_controls=_extra_controls,
-            extra_metrics=[("Attached", attached_n)],
-            discard_mode="titles",
-        )
-
-    # ---------------- Attach Specific Event ----------------
-    with tab_pick:
-        cards: List[Dict[str, Any]] = list_all_event_cards(configs=configs)
-
-        c1, c2, c3 = st.columns([1.2, 1, 1])
-        with c1:
-            search = st.text_input("Search", value="", key="enc_events_pick_search")
-        with c2:
-            type_opts = ["Consumable", "Immediate", "Rendezvous"]
-            type_filter = st.multiselect(
-                "Type",
-                options=type_opts,
-                default=type_opts,
-                key="enc_events_pick_types",
-            )
-        with c3:
-            exp_opts = sorted(
-                {
-                    str(c.get("expansion") or "")
-                    for c in cards
-                    if str(c.get("expansion") or "").strip()
-                }
-            )
-            exp_sel = st.multiselect(
-                "Expansion",
-                options=exp_opts,
-                default=exp_opts,
-                key="enc_events_pick_exps",
+            render_deck_simulator(
+                settings=settings,
+                configs=configs,
+                card_width=card_w,
+                key_prefix="enc_events_sim",
+                show_preset_selector=True,
+                preset_select_key="enc_events_preset",
+                extra_left_controls=_extra_controls,
+                extra_metrics=[("Attached", attached_n)],
+                discard_mode="titles",
             )
 
-        if search.strip():
-            s = search.strip().lower()
-            cards = [c for c in cards if s in str(c.get("id", "")).lower()]
+        # ---------------- Attach Specific Event ----------------
+    if tab_pick.open:
+        with tab_pick:
+            cards: List[Dict[str, Any]] = list_all_event_cards(configs=configs)
 
-        if type_filter:
-            allowed = set(type_filter)
-            cards = [c for c in cards if str(c.get("type") or "") in allowed]
-        else:
-            cards = []
-
-        if exp_sel:
-            allowed_exp = set(exp_sel)
-            cards = [c for c in cards if str(c.get("expansion") or "") in allowed_exp]
-
-        cards = sorted(cards, key=lambda x: str(x.get("name") or ""))
-
-        left, right = st.columns([1, 0.5], gap="large")
-
-        if not cards:
-            with left:
-                st.caption("No events match the current filters.")
-            with right:
-                st.markdown("### Card")
-                st.caption("—")
-        else:
-            labels = [
-                f"{c.get('id','')} · {c.get('type','')}".strip()
-                for c in cards
-            ]
-
-            with left:
-                choice = st.radio(
-                    "Events",
-                    options=labels,
-                    index=0,
-                    key="enc_events_pick_radio",
+            c1, c2, c3 = st.columns([1.2, 1, 1])
+            with c1:
+                search = st.text_input(
+                    "Search",
+                    value="",
+                    key="enc_events_pick_search",
+                    persist_state="session",
                 )
-                chosen = cards[labels.index(choice)]
+            with c2:
+                type_opts = ["Consumable", "Immediate", "Rendezvous"]
+                type_filter = st.multiselect(
+                    "Type",
+                    options=type_opts,
+                    default=type_opts,
+                    key="enc_events_pick_types",
+                    persist_state="session",
+                )
+            with c3:
+                exp_opts = sorted(
+                    {
+                        str(c.get("expansion") or "")
+                        for c in cards
+                        if str(c.get("expansion") or "").strip()
+                    }
+                )
+                exp_sel = st.multiselect(
+                    "Expansion",
+                    options=exp_opts,
+                    default=exp_opts,
+                    key="enc_events_pick_exps",
+                    persist_state="session",
+                )
 
-                if st.button(
-                    "Attach selected 📎",
-                    width="stretch",
-                    disabled=not can_attach,
-                    key="enc_events_attach_selected",
-                ):
-                    _attach_event_to_current_encounter(str(chosen["id"]), str(chosen["image_path"]))
+            if search.strip():
+                s = search.strip().lower()
+                cards = [c for c in cards if s in str(c.get("id", "")).lower()]
 
-            with right:
-                st.markdown("### Card")
-                p = Path(str(chosen["image_path"]))
-                img_bytes = get_image_bytes_cached(str(p))
+            if type_filter:
+                allowed = set(type_filter)
+                cards = [c for c in cards if str(c.get("type") or "") in allowed]
+            else:
+                cards = []
 
-                if img_bytes:
-                    st.image(img_bytes, width=card_w)
-                txt = str(chosen.get("text") or "").strip()
-                if txt:
-                    st.caption(txt)
+            if exp_sel:
+                allowed_exp = set(exp_sel)
+                cards = [c for c in cards if str(c.get("expansion") or "") in allowed_exp]
+
+            cards = sorted(cards, key=lambda x: str(x.get("name") or ""))
+
+            left, right = st.columns([1, 0.5], gap="large")
+
+            if not cards:
+                with left:
+                    st.caption("No events match the current filters.")
+                with right:
+                    st.markdown("### Card")
+                    st.caption("—")
+            else:
+                labels = [
+                    f"{c.get('id','')} · {c.get('type','')}".strip()
+                    for c in cards
+                ]
+
+                with left:
+                    choice = st.radio(
+                        "Events",
+                        options=labels,
+                        index=0,
+                        key="enc_events_pick_radio",
+                    )
+                    chosen = cards[labels.index(choice)]
+
+                    if st.button(
+                        "Attach selected 📎",
+                        width="stretch",
+                        disabled=not can_attach,
+                        key="enc_events_attach_selected",
+                    ):
+                        _attach_event_to_current_encounter(str(chosen["id"]), str(chosen["image_path"]))
+
+                with right:
+                    st.markdown("### Card")
+                    p = Path(str(chosen["image_path"]))
+                    img_bytes = get_image_bytes_cached(str(p))
+
+                    if img_bytes:
+                        st.image(img_bytes, width=card_w)
+                    txt = str(chosen.get("text") or "").strip()
+                    if txt:
+                        st.caption(txt)

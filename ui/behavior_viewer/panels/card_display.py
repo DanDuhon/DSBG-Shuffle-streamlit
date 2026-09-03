@@ -3,20 +3,23 @@ from __future__ import annotations
 from typing import Any
 
 import streamlit as st
-from pathlib import Path
 
 from core.behavior.assets import _behavior_image_path
 from core.behavior.generation import (
     render_behavior_card_cached,
     render_behavior_card_uncached,
     render_data_card_cached,
+    render_data_card_uncached,
     render_dual_boss_behavior_card,
     render_dual_boss_data_cards,
 )
 from core.behavior.priscilla_overlay import overlay_priscilla_arcs
-from core.image_cache import get_image_thumbnail_bytes_cached
 
 from ui.behavior_viewer.models import BehaviorPickerModel, DATA_CARD_SENTINEL
+from ui.boss_mode.guardian_dragon_fiery_breath import (
+    GUARDIAN_CAGE_PREFIX,
+    GUARDIAN_DRAGON_NAME,
+)
 
 
 def render_card_display(
@@ -36,23 +39,9 @@ def render_card_display(
 
     if choice == DATA_CARD_SENTINEL:
         if entry.name == "Ornstein & Smough":
-            if cloud_low_memory and getattr(cfg, "display_cards", None):
-                cards = list(cfg.display_cards or [])
-                if len(cards) >= 2:
-                    c1, c2 = st.columns(2)
-                    for col, pth in ((c1, cards[0]), (c2, cards[1])):
-                        with col:
-                            try:
-                                thumb = get_image_thumbnail_bytes_cached(
-                                    str(Path(pth)),
-                                    max_width=int(card_width),
-                                )
-                                if thumb:
-                                    st.image(thumb, width=card_width)
-                            except Exception:
-                                st.caption("Card image unavailable.")
-                    return
-
+            # `render_dual_boss_data_cards` is uncached, so it is safe on the
+            # low-memory path too -- and unlike a raw thumbnail it actually
+            # paints the stats onto the card.
             o_img, s_img = render_dual_boss_data_cards(cfg.raw)
             c1, c2 = st.columns(2)
             with c1:
@@ -64,47 +53,33 @@ def render_card_display(
         # Special-case: always show skeletal horse data card for Executioner's Chariot
         if entry.name == "Executioner's Chariot":
             base_path = "assets/behavior cards/Executioner's Chariot - Skeletal Horse.jpg"
-            if cloud_low_memory:
-                try:
-                    thumb = get_image_thumbnail_bytes_cached(
-                        str(Path(base_path)),
-                        max_width=int(card_width),
-                    )
-                    if thumb:
-                        st.image(thumb, width=card_width)
-                    else:
-                        st.caption("Card image unavailable.")
-                except Exception:
-                    st.caption("Card image unavailable.")
-            else:
-                img_bytes = render_data_card_cached(
-                    base_path,
-                    cfg.raw,
-                    is_boss=(entry.tier != "enemy"),
-                )
-                st.image(img_bytes, width=card_width)
+            render_data = (
+                render_data_card_uncached if cloud_low_memory else render_data_card_cached
+            )
+            st.image(
+                render_data(base_path, cfg.raw, is_boss=(entry.tier != "enemy")),
+                width=card_width,
+            )
             return
 
         if cfg.display_cards:
-            if cloud_low_memory:
-                try:
-                    thumb = get_image_thumbnail_bytes_cached(
-                        str(Path(cfg.display_cards[0])),
-                        max_width=int(card_width),
-                    )
-                    if thumb:
-                        st.image(thumb, width=card_width)
-                    else:
-                        st.caption("Card image unavailable.")
-                except Exception:
-                    st.caption("Card image unavailable.")
-            else:
-                img_bytes = render_data_card_cached(
+            # Low memory picks the uncached renderer, NOT a raw thumbnail. The
+            # thumbnail is the untouched base image, so on Streamlit Cloud --
+            # where low-memory mode is on by default -- every data card here
+            # showed up without its health/armor/resist/heatup values or its
+            # dodge icon. Boss Mode already did it this way, which is why the
+            # same card looked right there.
+            render_data = (
+                render_data_card_uncached if cloud_low_memory else render_data_card_cached
+            )
+            st.image(
+                render_data(
                     cfg.display_cards[0],
                     cfg.raw,
                     is_boss=(entry.tier != "enemy"),
-                )
-                st.image(img_bytes, width=card_width)
+                ),
+                width=card_width,
+            )
         return
 
     # Map display label back to original behavior name for non-compact mode
@@ -119,6 +94,19 @@ def render_card_display(
         return
 
     beh = cfg.behaviors.get(sel, {})
+
+    # Guardian Dragon's "Cage Grasp Inferno" cards carry a `dodge` value in the
+    # JSON, but on the printed card that difficulty belongs to the paired Fiery
+    # Breath AoE card, not this one. Boss Mode strips it for exactly this reason
+    # (`try_render_guardian_dragon_current`) and draws it on the AoE card; the
+    # viewer shows one card at a time, so it just drops it.
+    if (
+        entry.name == GUARDIAN_DRAGON_NAME
+        and isinstance(sel, str)
+        and sel.startswith(GUARDIAN_CAGE_PREFIX)
+        and isinstance(beh, dict)
+    ):
+        beh = {k: v for k, v in beh.items() if k != "dodge"}
 
     if cloud_low_memory:
         # Cloud low-memory: avoid generating/caching rendered PNGs per card.
@@ -161,8 +149,12 @@ def render_card_display(
         )
         # Apply Priscilla overlay when requested
         priscilla_invis_key = "behavior_viewer_priscilla_invisible"
+        # Default False, matching the checkbox in `card_picker` -- the key is
+        # absent whenever that checkbox has not been rendered (another enemy
+        # selected), and defaulting True drew the invisibility overlay on a card
+        # the user never asked for it on.
         if entry.name == "Crossbreed Priscilla" and st.session_state.get(
-            priscilla_invis_key, True
+            priscilla_invis_key, False
         ):
             img_bytes = overlay_priscilla_arcs(img_bytes, sel, beh)
 

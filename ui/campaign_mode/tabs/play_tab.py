@@ -350,11 +350,11 @@ def _render_campaign_play_tab(
     # Only the encounter spaces have something to play here.
     if kind != "encounter":
         label = (
-                _describe_v2_node_label(campaign, current_node)
-                if active_version == "V2"
-                else _describe_v1_node_label(campaign, current_node)
-            )
-        st.info(f"There is no regular encounter to play here.")
+            _describe_v2_node_label(campaign, current_node)
+            if active_version == "V2"
+            else _describe_v1_node_label(campaign, current_node)
+        )
+        st.info(f"**{label}** — there is no regular encounter to play here.")
         return
 
     # Ensure Encounter Mode's current_encounter matches this campaign node.
@@ -366,7 +366,16 @@ def _render_campaign_play_tab(
         if active_version == "V2":
             label = _describe_v2_node_label(campaign, current_node)
             st.info(
-                f"Choose an encounter for this space on the Campaign tab before playing it."
+                f"**{label}** — choose an encounter for this space on the "
+                "Campaign tab before playing it."
+            )
+        else:
+            # V1 reaches here when the node carries no frozen encounter. Rare,
+            # but returning silently left the tab blank with no explanation.
+            label = _describe_v1_node_label(campaign, current_node)
+            st.info(
+                f"**{label}** — this space has no encounter data. Regenerate "
+                "the campaign from the Setup tab."
             )
         return
 
@@ -383,6 +392,20 @@ def _render_campaign_play_tab(
 
     # ---- Campaign outcome from the LAST encounter you played in Encounter Mode ----
     st.markdown("#### Campaign Outcome")
+
+    # One-shot notice carried across the rerun the outcome handlers trigger.
+    # The handlers below mutate campaign state that this function already read
+    # (`encounter_is_complete`, node status, souls), so they must rerun rather
+    # than render a message into a page built from the pre-click state -- which
+    # left both outcome buttons on screen, one stray click away from zeroing
+    # the souls just awarded.
+    play_notice = st.session_state.pop("campaign_play_notice", None)
+    if play_notice:
+        level, text = play_notice
+        if level == "success":
+            st.success(str(text))
+        else:
+            st.warning(str(text))
 
     reward_totals = st.session_state.get("last_encounter_reward_totals") or {}
 
@@ -494,7 +517,11 @@ def _render_campaign_play_tab(
                 _consume_fight_attached_events(state, current_node)
 
                 if reward_events > 0 and active_version == "V2":
-                    counts = _draw_and_apply_campaign_events(
+                    # Called for its side effects: the draws are routed onto
+                    # nodes, the party and the unresolved list inside. It also
+                    # returns per-type counters, unused today, if this ever
+                    # wants to report what was drawn.
+                    _draw_and_apply_campaign_events(
                         count=reward_events,
                         campaign=campaign,
                         state=state,
@@ -544,7 +571,11 @@ def _render_campaign_play_tab(
                 st.session_state["last_encounter_reward_totals"] = {}
                 st.session_state.pop("last_encounter_rewards_for_slug", None)
 
-                st.success("Encounter completed; campaign updated.")
+                st.session_state["campaign_play_notice"] = (
+                    "success",
+                    "Encounter completed; campaign updated.",
+                )
+                st.rerun()
         elif not encounter_is_complete:
             st.caption(
                 'Play the encounter above, then click '
@@ -624,10 +655,10 @@ def _render_campaign_play_tab(
             st.session_state.pop("last_encounter_rewards_for_slug", None)
 
             if sparks_cur > 0:
-                st.warning(
-                    "Encounter failed; party returned to the bonfire and lost 1 Spark."
-                )
+                message = "Encounter failed; party returned to the bonfire and lost 1 Spark."
             else:
-                st.warning(
+                message = (
                     "Encounter failed; party returned to the bonfire but has no Sparks left."
                 )
+            st.session_state["campaign_play_notice"] = ("warning", message)
+            st.rerun()

@@ -21,7 +21,7 @@ CLASS_TIERS: Dict[str, Dict[str, Any]] = {
         "fth": [16, 23, 32, 40],
     },
     "Deprived": {
-        "expansions": {"Tomb of Giants", "Characters Expansion"},
+        "expansions": {"Painted World of Ariamis", "Characters Expansion"},
         "str": [10, 20, 30, 40],
         "dex": [10, 20, 30, 40],
         "itl": [10, 20, 30, 40],

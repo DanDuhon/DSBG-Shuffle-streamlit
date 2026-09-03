@@ -32,18 +32,25 @@ from core.behavior.generation import (
     render_data_card_uncached,
 )
 from core.behavior.logic import load_behavior, _read_behavior_json
+from ui.encounter_mode.generation import _get_enemy_health_from_behavior
 from core.behavior.models import BehaviorEntry
-from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
+from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level, _is_number
 from ui.encounter_mode.data.enemies import enemyNames
+from ui.encounter_mode.data.rewards import ENCOUNTER_ORIGINAL_REWARDS
 from ui.encounter_mode.data.keywords import (
     encounterKeywords,
-    EDITED_ENCOUNTER_KEYWORDS_STATIC as editedEncounterKeywords,
     keywordText
 )
+# Single source of truth for edited-encounter keywords, shared with Setup and
+# the card renderer. Importing EDITED_ENCOUNTER_KEYWORDS_STATIC directly here
+# used a *different* dict: it carried 8 entries with no edited card on disk
+# (unreachable, since Setup gates on the disk-discovered mapping) and so the two
+# halves of the app disagreed about which encounters have edited rules.
+from ui.encounter_mode.assets import editedEncounterKeywords
 from ui.encounter_mode.panels import invader_panel
 from ui.encounter_mode import logic as enc_logic
 from ui.encounter_mode.state.play_state import get_player_count, log_entry
-from ui.event_mode.logic import EVENT_BEHAVIOR_MODIFIERS, EVENT_REWARDS
+from ui.event_mode.logic import get_behavior_modifiers, get_rewards
 from ui.encounter_mode.helpers import _detect_edited_flag, _get_enemy_display_names
 from core.expansions import is_v2_expansion
 
@@ -118,12 +125,26 @@ def _render_keywords_summary(encounter: dict, settings: dict) -> None:
 
 
 def _render_rule_block(rendered_text: str, *, prefix: str = "", key_hint: Optional[str] = None) -> None:
-    if ":" not in rendered_text:
-        if prefix:
-            st.markdown(f"- {prefix}{rendered_text}", unsafe_allow_html=True)
-        else:
-            st.markdown(f"- {rendered_text}", unsafe_allow_html=True)
-    
+    """Render one rule as a bullet.
+
+    Rules shaped like "Label: body" show the label emphasised; everything else
+    renders as-is. Both branches must render: text containing a ':' previously
+    fell through with no `else` and was silently dropped, which blanked the
+    compact Rules panel and the timer-gated "Upcoming rules" list.
+    """
+    _ = key_hint  # accepted by callers; no widget is created here
+
+    text = (rendered_text or "").strip()
+    if not text:
+        return
+
+    head, sep, tail = text.partition(":")
+    body = tail.strip().replace("\n", "<br>")
+    # Treat a short, sentence-free lead-in as a label ("Snowstorm: ...").
+    if sep and body and len(head) <= 40 and "." not in head:
+        st.markdown(f"- {prefix}**{head.strip()}:** {body}", unsafe_allow_html=True)
+    else:
+        st.markdown(f"- {prefix}{text}".replace("\n", "<br>"), unsafe_allow_html=True)
 
 
 def _has_top_level_colon(template: str | None) -> bool:
@@ -180,9 +201,11 @@ def _detect_gang_name(encounter: dict) -> Optional[str]:
                 name = str(eid)
 
             if name:
-                # load base behavior JSON to read default health
-                cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
-                health = int(cfg.raw.get("health", 1))
+                # Base (non-NG+) health, memoised. Gang membership is defined by
+                # BASE health 1, and NG+ adds +1 HP per level to health 1-3, so
+                # scaled values never match and gang rules silently stop firing.
+                # This runs once per enemy per rerun, so the cache matters.
+                health = _get_enemy_health_from_behavior(name)
 
         if not name:
             continue
@@ -383,7 +406,7 @@ def compute_reward_totals(encounter: dict, settings: dict, play_state: dict) -> 
             ev_name = ev.get("name") or ev.get("title") or ev.get("id")
             if not ev_name:
                 continue
-            ev_rewards = EVENT_REWARDS.get(ev_name)  # type: ignore[index]
+            ev_rewards = get_rewards().get(ev_name)  # type: ignore[index]
             if not ev_rewards:
                 continue
 
@@ -424,12 +447,44 @@ def store_reward_totals_for_campaign(encounter: dict, totals: dict) -> None:
         st.session_state["last_encounter_rewards_for_slug"] = slug
 
 
+def _item_reward_names(encounter: dict) -> list[str]:
+    """Item reward(s) printed on this encounter's card, as currently shuffled.
+
+    Mirrors how the card itself is rendered: start from the original reward
+    table, then apply any swap the shuffler recorded under
+    `_shuffled_reward_replacements` (Similar Soul Cost / Same Item Tier).
+
+    The swap map is read from the top-level `reward_replacements` first, since
+    that survives `encounter_data` being stripped (Cloud low-memory mode, or a
+    saved encounter), falling back to the copy inside `encounter_data`.
+
+    Returns [] when the encounter has no printed item reward at all, in which
+    case the caller keeps the generic "check the encounter card" wording.
+    """
+    name = encounter.get("encounter_name") or encounter.get("name")
+    expansion = encounter.get("expansion")
+    if not name or not expansion:
+        return []
+
+    entries = ENCOUNTER_ORIGINAL_REWARDS.get((name, expansion)) or []
+    replacements = encounter.get("reward_replacements") or (
+        encounter.get("encounter_data") or {}
+    ).get("_shuffled_reward_replacements") or {}
+
+    out: list[str] = []
+    for entry in entries:
+        text = entry.get("text") if isinstance(entry, dict) else None
+        if isinstance(text, str) and text.strip():
+            out.append(str(replacements.get(text, text)).strip())
+    return out
+
+
 def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     """
     Render a Rewards section for the encounter, combining:
     - Encounter-level rewards from ENCOUNTER_REWARDS
     - Trial rewards gated by their checkbox triggers
-    - Event-level rewards from EVENT_REWARDS for any attached events
+    - Event-level rewards from get_rewards() for any attached events
     """
     st.markdown("#### Rewards")
 
@@ -449,15 +504,19 @@ def _render_rewards(encounter: dict, settings: dict, play_state: dict) -> None:
     if totals["event"]:
         st.markdown(f"- Draw {totals['event']+1} events")
     if totals["refresh_heroic"]:
-        st.markdown(f"- Refresh Heroic Action")
+        st.markdown("- Refresh Heroic Action")
     if totals["refresh_luck"]:
-        st.markdown(f"- Refresh Luck")
+        st.markdown("- Refresh Luck")
     if totals["refresh_estus"]:
-        st.markdown(f"- Refresh Estus Flask")
+        st.markdown("- Refresh Estus Flask")
     if totals["search"]:
-        st.markdown(f"- Search reward (check the encounter card)")
+        item_names = _item_reward_names(encounter)
+        if item_names:
+            st.markdown(f"- Search reward: **{'**, **'.join(item_names)}**")
+        else:
+            st.markdown("- Search reward (check the encounter card)")
     if totals["shortcut"]:
-        st.markdown(f"- Shortcut")
+        st.markdown("- Shortcut")
 
 
 def _apply_rewards_from_config(
@@ -850,11 +909,10 @@ def _render_current_rules(encounter: dict, settings: dict, play_state: dict, *, 
             else:
                 current_encounter_rules.append(r)
 
-    # Compute gang info early so Gang can be shown even when no other rules exist
+    # Gang info is needed below only as a presence check; `_render_gang_rule`
+    # resolves the actual name itself. (A `gang_name_preview` was computed here
+    # and never read, doubling the per-rerun behavior loads on this path.)
     encounter_keywords = _get_encounter_keywords(encounter, settings)
-    gang_name_preview = None
-    if "gang" in encounter_keywords:
-        gang_name_preview = _detect_gang_name(encounter)
 
     events = st.session_state.get("encounter_events", []) or []
     event_rule_groups: list[tuple[str, list]] = []
@@ -1403,13 +1461,12 @@ def _render_attached_events(encounter: dict) -> None:
             + (f" ({rendezvous_count} rendezvous)." if rendezvous_count else ".")
         )
 
+        behavior_mods = get_behavior_modifiers()
         for ev in events:
             name = ev.get("name") or ev.get("id")
             st.markdown(f"- **{name}**")
 
-            mods = EVENT_BEHAVIOR_MODIFIERS.get(name) or EVENT_BEHAVIOR_MODIFIERS.get(
-                ev.get("id")
-            )
+            mods = behavior_mods.get(name) or behavior_mods.get(ev.get("id"))
             if mods:
                 for m in mods:
                     desc = (
@@ -1579,11 +1636,12 @@ def _gather_behavior_mods_for_enemy(
         ev_name = ev.get("name")
         label = ev_name or ev_id or ""
 
-        # Try both ID and name keys; EVENT_BEHAVIOR_MODIFIERS may use either
+        # Try both ID and name keys;
+        behavior_mods = get_behavior_modifiers()
         for key in (ev_id, ev_name):
             if not key:
                 continue
-            for mod in EVENT_BEHAVIOR_MODIFIERS.get(key, []):
+            for mod in behavior_mods.get(key, []):
                 if not _mod_applies_to_enemy(mod, enemy_name, encounter):
                     continue
 
@@ -1990,7 +2048,9 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
         with target_col:
             # Load base behavior JSON (cached) without building a full BehaviorConfig;
             # we only need raw JSON + the entry metadata for rendering.
-            base_raw = deepcopy(_read_behavior_json(str(entry.path)))
+            # `_read_behavior_json` is `cache_data`-backed and unpickles a fresh
+            # object per read, so this is already a private copy to mutate.
+            base_raw = _read_behavior_json(str(entry.path))
             enemy_name = entry.name
             all_enemy_names.append(enemy_name)
 
@@ -2034,28 +2094,34 @@ def _render_enemy_behaviors(encounter: dict, *, columns: int = 2) -> None:
                             candidates.append(v)
 
                 for beh in candidates:
-                    top_type = str(beh.get("type", "")).lower()
-
                     for slot in ("left", "middle", "right"):
                         spec = beh.get(slot)
                         if not isinstance(spec, dict):
                             continue
 
-                        # If the card is a move-type, add stagger to any attack node
-                        if top_type == "move":
-                            effects = spec.setdefault("effect", [])
-                            if isinstance(effects, list) and "stagger" not in effects:
-                                effects.append("stagger")
-                                hanging_rafters_changed = True
+                        # "If a character is pushed by an enemy attack, they
+                        # suffer Stagger." Two shapes carry a push, and `type`
+                        # lives on the slot (never on the card root, which is
+                        # what the old check read — so it never fired):
+                        #   - physical/magic attack with a boolean `push` flag
+                        #   - move whose numeric `push` is the damage it deals
+                        slot_type = str(spec.get("type", "")).lower()
+                        push = spec.get("push")
+                        if slot_type in ("physical", "magic"):
+                            pushes = push is True
+                        elif slot_type == "move":
+                            pushes = _is_number(push) and push > 0
+                        else:
+                            pushes = False
 
-                        # Also add stagger to any attack that has push (flag or type)
-                        has_push = bool(spec.get("push")) or (spec.get("type") == "push")
-                        if has_push:
-                            effects = spec.setdefault("effect", [])
-                            if isinstance(effects, list) and "stagger" not in effects:
-                                effects.append("stagger")
-                                hanging_rafters_changed = True
-                
+                        if not pushes:
+                            continue
+
+                        effects = spec.setdefault("effect", [])
+                        if isinstance(effects, list) and "stagger" not in effects:
+                            effects.append("stagger")
+                            hanging_rafters_changed = True
+
 
             # Special-case: use alternate data card for certain enemies in The Shine of Gold
             if enemy_name in ("Mimic", "Phalanx") and (encounter.get("encounter_name") == "The Shine of Gold" or encounter.get("name") == "The Shine of Gold"):

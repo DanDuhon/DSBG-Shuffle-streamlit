@@ -20,6 +20,7 @@ from ui.campaign_mode.core import (
 from ui.campaign_mode.tabs.manage_tab_shared import (
     _render_campaign_encounter_card,
     _render_campaign_save_controls,
+    render_boss_outcome_notice,
 )
 from ui.campaign_mode.state import (
     _get_settings,
@@ -60,11 +61,8 @@ def _extract_invader_names(raw_invaders: Any) -> list[str]:
 
 
 def _get_all_invader_names() -> list[str]:
-    """Return all invader names from the behavior catalog (cached in session_state)."""
-    catalog = st.session_state.get("behavior_catalog")
-    if catalog is None:
-        catalog = build_behavior_catalog()
-        st.session_state["behavior_catalog"] = catalog
+    """Return all invader names from the behavior catalog."""
+    catalog = build_behavior_catalog()
 
     result: list[str] = []
     for per_cat in catalog.values():
@@ -107,7 +105,16 @@ def _render_v1_invader_setup_controls(*, campaign: Dict[str, Any], current_node:
     node_id = str(current_node.get("id") or "?")
     key_prefix = f"campaign_v1_invaders_{node_id}"
 
-    with st.expander("Invaders for this encounter", expanded=False):
+    # `on_change="rerun"` + `.open`: collapsed, this body still ran on every
+    # rerun, calling `build_behavior_catalog()` (~3.9 ms warm) twice to list
+    # invaders nobody is looking at. Opening it costs one round-trip instead.
+    invader_exp = st.expander(
+        "Invaders for this encounter", expanded=False, on_change="rerun"
+    )
+    if not invader_exp.open:
+        return
+
+    with invader_exp:
         st.caption(
             "Add extra invaders to this encounter. "
             "Invaders that are part of the encounter setup itself "
@@ -231,6 +238,7 @@ def _render_v1_campaign(state: Dict[str, Any], bosses_by_name: Dict[str, Any]) -
     settings = _get_settings()
     # Apply any cross-tab widget sync requests before instantiating widgets.
     apply_pending_widget_sets()
+    render_boss_outcome_notice()
     cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
 
     campaign = state.get("campaign")

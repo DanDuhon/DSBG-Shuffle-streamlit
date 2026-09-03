@@ -86,6 +86,16 @@ def _default_sparks_max(player_count: int) -> int:
     return max(1, 6 - player_count)
 
 
+def _default_starting_souls_v1(player_count: int) -> int:
+    """Souls a V1 campaign party begins with.
+
+    A solo party starts with 16 souls; larger parties start at 0. V2 has no
+    official starting-souls rule for a single character, so it always starts
+    at 0 (see `_ensure_v2_state`).
+    """
+    return 16 if int(player_count) == 1 else 0
+
+
 def _campaign_find_next_encounter_node(
     campaign: Dict[str, Any],
     from_node_id: Optional[str],

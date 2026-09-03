@@ -33,9 +33,17 @@ RENDEZVOUS_EVENTS = {name for name, t in EVENT_CARD_TYPE.items() if t == "Rendez
 CONSUMABLE_EVENTS = {name for name, t in EVENT_CARD_TYPE.items() if t == "Consumable"}
 IMMEDIATE_EVENTS = {name for name, t in EVENT_CARD_TYPE.items() if t == "Immediate"}
 
-EVENT_BEHAVIOR_MODIFIERS = get_event_behavior_modifiers_map()
-EVENT_REWARDS: Dict[str, List[dict]] = get_event_rewards_map()
-EVENT_DRAW_REWARDS: Dict[str, List[dict]] = get_event_draw_rewards_map()
+
+def get_behavior_modifiers() -> Dict[str, List[dict]]:
+    return get_event_behavior_modifiers_map()
+
+
+def get_rewards() -> Dict[str, List[dict]]:
+    return get_event_rewards_map()
+
+
+def get_draw_rewards() -> Dict[str, List[dict]]:
+    return get_event_draw_rewards_map()
 
 
 def _utc_now_iso() -> str:
@@ -226,7 +234,7 @@ def compute_draw_rewards_for_card(card_path: str, *, player_count: int = 1) -> D
     effects are represented on the card itself and resolved manually.
     """
     base = os.path.splitext(os.path.basename(str(card_path)))[0]
-    entries = EVENT_DRAW_REWARDS.get(base)
+    entries = get_draw_rewards().get(base)
     totals: Dict[str, int] = {"souls": 0, "treasure": 0}
 
     if not entries:

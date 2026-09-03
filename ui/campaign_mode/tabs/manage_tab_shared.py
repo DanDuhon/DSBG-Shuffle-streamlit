@@ -1,9 +1,14 @@
 # ui/campaign_mode/manage_tab_shared.py
+import copy
 import streamlit as st
 from typing import Any, Dict, Optional
 
 from core import auth
-from ui.campaign_mode.persistence import get_campaigns, _save_campaigns
+from ui.campaign_mode.persistence import (
+    CampaignsUnavailable,
+    get_campaigns,
+    _save_campaigns,
+)
 
 from core.settings_manager import _has_supabase_config, is_streamlit_cloud
 from ui.campaign_mode.persistence.dirty import set_campaign_baseline
@@ -169,8 +174,12 @@ def _apply_boss_defeated(
 
     st.session_state[state_key] = state
 
-    st.success(
-        "Boss defeated; rewards applied and the party has returned to the bonfire."
+    # One-shot: `st.rerun()` raises before an `st.success` delta is committed,
+    # so the message has to survive the rerun. Same pattern as
+    # `campaign_manage_save_notice` below.
+    st.session_state["campaign_boss_outcome_notice"] = (
+        "success",
+        "Boss defeated; rewards applied and the party has returned to the bonfire.",
     )
     st.rerun()
 
@@ -234,10 +243,28 @@ def _apply_boss_failure(
     st.session_state.pop("last_encounter_rewards_for_slug", None)
 
     if sparks_cur > 0:
-        st.warning("Boss failed; party returned to the bonfire and lost 1 Spark.")
+        message = "Boss failed; party returned to the bonfire and lost 1 Spark."
     else:
-        st.warning("Boss failed; party returned to the bonfire but has no Sparks left.")
+        message = "Boss failed; party returned to the bonfire but has no Sparks left."
+    st.session_state["campaign_boss_outcome_notice"] = ("warning", message)
     st.rerun()
+
+
+def render_boss_outcome_notice() -> None:
+    """Show the boss defeated/failed message set before the outcome rerun.
+
+    Rendered at the top of the Manage tab, because that is where the party
+    lands after either outcome -- the Boss Fight view stops rendering once the
+    node is resolved, so a notice drained there would never be seen.
+    """
+    notice = st.session_state.pop("campaign_boss_outcome_notice", None)
+    if not notice:
+        return
+    level, text = notice
+    if level == "success":
+        st.success(str(text))
+    else:
+        st.warning(str(text))
 
 
 def _render_boss_outcome_controls(
@@ -262,7 +289,6 @@ def _render_boss_outcome_controls(
     player_count = int(campaign.get("player_count") or 0)
     sparks_cur = int(state.get("sparks") or 0)
     sparks_max = int(state.get("sparks_max") or sparks_cur)
-    souls_cur = int(state.get("souls") or 0)
 
     token_node_id = state.get("souls_token_node_id")
     token_amount = int(state.get("souls_token_amount") or 0)
@@ -312,8 +338,6 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
     """
     Shared helper to render a frozen campaign encounter card (V1 or V2).
     """
-    cloud_low_memory = bool(st.session_state.get("cloud_low_memory", False))
-
     expansion = frozen.get("expansion")
     level = frozen.get("encounter_level")
     name = frozen.get("encounter_name")
@@ -340,7 +364,11 @@ def _render_campaign_encounter_card(frozen: Dict[str, Any]) -> None:
         level,
         use_edited,
         enemies=enemies,
-        include_bytes=not cloud_low_memory,
+        # Only `card_img` is read below. Producing `card_bytes` costs a JPEG
+        # encode measured at 36.5 ms -- over 90% of this call -- for a value
+        # nothing looks at, and V2's unpicked-encounter view calls this once per
+        # option.
+        include_bytes=False,
     )
     if res and res.get("ok"):
         img = res["card_img"]
@@ -368,6 +396,11 @@ def _render_campaign_save_controls(
     st.markdown("---")
     st.markdown("##### Save campaign")
 
+    # One-shot notice carried across the post-save rerun (see the save handler).
+    save_notice = st.session_state.pop("campaign_manage_save_notice", None)
+    if save_notice:
+        st.success(str(save_notice))
+
     cloud_mode = bool(is_streamlit_cloud())
     supabase_ready = bool(_has_supabase_config())
     can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
@@ -376,7 +409,14 @@ def _render_campaign_save_controls(
     elif cloud_mode and not auth.is_authenticated():
         st.caption("Log in to save.")
 
-    campaigns = get_campaigns()
+    try:
+        campaigns = get_campaigns()
+    except CampaignsUnavailable:
+        campaigns = {}
+        st.error(
+            "Could not reach the campaign store. Existing saves can't be listed "
+            "right now — they have not been deleted."
+        )
     saved_names = sorted((campaigns or {}).keys())
 
     pick_key = f"campaign_manage_save_pick_{version.lower()}"
@@ -414,6 +454,9 @@ def _render_campaign_save_controls(
         "Name to save as",
         key=name_key,
         placeholder="e.g. Friday night run",
+        # This tab stops rendering when the user switches tabs; without
+        # session persistence a half-typed name would be lost.
+        persist_state="session",
     )
 
     name_now = str(st.session_state.get(name_key) or "").strip()
@@ -458,7 +501,11 @@ def _render_campaign_save_controls(
         state["name"] = name
         snapshot = {
             "rules_version": version,
-            "state": state,
+            # Deep-copy: `state` is the live session_state dict. Storing it by
+            # reference makes the saved snapshot keep mutating as the user keeps
+            # playing, so the next save of ANY campaign rewrites this one's file
+            # entry with current progress.
+            "state": copy.deepcopy(state),
             "sidebar_settings": {
                 "active_expansions": settings.get("active_expansions"),
                 "selected_characters": settings.get("selected_characters"),
@@ -467,6 +514,18 @@ def _render_campaign_save_controls(
         }
 
         campaigns[name] = snapshot
-        _save_campaigns(campaigns)
+        if not _save_campaigns(campaigns):
+            # Leave the campaign dirty so the user keeps their overwrite warnings
+            # and knows the progress is still unsaved.
+            campaigns.pop(name, None)
+            st.error(
+                f"Could not save campaign '{name}'. Your progress is still "
+                "unsaved — check your connection and try again."
+            )
+            return
+
         set_campaign_baseline(version=version, state=state)
-        st.success(f"Saved campaign '{name}'.")
+        # Rerun so the picker above refreshes with the new name immediately;
+        # it is built from `campaigns`, which is read before this handler runs.
+        st.session_state["campaign_manage_save_notice"] = f"Saved campaign '{name}'."
+        st.rerun()

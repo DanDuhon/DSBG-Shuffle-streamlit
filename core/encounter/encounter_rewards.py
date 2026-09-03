@@ -797,7 +797,7 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
                 {
                     "type": "souls",
                     "per_counter": 1,
-                    "counter_trigger_id": "abandoned_and_forgotten_flipped_trap"
+                    "counter_trigger_id": "gleaming_silver_flipped_traps"
                 },
                 {
                     "type": "refresh",
@@ -1056,7 +1056,7 @@ ENCOUNTER_REWARDS: Dict[str, Dict[str, EncounterRewardsConfig]] = {
                 {
                     "type": "treasure",
                     "flat": 2,
-                    "trial_trigger_id": "grim_reunion_trial",
+                    "trial_trigger_id": "the_grand_hall_trial",
                 },
             ]
         },

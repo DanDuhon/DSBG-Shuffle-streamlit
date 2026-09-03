@@ -19,10 +19,14 @@ def try_render_old_iron_king_current(*, cfg, state, current) -> bool:
     ):
         return False
 
-    last_key = f"boss_mode_last_current::{cfg.name}"
-    last_current = st.session_state.get(last_key)
-    is_new_draw = last_current != current
-    st.session_state[last_key] = current
+    # Key off the draw counter, not the card name: only three Fire Beam cards
+    # exist against a 6-slot deck, so a same-named redraw looked like "not a new
+    # draw" and reused the cached pattern.
+    draw_token = st.session_state.get("boss_mode_draw_token", 0)
+    last_key = f"boss_mode_last_draw::{cfg.name}"
+    last_draw = st.session_state.get(last_key)
+    is_new_draw = last_draw != draw_token
+    st.session_state[last_key] = draw_token
 
     mode = "generated" if st.session_state.get("oik_blasted_generate", False) else "deck"
 

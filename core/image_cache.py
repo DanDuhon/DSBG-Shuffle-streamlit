@@ -3,11 +3,11 @@ core.image_cache
 -----------------
 Centralized image loading and caching utilities for Dark Souls: The Board Game Streamlit app.
 
-Provides disk-persistent caching for:
-- Encounter cards (original & edited)
-- Enemy icons
-- Character icons
-- Expansion icons
+Caching is entirely in memory -- `st.cache_data` / `st.cache_resource` where
+Streamlit is available, `functools.lru_cache` otherwise -- and is keyed on
+(path, mtime) so edits to an asset invalidate it. Nothing here is written back
+to disk. Covers encounter cards (original & edited), enemy icons, character
+icons and expansion icons.
 """
 
 from pathlib import Path
@@ -44,19 +44,14 @@ except Exception:  # pragma: no cover
         return _decorator
 
 # -------------------------------------------------------------
-# Paths and cache directories
+# Paths
 # -------------------------------------------------------------
 ASSETS = Path("assets")
-CACHE_ROOT = Path("data/.cache")
-CACHE_DIRS = {
-    "base_cards": CACHE_ROOT / "base_cards",
-    "edited_cards": CACHE_ROOT / "edited_cards",
-    "icons": CACHE_ROOT / "icons",
-    "characters": CACHE_ROOT / "characters",
-    "expansions": CACHE_ROOT / "expansions",
-}
-for d in CACHE_DIRS.values():
-    d.mkdir(parents=True, exist_ok=True)
+
+# There was a `CACHE_ROOT = Path("data/.cache")` here with five subdirectories,
+# created at import. Nothing ever read or wrote them -- the caches in this
+# module are all in memory -- so all it did was leave five empty directories
+# behind on every process start. Delete `data/.cache` if it still exists.
 
 
 # -------------------------------------------------------------
@@ -72,18 +67,29 @@ except Exception:
     _IS_CLOUD = False
 
 
+@lru_cache(maxsize=None)
+def _cloud_flag(name: str, default: bool) -> bool:
+    """Read a deployment flag once.
+
+    These come from Streamlit Secrets or the environment, neither of which
+    changes for the life of the process. Reading them is not cheap: with no
+    `.streamlit/secrets.toml` present, Streamlit's secrets lookup only memoizes
+    on success, so every miss re-probes every candidate path and raises --
+    measured at ~80 us per call. The image helpers below run per file path, on
+    grids of 30-100 thumbnails.
+    """
+    return bool(get_config_bool(name, default=default))
+
+
 def _disable_all_image_caches() -> bool:
     """Cloud-only: bypass all image-related caches.
 
     Defaults to enabled on Streamlit Cloud.
     """
 
-    try:
-        if not _IS_CLOUD:
-            return False
-        return bool(get_config_bool("DSBG_DISABLE_IMAGE_CACHES", default=True))
-    except Exception:
+    if not _IS_CLOUD:
         return False
+    return _cloud_flag("DSBG_DISABLE_IMAGE_CACHES", True)
 
 if _IS_CLOUD:
     IMAGE_BYTES_CACHE_MAX_ENTRIES = 128
@@ -386,20 +392,18 @@ def _load_pil_image_cached_raw(
 
 
 def load_pil_image_cached(path: str, convert: str | None = "RGBA") -> Image.Image:
-    """Public helper: return a PIL Image for `path` (cached).
+    """Public helper: return a private PIL Image for `path`.
 
-    The returned Image should be copied by callers before mutating it.
+    The underlying decode is cached process-wide; each caller gets its own
+    copy, so mutating the result is safe.
     """
     p = Path(path)
     if _should_bypass_image_cache_for_path(p):
         if not p.exists():
             raise FileNotFoundError(f"Missing image: {p}")
-        data = p.read_bytes()
-        img = Image.open(io.BytesIO(data))
-        if convert:
-            img = img.convert(convert)
-        return img
-    return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert)
+        img = Image.open(io.BytesIO(p.read_bytes()))
+        return img.convert(convert) if convert else img
+    return _load_pil_image_cached_raw(str(p), _stat_mtime_ns(p), convert).copy()
 
 
 def _bytes_to_data_uri_uncached(data: bytes, mime: str = "image/png") -> str:
@@ -420,16 +424,16 @@ def _is_encounter_card_asset_path(p: Path) -> bool:
 
 
 def _should_bypass_image_cache_for_path(p: Path) -> bool:
-    try:
-        if not is_streamlit_cloud():
-            return False
-        # Cloud-only low-memory: disable all image caches by default.
-        if get_config_bool("DSBG_DISABLE_IMAGE_CACHES", default=True):
-            return True
-
-        # Legacy/targeted switch: disable only encounter-card image caches.
-        if not get_config_bool("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", default=False):
-            return False
-        return _is_encounter_card_asset_path(p)
-    except Exception:
+    # `_IS_CLOUD` and `_cloud_flag` instead of `is_streamlit_cloud()` /
+    # `get_config_bool()`: this runs once per image path, and those cost ~80 us
+    # each on a deployment without a secrets file.
+    if not _IS_CLOUD:
         return False
+    # Cloud-only low-memory: disable all image caches by default.
+    if _cloud_flag("DSBG_DISABLE_IMAGE_CACHES", True):
+        return True
+
+    # Legacy/targeted switch: disable only encounter-card image caches.
+    if not _cloud_flag("DSBG_DISABLE_ENCOUNTER_IMAGE_CACHES", False):
+        return False
+    return _is_encounter_card_asset_path(p)

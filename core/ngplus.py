@@ -63,6 +63,35 @@ def dodge_for_level(base_dodge: Optional[int], level: int) -> Optional[int]:
     return int(base_dodge) + dodge_bonus_for_level(level)
 
 
+def _is_number(v: Any) -> bool:
+    """True for real numbers only — bool subclasses int, and boolean flags
+    must not be treated as amounts."""
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+_CARD_SLOTS = ("left", "middle", "right")
+
+
+def _looks_like_card(value: Any) -> bool:
+    """True for dicts that are behavior cards rather than stat blocks.
+
+    A card carries at least one attack slot, or a dodge difficulty (The
+    Pursuer's Forward/Back Dash are dodge-only cards).
+
+    This deliberately does NOT test for "middle" alone, which is what it used to
+    do: 47 cards in the shipped data have only `left` and/or `right` slots --
+    Kalameet's Flame Feint, Vordt's Shove Right and Retreating Sweep, six of The
+    Last Giant's -- and every one of them was silently skipped by NG+ while its
+    neighbours on the same deck were scaled.
+
+    Stat blocks stay excluded: Ornstein & Smough's per-boss entries carry
+    health/armor/resist/heatup and no slot or dodge key.
+    """
+    if not isinstance(value, dict):
+        return False
+    return any(slot in value for slot in _CARD_SLOTS) or "dodge" in value
+
+
 def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
     """
     Apply NG+ to a single behavior card.
@@ -80,19 +109,18 @@ def _apply_to_card_dict(card: Dict[str, Any], level: int) -> Dict[str, Any]:
     # Damage in left/middle/right regions
     for side in ("left", "middle", "right"):
         region = card.get(side)
-        if (
-            isinstance(region, dict)
-            and "damage" in region
-            and isinstance(region["damage"], (int, float))
-        ):
+        if not isinstance(region, dict):
+            continue
+
+        if _is_number(region.get("damage")):
             region = deepcopy(region)
             region["damage"] = damage_for_level(int(region["damage"]), level)
             card[side] = region
-        
+
         # Also scale numeric push values on the region (some move-attacks
         # encode their push as a numeric `push` field). Preserve boolean
         # `push` flags (they indicate presence rather than amount).
-        if isinstance(region, dict) and "push" in region and isinstance(region["push"], (int, float)):
+        if _is_number(region.get("push")):
             region = deepcopy(region)
             region["push"] = damage_for_level(int(region["push"]), level)
             card[side] = region
@@ -129,12 +157,14 @@ def apply_ngplus_to_raw(
         hp_bonus = health_bonus_for_level(base_hp, level)
         raw["health"] = base_hp + hp_bonus
 
-    if "heatup" in raw and isinstance(raw["heatup"], (int, float)):
-        if enemy_name == "Vordt of the Boreal Valley":
-            raw["heatup1"] = int(raw["heatup1"]) + hp_bonus
-            raw["heatup2"] = int(raw["heatup2"]) + hp_bonus
-        if not enemy_name in {"Old Dragonslayer", "The Four Kings", "Executioner's Chariot"}:
-            raw["heatup"] = int(raw["heatup"]) + hp_bonus
+    # Vordt uses two heat-up thresholds instead of a single "heatup" key.
+    if enemy_name == "Vordt of the Boreal Valley":
+        for key in ("heatup1", "heatup2"):
+            if isinstance(raw.get(key), (int, float)):
+                raw[key] = int(raw[key]) + hp_bonus
+
+    if isinstance(raw.get("heatup"), (int, float)):
+        raw["heatup"] = int(raw["heatup"]) + hp_bonus
 
     # ----- Paladin Leeroy special rule text -----
     # Only relevant for NG+ levels (>0); X = 2 + HP bonus from NG+.
@@ -150,11 +180,19 @@ def apply_ngplus_to_raw(
         raw["behavior"] = _apply_to_card_dict(raw["behavior"], level)
         return raw
 
-    # Multi-card bosses/invaders (e.g. Armorer Dennis):
-    # top-level keys that look like behavior cards have a "middle" dict.
+    # Multi-card bosses/invaders (e.g. Armorer Dennis).
     for key, value in list(raw.items()):
-        if isinstance(value, dict) and "middle" in value:
+        if not isinstance(value, dict):
+            continue
+        if _looks_like_card(value):
             raw[key] = _apply_to_card_dict(value, level)
+        elif value and all(_looks_like_card(v) for v in value.values()):
+            # Ornstein & Smough keep two half-cards under one card name, e.g.
+            # "Gliding Stab & Hammer Smash" -> {"Gliding Stab": {...}, ...}.
+            raw[key] = {
+                half_name: _apply_to_card_dict(half, level)
+                for half_name, half in value.items()
+            }
 
     return raw
 
@@ -199,17 +237,3 @@ def health_bonus_for_level(base_hp: Optional[int], level: int) -> int:
     if hp_ng is None:
         return 0
     return int(hp_ng) - base_hp
-
-
-def dodge_bonus_for_level(level: int) -> int:
-    """
-    NG+ dodge rules:
-      - NG+0-1: +0
-      - NG+2-3: +1
-      - NG+4-5: +2
-    """
-    if level <= 1:
-        return 0
-    if 2 <= level <= 3:
-        return 1
-    return 2

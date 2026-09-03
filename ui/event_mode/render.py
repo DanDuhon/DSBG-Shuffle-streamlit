@@ -36,83 +36,92 @@ def render(settings: Dict[str, Any]) -> None:
         rerun_on_change=False,
     )
 
-    tab_builder, tab_viewer = st.tabs(["Deck Builder", "Card Viewer"])
+    # `on_change="rerun"` + `.open`: the Deck Builder loops 30 cards (~240
+    # element deltas) and was doing it while the user sat on Card Viewer.
+    tab_builder, tab_viewer = st.tabs(
+        ["Deck Builder", "Card Viewer"], on_change="rerun"
+    )
 
-    with tab_builder:
-        render_deck_builder(settings=settings, configs=configs)
+    if tab_builder.open:
+        with tab_builder:
+            render_deck_builder(settings=settings, configs=configs)
 
-    with tab_viewer:
-        cards = list_all_event_cards(configs=configs)
-        if not cards:
-            st.info("No event cards found.")
-            return
-
-        # Card display width (prefer live session_state for immediate UI updates).
-        user_settings = st.session_state.get("user_settings") or {}
-        card_w = int(st.session_state.get("ui_card_width", user_settings.get("ui_card_width", 360)))
-        card_w = max(240, min(560, card_w))
-
-        # Build stable, human-friendly labels.
-        labels: list[str] = []
-        label_to_card: dict[str, dict] = {}
-        label_counts: dict[str, int] = {}
-
-        for c in cards:
-            cid = str(c.get("id") or "").strip()
-            if not cid:
-                continue
-
-            # Prefer a simple title-ish display, but keep it predictable.
-            display = cid.replace("_", " ").strip()
-            if display and display.lower() == display:
-                display = display.title()
-
-            # Ensure uniqueness if two cards end up with the same label.
-            n = label_counts.get(display, 0) + 1
-            label_counts[display] = n
-            label = display if n == 1 else f"{display} ({n})"
-
-            labels.append(label)
-            label_to_card[label] = c
-
-        if not labels:
-            st.info("No event cards found.")
-            return
-
-        compact = bool(st.session_state.get("ui_compact", False))
-        picker_key = "event_card_viewer_choice"
-
-        left, right = st.columns([1, 2], gap="medium")
-        with left:
-            if compact:
-                choice = st.selectbox(
-                    "Event card",
-                    options=labels,
-                    key=picker_key,
-                )
-            else:
-                choice = st.radio(
-                    "Event card",
-                    options=labels,
-                    key=picker_key,
-                )
-
-        with right:
-            card = label_to_card.get(choice) or {}
-            img_path = card.get("image_path")
-            if not isinstance(img_path, str) or not img_path:
-                st.error("Event card image path is missing.")
+    if tab_viewer.open:
+        with tab_viewer:
+            cards = list_all_event_cards(configs=configs)
+            if not cards:
+                st.info("No event cards found.")
                 return
 
-            img_bytes = get_image_bytes_cached(str(Path(img_path)))
-            if not img_bytes:
-                st.error(f"Unable to load image: {img_path}")
+            # Card display width (prefer live session_state for immediate UI updates).
+            user_settings = st.session_state.get("user_settings") or {}
+            card_w = int(st.session_state.get("ui_card_width", user_settings.get("ui_card_width", 360)))
+            card_w = max(240, min(560, card_w))
+
+            # Build stable, human-friendly labels.
+            labels: list[str] = []
+            label_to_card: dict[str, dict] = {}
+            label_counts: dict[str, int] = {}
+
+            for c in cards:
+                cid = str(c.get("id") or "").strip()
+                if not cid:
+                    continue
+
+                # Prefer a simple title-ish display, but keep it predictable.
+                display = cid.replace("_", " ").strip()
+                if display and display.lower() == display:
+                    display = display.title()
+
+                # Ensure uniqueness if two cards end up with the same label.
+                n = label_counts.get(display, 0) + 1
+                label_counts[display] = n
+                label = display if n == 1 else f"{display} ({n})"
+
+                labels.append(label)
+                label_to_card[label] = c
+
+            if not labels:
+                st.info("No event cards found.")
                 return
 
-            st.image(img_bytes, width=card_w)
+            compact = bool(st.session_state.get("ui_compact", False))
+            picker_key = "event_card_viewer_choice"
 
-            expansion = card.get("expansion")
-            if isinstance(expansion, str) and expansion.strip():
-                st.caption(f"Found in: {expansion}")
-            else:
-                st.caption("Found in: (unknown)")
+            left, right = st.columns([1, 2], gap="medium")
+            with left:
+                if compact:
+                    choice = st.selectbox(
+                        "Event card",
+                        options=labels,
+                        key=picker_key,
+                        persist_state="session",
+                    )
+                else:
+                    choice = st.radio(
+                        "Event card",
+                        options=labels,
+                        key=picker_key,
+                        # Keep the viewed card across a tab switch.
+                        persist_state="session",
+                    )
+
+            with right:
+                card = label_to_card.get(choice) or {}
+                img_path = card.get("image_path")
+                if not isinstance(img_path, str) or not img_path:
+                    st.error("Event card image path is missing.")
+                    return
+
+                img_bytes = get_image_bytes_cached(str(Path(img_path)))
+                if not img_bytes:
+                    st.error(f"Unable to load image: {img_path}")
+                    return
+
+                st.image(img_bytes, width=card_w)
+
+                expansion = card.get("expansion")
+                if isinstance(expansion, str) and expansion.strip():
+                    st.caption(f"Found in: {expansion}")
+                else:
+                    st.caption("Found in: (unknown)")

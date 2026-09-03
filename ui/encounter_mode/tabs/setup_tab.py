@@ -218,6 +218,26 @@ def _render_encounter_setup_text_summary(current_encounter: dict) -> None:
         st.caption("—")
 
 
+
+def _with_reward_replacements(enc_data: dict, encounter: dict) -> dict:
+    """Re-attach the item-reward swap so a re-rendered card shows it.
+
+    `encounter_data` is dropped in Cloud low-memory mode and when an encounter
+    is saved, so the card would otherwise revert to the printed reward. The map
+    is mirrored on the encounter itself, which survives both.
+
+    Copies before mutating: `load_encounter_data` returns the process-wide
+    cached dict.
+    """
+    replacements = encounter.get("reward_replacements") or {}
+    if not enc_data or not replacements:
+        return enc_data
+    if (enc_data.get("_shuffled_reward_replacements") or {}) == replacements:
+        return enc_data
+    enc_data = dict(enc_data)
+    enc_data["_shuffled_reward_replacements"] = dict(replacements)
+    return enc_data
+
 def _strip_encounter_heavy_fields_inplace(encounter: object) -> None:
     if not isinstance(encounter, dict):
         return
@@ -272,6 +292,28 @@ def _ensure_card_bytes_inplace(encounter: dict) -> bytes | None:
         return None
 
 
+def _edited_toggle_prev_state(widget_key: str, fallback: bool) -> bool:
+    """Value the "use edits" checkbox held on the *previous* run.
+
+    Deliberately not read back out of `settings["edited_toggles"]`. The
+    checkbox's `on_change` callback writes that dict, and Streamlit runs
+    callbacks *before* the rerun, so by the time the render path reads it the
+    stored value already equals the new one -- making `toggle_changed`
+    permanently False, `apply_edited_toggle` unreachable, and the auto-shuffle
+    branch fire instead (re-rolling the enemy list and clearing
+    `encounter_events`).
+
+    This mirror is written only by the render path, in
+    `_remember_edited_toggle`, one line after the comparison.
+    """
+    return bool(st.session_state.get(f"_last_edited_for_{widget_key}", fallback))
+
+
+def _remember_edited_toggle(widget_key: str, value: bool) -> None:
+    """Record the rendered checkbox value for the next run's comparison."""
+    st.session_state[f"_last_edited_for_{widget_key}"] = bool(value)
+
+
 def render_original_encounter(
     encounter_data,
     selected_expansion,
@@ -313,6 +355,183 @@ def render_original_encounter(
 
 
 # --- Main render --------------------------------------------------------------
+
+
+def _render_saved_encounters_section(
+    *,
+    settings: dict,
+    character_count: int,
+    use_edited: bool,
+    cloud_low_memory: bool,
+) -> None:
+    """Render the Save / Load / Delete controls for curated encounters.
+
+    Shared by the standard and compact layouts. The compact layout previously
+    omitted this entirely, so mobile users could not save or load at all.
+    """
+    st.subheader("Saved Encounters")
+
+    cloud_mode = bool(is_streamlit_cloud())
+    supabase_ready = bool(_has_supabase_config())
+    can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
+    if cloud_mode and not supabase_ready:
+        st.caption("Saving is disabled until Supabase is configured.")
+    elif cloud_mode and not auth.is_authenticated():
+        st.caption("Log in to save.")
+
+    save_name_default = (
+        st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
+    )
+    # Keyed: without a `key` the widget's identity includes `value=`, so any
+    # rerun that changed the selected encounter recreated the box and discarded
+    # what the user had typed.
+    if "encounter_save_as_name" not in st.session_state:
+        st.session_state["encounter_save_as_name"] = save_name_default
+    save_name = st.text_input(
+        "Save as:", key="encounter_save_as_name", persist_state="session"
+    )
+
+    if st.button("Save Current 💾", width="stretch", disabled=not can_persist):
+        if "current_encounter" not in st.session_state:
+            st.warning("No active encounter to save.")
+        else:
+            if not can_persist:
+                st.error("Not logged in; cannot persist on Streamlit Cloud.")
+                st.stop()
+            # Build payload but strip non-JSON-serializable objects (images/bytes)
+            raw = dict(st.session_state.current_encounter)
+            for k in ("card_img", "buf", "card_bytes"):
+                if k in raw:
+                    raw.pop(k, None)
+
+            # The item-reward swap (Similar Soul Cost / Same Item Tier) lives
+            # inside `encounter_data`, which is not persisted. Keep just the
+            # tiny name->name map so a reloaded encounter still shows the item
+            # the party actually earned instead of reverting to the printed one.
+            reward_replacements = (
+                (raw.get("encounter_data") or {}).get("_shuffled_reward_replacements")
+                or {}
+            )
+
+            # Ensure we do not persist full encounter JSON in saved payloads
+            raw.pop("encounter_data", None)
+            payload = {
+                **raw,
+                "reward_replacements": reward_replacements,
+                "events": st.session_state.get("encounter_events", []),
+                "meta_label": st.session_state.get("last_encounter", {}).get("label"),
+                "character_count": character_count,
+                "edited": use_edited,
+            }
+            st.session_state.saved_encounters[save_name] = payload
+            # Persist saved encounters into dedicated file
+            try:
+                save_saved_encounters(st.session_state.saved_encounters)
+            except Exception:
+                # fallback: store in user settings
+                settings["saved_encounters"] = st.session_state.saved_encounters
+                st.session_state["user_settings"] = settings
+                save_settings(settings)
+            st.success(f"Saved encounter as '{save_name}'.")
+
+    if st.session_state.saved_encounters:
+        load_name = st.selectbox(
+            "Load saved encounter:",
+            list(st.session_state.saved_encounters.keys()),
+        )
+        load_col, delete_col = st.columns([1, 1])
+        with load_col:
+            if st.button("Load 📥", width="stretch"):
+                payload = dict(st.session_state.saved_encounters[load_name])
+
+                # Re-generate the encounter image (images are not persisted).
+                # Load encounter JSON on-demand if it wasn't saved in payload.
+                if not cloud_low_memory:
+                    try:
+                        exp = payload.get("expansion") or payload.get("expansions_used", [None])[0]
+                        lvl = int(payload.get("encounter_level") or payload.get("level") or 0)
+                        nm = payload.get("encounter_name") or payload.get("name")
+                        pc = int(payload.get("character_count") or character_count)
+                        enc_data = payload.get("encounter_data") or payload.get("data") or {}
+                        if not enc_data and exp and nm:
+                            enc_data = load_encounter_data(exp, nm, character_count=pc, level=lvl)
+
+                        # Restore the persisted item-reward swap. Copy first:
+                        # `load_encounter_data` returns the process-wide cached
+                        # dict, so mutating it in place would leak this save's
+                        # swap into every other encounter and session.
+                        saved_replacements = payload.get("reward_replacements") or {}
+                        if enc_data and saved_replacements:
+                            enc_data = dict(enc_data)
+                            enc_data["_shuffled_reward_replacements"] = dict(
+                                saved_replacements
+                            )
+
+                        # Put it back on the payload: saving strips
+                        # `encounter_data`, and the edited-encounter toggle
+                        # indexes it directly, so a loaded encounter without
+                        # it raised KeyError.
+                        if enc_data:
+                            payload["encounter_data"] = enc_data
+
+                        card_img = generate_encounter_image(
+                            exp,
+                            lvl,
+                            nm,
+                            enc_data or {},
+                            payload.get("enemies") or [],
+                            use_edited=payload.get("edited", False),
+                        )
+                    except Exception:
+                        card_img = None
+
+                    if card_img is not None:
+                        payload["card_img"] = card_img
+                        try:
+                            data = _encode_image_as_jpeg_bytes(card_img, quality=85)
+                            if data:
+                                payload["card_bytes"] = data
+                            else:
+                                payload.pop("card_bytes", None)
+                        except Exception:
+                            payload.pop("card_bytes", None)
+
+                st.session_state.current_encounter = payload
+                if cloud_low_memory:
+                    _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
+                st.session_state.encounter_events = payload.get("events", [])
+                st.session_state["last_encounter"] = {
+                    "label": payload.get("meta_label", load_name),
+                    "slug": payload.get("slug"),
+                    "expansion": payload.get("expansion"),
+                    "character_count": payload.get("character_count"),
+                    "edited": payload.get("edited", False),
+                    "enemies": payload.get("enemies"),
+                    "expansions_used": payload.get("expansions_used"),
+                }
+
+                # Reconstruct 'added invaders' from payload['invaders']
+                _restore_added_invaders_from_payload(payload)
+                _apply_added_invaders_to_current_encounter()
+
+                # Render the loaded encounter immediately, and tell the
+                # auto-shuffle pass to stand down for that run.
+                st.session_state["_encounter_just_loaded"] = True
+                st.rerun()
+
+        with delete_col:
+            if st.button("Delete 🗑️", width="stretch", disabled=not can_persist):
+                if load_name in st.session_state.saved_encounters:
+                    st.session_state.saved_encounters.pop(load_name, None)
+                    # Persist deletion to dedicated file, fallback to settings
+                    try:
+                        save_saved_encounters(st.session_state.saved_encounters)
+                    except Exception:
+                        settings["saved_encounters"] = st.session_state.saved_encounters
+                        st.session_state["user_settings"] = settings
+                        save_settings(settings)
+                    st.success(f"Deleted saved encounter '{load_name}'.")
+                    st.rerun()
 
 
 def render(settings: dict, valid_party: bool, character_count: int) -> None:
@@ -504,6 +723,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 prev_state = False
 
             widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
+            prev_state = _edited_toggle_prev_state(widget_key, prev_state)
 
             def _on_edited_changed():
                 new_val = bool(st.session_state.get(widget_key, False))
@@ -528,6 +748,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                 save_settings(settings)
 
             toggle_changed = prev_state != use_edited
+            _remember_edited_toggle(widget_key, use_edited)
             st.session_state["last_toggle"] = use_edited
 
             # Determine availability for shuffle/original buttons
@@ -652,8 +873,20 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         pass
                 else:
                     current = st.session_state.current_encounter
+                    # `encounter_data` is stripped when an encounter is saved, so
+                    # reload it on demand rather than indexing blindly.
+                    enc_data = current.get("encounter_data")
+                    if not enc_data:
+                        enc_data = load_encounter_data(
+                            current.get("expansion"),
+                            current.get("encounter_name"),
+                            character_count=character_count,
+                            level=int(current.get("encounter_level") or 0),
+                        )
+                        current["encounter_data"] = enc_data
+
                     res = apply_edited_toggle(
-                        current["encounter_data"],
+                        enc_data,
                         current["expansion"],
                         current["encounter_name"],
                         current["encounter_level"],
@@ -676,12 +909,17 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         }
                         _apply_added_invaders_to_current_encounter()
 
-            # Auto-shuffle when encounter selection changes (and no explicit button pressed)
+            # Auto-shuffle when encounter selection changes (and no explicit button pressed).
+            # A just-loaded saved encounter is exempt: its label/expansion need not
+            # match the dropdown, so auto-shuffle would silently replace what the
+            # user just loaded and wipe its attached events.
+            just_loaded = bool(st.session_state.pop("_encounter_just_loaded", False))
             if (
                 selected_label
                 and not shuffle_clicked
                 and not original_clicked
                 and not toggle_changed
+                and not just_loaded
             ):
                 last = st.session_state.get("last_encounter", {})
                 encounter_changed = (
@@ -736,129 +974,12 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             # ---------------------------------------------------------
             # Save / Load curated encounters
             # ---------------------------------------------------------
-            st.subheader("Saved Encounters")
-
-            cloud_mode = bool(is_streamlit_cloud())
-            supabase_ready = bool(_has_supabase_config())
-            can_persist = (not cloud_mode) or (supabase_ready and auth.is_authenticated())
-            if cloud_mode and not supabase_ready:
-                st.caption("Saving is disabled until Supabase is configured.")
-            elif cloud_mode and not auth.is_authenticated():
-                st.caption("Log in to save.")
-
-            save_name_default = (
-                st.session_state.get("last_encounter", {}).get("slug") or "custom_encounter"
+            _render_saved_encounters_section(
+                settings=settings,
+                character_count=character_count,
+                use_edited=use_edited,
+                cloud_low_memory=cloud_low_memory,
             )
-            save_name = st.text_input("Save as:", value=save_name_default)
-
-            if st.button("Save Current 💾", width="stretch", disabled=not can_persist):
-                if "current_encounter" not in st.session_state:
-                    st.warning("No active encounter to save.")
-                else:
-                    if not can_persist:
-                        st.error("Not logged in; cannot persist on Streamlit Cloud.")
-                        st.stop()
-                    # Build payload but strip non-JSON-serializable objects (images/bytes)
-                    raw = dict(st.session_state.current_encounter)
-                    for k in ("card_img", "buf", "card_bytes"):
-                        if k in raw:
-                            raw.pop(k, None)
-
-                    # Ensure we do not persist full encounter JSON in saved payloads
-                    raw.pop("encounter_data", None)
-                    payload = {
-                        **raw,
-                        "events": st.session_state.get("encounter_events", []),
-                        "meta_label": st.session_state.get("last_encounter", {}).get("label"),
-                        "character_count": character_count,
-                        "edited": use_edited,
-                    }
-                    st.session_state.saved_encounters[save_name] = payload
-                    # Persist saved encounters into dedicated file
-                    try:
-                        save_saved_encounters(st.session_state.saved_encounters)
-                    except Exception:
-                        # fallback: store in user settings
-                        settings["saved_encounters"] = st.session_state.saved_encounters
-                        st.session_state["user_settings"] = settings
-                        save_settings(settings)
-                    st.success(f"Saved encounter as '{save_name}'.")
-
-            if st.session_state.saved_encounters:
-                load_name = st.selectbox(
-                    "Load saved encounter:",
-                    list(st.session_state.saved_encounters.keys()),
-                )
-                load_col, delete_col = st.columns([1, 1])
-                with load_col:
-                    if st.button("Load 📥", width="stretch"):
-                        payload = dict(st.session_state.saved_encounters[load_name])
-
-                        # Re-generate the encounter image (images are not persisted).
-                        # Load encounter JSON on-demand if it wasn't saved in payload.
-                        if not cloud_low_memory:
-                            try:
-                                exp = payload.get("expansion") or payload.get("expansions_used", [None])[0]
-                                lvl = int(payload.get("encounter_level") or payload.get("level") or 0)
-                                nm = payload.get("encounter_name") or payload.get("name")
-                                pc = int(payload.get("character_count") or character_count)
-                                enc_data = payload.get("encounter_data") or payload.get("data") or {}
-                                if not enc_data and exp and nm:
-                                    enc_data = load_encounter_data(exp, nm, character_count=pc, level=lvl)
-
-                                card_img = generate_encounter_image(
-                                    exp,
-                                    lvl,
-                                    nm,
-                                    enc_data or {},
-                                    payload.get("enemies") or [],
-                                    use_edited=payload.get("edited", False),
-                                )
-                            except Exception:
-                                card_img = None
-
-                            if card_img is not None:
-                                payload["card_img"] = card_img
-                                try:
-                                    data = _encode_image_as_jpeg_bytes(card_img, quality=85)
-                                    if data:
-                                        payload["card_bytes"] = data
-                                    else:
-                                        payload.pop("card_bytes", None)
-                                except Exception:
-                                    payload.pop("card_bytes", None)
-
-                        st.session_state.current_encounter = payload
-                        if cloud_low_memory:
-                            _strip_encounter_heavy_fields_inplace(st.session_state.current_encounter)
-                        st.session_state.encounter_events = payload.get("events", [])
-                        st.session_state["last_encounter"] = {
-                            "label": payload.get("meta_label", load_name),
-                            "slug": payload.get("slug"),
-                            "expansion": payload.get("expansion"),
-                            "character_count": payload.get("character_count"),
-                            "edited": payload.get("edited", False),
-                            "enemies": payload.get("enemies"),
-                            "expansions_used": payload.get("expansions_used"),
-                        }
-
-                        # Reconstruct 'added invaders' from payload['invaders']
-                        _restore_added_invaders_from_payload(payload)
-                        _apply_added_invaders_to_current_encounter()
-
-                with delete_col:
-                    if st.button("Delete 🗑️", width="stretch", disabled=not can_persist):
-                        if load_name in st.session_state.saved_encounters:
-                            st.session_state.saved_encounters.pop(load_name, None)
-                            # Persist deletion to dedicated file, fallback to settings
-                            try:
-                                save_saved_encounters(st.session_state.saved_encounters)
-                            except Exception:
-                                settings["saved_encounters"] = st.session_state.saved_encounters
-                                st.session_state["user_settings"] = settings
-                                save_settings(settings)
-                            st.success(f"Deleted saved encounter '{load_name}'.")
-                            st.rerun()
 
         # -------------------------------------------------------------------------
         # RIGHT COLUMN – CARDS
@@ -876,6 +997,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                         enc_data = encounter.get("encounter_data") or {}
                         if not enc_data and exp and nm:
                             enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
+                        enc_data = _with_reward_replacements(enc_data, encounter)
                         if exp and nm and lvl:
                             if memlog_checkpoint is not None:
                                 try:
@@ -1207,6 +1329,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             prev_state = False
 
         widget_key = f"edited_toggle_{encounter_name}_{selected_expansion}"
+        prev_state = _edited_toggle_prev_state(widget_key, prev_state)
 
         def _on_edited_changed_compact():
             new_val = bool(st.session_state.get(widget_key, False))
@@ -1231,6 +1354,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
             save_settings(settings)
 
         toggle_changed = prev_state != use_edited
+        _remember_edited_toggle(widget_key, use_edited)
         st.session_state["last_toggle"] = use_edited
 
         # --- Shuffle / Original buttons ---
@@ -1365,8 +1489,20 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     pass
             else:
                 current = st.session_state.current_encounter
+                # `encounter_data` is stripped when an encounter is saved, so
+                # reload it on demand rather than indexing blindly.
+                enc_data = current.get("encounter_data")
+                if not enc_data:
+                    enc_data = load_encounter_data(
+                        current.get("expansion"),
+                        current.get("encounter_name"),
+                        character_count=character_count,
+                        level=int(current.get("encounter_level") or 0),
+                    )
+                    current["encounter_data"] = enc_data
+
                 res = apply_edited_toggle(
-                    current["encounter_data"],
+                    enc_data,
                     current["expansion"],
                     current["encounter_name"],
                     current["encounter_level"],
@@ -1387,12 +1523,17 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     }
                     _apply_added_invaders_to_current_encounter()
 
-        # Auto-shuffle when encounter selection changes (and no explicit button pressed)
+        # Auto-shuffle when encounter selection changes (and no explicit button pressed).
+        # A just-loaded saved encounter is exempt, same as the standard layout:
+        # its label/expansion need not match the dropdown, so auto-shuffle would
+        # replace what the user just loaded and wipe its attached events.
+        just_loaded = bool(st.session_state.pop("_encounter_just_loaded", False))
         if (
             selected_label
             and not shuffle_clicked
             and not original_clicked
             and not toggle_changed
+            and not just_loaded
         ):
             last = st.session_state.get("last_encounter", {})
             encounter_changed = (
@@ -1441,6 +1582,7 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
                     enc_data = encounter.get("encounter_data") or {}
                     if not enc_data and exp and nm:
                         enc_data = load_encounter_data(exp, nm, character_count=character_count, level=lvl)
+                    enc_data = _with_reward_replacements(enc_data, encounter)
                     if exp and nm and lvl:
                         img = generate_encounter_image(
                             exp,
@@ -1494,6 +1636,14 @@ def render(settings: dict, valid_party: bool, character_count: int) -> None:
         # --- Optional invader configuration for this encounter ---
         if "current_encounter" in st.session_state:
             _render_invader_setup_controls(st.session_state.current_encounter)
+
+        st.markdown("---")
+        _render_saved_encounters_section(
+            settings=settings,
+            character_count=character_count,
+            use_edited=use_edited,
+            cloud_low_memory=cloud_low_memory,
+        )
 
         st.markdown("#### Events")
 
@@ -1582,13 +1732,9 @@ def _invader_map_key(encounter: dict) -> str:
 
 def _get_all_invader_entries() -> list[BehaviorEntry]:
     """
-    Return all BehaviorEntry objects that are invaders (is_invader=True),
-    reusing the behavior catalog from the Behavior Decks tab if present.
+    Return all BehaviorEntry objects that are invaders (is_invader=True).
     """
-    catalog = st.session_state.get("behavior_catalog")
-    if catalog is None:
-        catalog = build_behavior_catalog()
-        st.session_state["behavior_catalog"] = catalog
+    catalog = build_behavior_catalog()
 
     entries: list[BehaviorEntry] = []
     for per_cat in catalog.values():
@@ -1706,7 +1852,16 @@ def _render_invader_setup_controls(encounter: dict) -> None:
     """
     key = _invader_map_key(encounter)
 
-    with st.expander("Invaders for this encounter", expanded=False):
+    # `on_change="rerun"` + `.open`: collapsed, this body still ran on every
+    # rerun, calling `build_behavior_catalog()` (~3.9 ms warm) twice to list
+    # invaders nobody is looking at. Opening it costs one round-trip instead.
+    invader_exp = st.expander(
+        "Invaders for this encounter", expanded=False, on_change="rerun"
+    )
+    if not invader_exp.open:
+        return
+
+    with invader_exp:
         st.caption(
             "Add extra invaders to this encounter. "
             "Invaders that are part of the encounter setup itself "

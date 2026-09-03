@@ -3,13 +3,13 @@ import io
 import random
 from typing import Sequence, Tuple
 
-from PIL import Image
 from PIL import Image, ImageDraw
 from pathlib import Path
 
 from core.behavior.generation import render_behavior_card_cached, render_behavior_card_uncached
 from core.behavior.assets import BEHAVIOR_CARDS_PATH, _behavior_image_path, FONTS, text_styles, ICONS_DIR
 from ui.boss_mode.aoe_pattern_utils import (
+    get_aoe_overlay_icons,
     NODE_COORDS,
     is_adjacent,
     is_diagonal,
@@ -233,19 +233,8 @@ def _guardian_render_fiery_breath(cfg, pattern):
     elif isinstance(base, str):
         base_img = Image.open(base).convert("RGBA")
 
-    assets_dir = Path(BEHAVIOR_CARDS_PATH).parent
-
-    # Load icons
-    aoe_icon_path = assets_dir / "behavior icons" / "aoe_node.png"
-    dest_icon_path = assets_dir / "behavior icons" / "destination_node.png"
-
-    aoe_icon = Image.open(aoe_icon_path).convert("RGBA")
-    dest_icon = Image.open(dest_icon_path).convert("RGBA")
-
-    resample = Image.Resampling.LANCZOS
-
-    aoe_icon = aoe_icon.resize((250, 250), resample)
-    dest_icon = dest_icon.resize((122, 122), resample)
+    # Decoded and resized once per process rather than on every rerun.
+    aoe_icon, dest_icon = get_aoe_overlay_icons()
 
     # Overlay destination node first
     dest = pattern.get("dest")

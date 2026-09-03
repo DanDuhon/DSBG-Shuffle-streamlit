@@ -4,11 +4,28 @@ import streamlit as st
 
 
 def get_encounter_id(encounter: dict):
-    """Best-effort way to identify the current encounter for resetting state."""
-    for key in ("id", "slug", "encounter_slug", "encounter_name"):
-        if key in encounter:
-            return encounter[key]
-    return None
+    """Best-effort way to identify the current encounter for resetting state.
+
+    Falls back to a name qualified by expansion and level, because the bare name
+    is not unique: "Broken Passageway" exists in both Dark Souls The Board Game
+    and The Sunless City, and "Central Plaza" in both Painted World of Ariamis
+    and The Sunless City. Sharing an id meant switching between such a pair did
+    not reset the timer/phase/log, and made them share widget and invader-deck
+    keys. Campaign Mode supplies an explicit slug and is unaffected.
+    """
+    for key in ("id", "slug", "encounter_slug"):
+        value = encounter.get(key)
+        if value:
+            return value
+
+    name = encounter.get("encounter_name") or encounter.get("name")
+    if not name:
+        return None
+
+    expansion = encounter.get("expansion")
+    level = encounter.get("encounter_level", encounter.get("level"))
+    parts = [str(p) for p in (expansion, level, name) if p not in (None, "")]
+    return "|".join(parts)
 
 
 def get_player_count() -> int:
@@ -46,10 +63,18 @@ def ensure_play_state(encounter_id):
     return state
 
 
-def apply_pending_action(play_state: dict, timer_behavior: dict):
+def apply_pending_action(
+    play_state: dict,
+    timer_behavior: dict,
+    *,
+    trigger_scope_key: str | None = None,
+):
     """
     If the last run scheduled a pending turn action (next, prev, reset),
     apply it *before* rendering anything, and return the action string.
+
+    `trigger_scope_key` is the encounter's trigger scope; a reset clears it so
+    checkboxes/counters return to their defaults along with the timer.
 
     Returns:
         "next", "prev", "reset", or None if no pending action was set.
@@ -63,7 +88,19 @@ def apply_pending_action(play_state: dict, timer_behavior: dict):
     elif action == "prev":
         previous_turn(play_state)
     elif action == "reset":
-        reset_play_state(play_state)
+        # Clear this encounter's triggers first: a trigger left checked would
+        # otherwise be folded straight back into the timer by the
+        # recompute-from-triggers pass, undoing the reset.
+        if trigger_scope_key:
+            scopes = st.session_state.get("encounter_triggers")
+            if isinstance(scopes, dict):
+                scopes.pop(trigger_scope_key, None)
+
+        init = timer_behavior.get("initial_timer")
+        reset_play_state(
+            play_state,
+            initial_timer=init if isinstance(init, int) else 0,
+        )
 
     return action
 
@@ -134,12 +171,18 @@ def previous_turn(play_state: dict) -> None:
             log_entry(play_state, "Already at starting state; cannot go back further")
 
 
-def reset_play_state(play_state: dict) -> None:
-    """Clear timer and log, and return to the initial Enemy Phase state."""
+def reset_play_state(play_state: dict, *, initial_timer: int = 0) -> None:
+    """Clear log and return to this encounter's starting Enemy Phase state.
+
+    `initial_timer` mirrors the value applied when the state was first created
+    (e.g. Maze of the Dead edited starts at Timer 3). Resetting to a hard 0
+    ignored that, so such encounters could not actually be reset.
+    """
+    start = initial_timer if isinstance(initial_timer, int) and initial_timer >= 0 else 0
     play_state["phase"] = "enemy"
-    play_state["timer"] = 0
+    play_state["timer"] = start
     play_state["log"] = []
     play_state["enemy_phase_entry"] = int(play_state.get("enemy_phase_entry", 0) or 0) + 1
     # Clear transient trigger messages when resetting.
     st.session_state["encounter_last_trigger_messages"] = []
-    log_entry(play_state, "Play state reset (Timer 0, Enemy Phase)")
+    log_entry(play_state, f"Play state reset (Timer {start}, Enemy Phase)")

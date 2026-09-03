@@ -11,6 +11,7 @@ from random import choice
 from ui.encounter_mode.generation import (
     generate_encounter_image,
     load_encounter,
+    load_encounter_transient,
     load_valid_sets,
 )
 from core.enemies import ENEMY_EXPANSIONS_BY_ID
@@ -206,6 +207,11 @@ def _load_invader_enemy_ids():
     """
     Load invader identifiers so we can count how many invaders are in a chosen enemy list.
     Supports a few plausible shapes for invaders.json.
+
+    Returns integer enemy ids. `invaders.json` is keyed by enemy NAME while
+    encounter enemy lists hold integer ids, so names are resolved through
+    `enemyNames`. Returning the raw names here made every `eid in invader_ids`
+    test false, which silently disabled the per-level invader caps entirely.
     """
     if not INVADERS_PATH.exists():
         return set()
@@ -213,19 +219,34 @@ def _load_invader_enemy_ids():
     with INVADERS_PATH.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
+    by_name = {str(name): eid for eid, name in enemyNames.items()}
+
+    def _resolve(value):
+        """Return an int enemy id for a name or id-like value, else None."""
+        coerced = _coerce_enemy_id(value)
+        if isinstance(coerced, int):
+            return coerced
+        return by_name.get(str(coerced).strip())
+
     ids = set()
 
     if isinstance(data, dict):
         for k, v in data.items():
             # Always include the key as a fallback identifier
-            ids.add(_coerce_enemy_id(k))
+            resolved = _resolve(k)
+            if resolved is not None:
+                ids.add(resolved)
             if isinstance(v, dict):
                 cand = v.get("enemy_id") or v.get("id") or v.get("name")
                 if cand is not None:
-                    ids.add(_coerce_enemy_id(cand))
+                    resolved = _resolve(cand)
+                    if resolved is not None:
+                        ids.add(resolved)
     elif isinstance(data, list):
         for v in data:
-            ids.add(_coerce_enemy_id(v))
+            resolved = _resolve(v)
+            if resolved is not None:
+                ids.add(resolved)
 
     return ids
 
@@ -462,7 +483,11 @@ def _encounter_has_viable_alternative_cached(
     - `original_only` and the original enemy list is viable, or
     - at least one alternative enemy set is viable.
     """
-    data = load_encounter(encounter_slug, int(character_count)) or {}
+    # Transient: this function's whole output is the bool below, which the
+    # `lru_cache` above already memoises, so retaining the parsed JSON buys
+    # nothing. Retaining it cost 115 MB across the 44 encounters the Setup
+    # tab's first render walks -- see `load_encounter_transient`.
+    data = load_encounter_transient(encounter_slug, int(character_count)) or {}
     invader_ids = _load_invader_enemy_ids()
     disabled_set = set(disabled_enemy_ids)
 
@@ -1220,6 +1245,12 @@ def shuffle_encounter(
         "buf": buf,
         "card_img": card_img,
         "encounter_data": encounter_data,
+        # Mirrored at the top level so it survives `encounter_data` being
+        # stripped (Cloud low-memory mode, saved payloads). The Play tab reads
+        # it to name the item reward the party actually earned.
+        "reward_replacements": dict(
+            (encounter_data or {}).get("_shuffled_reward_replacements") or {}
+        ),
         "encounter_name": name,
         "encounter_level": level,
         "expansion": selected_expansion,

@@ -68,8 +68,7 @@ def reset_invaders_for_encounter(encounter: dict) -> None:
       - Rebuild their behavior deck state from disk (fresh state).
       - Reset their entity HP back to max.
       - Clear their HP tracker entries so the slider re-initializes.
-      - Bump 'deck_reset_id' so the slider key changes and picks up
-        the fresh default value.
+      - Bump 'deck_reset_id' for the behavior deck rendering.
     """
     entries = _get_invader_behavior_entries_for_encounter(encounter)
     if not entries:
@@ -119,7 +118,9 @@ def reset_invaders_for_encounter(encounter: dict) -> None:
     # Persist the updated HP tracker back into session_state
     st.session_state["hp_tracker"] = tracker
 
-    # Bump reset id so the slider's key changes and re-initializes
+    # The HP sliders re-initialize from the tracker entries cleared above; they
+    # no longer key off `deck_reset_id`. It is still bumped because the behavior
+    # deck rendering downstream keys off it.
     st.session_state["deck_reset_id"] = st.session_state.get("deck_reset_id", 0) + 1
 
 
@@ -488,7 +489,6 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
     entity and with check_and_trigger_heatup.
     """
     tracker = st.session_state.setdefault("hp_tracker", {})
-    reset_id = st.session_state.get("deck_reset_id", 0)
 
     entities = getattr(cfg, "entities", []) or []
 
@@ -509,7 +509,11 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
     if hp_max > 0:
         initial_val = max(0, min(initial_val, hp_max))
 
-    slider_key = f"invader_hp_{ent_id}_{reset_id}"
+    # No `deck_reset_id` in the key. It used to be baked in so that resetting an
+    # invader changed the key and the slider re-read its default -- but the id is
+    # bumped app-wide, so resetting one invader snapped *every* invader's slider
+    # back. Seeding the key from the tracker below does the same job per entity.
+    slider_key = f"invader_hp_{ent_id}"
 
     # Keys for pending heat-up confirmation for this specific invader
     pending_flag_key = f"invader_heatup_pending_{ent_id}"
@@ -567,11 +571,18 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
                     st.session_state.pop(_pending_new_key, None)
 
     # Slider itself; on_change handles all the logic
+    # Push tracker changes that did not come from this slider into the widget:
+    # `value=` is inert once the widget exists (see `render_health_tracker`).
+    # The mirror keeps this from fighting the user's own drags.
+    mirror_key = f"_invader_hp_shown_{ent_id}"
+    if st.session_state.get(mirror_key) != initial_val:
+        st.session_state[slider_key] = initial_val
+    st.session_state[mirror_key] = initial_val
+
     st.slider(
         "HP",
         min_value=0,
         max_value=hp_max if hp_max > 0 else max(0, initial_val),
-        value=initial_val,
         step=1,
         key=slider_key,
         on_change=_on_hp_change,
@@ -606,7 +617,10 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
                 st.session_state.pop(pending_prev_key, None)
                 st.session_state.pop(pending_new_key, None)
 
-                st.rerun()
+                # scope="fragment": everything this touches is rendered inside
+                # `_enemy_cards_fragment`. A bare `st.rerun()` is scope="app" in
+                # 1.63, so it re-executed the whole Play tab to redraw one card.
+                st.rerun(scope="fragment")
 
         with col_cancel:
             if st.button("Cancel ❌", key=f"{slider_key}_cancel_heatup", width="stretch"):
@@ -617,7 +631,7 @@ def _render_invader_health_block(cfg: BehaviorConfig, state: dict) -> None:
 
                 # If you *also* want to roll HP back to pre-threshold,
                 # you could optionally do that here. For now we just keep the slider.
-                st.rerun()
+                st.rerun(scope="fragment")
 
 
 
@@ -635,13 +649,13 @@ def _render_invader_deck_controls(cfg: BehaviorConfig, state: dict) -> None:
     with col_draw:
         if st.button("Draw next card 🃏", key=f"invader_draw_{cfg.name}", width="stretch"):
             _draw_card(state)
-            st.rerun()
+            st.rerun(scope="fragment")
 
     with col_heatup:
         # Optional: only show if cfg has heat-up behavior
         if st.button("Manual heat-up 🔥", key=f"invader_heatup_{cfg.name}", width="stretch"):
             _manual_heatup(state)
-            st.rerun()
+            st.rerun(scope="fragment")
 
     draw_count = len(state.get("draw_pile", []))
     discard_count = len(state.get("discard_pile", []))

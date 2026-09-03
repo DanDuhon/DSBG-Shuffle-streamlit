@@ -1,5 +1,6 @@
 #ui/encounter_mode/generation.py
 import streamlit as st
+from collections import OrderedDict, namedtuple
 from functools import lru_cache
 import os
 from typing import Dict, Tuple
@@ -8,7 +9,6 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from core.behavior.logic import load_behavior
-from core.image_cache import get_image_bytes_cached, bytes_to_data_uri
 from core.settings_manager import get_config_bool, is_streamlit_cloud
 from ui.encounter_mode.assets import (
     get_enemy_image_by_id,
@@ -117,14 +117,98 @@ def _get_reward_font(size: int) -> ImageFont.FreeTypeFont:
         return ImageFont.load_default()
 
 
-@lru_cache(maxsize=256)
+_MISSING = object()
+
+
+class _ByteBoundedCache:
+    """LRU cache bounded by an approximate byte budget rather than entry count.
+
+    Entry-count limits are a poor fit for this app's assets: a single cache can
+    hold both a 0.6 MB gang strip and a 5 MB encounter card, so `maxsize=N` says
+    nothing useful about memory. Callers supply a weight per entry.
+    """
+
+    def __init__(self, max_bytes: int) -> None:
+        self.max_bytes = int(max_bytes)
+        self.hits = 0
+        self.misses = 0
+        self.bytes = 0
+        self._data: OrderedDict = OrderedDict()
+        self._weights: dict = {}
+
+    def get(self, key):
+        value = self._data.get(key, _MISSING)
+        if value is _MISSING:
+            self.misses += 1
+            return _MISSING
+        self._data.move_to_end(key)
+        self.hits += 1
+        return value
+
+    def peek(self, key):
+        """Read an entry without counting a hit/miss or changing LRU order.
+
+        For callers that can proceed without the cache and so should not be
+        credited in its hit rate, nor promote an entry they only borrowed.
+        """
+        return self._data.get(key, _MISSING)
+
+    def put(self, key, value, weight: int) -> None:
+        weight = max(1, int(weight))
+        # An entry bigger than the whole budget is returned but never retained.
+        if weight > self.max_bytes:
+            return
+        if key in self._data:
+            self.bytes -= self._weights.pop(key, 0)
+        self._data[key] = value
+        self._data.move_to_end(key)
+        self._weights[key] = weight
+        self.bytes += weight
+        while self.bytes > self.max_bytes and len(self._data) > 1:
+            old_key, _ = self._data.popitem(last=False)
+            self.bytes -= self._weights.pop(old_key, 0)
+
+    def clear(self) -> None:
+        self._data.clear()
+        self._weights.clear()
+        self.bytes = 0
+        self.hits = 0
+        self.misses = 0
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+
+def _rgba_image_cache_budget_bytes() -> int:
+    """Byte budget for decoded RGBA images (override with DSBG_IMAGE_CACHE_MB)."""
+    try:
+        mb = int(os.environ.get("DSBG_IMAGE_CACHE_MB", "") or 0)
+    except ValueError:
+        mb = 0
+    if mb <= 0:
+        mb = 48 if is_streamlit_cloud() else 160
+    return mb * 1024 * 1024
+
+
+# 249 encounter card images decode to ~5 MB each as RGBA; the previous
+# `maxsize=256` exceeded that count, so the entire ~1.2 GB set could accumulate.
+_rgba_image_cache = _ByteBoundedCache(_rgba_image_cache_budget_bytes())
+
+
 def _load_rgba_image(path: str) -> Image.Image:
-    """Load an RGBA image from disk.
+    """Load an RGBA image from disk, memoised under a byte budget.
 
     NOTE: Returned image must be treated as read-only.
     Callers should `copy()` before mutating/compositing.
     """
-    return Image.open(path).convert("RGBA")
+    cached = _rgba_image_cache.get(path)
+    if cached is not _MISSING:
+        return cached
+
+    img = Image.open(path).convert("RGBA")
+    w, h = img.size
+    _rgba_image_cache.put(path, img, w * h * 4)
+    return img
 
 
 def _should_bypass_encounter_card_base_image_cache() -> bool:
@@ -162,8 +246,16 @@ def _get_icon_resized(path: str, box_size: int) -> Tuple[Image.Image, Tuple[int,
 
 @lru_cache(maxsize=256)
 def _get_enemy_health_from_behavior(name: str) -> int:
+    """Base (non-NG+) health for an enemy, used for gang detection.
+
+    apply_ngplus=False is required for two reasons: gang membership is defined
+    by BASE health 1, and this result is cached by name only — an NG+-scaled
+    value would be pinned across NG+ level changes.
+    """
     try:
-        cfg = load_behavior(Path("data/behaviors") / f"{name}.json")
+        cfg = load_behavior(
+            Path("data/behaviors") / f"{name}.json", apply_ngplus=False
+        )
         return int(cfg.raw.get("health", 1))
     except Exception:
         return 1
@@ -190,117 +282,27 @@ def load_valid_sets():
     return {}
 
 
-def _img_tag_from_path(path: Path, title: str, height_px: int = 30, extra_css: str = "") -> str:
-    if not path.exists():
-        return ""
-    data = get_image_bytes_cached(str(path))
-    suffix = path.suffix.lower()
-    mime = "image/png" if suffix == ".png" else "image/jpeg"
-    data_uri = bytes_to_data_uri(data, mime=mime)
-
-    style = (
-        f"height:{height_px}px; "
-        f"max-height:none; "
-        f"width:auto; "
-        f"max-width:none; "
-        f"{extra_css}"
-    )
-
-    return (
-        f"<img src='{data_uri}' "
-        f"title='{title}' alt='{title}' "
-        f"style='{style}'/>")
-
-
-def render_encounter_icons(current_encounter, assets_dir="assets"):
-    chars_dir = Path(assets_dir) / "characters"
-    exps_dir = Path(assets_dir) / "expansions"
-
-    html = """
-    <style>
-      .icons-section h4 { margin: 0.75rem 0 0.25rem 0; }
-      .icons-row { display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; }
-      .icons-row::-webkit-scrollbar { height: 6px; }
-      .icons-row::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
-      .icons-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; }
-      .icon-fallback {
-        height:48px; background:#ccc; border-radius:6px;
-        display:flex; align-items:center; justify-content:center;
-        font-size:10px; text-align:center; padding:2px;
-      }
-    </style>
-    <div class="icons-section">
-    """
-
-    # PARTY
-    characters = st.session_state.user_settings.get("selected_characters", [])
-    if characters:
-        html += "<h5>Party</h5><div class='icons-row'>"
-        for char in characters:
-            fname = f"{char}.png"
-            tag = _img_tag_from_path(chars_dir / fname, title=char, extra_css="border-radius:6px;")
-            if tag:
-                html += tag
-            else:
-                initial = (char or "?")[0:1]
-                html += f"<div class='icon-fallback' title='{char}'>{initial}</div>"
-        html += "</div>"
-
-    # EXPANSIONS USED
-    enemies = current_encounter["enemies"]
-    expansions_used = list(current_encounter.get("expansions_used", []))
-    icons = []
-    html += "<h5>Expansions Needed</h5><div class='icons-grid'>"
-
-    enemy_ids = set([e["name"] if isinstance(e, dict) else e for e in enemies])
-
-    if any(exp in expansions_used for exp in ["Dark Souls The Board Game", "The Sunless City"]):
-        if 16 not in enemy_ids and 34 not in enemy_ids:
-            icons.append({"file": "Dark Souls The Board Game The Sunless City.png",
-                          "label": "Dark Souls The Board Game / The Sunless City"})
-            expansions_used = [exp for exp in expansions_used if exp not in ["Dark Souls The Board Game", "The Sunless City"]]
-        else:
-            if 16 in enemy_ids:
-                icons.append({"file": "Dark Souls The Board Game.png", "label": "Dark Souls The Board Game"})
-            if 34 in enemy_ids:
-                icons.append({"file": "The Sunless City.png", "label": "The Sunless City"})
-        for exp in [exp for exp in expansions_used if exp not in {"Dark Souls The Board Game", "The Sunless City"}]:
-            icons.append({"file": f"{exp}.png", "label": exp})
-    else:
-        for exp in expansions_used:
-            icons.append({"file": f"{exp}.png", "label": exp})
-
-    seen = set()
-    for icon in icons:
-        fname, label = icon["file"], icon["label"]
-        if fname in seen:
-            continue
-        seen.add(fname)
-
-        if fname == "Executioner's Chariot.png":
-            height_px = 36
-        else:
-            height_px = 30
-
-        tag = _img_tag_from_path(
-            exps_dir / fname,
-            title=label,
-            height_px=height_px,
-            extra_css="object-fit:contain; border-radius:6px;",
-        )
-        if tag:
-            html += tag
-        else:
-            html += f"<div class='icon-fallback' title='{label}'>{label}</div>"
-
-    html += "</div>"
-    return html
-
-
 def build_encounter_keywords(encounter_name, expansion, use_edited=False):
-    """Return list of (keyword, description)"""
+    """Return list of (keyword, description), in order, without repeats.
+
+    Blank tokens are dropped and duplicates collapsed: several data rows list
+    the same keyword two or three times, which rendered the identical paragraph
+    once per occurrence, and a stray empty token rendered as the
+    "No description available." fallback.
+    """
     keywords = editedEncounterKeywords.get((encounter_name, expansion), []) if use_edited else encounterKeywords.get((encounter_name, expansion), [])
-    return [(kw, keywordText.get(kw, "No description available.")) for kw in keywords]
+
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for kw in keywords or []:
+        if not isinstance(kw, str):
+            continue
+        kw = kw.strip()
+        if not kw or kw in seen:
+            continue
+        seen.add(kw)
+        out.append((kw, keywordText.get(kw, "No description available.")))
+    return out
 
 
 def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:
@@ -319,9 +321,17 @@ def load_encounter_uncached(encounter_slug: str, character_count: int) -> dict:
 # Strategy:
 # - Cloud tighten-LRU mode: cache only the most recently requested encounter
 #   (single-entry cache).
-# - Otherwise: use an LRU cache (larger local/dev footprint is OK).
-
-from collections import namedtuple
+# - Otherwise: an LRU bounded by BYTES rather than entry count.
+#
+# Byte-bounding matters because these files are extremely skewed: the median is
+# ~20 KB but the largest is 4.7 MB on disk (~16 MB parsed), across 864 files
+# totalling 544 MB. A count-based `maxsize=1024` never evicted anything — the
+# whole corpus could accumulate, roughly 1.9 GB parsed. A byte budget keeps
+# hundreds of typical encounters resident while capping the worst case.
+#
+# Repeated *filtering* does not depend on this cache: viability is memoised
+# separately as a bool in `logic._encounter_has_viable_alternative_cached`.
+# This cache exists to keep re-shuffles of the current encounter fast.
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
@@ -331,9 +341,53 @@ _SINGLE_ENCOUNTER_CACHE_HITS = 0
 _SINGLE_ENCOUNTER_CACHE_MISSES = 0
 
 
-@lru_cache(maxsize=1024)
+def _encounter_cache_budget_bytes() -> int:
+    """Byte budget for the encounter JSON cache (override with DSBG_ENCOUNTER_CACHE_MB)."""
+    try:
+        mb = int(os.environ.get("DSBG_ENCOUNTER_CACHE_MB", "") or 0)
+    except ValueError:
+        mb = 0
+    if mb <= 0:
+        mb = 64 if is_streamlit_cloud() else 192
+    return mb * 1024 * 1024
+
+
+_ENCOUNTER_CACHE_MAX_BYTES = _encounter_cache_budget_bytes()
+_encounter_cache = _ByteBoundedCache(_ENCOUNTER_CACHE_MAX_BYTES)
+
+
+# Parsed JSON costs several times its on-disk size as Python objects. Measured
+# across this dataset: 4.70 MB file -> ~16.4 MB parsed, 0.02 MB -> ~0.09 MB, so
+# ~3.5-4.5x. Weighting by file size x this factor makes the byte budget below an
+# approximation of RETAINED MEMORY rather than of disk bytes.
+_ENCOUNTER_PARSE_FACTOR = 4
+
+
+def _encounter_weight(encounter_slug: str, character_count: int) -> int:
+    """Approximate retained memory for an encounter, from its on-disk size.
+
+    File size is free to obtain and proportional to the parsed cost, which is
+    all the budget needs.
+    """
+    try:
+        size = (
+            ENCOUNTER_DATA_DIR / f"{encounter_slug}_{character_count}.json"
+        ).stat().st_size
+    except OSError:
+        return 1
+    return max(1, size * _ENCOUNTER_PARSE_FACTOR)
+
+
 def _load_encounter_lru(encounter_slug: str, character_count: int) -> dict:
-    return _load_encounter_from_disk(encounter_slug, character_count)
+    """Load an encounter, memoised under a byte budget (LRU eviction)."""
+    key = (encounter_slug, character_count)
+    cached = _encounter_cache.get(key)
+    if cached is not _MISSING:
+        return cached
+
+    data = _load_encounter_from_disk(encounter_slug, character_count)
+    _encounter_cache.put(key, data, _encounter_weight(encounter_slug, character_count))
+    return data
 
 
 def load_encounter(encounter_slug: str, character_count: int):
@@ -361,15 +415,56 @@ def load_encounter(encounter_slug: str, character_count: int):
     return _load_encounter_lru(key[0], key[1])
 
 
+def load_encounter_transient(encounter_slug: str, character_count: int) -> dict:
+    """Parse an encounter without admitting it to the retaining caches.
+
+    For callers that reduce the JSON to a small answer and then drop it. The
+    only one today is the viability check, whose bool is already memoised by
+    `logic._encounter_has_viable_alternative_cached` -- so the parsed dict is
+    dead the moment that call returns.
+
+    Routing it through `load_encounter` instead pinned every encounter the
+    filter walked: the first Encounter Mode render sweeps 44 of them
+    (`filter_expansions` takes one per expansion, `filter_encounters` all of
+    the selected one) and retained **115 MB**, measured. That is over the
+    64 MB Cloud budget on its own, so on Cloud the entries evicted each other
+    and the next sweep re-read all 44 from disk (~1.06 s cold, measured).
+
+    Reads through an existing cache entry when there is one, so the selected
+    encounter -- which shuffling does want resident -- is never parsed twice.
+    This is what the cache-strategy note above already claims: filtering does
+    not depend on the encounter cache; the cache exists for re-shuffles.
+    """
+
+    key = (str(encounter_slug), int(character_count))
+
+    if _TIGHTEN_LRU:
+        if _SINGLE_ENCOUNTER_CACHE_KEY == key and isinstance(_SINGLE_ENCOUNTER_CACHE_VALUE, dict):
+            return _SINGLE_ENCOUNTER_CACHE_VALUE
+    else:
+        cached = _encounter_cache.peek(key)
+        if cached is not _MISSING:
+            return cached
+
+    return _load_encounter_from_disk(key[0], key[1])
+
+
 def _load_encounter_cache_info():
     if _TIGHTEN_LRU:
         curr = 1 if _SINGLE_ENCOUNTER_CACHE_KEY is not None else 0
         return _CacheInfo(_SINGLE_ENCOUNTER_CACHE_HITS, _SINGLE_ENCOUNTER_CACHE_MISSES, 1, curr)
-    try:
-        ci = _load_encounter_lru.cache_info()
-        return _CacheInfo(int(ci.hits), int(ci.misses), ci.maxsize, int(ci.currsize))
-    except Exception:
-        return _CacheInfo(0, 0, 1024, 0)
+    # `maxsize` is reported in MB (the budget), `currsize` as the entry count.
+    return _CacheInfo(
+        _encounter_cache.hits,
+        _encounter_cache.misses,
+        _ENCOUNTER_CACHE_MAX_BYTES // (1024 * 1024),
+        len(_encounter_cache),
+    )
+
+
+def _load_encounter_cache_bytes() -> int:
+    """Bytes currently attributed to the encounter JSON cache."""
+    return 0 if _TIGHTEN_LRU else _encounter_cache.bytes
 
 
 def _load_encounter_cache_clear():
@@ -381,10 +476,7 @@ def _load_encounter_cache_clear():
         _SINGLE_ENCOUNTER_CACHE_HITS = 0
         _SINGLE_ENCOUNTER_CACHE_MISSES = 0
         return
-    try:
-        _load_encounter_lru.cache_clear()
-    except Exception:
-        pass
+    _encounter_cache.clear()
 
 
 # Attach hooks so existing diagnostics (memlog) can call `load_encounter.cache_info()`.
@@ -699,20 +791,12 @@ def generate_encounter_image(
             gy = int(round(float(gy) * scale))
             gsize = max(1, int(round(float(gsize) * scale)))
 
-        # Candidate filenames to support different naming conventions
-        candidates = []
-        if gang_name:
-            lname = gang_name.lower().replace(" ", "_")
-            candidates.append(f"gang_{lname}.png")            # e.g. gang_hollow.png
-            candidates.append(f"gang{gang_name.replace(' ', '')}.png")  # e.g. gangHollow.png
-            candidates.append(f"gang_{gang_name.replace(' ', '')}.png")   # e.g. gang_Hollow.png
-
+        # Gang art is named gang<Name>.png, e.g. gangHollow.png / gangSilverKnight.png
         gang_img_path = None
-        for fname in candidates:
-            p = Path("assets") / "keywords" / fname
+        if gang_name:
+            p = Path("assets") / "keywords" / f"gang{gang_name.replace(' ', '')}.png"
             if p.exists():
                 gang_img_path = p
-                break
 
         if gang_img_path:
             if bypass_image_caches:
@@ -725,10 +809,20 @@ def generate_encounter_image(
     return card_img
 
 
-@st.cache_data(show_spinner=False)
 def load_encounter_data(expansion: str, name: str | None = None, character_count: int | None = None, level: int | None = None) -> dict:
     """
     Wrapper around load_encounter that can later handle list or dataclass conversion.
+
+    Deliberately not `@st.cache_data`. `load_encounter` already caches against a
+    byte budget; a second unbounded cache on top of it pinned every encounter
+    this process had ever touched, in full, forever -- measured at 547 MB
+    retained while the inner cache was correctly holding 21 entries / 187.8 MB.
+
+    The outer cache was also providing something callers rely on: `cache_data`
+    unpickles a fresh object per read, so each caller got a private dict to add
+    `_shuffled_reward_replacements` to. A shallow copy keeps that property at a
+    fraction of the cost -- and matches what `logic.__init__` already does when
+    it calls `load_encounter` directly.
     """
     if name:
         # Prefer filenames that include expansion, level, and name
@@ -736,7 +830,7 @@ def load_encounter_data(expansion: str, name: str | None = None, character_count
             slug = f"{expansion}_{int(level)}_{name}"
         else:
             slug = f"{expansion}_{name}"
-        return load_encounter(slug, character_count)
+        return dict(load_encounter(slug, character_count) or {})
     else:
         # Future support for all encounters in expansion
         return {}

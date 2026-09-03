@@ -69,6 +69,11 @@ def cache_data(*args, **kwargs):
     """Streamlit cache decorator when available; no-op otherwise."""
 
     try:
+        # Same conservative defaults as the card renderers, unless the caller
+        # overrides: an unbounded cache here grows for the life of the process.
+        limits = cache_limits()
+        kwargs.setdefault("max_entries", limits["max_entries"])
+        kwargs.setdefault("ttl", limits["ttl"])
         return st.cache_data(*args, **kwargs)  # type: ignore[attr-defined]
     except Exception:
         def _decorator(fn):
@@ -92,6 +97,7 @@ def rerun() -> None:
         return
     raise RuntimeError("rerun() called without Streamlit; pass rerun callback via set_behavior_runtime()")
 
+from core.behavior.cache_limits import cache_limits
 from core.behavior.models import BehaviorConfig, Entity, Heatup
 from core.behavior.assets import _path, _strip_behavior_suffix
 from core.ngplus import apply_ngplus_to_raw, get_current_ngplus_level
@@ -197,6 +203,13 @@ def _draw_card(state):
                 state[deck_key] = state[discard_key][:]
                 random.shuffle(state[deck_key])
                 state[discard_key].clear()
+            # Recycling the discard is the only refill; if that was empty too
+            # the deck was never built, and popping would raise a bare
+            # IndexError several frames from the cause.
+            assert state[deck_key], (
+                f"Vordt deck {deck_key!r} and its discard {discard_key!r} are "
+                "both empty; the deck was not set up."
+            )
             card = state[deck_key].pop(0)
             state[discard_key].append(card)
             return card
@@ -342,6 +355,9 @@ def _reset_deck(state, cfg):
     for ent in cfg.entities:
         ent.hp = ent.hp_max
         ent.crossed = []
+        # Belt and braces. Popping a widget key does not by itself reset the
+        # widget in 1.63; what actually moves the HP slider is clearing
+        # `hp_tracker` below, which `render_health_tracker` seeds the slider from.
         _ss().pop(f"hp_{ent.id}", None)
 
     # --- Clear UI caches / flags
@@ -349,9 +365,13 @@ def _reset_deck(state, cfg):
     ss.pop("hp_tracker", None)
     ss.pop("last_edit", None)
     ss["deck_reset_id"] = ss.get("deck_reset_id", 0) + 1
-    ss["chariot_heatup_done"] = False
     ss["pending_heatup_prompt"] = False
-    ss["heatup_done"] = False
+    # Heat-up state belongs to the boss being reset. These were global, so
+    # resetting ANY boss un-heat-upped an in-progress fight for another one —
+    # `chariot_heatup_done` in particular is the Chariot's only heat-up record.
+    state["heatup_done"] = False
+    if cfg.name == "Executioner's Chariot":
+        ss["chariot_heatup_done"] = False
     ss["behavior_cfg"] = cfg
 
 def _manual_heatup(state):
@@ -382,7 +402,8 @@ def _manual_heatup(state):
         ss["pending_heatup_target"] = None
         ss["pending_heatup_type"] = None
         if cfg.name not in {"Old Dragonslayer", "Ornstein & Smough", "Vordt of the Boreal Valley"}:
-            ss["heatup_done"] = True
+            # Per-boss, not global: see _reset_deck.
+            state["heatup_done"] = True
         
 
 def _ornstein_smough_heatup_ui(state, cfg):
@@ -488,6 +509,22 @@ def list_behavior_files() -> List[Path]:
     return sorted(DATA_DIR.glob("*.json"))
 
 
+def behavior_files_fingerprint() -> tuple:
+    """(path, mtime_ns) for every behavior file.
+
+    Used as a cache key so edits to the behavior JSON invalidate derived
+    caches (e.g. the behavior catalog) without needing a process restart.
+    """
+    out = []
+    for p in list_behavior_files():
+        try:
+            out.append((str(p), p.stat().st_mtime_ns))
+        except OSError:
+            # File vanished between listing and stat; treat as absent.
+            continue
+    return tuple(out)
+
+
 def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
     """
     Return all behavior keys that start with the given prefix (case-insensitive).
@@ -503,14 +540,29 @@ def match_behavior_prefix(behaviors: dict[str, dict], prefix: str) -> list[str]:
 # JSON Importer
 # ------------------------
 @cache_data(show_spinner=False)
-def _read_behavior_json(path_str: str) -> dict:
+def _read_behavior_json_cached(path_str: str, mtime_ns: int) -> dict:
     with open(path_str, "r", encoding="utf-8") as f:
         return json.load(f)
-    
+
+
+def _read_behavior_json(path_str: str) -> dict:
+    """Behavior JSON for `path_str`, cached against the file's mtime.
+
+    The mtime is part of the cache key so an edit to a behavior JSON
+    invalidates the card data, the same way `behavior_files_fingerprint()`
+    invalidates the catalog. Keyed on the path alone, the catalog would pick up
+    a rename or recategorisation while every card kept rendering pre-edit
+    values until the process restarted.
+    """
+    return _read_behavior_json_cached(path_str, Path(path_str).stat().st_mtime_ns)
+
+
 def load_behavior(fname: Path, raw_override: dict | None = None, apply_ngplus: bool = True) -> BehaviorConfig:
     # 1) Load base raw config from JSON or use an explicit override
     if raw_override is None:
-        base_raw = deepcopy(_read_behavior_json(str(fname)))  # copy so we can mutate safely
+        # `_read_behavior_json` is `cache_data`-backed, which unpickles a fresh
+        # object on every read, so this is already a private copy to mutate.
+        base_raw = _read_behavior_json(str(fname))
     else:
         base_raw = deepcopy(raw_override)
     name = fname.stem
@@ -910,6 +962,13 @@ def _apply_sif_limping_mode(state, cfg):
         if "Limping Strike" in name:
             limp_card = name
             break
+
+    # Without this the deck became `[None]` and the next draw served a card
+    # that does not exist, rather than failing where the data is wrong.
+    assert limp_card is not None, (
+        "Sif limping mode needs a 'Limping Strike' behavior card; "
+        f"{cfg.name!r} has none."
+    )
 
     state["draw_pile"] = [limp_card]
     state["discard_pile"] = []

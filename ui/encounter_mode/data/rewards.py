@@ -34,7 +34,7 @@ ENCOUNTER_ORIGINAL_REWARDS = {
         {"text": "Fireball", "pos": (43, 480)},
     ],
     ("Grave Matters", "Tomb of Giants"): [
-        {"text": "Firebomb", "pos": (43, 475)},
+        {"text": "Firebombs", "pos": (43, 475)},
     ],
     ("Puppet Master", "Tomb of Giants"): [
         {"text": "Skull Lantern", "pos": (43, 475)},

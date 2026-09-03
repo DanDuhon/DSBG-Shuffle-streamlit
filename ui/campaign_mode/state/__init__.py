@@ -1,7 +1,7 @@
 #ui/campaign_mode/state.py
 import streamlit as st
 from typing import Any, Dict
-from ui.campaign_mode.core import _default_sparks_max
+from ui.campaign_mode.core import _default_sparks_max, _default_starting_souls_v1
 from ui.campaign_mode.helpers import get_player_count_from_settings
 
 
@@ -109,7 +109,9 @@ def _ensure_v1_state(player_count: int) -> Dict[str, Any]:
         },
     )
 
-    state.setdefault("souls", 0)
+    # Starting souls apply once, at campaign start: `setdefault` leaves an
+    # in-progress campaign alone (including one legitimately spent down to 0).
+    state.setdefault("souls", _default_starting_souls_v1(player_count))
 
     sparks_max = _default_sparks_max(player_count)
     prev_max = state.get("sparks_max")
@@ -151,6 +153,8 @@ def _ensure_v2_state(player_count: int) -> Dict[str, Any]:
         },
     )
 
+    # V2 has no official starting-souls rule for a solo party, so it always
+    # starts at 0 (unlike V1, which starts a single character on 16).
     state.setdefault("souls", 0)
 
     sparks_max = _default_sparks_max(player_count)

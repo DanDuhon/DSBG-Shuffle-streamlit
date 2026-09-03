@@ -25,6 +25,19 @@ def ensure_boss_state(entry):
     key = get_boss_mode_state_key(entry)
     current_ng = int(get_current_ngplus_level() or 0)
 
+    # The pending heat-up prompt lives in global session state, so it survives a
+    # boss switch: without this, arming it on boss A and then selecting boss B
+    # fires "entered Heat-Up range!" for B at full HP, and confirming applies a
+    # real heat-up to B's deck.
+    if st.session_state.get("_boss_mode_last_state_key") != key:
+        st.session_state["_boss_mode_last_state_key"] = key
+        for k in (
+            "pending_heatup_prompt",
+            "pending_heatup_target",
+            "pending_heatup_type",
+        ):
+            st.session_state.pop(k, None)
+
     state = st.session_state.get(key)
     if not state:
         state, cfg = _new_state_from_file(entry.path)

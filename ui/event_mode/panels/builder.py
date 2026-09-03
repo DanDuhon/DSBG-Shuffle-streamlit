@@ -39,6 +39,17 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
     custom_decks = load_custom_event_decks()
     names = sorted(custom_decks.keys())
 
+    # `st.session_state[<widget key>]` may only be written before that widget is
+    # instantiated, so the buttons below update the builder dict and raise the
+    # sync flag; the widget keys are seeded from the dict here, on the next run.
+    # (The per-card "copies" widgets are seeded the same way further down.)
+    b = _builder_get()
+    if bool(st.session_state.get(_BUILDER_SYNC_KEY, False)):
+        st.session_state["event_builder_pick"] = b.get("loaded_from") or "(new)"
+        st.session_state["event_builder_name"] = b.get("name", "") or ""
+    elif "event_builder_name" not in st.session_state:
+        st.session_state["event_builder_name"] = b.get("name", "") or ""
+
     c1, c2 = st.columns([1.2, 1])
 
     with c1:
@@ -57,11 +68,10 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
                 b.update({"name": pick, "cards": dict(cards or {}), "loaded_from": pick})
             st.session_state[_BUILDER_KEY] = b
             st.session_state[_BUILDER_SYNC_KEY] = True
+            st.rerun()
 
         b = _builder_get()
-        b_name = st.text_input(
-            "Deck name", value=b.get("name", "") or "", key="event_builder_name"
-        )
+        b_name = st.text_input("Deck name", key="event_builder_name")
         b["name"] = b_name
 
     with c2:
@@ -106,21 +116,17 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
             name = str(b["name"]).strip()
             if name:
                 custom_decks[name] = {"cards": dict(cards_map)}
-                save_custom_event_decks(custom_decks)
 
+                # save_custom_event_decks() reruns the script itself, so state
+                # updates have to happen before the call or they never run.
+                # `cards` too: the sync below reseeds the per-card "copies"
+                # widgets from the builder dict, so it has to hold what we saved.
+                b["cards"] = dict(cards_map)
                 b["loaded_from"] = name
                 st.session_state[_BUILDER_KEY] = b
                 st.session_state[_BUILDER_SYNC_KEY] = True
 
-                try:
-                    st.session_state["event_builder_pick"] = name
-                except Exception:
-                    pass
-                try:
-                    st.session_state["event_builder_name"] = name
-                except Exception:
-                    pass
-                st.rerun()
+                save_custom_event_decks(custom_decks)
 
         reset_disabled = not bool(cards_map)
         if st.button("Reset deck 🔄", width="stretch", disabled=reset_disabled):
@@ -143,20 +149,12 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
             loaded = b.get("loaded_from")
             if loaded in custom_decks:
                 del custom_decks[loaded]
-                save_custom_event_decks(custom_decks)
 
+                # save_custom_event_decks() reruns the script itself, so state
+                # updates have to happen before the call or they never run.
                 b.update({"name": "", "cards": {}, "loaded_from": None})
                 st.session_state[_BUILDER_KEY] = b
                 st.session_state[_BUILDER_SYNC_KEY] = True
-
-                try:
-                    st.session_state["event_builder_pick"] = "(new)"
-                except Exception:
-                    pass
-                try:
-                    st.session_state["event_builder_name"] = ""
-                except Exception:
-                    pass
 
                 prefix = "event_builder_copies_all::"
                 for key in list(st.session_state.keys()):
@@ -165,7 +163,8 @@ def render_deck_builder(*, settings: Dict[str, Any], configs: Dict[str, Any]) ->
                             st.session_state[key] = 0
                         except Exception:
                             pass
-                st.rerun()
+
+                save_custom_event_decks(custom_decks)
 
     st.markdown("---")
 
