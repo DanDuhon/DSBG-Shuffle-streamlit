@@ -72,9 +72,9 @@ coords_map = {
         "right": (545, 737),
     },
     "attack_move": {
-        "left": (50, 760),
-        "middle": (304, 760),
-        "right": (567, 760),
+        "left": (57, 759),
+        "middle": (304, 759),
+        "right": (567, 759),
     },
     "attack_magic": {
         "left": (33, 735),
